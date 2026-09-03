@@ -1,0 +1,84 @@
+﻿# Dependencies
+node_modules/
+.pnpm-store/
+
+# Build outputs
+dist/
+build/
+.next/
+out/
+*.tsbuildinfo
+
+# Environment
+.env
+.env.local
+.env.development
+.env.test
+.env.production
+.env.production.local
+.env.*.local
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+pnpm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Testing
+coverage/
+.nyc_output/
+*.lcov
+
+# Cache
+.cache/
+.turbo/
+.eslintcache
+.parcel-cache/
+.vite/
+.vitest/
+
+# IDE
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# Docker
+docker-compose.override.yml
+.docker/
+
+# Supabase
+supabase/.temp/
+supabase/.branches/
+
+# SSL Certificates
+infrastructure/ssl/certs/*
+!infrastructure/ssl/certs/.gitkeep
+
+# Backups
+backups/
+*.sql.bak
+*.dump
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# OS files
+.DS_Store
+Desktop.ini
+
+# Secrets
+*.pem
+*.key
+*.crt
+*.p12
+*.pfx

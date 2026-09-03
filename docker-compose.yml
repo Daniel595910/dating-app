@@ -1,0 +1,218 @@
+version: "3.9"
+
+services:
+  # ============================================
+  # NGINX API GATEWAY
+  # ============================================
+  nginx:
+    build:
+      context: ./infrastructure/docker/nginx
+      dockerfile: Dockerfile
+    container_name: dating-app-nginx
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    depends_on:
+      - web
+      - admin
+      - backend
+    networks:
+      - dating-app-network
+    volumes:
+      - ./infrastructure/ssl/certs:/etc/nginx/certs:ro
+    healthcheck:
+      test: ["CMD", "nginx", "-t"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ============================================
+  # WEB APPLICATION (PWA)
+  # ============================================
+  web:
+    build:
+      context: ./apps/web
+      dockerfile: Dockerfile
+      args:
+        - NODE_ENV=production
+        - VITE_SUPABASE_URL=${VITE_SUPABASE_URL}
+        - VITE_SUPABASE_ANON_KEY=${VITE_SUPABASE_ANON_KEY}
+    container_name: dating-app-web
+    restart: always
+    environment:
+      - NODE_ENV=production
+    depends_on:
+      - backend
+    networks:
+      - dating-app-network
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:80/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ============================================
+  # ADMIN APPLICATION
+  # ============================================
+  admin:
+    build:
+      context: ./apps/admin
+      dockerfile: Dockerfile
+      args:
+        - NODE_ENV=production
+        - VITE_SUPABASE_URL=${VITE_SUPABASE_URL}
+        - VITE_SUPABASE_ANON_KEY=${VITE_SUPABASE_ANON_KEY}
+    container_name: dating-app-admin
+    restart: always
+    environment:
+      - NODE_ENV=production
+    depends_on:
+      - backend
+    networks:
+      - dating-app-network
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:80/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ============================================
+  # BACKEND API (if separate from Supabase)
+  # ============================================
+  backend:
+    build:
+      context: .
+      dockerfile: ./infrastructure/docker/backend/Dockerfile
+    container_name: dating-app-backend
+    restart: always
+    environment:
+      - NODE_ENV=production
+      - DATABASE_URL=${DATABASE_URL}
+      - REDIS_URL=${REDIS_URL}
+      - SUPABASE_URL=${VITE_SUPABASE_URL}
+      - SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}
+      - JWT_SECRET=${JWT_SECRET}
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - dating-app-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ============================================
+  # POSTGRESQL DATABASE
+  # ============================================
+  postgres:
+    build:
+      context: ./infrastructure/docker/postgres
+      dockerfile: Dockerfile
+    container_name: dating-app-postgres
+    restart: always
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-betold_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-securepassword}
+      POSTGRES_DB: ${POSTGRES_DB:-betold}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - dating-app-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-betold_user} -d ${POSTGRES_DB:-betold}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ============================================
+  # REDIS CACHE
+  # ============================================
+  redis:
+    build:
+      context: ./infrastructure/docker/redis
+      dockerfile: Dockerfile
+    container_name: dating-app-redis
+    restart: always
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - dating-app-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ============================================
+  # PROMETHEUS MONITORING
+  # ============================================
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: dating-app-prometheus
+    restart: always
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./infrastructure/monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+      - '--web.console.templates=/usr/share/prometheus/consoles'
+    networks:
+      - dating-app-network
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:9090/-/healthy"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+networks:
+  dating-app-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+  prometheus_data:
+    driver: local

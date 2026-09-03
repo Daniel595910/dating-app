@@ -1,0 +1,81 @@
+.container {
+  background-color: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.75rem;
+  padding: 1.25rem;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
+}
+
+.daysLabel {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #6b7280;
+}
+
+.stageLabel {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #3b82f6;
+}
+
+.progressTrack {
+  height: 8px;
+  background-color: #f3f4f6;
+  border-radius: 9999px;
+  overflow: hidden;
+  margin-bottom: 1rem;
+}
+
+.progressFill {
+  height: 100%;
+  background-color: #3b82f6;
+  border-radius: 9999px;
+  transition: width 0.3s ease;
+}
+
+.stages {
+  display: flex;
+  justify-content: space-between;
+}
+
+.stageIndicator {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+  flex: 1;
+}
+
+.stageDot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background-color: #e5e7eb;
+  transition: all 0.3s ease;
+}
+
+.stageComplete .stageDot {
+  background-color: #3b82f6;
+}
+
+.stageCurrent .stageDot {
+  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.2);
+}
+
+.stageName {
+  font-size: 0.75rem;
+  color: #9ca3af;
+  text-align: center;
+}
+
+.stageComplete .stageName,
+.stageCurrent .stageName {
+  color: #3b82f6;
+  font-weight: 500;
+}

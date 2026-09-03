@@ -1,0 +1,85 @@
+.card {
+  background-color: #ffffff;
+  border-radius: 0.75rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  border: 1px solid #f3f4f6;
+  overflow: hidden;
+  position: relative;
+  transition: all 0.2s ease;
+}
+
+.clickable {
+  cursor: pointer;
+  border: none;
+  background: none;
+  padding: 0;
+  text-align: left;
+  font-family: inherit;
+  width: 100%;
+}
+
+.clickable:hover {
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  transform: translateY(-2px);
+}
+
+.clickable:focus-visible {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+}
+
+.loading {
+  pointer-events: none;
+}
+
+.loadingOverlay {
+  position: absolute;
+  inset: 0;
+  background-color: rgba(255, 255, 255, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+}
+
+.spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid #e5e7eb;
+  border-top-color: #3b82f6;
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+}
+
+.header {
+  padding: 1.25rem 1.5rem 0.75rem;
+}
+
+.title {
+  margin: 0;
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #111827;
+}
+
+.description {
+  margin: 0.25rem 0 0;
+  font-size: 0.875rem;
+  color: #6b7280;
+}
+
+.content {
+  padding: 0.75rem 1.5rem 1.25rem;
+}
+
+.footer {
+  padding: 1rem 1.5rem;
+  border-top: 1px solid #f3f4f6;
+  background-color: #f9fafb;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

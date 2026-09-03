@@ -1,0 +1,75 @@
+.toast {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  border-radius: 0.5rem;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  font-size: 0.875rem;
+  min-width: 300px;
+  max-width: 400px;
+  animation: slideIn 0.3s ease;
+}
+
+.success {
+  background-color: #ffffff;
+  color: #065f46;
+  border: 1px solid #d1fae5;
+}
+
+.error {
+  background-color: #ffffff;
+  color: #991b1b;
+  border: 1px solid #fee2e2;
+}
+
+.warning {
+  background-color: #ffffff;
+  color: #92400e;
+  border: 1px solid #fef3c7;
+}
+
+.info {
+  background-color: #ffffff;
+  color: #1e40af;
+  border: 1px solid #dbeafe;
+}
+
+.icon {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.message {
+  flex: 1;
+  line-height: 1.4;
+}
+
+.closeButton {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0.25rem;
+  border-radius: 0.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.7;
+  transition: opacity 0.2s ease;
+}
+
+.closeButton:hover {
+  opacity: 1;
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateX(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}

@@ -1,0 +1,88 @@
+.container {
+  padding: 1rem;
+  max-width: 600px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #111827;
+  margin: 0;
+}
+
+.error {
+  color: #ef4444;
+  text-align: center;
+  padding: 2rem;
+}
+
+.upgradeSection {
+  background-color: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.75rem;
+  padding: 1.25rem;
+}
+
+.upgradeTitle {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #111827;
+  margin: 0 0 1rem;
+}
+
+.plans {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.plan {
+  padding: 1.25rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.planName {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #111827;
+  margin: 0;
+}
+
+.planPrice {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #3b82f6;
+  margin: 0;
+}
+
+.planFeatures {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+}
+
+.planFeatures li {
+  font-size: 0.875rem;
+  color: #374151;
+  padding-left: 1.25rem;
+  position: relative;
+}
+
+.planFeatures li::before {
+  content: '✓';
+  position: absolute;
+  left: 0;
+  color: #10b981;
+  font-weight: 600;
+}

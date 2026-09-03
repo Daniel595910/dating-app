@@ -1,0 +1,40 @@
+﻿.container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 2rem;
+  gap: 1rem;
+}
+
+.error {
+  color: #ef4444;
+  font-size: 1rem;
+  margin: 0;
+  text-align: center;
+}
+
+.redirect {
+  color: #6b7280;
+  font-size: 0.875rem;
+  margin: 0;
+}
+
+.communityInfo {
+  text-align: center;
+  margin-top: 1rem;
+}
+
+.communityName {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #111827;
+  margin: 0 0 0.5rem;
+}
+
+.communityDescription {
+  font-size: 0.9375rem;
+  color: #6b7280;
+  margin: 0;
+}

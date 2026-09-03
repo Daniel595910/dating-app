@@ -1,0 +1,54 @@
+# Supabase Configuration
+project_id = "dating-app"
+
+[api]
+enabled = true
+port = 54321
+schemas = ["public", "graphql_public"]
+extra_search_path = ["public", "extensions"]
+max_rows = 1000
+
+[db]
+port = 54322
+shadow_port = 54320
+major_version = 15
+
+[studio]
+enabled = true
+port = 54323
+
+[inbucket]
+enabled = true
+port = 54324
+
+[storage]
+enabled = true
+file_size_limit = "50MiB"
+
+[auth]
+enabled = true
+site_url = "http://localhost:3000"
+additional_redirect_urls = ["http://localhost:3001"]
+jwt_expiry = 3600
+enable_signup = true
+minimum_password_length = 8
+
+[auth.email]
+enable_signup = true
+enable_confirmations = true
+double_confirm_changes = true
+
+[auth.sms]
+enable_signup = true
+enable_confirmations = true
+template = "Your verification code is: {{ .Code }}"
+
+[realtime]
+enabled = true
+max_concurrent_connections = 10000
+max_events_per_second = 100
+
+[analytics]
+enabled = false
+port = 54327
+vector_port = 54328

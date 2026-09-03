@@ -1,0 +1,41 @@
+﻿.card {
+  margin-bottom: 1rem;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
+}
+
+.title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #111827;
+  margin: 0;
+}
+
+.points {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.5rem 0;
+  border-top: 1px solid #f3f4f6;
+}
+
+.pointsLabel {
+  color: #6b7280;
+  font-size: 0.875rem;
+}
+
+.pointsValue {
+  font-weight: 600;
+  color: #111827;
+  font-size: 0.875rem;
+}
+
+.expiry {
+  font-size: 0.75rem;
+  color: #9ca3af;
+  margin: 0.5rem 0 0;
+}

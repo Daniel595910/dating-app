@@ -1,0 +1,23 @@
+superbase project 
+danielebenebe94@gmail.com's Project
+
+BeenThere595910@#
+
+Project ID
+Reference used in APIs and URLs. : bngrqxtxppuhtrtqmlli
+
+Project region
+West Europe (London)  : eu-west-2
+
+publisher key API Key default
+No description : sb_publishable_MS-W_pOmKImk6t8LI6fo7g_I9eexxlG
+
+Secret Key : sb_secret_LiqSMeJLe9nFWZHvsclNlQ_O1wqKA1V
+
+
+anon public  : eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJuZ3JxeHR4cHB1aHRydHFtbGxpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODgyNjk2MjksImV4cCI6MjEwMzg0NTYyOX0.GoCsq6n2iO5PB4mFqqLW1icMP5fyO9_8M4gTLhXSnRs
+
+
+service_role secret : eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJuZ3JxeHR4cHB1aHRydHFtbGxpIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4ODI2OTYyOSwiZXhwIjoyMTAzODQ1NjI5fQ.bE8XrXV8W8pHWdOwEk5kcunkmUq7FACiBZ_CCKxCe4U
+
+
