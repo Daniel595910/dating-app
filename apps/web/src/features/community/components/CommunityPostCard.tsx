@@ -1,8 +1,13 @@
 ﻿import React, { useState } from 'react';
-import { Heart, MessageCircle, Share2, MapPin, BadgeCheck, Crown, MoreVertical, Handshake, MessageCircle as ChatIcon } from 'lucide-react';
+import { Heart, MessageCircle, MapPin, BadgeCheck, Share2 } from 'lucide-react';
 import { CommunityPost } from '../../types/community.types';
-import { PostActionMenu } from './PostActionMenu';
 import { ReportSheet } from './ReportSheet';
+import { BlockConfirmSheet } from './BlockConfirmSheet';
+import { ShareSheet } from './ShareSheet';
+import { LookingForBadge } from './LookingForBadge';
+import { PostMedia } from './PostMedia';
+import { PostActions } from './PostActions';
+import { ImagePreviewModal } from './ImagePreviewModal';
 
 interface CommunityPostCardProps {
   post: CommunityPost;
@@ -13,36 +18,6 @@ interface CommunityPostCardProps {
   onProfileClick: (authorId: string) => void;
 }
 
-const getLookingForIcon = (type: string) => {
-  switch (type) {
-    case 'marriage':
-      return Crown;
-    case 'relationship':
-      return Heart;
-    case 'friendship':
-      return Handshake;
-    case 'conversation':
-      return ChatIcon;
-    default:
-      return Heart;
-  }
-};
-
-const getLookingForColor = (type: string) => {
-  switch (type) {
-    case 'marriage':
-      return { color: '#f59e0b', bg: '#fef3c7' };
-    case 'relationship':
-      return { color: '#ef4444', bg: '#fee2e2' };
-    case 'friendship':
-      return { color: '#10b981', bg: '#d1fae5' };
-    case 'conversation':
-      return { color: '#3b82f6', bg: '#dbeafe' };
-    default:
-      return { color: '#ef4444', bg: '#fee2e2' };
-  }
-};
-
 export const CommunityPostCard: React.FC<CommunityPostCardProps> = ({
   post,
   currentUserId,
@@ -51,284 +26,83 @@ export const CommunityPostCard: React.FC<CommunityPostCardProps> = ({
   onShare,
   onProfileClick,
 }) => {
-  const [actionMenuOpen, setActionMenuOpen] = useState(false);
-  const [reportSheetOpen, setReportSheetOpen] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [reportOpen, setReportOpen] = useState(false);
+  const [blockOpen, setBlockOpen] = useState(false);
+  const [shareOpen, setShareOpen] = useState(false);
+  const [previewIndex, setPreviewIndex] = useState<number | null>(null);
 
   const isOwnPost = post.author.id === currentUserId;
-  const LookingForIcon = post.lookingFor ? getLookingForIcon(post.lookingFor.type) : null;
-  const lookingForColors = post.lookingFor ? getLookingForColor(post.lookingFor.type) : null;
+  const mediaUrls = post.media.map((m) => m.url);
 
   return (
-    <article
-      style={{
-        backgroundColor: '#ffffff',
-        borderRadius: '1rem',
-        padding: '1rem',
-        marginBottom: '0.75rem',
-        boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
-      }}
-    >
+    <article style={{ backgroundColor: '#ffffff', borderRadius: '20px', marginBottom: '14px', boxShadow: '0 2px 8px rgba(0,0,0,0.04)', border: '1px solid #f3f4f6' }}>
       {/* Author Row */}
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '0.75rem',
-          marginBottom: '0.75rem',
-        }}
-      >
-        <div
-          onClick={() => onProfileClick(post.author.id)}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.75rem',
-            cursor: 'pointer',
-            flex: 1,
-            minWidth: 0,
-          }}
-        >
-          <div
-            style={{
-              width: 44,
-              height: 44,
-              borderRadius: '50%',
-              backgroundColor: '#f3f4f6',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontWeight: 600,
-              color: '#6b7280',
-              fontSize: '1rem',
-              overflow: 'hidden',
-              flexShrink: 0,
-            }}
-          >
+      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '14px 16px 8px' }}>
+        <button onClick={() => onProfileClick(post.author.id)} style={{ display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer', flex: 1, minWidth: 0, background: 'none', border: 'none', padding: 0 }}>
+          <div style={{ width: 44, height: 44, borderRadius: '50%', background: 'linear-gradient(135deg, #fef3c7, #fde68a)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, color: '#92400e', fontSize: '18px', flexShrink: 0 }}>
             {post.author.avatarUrl ? (
-              <img
-                src={post.author.avatarUrl}
-                alt={post.author.name}
-                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-              />
+              <img src={post.author.avatarUrl} alt={post.author.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
             ) : (
               post.author.name.charAt(0).toUpperCase()
             )}
           </div>
-
-          <div style={{ minWidth: 0 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-              <span style={{ fontWeight: 600, fontSize: '0.9375rem', color: '#111827' }}>
-                {post.author.name}
-              </span>
-              {post.author.verified && (
-                <BadgeCheck size={16} style={{ color: '#3b82f6', flexShrink: 0 }} />
-              )}
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+              <span style={{ fontWeight: 700, fontSize: '15px', color: '#111827' }}>{post.author.name}</span>
+              {post.author.verified && <BadgeCheck size={16} color="#3b82f6" />}
             </div>
             {post.author.location && (
-              <div
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.125rem',
-                  fontSize: '0.75rem',
-                  color: '#6b7280',
-                }}
-              >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '2px', fontSize: '12px', color: '#9ca3af' }}>
                 <MapPin size={10} />
                 <span>{post.author.location}</span>
               </div>
             )}
           </div>
-        </div>
-
-        {/* More Button */}
-        <button
-          onClick={() => setActionMenuOpen(true)}
-          aria-label="More options"
-          style={{
-            background: 'none',
-            border: 'none',
-            cursor: 'pointer',
-            color: '#9ca3af',
-            padding: '0.5rem',
-            borderRadius: '9999px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            minWidth: 44,
-            minHeight: 44,
-            flexShrink: 0,
-          }}
-        >
-          <MoreVertical size={20} />
         </button>
       </div>
 
       {/* Looking For Badge */}
-      {post.lookingFor && LookingForIcon && lookingForColors && (
-        <div
-          style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '0.375rem',
-            padding: '0.25rem 0.625rem',
-            borderRadius: '9999px',
-            backgroundColor: lookingForColors.bg,
-            color: lookingForColors.color,
-            fontSize: '0.75rem',
-            fontWeight: 600,
-            marginBottom: '0.5rem',
-          }}
-        >
-          <LookingForIcon size={12} />
-          <span>Looking for {post.lookingFor.label}</span>
-        </div>
-      )}
+      {post.lookingFor && <LookingForBadge lookingFor={post.lookingFor} />}
 
       {/* Content */}
-      <p
-        style={{
-          margin: '0 0 0.75rem',
-          fontSize: '0.9375rem',
-          lineHeight: 1.5,
-          color: '#374151',
-          whiteSpace: 'pre-wrap',
-          wordBreak: 'break-word',
-        }}
-      >
-        {post.content}
-      </p>
+      {post.content && (
+        <p style={{ margin: 0, padding: '0 16px 12px', fontSize: '15px', lineHeight: 1.6, color: '#374151', whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
+          {post.content}
+        </p>
+      )}
 
-      {/* Media */}
-      {post.media && post.media.length > 0 && (
-        <div
-          style={{
-            display: 'flex',
-            gap: '0.5rem',
-            marginBottom: '0.75rem',
-            overflowX: 'auto',
-          }}
-        >
-          {post.media.map((media, index) => (
-            <img
-              key={media.id || index}
-              src={media.thumbnailUrl || media.url}
-              alt=""
-              loading="lazy"
-              style={{
-                width: 120,
-                height: 120,
-                objectFit: 'cover',
-                borderRadius: '0.75rem',
-                flexShrink: 0,
-              }}
-            />
+      {/* Media with click handler */}
+      {post.media.length > 0 && (
+        <PostMedia media={post.media} onImageClick={(index) => setPreviewIndex(index)} />
+      )}
+
+      {/* Tags */}
+      {post.tags.length > 0 && (
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', padding: '0 16px 8px' }}>
+          {post.tags.map((tag, index) => (
+            <span key={index} style={{ color: '#3b82f6', fontSize: '12px', fontWeight: 500 }}>#{tag}</span>
           ))}
         </div>
       )}
 
       {/* Actions */}
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '1.5rem',
-          paddingTop: '0.75rem',
-          borderTop: '1px solid #f9fafb',
-        }}
-      >
-        <button
-          onClick={() => onLike(post.id)}
-          aria-label={post.viewer.liked ? 'Unlike' : 'Like'}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.375rem',
-            background: 'none',
-            border: 'none',
-            cursor: 'pointer',
-            color: post.viewer.liked ? '#ef4444' : '#6b7280',
-            fontSize: '0.875rem',
-            padding: '0.25rem',
-            borderRadius: '0.5rem',
-            minHeight: 44,
-          }}
-        >
-          <Heart size={18} fill={post.viewer.liked ? '#ef4444' : 'none'} />
-          <span>{post.stats.likes}</span>
-        </button>
+      <PostActions postId={post.id} stats={post.stats} viewer={post.viewer} onLike={onLike} onComment={onComment} onShare={() => setShareOpen(true)} />
 
-        <button
-          onClick={() => onComment(post.id)}
-          aria-label="Comments"
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.375rem',
-            background: 'none',
-            border: 'none',
-            cursor: 'pointer',
-            color: '#6b7280',
-            fontSize: '0.875rem',
-            padding: '0.25rem',
-            borderRadius: '0.5rem',
-            minHeight: 44,
-          }}
-        >
-          <MessageCircle size={18} />
-          <span>{post.stats.comments}</span>
-        </button>
-
-        <button
-          onClick={() => onShare(post.id)}
-          aria-label="Share"
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            background: 'none',
-            border: 'none',
-            cursor: 'pointer',
-            color: '#6b7280',
-            padding: '0.25rem',
-            borderRadius: '0.5rem',
-            marginLeft: 'auto',
-            minWidth: 44,
-            minHeight: 44,
-            justifyContent: 'center',
-          }}
-        >
-          <Share2 size={18} />
-        </button>
-      </div>
-
-      {/* Action Menu */}
-      <PostActionMenu
-        open={actionMenuOpen}
-        onClose={() => setActionMenuOpen(false)}
-        isOwnPost={isOwnPost}
-        onReport={() => {
-          setActionMenuOpen(false);
-          setReportSheetOpen(true);
-        }}
-        onBlock={() => {
-          setActionMenuOpen(false);
-          console.log('Block user:', post.author.id);
-        }}
-        onMute={() => {
-          setActionMenuOpen(false);
-          console.log('Mute user:', post.author.id);
-        }}
+      {/* Image Preview Modal */}
+      <ImagePreviewModal
+        open={previewIndex !== null}
+        images={mediaUrls}
+        currentIndex={previewIndex || 0}
+        onClose={() => setPreviewIndex(null)}
+        onNext={() => setPreviewIndex((prev) => Math.min((prev || 0) + 1, mediaUrls.length - 1))}
+        onPrev={() => setPreviewIndex((prev) => Math.max((prev || 0) - 1, 0))}
       />
 
-      {/* Report Sheet */}
-      <ReportSheet
-        open={reportSheetOpen}
-        onClose={() => setReportSheetOpen(false)}
-        reporterId={currentUserId}
-        targetType="post"
-        targetId={post.id}
-        reportedUserId={post.author.id}
-      />
+      {/* Sheets */}
+      <ReportSheet open={reportOpen} onClose={() => setReportOpen(false)} reporterId={currentUserId} targetType="post" targetId={post.id} reportedUserId={post.author.id} />
+      <BlockConfirmSheet open={blockOpen} onClose={() => setBlockOpen(false)} blockerId={currentUserId} targetUserId={post.author.id} targetUserName={post.author.name} onBlocked={() => setBlockOpen(false)} />
+      <ShareSheet open={shareOpen} onClose={() => setShareOpen(false)} postUrl={`${window.location.origin}/post/${post.id}`} />
     </article>
   );
 };

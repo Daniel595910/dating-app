@@ -1,51 +1,64 @@
-﻿import React from 'react';
+﻿import React, { useState } from 'react';
+import { LayoutGrid, Sparkles, Heart, MapPin, Users } from 'lucide-react';
 import { FeedFilter } from '../../types/community.types';
+import styles from '../styles/FilterBar.module.css';
 
 interface FilterBarProps {
   activeFilter: FeedFilter;
   onFilterChange: (filter: FeedFilter) => void;
 }
 
-const FILTERS: Array<{ id: FeedFilter; label: string }> = [
-  { id: 'all', label: 'All' },
-  { id: 'new', label: 'New' },
-  { id: 'looking', label: 'Looking' },
-  { id: 'nearby', label: 'Nearby' },
-  { id: 'following', label: 'Following' },
+interface FilterItem {
+  id: FeedFilter;
+  label: string;
+  icon: React.ReactNode;
+  description: string;
+}
+
+const FILTER_ITEMS: FilterItem[] = [
+  { id: 'all', label: 'All', icon: <LayoutGrid size={14} />, description: 'Show all community posts' },
+  { id: 'new', label: 'New', icon: <Sparkles size={14} />, description: 'Posts from last 24 hours' },
+  { id: 'looking', label: 'Looking For', icon: <Heart size={14} />, description: 'People looking for connections' },
+  { id: 'nearby', label: 'Nearby', icon: <MapPin size={14} />, description: 'Posts from people near you' },
+  { id: 'following', label: 'Following', icon: <Users size={14} />, description: 'Posts from people you follow' },
 ];
 
 export const FilterBar: React.FC<FilterBarProps> = ({ activeFilter, onFilterChange }) => {
+  const [showDescriptions, setShowDescriptions] = useState(false);
+
   return (
-    <div style={{
-      display: 'flex',
-      gap: '0.25rem',
-      padding: '0.5rem 1rem',
-      backgroundColor: '#ffffff',
-      borderBottom: '1px solid #f3f4f6',
-      overflowX: 'auto',
-      whiteSpace: 'nowrap',
-      scrollbarWidth: 'none',
-    }}>
-      {FILTERS.map((filter) => (
-        <button
-          key={filter.id}
-          onClick={() => onFilterChange(filter.id)}
-          style={{
-            padding: '0.375rem 0.75rem',
-            borderRadius: '9999px',
-            border: 'none',
-            cursor: 'pointer',
-            fontSize: '0.8125rem',
-            fontWeight: 500,
-            whiteSpace: 'nowrap',
-            flexShrink: 0,
-            backgroundColor: activeFilter === filter.id ? '#111827' : '#f3f4f6',
-            color: activeFilter === filter.id ? '#ffffff' : '#6b7280',
-          }}
-        >
-          {filter.label}
-        </button>
-      ))}
+    <div className={styles.container}>
+      <div className={styles.filterBar} role="tablist" aria-label="Community filters">
+        {FILTER_ITEMS.map((filter) => {
+          const isActive = activeFilter === filter.id;
+          return (
+            <button
+              key={filter.id}
+              role="tab"
+              aria-selected={isActive}
+              aria-label={filter.description}
+              title={filter.description}
+              className={`${styles.filterButton} ${isActive ? styles.filterButtonActive : ''}`}
+              onClick={() => onFilterChange(filter.id)}
+              onMouseEnter={() => setShowDescriptions(true)}
+              onMouseLeave={() => setShowDescriptions(false)}
+            >
+              <span className={styles.filterIcon}>{filter.icon}</span>
+              <span>{filter.label}</span>
+              {isActive && (
+                <span className={styles.activeDot} />
+              )}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Active filter description */}
+      {showDescriptions && (
+        <div className={styles.descriptionBar}>
+          {FILTER_ITEMS.find((f) => f.id === activeFilter)?.description}
+        </div>
+      )}
     </div>
   );
 };

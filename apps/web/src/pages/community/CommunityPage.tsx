@@ -5,6 +5,7 @@ import { useCommunityFeed } from '../../features/community/hooks/useCommunityFee
 import { usePostInteractions } from '../../features/community/hooks/usePostInteractions';
 import { useCommunityRealtime } from '../../features/community/hooks/useCommunityRealtime';
 import { usePullToRefresh } from '../../features/community/hooks/usePullToRefresh';
+import { useConnection } from '../../features/community/hooks/useConnection';
 import { CommunityHeader } from '../../features/community/components/CommunityHeader';
 import { FilterBar } from '../../features/community/components/FilterBar';
 import { CommunityPostCard } from '../../features/community/components/CommunityPostCard';
@@ -18,6 +19,8 @@ import { CommentSheet } from '../../features/community/components/CommentSheet';
 import { ProfilePreviewSheet } from '../../features/community/components/ProfilePreviewSheet';
 import { ConnectionPrompt } from '../../features/community/components/ConnectionPrompt';
 import { MatchSuccess } from '../../features/community/components/MatchSuccess';
+import { PendingRequests } from '../../features/community/components/PendingRequests';
+import { ConnectionStatus } from '../../features/community/components/ConnectionStatus';
 import { BottomNav } from '../../features/community/components/BottomNav';
 import { FeedFilter, CommunityPostType } from '../../features/community/types/community.types';
 import styles from '../../features/community/styles/CommunityPage.module.css';
@@ -26,7 +29,6 @@ export const CommunityPage: React.FC = () => {
   const { user } = useAuthStore();
   const [filter, setFilter] = useState<FeedFilter>('all');
   const [createSheetOpen, setCreateSheetOpen] = useState(false);
-  const [createPostType, setCreatePostType] = useState<CommunityPostType | null>(null);
   const [commentPostId, setCommentPostId] = useState<string | null>(null);
   const [previewAuthorId, setPreviewAuthorId] = useState<string | null>(null);
   const [connectionTarget, setConnectionTarget] = useState<{ id: string; name: string } | null>(null);
@@ -52,11 +54,9 @@ export const CommunityPage: React.FC = () => {
   });
 
   const { likePost } = usePostInteractions(user?.id || null);
+  const { pendingRequests, acceptRequest, rejectRequest } = useConnection({ userId: user?.id || null });
 
-  const pullToRefresh = usePullToRefresh({
-    onRefresh: refresh,
-    disabled: feedLoading,
-  });
+  const pullToRefresh = usePullToRefresh({ onRefresh: refresh, disabled: feedLoading });
 
   useCommunityRealtime({
     communityId: community?.id || null,
@@ -64,22 +64,15 @@ export const CommunityPage: React.FC = () => {
     onPostDeleted: (postId) => removePost(postId),
   });
 
-  const handleFilterChange = (newFilter: FeedFilter) => {
-    setFilter(newFilter);
-  };
-
   const handleLike = async (postId: string) => {
     const post = posts.find((p) => p.id === postId);
     if (!post) return;
-
     const currentlyLiked = post.viewer.liked;
     const currentCount = post.stats.likes;
-
     updatePost(postId, {
       viewer: { ...post.viewer, liked: !currentlyLiked },
       stats: { ...post.stats, likes: currentlyLiked ? currentCount - 1 : currentCount + 1 },
     });
-
     try {
       await likePost(postId, currentlyLiked, currentCount);
     } catch {
@@ -93,63 +86,40 @@ export const CommunityPage: React.FC = () => {
   const handleGetToKnow = (targetUserId: string) => {
     if (targetUserId === user?.id) return;
     const post = posts.find((p) => p.author.id === targetUserId);
-    setConnectionTarget({
-      id: targetUserId,
-      name: post?.author.name || 'this person',
-    });
+    setConnectionTarget({ id: targetUserId, name: post?.author.name || 'this person' });
   };
 
-  const handleStartChat = () => {
-    setMatchUser(null);
-    window.location.href = '/chats';
-  };
-
-  const handleRefreshNewPosts = () => {
-    setNewPostCount(0);
-    refresh();
-  };
-
-  if (communityLoading) {
-    return <CommunitySkeleton />;
-  }
-
+  if (communityLoading) return <CommunitySkeleton />;
   if (!community) {
     return (
       <div className={styles.communityPage}>
         <div className={styles.errorContainer}>
           <h2 className={styles.errorTitle}>No Community Assigned</h2>
-          <p className={styles.errorMessage}>
-            Complete your location verification to be assigned to your regional dating community.
-          </p>
+          <p className={styles.errorMessage}>Complete your location verification to be assigned to your regional dating community.</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div
-      className={styles.communityPage}
-      onTouchStart={pullToRefresh.handleTouchStart}
-      onTouchMove={pullToRefresh.handleTouchMove}
-      onTouchEnd={pullToRefresh.handleTouchEnd}
-    >
-      <CommunityHeader
-        community={{ ...community, onlineCount }}
-        onSearch={() => {
-          window.location.href = '/search';
-        }}
-        onMore={() => {}}
-      />
-
-      <FilterBar activeFilter={filter} onFilterChange={handleFilterChange} />
+    <div className={styles.communityPage}>
+      <CommunityHeader community={{ ...community, onlineCount }} onSearch={() => { window.location.href = '/search'; }} onMore={() => {}} />
+      <FilterBar activeFilter={filter} onFilterChange={setFilter} />
 
       {newPostCount > 0 && (
-        <button className={styles.newPostsIndicator} onClick={handleRefreshNewPosts}>
+        <button className={styles.newPostsIndicator} onClick={() => { setNewPostCount(0); refresh(); }}>
           ↑ {newPostCount} new posts
         </button>
       )}
 
       <main className={styles.feedContainer}>
+        {/* Pending Connection Requests */}
+        <PendingRequests
+          requests={pendingRequests.map((r) => ({ id: r.id, requesterName: r.requesterName, message: r.message }))}
+          onAccept={acceptRequest}
+          onReject={rejectRequest}
+        />
+
         {feedLoading && posts.length === 0 ? (
           <CommunitySkeleton />
         ) : feedError && posts.length === 0 ? (
@@ -177,53 +147,12 @@ export const CommunityPage: React.FC = () => {
       <CreatePostButton onClick={() => setCreateSheetOpen(true)} />
       <BottomNav />
 
-      <CommentSheet
-        open={Boolean(commentPostId)}
-        onClose={() => setCommentPostId(null)}
-        postId={commentPostId || ''}
-        userId={user?.id || ''}
-      />
-
-      <ProfilePreviewSheet
-        open={Boolean(previewAuthorId)}
-        onClose={() => setPreviewAuthorId(null)}
-        authorId={previewAuthorId}
-        onGetToKnow={(authorId) => {
-          setPreviewAuthorId(null);
-          handleGetToKnow(authorId);
-        }}
-        onViewFullProfile={(authorId) => {
-          setPreviewAuthorId(null);
-          window.location.href = `/profile/${authorId}`;
-        }}
-      />
-
-      <ConnectionPrompt
-        open={Boolean(connectionTarget)}
-        onClose={() => setConnectionTarget(null)}
-        targetUserId={connectionTarget?.id || ''}
-        targetUserName={connectionTarget?.name || ''}
-        currentUserId={user?.id || ''}
-      />
-
-      <MatchSuccess
-        open={Boolean(matchUser)}
-        onClose={() => setMatchUser(null)}
-        matchedUserName={matchUser || ''}
-        onStartChat={handleStartChat}
-      />
-
-      <CreatePostForm
-        open={createSheetOpen}
-        onClose={() => {
-          setCreateSheetOpen(false);
-          setCreatePostType(null);
-        }}
-        communityId={community.id}
-        userId={user?.id || ''}
-        initialType={createPostType || undefined}
-        onPostCreated={() => refresh()}
-      />
+      <CommentSheet open={Boolean(commentPostId)} onClose={() => setCommentPostId(null)} postId={commentPostId || ''} userId={user?.id || ''} />
+      <ProfilePreviewSheet open={Boolean(previewAuthorId)} onClose={() => setPreviewAuthorId(null)} authorId={previewAuthorId} onGetToKnow={(id) => { setPreviewAuthorId(null); handleGetToKnow(id); }} onViewFullProfile={(id) => { setPreviewAuthorId(null); window.location.href = `/profile/${id}`; }} />
+      <ConnectionPrompt open={Boolean(connectionTarget)} onClose={() => setConnectionTarget(null)} targetUserId={connectionTarget?.id || ''} targetUserName={connectionTarget?.name || ''} currentUserId={user?.id || ''} />
+      <MatchSuccess open={Boolean(matchUser)} onClose={() => setMatchUser(null)} matchedUserName={matchUser || ''} onStartChat={() => { setMatchUser(null); window.location.href = '/chats'; }} />
+      <CreatePostForm open={createSheetOpen} onClose={() => setCreateSheetOpen(false)} communityId={community.id} userId={user?.id || ''} onPostCreated={() => refresh()} />
     </div>
   );
 };
+

@@ -356,3 +356,82 @@
   from { transform: translateY(100%); }
   to { transform: translateY(0); }
 }
+
+.photoUploadButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  background-color: #f9fafb;
+  border: 1px dashed #d1d5db;
+  border-radius: 0.75rem;
+  cursor: pointer;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #6b7280;
+  transition: all 0.15s ease;
+  min-height: 48px;
+}
+
+.photoUploadButton:hover:not(:disabled) {
+  background-color: #f3f4f6;
+  border-color: #9ca3af;
+}
+
+.photoUploadButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.mediaPreview {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.mediaPreviewItem {
+  position: relative;
+  width: 80px;
+  height: 80px;
+}
+
+.mediaPreviewImage {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 0.5rem;
+  border: 1px solid #e5e7eb;
+}
+
+.mediaRemoveButton {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background-color: #ef4444;
+  color: #ffffff;
+  border: 2px solid #ffffff;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+
+.previewMediaRow {
+  display: flex;
+  gap: 0.375rem;
+  margin-top: 0.5rem;
+  overflow-x: auto;
+}
+
+.previewMediaImage {
+  width: 80px;
+  height: 80px;
+  object-fit: cover;
+  border-radius: 0.5rem;
+  flex-shrink: 0;
+}

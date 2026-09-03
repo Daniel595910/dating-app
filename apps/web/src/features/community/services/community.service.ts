@@ -13,10 +13,6 @@ import {
 } from '../types/community.types';
 
 class CommunityService {
-  // ============================================
-  // COMMUNITY INFO
-  // ============================================
-
   async getCommunityInfo(communityId: string): Promise<CommunityInfo | null> {
     const { data, error } = await supabase
       .from('communities')
@@ -32,7 +28,7 @@ class CommunityService {
       slug: data.slug,
       description: data.description,
       memberCount: data.member_count || 0,
-      onlineCount: 0, // Will be set via presence
+      onlineCount: 0,
       country: data.country,
       countryCode: data.country_code,
       state: data.state,
@@ -40,10 +36,6 @@ class CommunityService {
       flag: this.getFlagEmoji(data.country_code),
     };
   }
-
-  // ============================================
-  // COMMUNITY MEMBERSHIP
-  // ============================================
 
   async getUserCommunityMembership(userId: string): Promise<CommunityMember | null> {
     const { data, error } = await supabase
@@ -64,22 +56,14 @@ class CommunityService {
     };
   }
 
-  async assignUserToCommunity(userId: string): Promise<string | null> {
-    const { data, error } = await supabase.rpc('assign_user_to_community', {
-      p_user_id: userId,
-    });
+  async getUserFollowingIds(userId: string): Promise<string[]> {
+    const { data } = await supabase
+      .from('follows')
+      .select('following_id')
+      .eq('follower_id', userId);
 
-    if (error) {
-      console.error('Failed to assign community:', error);
-      return null;
-    }
-
-    return data;
+    return (data || []).map((f: any) => f.following_id);
   }
-
-  // ============================================
-  // FEED
-  // ============================================
 
   async getFeedPosts(
     communityId: string,
@@ -88,29 +72,71 @@ class CommunityService {
     cursor?: FeedCursor | null,
     limit: number = 20
   ): Promise<FeedResponse> {
+    console.log('=== getFeedPosts called ===');
+    console.log('communityId:', communityId);
+    console.log('userId:', userId);
+    console.log('filter:', filter);
+
     let query = supabase
       .from('posts')
       .select('*')
       .eq('community_id', communityId)
       .eq('status', 'published')
       .order('created_at', { ascending: false })
-      .order('id', { ascending: false })
-      .limit(limit + 1); // Fetch one extra to determine hasMore
+      .limit(limit + 1);
 
-    // Apply filter
+    // Apply filter logic
     if (filter === 'looking') {
+      console.log('Filtering by looking_for type');
       query = query.eq('type', 'looking_for');
     } else if (filter === 'new') {
-      query = query.gte('created_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString());
-    } else if (filter === 'question') {
-      query = query.eq('type', 'question');
+      const last24h = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+      console.log('Filtering by new (last 24h):', last24h);
+      query = query.gte('created_at', last24h);
+    } else if (filter === 'following') {
+      console.log('Filtering by following users');
+      const followingIds = await this.getUserFollowingIds(userId);
+      console.log('Following IDs:', followingIds);
+      if (followingIds.length > 0) {
+        query = query.in('author_id', followingIds);
+      } else {
+        console.log('No following, returning empty');
+        return { posts: [], nextCursor: null, hasMore: false };
+      }
+    } else if (filter === 'nearby') {
+      console.log('Filtering by nearby users');
+      const { data: userProfile } = await supabase
+        .from('profiles')
+        .select('location')
+        .eq('user_id', userId)
+        .single();
+
+      console.log('Current user location:', userProfile?.location);
+
+      if (userProfile?.location?.city) {
+        const { data: nearbyProfiles } = await supabase
+          .from('profiles')
+          .select('user_id')
+          .filter('location->>city', 'eq', userProfile.location.city);
+
+        const nearbyUserIds = (nearbyProfiles || []).map((p: any) => p.user_id);
+        console.log('Nearby user IDs:', nearbyUserIds);
+
+        if (nearbyUserIds.length > 0) {
+          query = query.in('author_id', nearbyUserIds);
+        } else {
+          console.log('No nearby users, returning empty');
+          return { posts: [], nextCursor: null, hasMore: false };
+        }
+      } else {
+        console.log('No location set, returning empty');
+        return { posts: [], nextCursor: null, hasMore: false };
+      }
     }
 
-    // Apply cursor
+    // Apply cursor for pagination
     if (cursor) {
-      query = query
-        .lt('created_at', cursor.createdAt)
-        .or(`created_at.eq.${cursor.createdAt},id.lt.${cursor.id}`);
+      query = query.lt('created_at', cursor.createdAt);
     }
 
     const { data: posts, error } = await query;
@@ -119,6 +145,8 @@ class CommunityService {
       console.error('Failed to fetch posts:', error);
       return { posts: [], nextCursor: null, hasMore: false };
     }
+
+    console.log('Posts fetched:', posts?.length || 0);
 
     if (!posts || posts.length === 0) {
       return { posts: [], nextCursor: null, hasMore: false };
@@ -156,12 +184,10 @@ class CommunityService {
       ? { createdAt: lastPost.created_at, id: lastPost.id }
       : null;
 
+    console.log('Returning posts:', communityPosts.length, 'hasMore:', hasMore);
+
     return { posts: communityPosts, nextCursor, hasMore };
   }
-
-  // ============================================
-  // POST INTERACTIONS
-  // ============================================
 
   async likePost(postId: string, userId: string): Promise<boolean> {
     const { error } = await supabase
@@ -209,36 +235,21 @@ class CommunityService {
 
     if (error || !data) return null;
 
-    const viewerState: PostViewerState = {
-      liked: false,
-      followingAuthor: false,
-      connectionStatus: 'none',
-    };
-
     return {
       id: data.id,
       communityId: data.community_id,
-      author: {
-        id: authorId,
-        name: 'You',
-        avatarUrl: null,
-        verified: false,
-      },
+      author: { id: authorId, name: 'You', avatarUrl: null, verified: false },
       type: data.type,
       content: data.content,
       media: media || [],
       lookingFor: lookingFor ? { type: 'relationship', label: lookingFor } : undefined,
       tags: data.tags || [],
       stats: { likes: 0, comments: 0, shares: 0 },
-      viewer: viewerState,
+      viewer: { liked: false, followingAuthor: false, connectionStatus: 'none' },
       createdAt: data.created_at,
       updatedAt: data.updated_at,
     };
   }
-
-  // ============================================
-  // PRESENCE
-  // ============================================
 
   subscribeToPresence(
     communityId: string,
@@ -267,27 +278,7 @@ class CommunityService {
     };
   }
 
-  // ============================================
-  // HELPERS
-  // ============================================
-
-  private mapPostToCommunityPost(
-    post: any,
-    profile: any,
-    liked: boolean
-  ): CommunityPost {
-    const stats: PostStats = {
-      likes: post.like_count || 0,
-      comments: post.comment_count || 0,
-      shares: 0,
-    };
-
-    const viewerState: PostViewerState = {
-      liked,
-      followingAuthor: false,
-      connectionStatus: 'none',
-    };
-
+  private mapPostToCommunityPost(post: any, profile: any, liked: boolean): CommunityPost {
     return {
       id: post.id,
       communityId: post.community_id,
@@ -309,8 +300,12 @@ class CommunityService {
       })),
       lookingFor: post.type === 'looking_for' ? this.parseLookingFor(post.content) : undefined,
       tags: post.tags || [],
-      stats,
-      viewer: viewerState,
+      stats: {
+        likes: post.like_count || 0,
+        comments: post.comment_count || 0,
+        shares: 0,
+      },
+      viewer: { liked, followingAuthor: false, connectionStatus: 'none' },
       createdAt: post.created_at,
       updatedAt: post.updated_at,
     };
@@ -319,19 +314,12 @@ class CommunityService {
   private parseLookingFor(content: string) {
     const match = content.match(/Looking for:\s*(.+)/);
     const label = match ? match[1] : 'Connection';
-    return {
-      type: 'relationship' as const,
-      label,
-    };
+    return { type: 'relationship' as const, label };
   }
 
   private getFlagEmoji(countryCode: string): string {
     const flags: Record<string, string> = {
-      NG: '🇳🇬',
-      GH: '🇬🇭',
-      ZA: '🇿🇦',
-      GB: '🇬🇧',
-      US: '🇺🇸',
+      NG: '🇳🇬', GH: '🇬🇭', ZA: '🇿🇦', GB: '🇬🇧', US: '🇺🇸',
     };
     return flags[countryCode] || '🌍';
   }

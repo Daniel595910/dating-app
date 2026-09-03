@@ -1,6 +1,5 @@
-﻿import React from 'react';
-import { X, Flag, Ban, VolumeX, Edit, Trash2, Bookmark } from 'lucide-react';
-import styles from '../styles/PostActionMenu.module.css';
+﻿import React, { useEffect, useRef } from 'react';
+import { Flag, Ban, VolumeX, Edit, Trash2, Bookmark } from 'lucide-react';
 
 interface PostActionMenuProps {
   open: boolean;
@@ -25,219 +24,137 @@ export const PostActionMenu: React.FC<PostActionMenuProps> = ({
   onDelete,
   onSave,
 }) => {
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        onClose();
+      }
+    };
+
+    if (open) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [open, onClose]);
+
   if (!open) return null;
+
+  const menuItemStyle: React.CSSProperties = {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '0.625rem',
+    width: '100%',
+    padding: '0.625rem 0.75rem',
+    background: 'none',
+    border: 'none',
+    cursor: 'pointer',
+    color: '#374151',
+    fontSize: '0.875rem',
+    fontWeight: 500,
+    borderRadius: '0.5rem',
+    transition: 'background-color 0.12s ease',
+    textAlign: 'left',
+    minHeight: 40,
+  };
+
+  const dangerItemStyle: React.CSSProperties = {
+    ...menuItemStyle,
+    color: '#ef4444',
+  };
+
+  const handleAction = (action: () => void) => {
+    action();
+    onClose();
+  };
 
   return (
     <div
-      className={styles.overlay}
-      onClick={onClose}
+      ref={menuRef}
       style={{
-        position: 'fixed',
-        inset: 0,
-        backgroundColor: 'rgba(0,0,0,0.5)',
-        zIndex: 999,
-        display: 'flex',
-        alignItems: 'flex-end',
+        position: 'absolute',
+        top: 'calc(100% + 4px)',
+        right: 0,
+        zIndex: 9999,
+        backgroundColor: '#ffffff',
+        borderRadius: '0.75rem',
+        boxShadow: '0 10px 25px rgba(0, 0, 0, 0.15), 0 4px 8px rgba(0, 0, 0, 0.08)',
+        border: '1px solid #e5e7eb',
+        minWidth: 220,
+        padding: '0.375rem',
       }}
     >
-      <div
-        className={styles.sheet}
-        onClick={(e) => e.stopPropagation()}
-        style={{
-          backgroundColor: '#ffffff',
-          borderRadius: '1.5rem 1.5rem 0 0',
-          width: '100%',
-          maxWidth: '480px',
-          margin: '0 auto',
-          padding: '0.5rem 1rem calc(1rem + env(safe-area-inset-bottom))',
-          maxHeight: '50dvh',
-          overflowY: 'auto',
-        }}
-      >
-        <div
-          style={{
-            width: 40,
-            height: 4,
-            backgroundColor: '#e5e7eb',
-            borderRadius: '9999px',
-            margin: '0 auto 0.75rem',
-          }}
-        />
-
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            marginBottom: '0.5rem',
-          }}
-        >
-          <h3 style={{ fontSize: '1rem', fontWeight: 700, color: '#111827', margin: 0 }}>
-            Options
-          </h3>
-          <button
-            onClick={onClose}
-            aria-label="Close"
-            style={{
-              background: 'none',
-              border: 'none',
-              cursor: 'pointer',
-              color: '#6b7280',
-              padding: '0.5rem',
-              borderRadius: '9999px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              minWidth: 44,
-              minHeight: 44,
-            }}
-          >
-            <X size={20} />
-          </button>
-        </div>
-
-        <div style={{ display: 'flex', flexDirection: 'column' }}>
-          {isOwnPost ? (
-            <>
-              {onEdit && (
-                <button
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.75rem',
-                    padding: '0.875rem 0.5rem',
-                    background: 'none',
-                    border: 'none',
-                    cursor: 'pointer',
-                    color: '#374151',
-                    fontSize: '0.9375rem',
-                    borderRadius: '0.5rem',
-                    minHeight: 48,
-                    width: '100%',
-                    textAlign: 'left',
-                  }}
-                  onClick={onEdit}
-                >
-                  <Edit size={18} />
-                  <span>Edit Post</span>
-                </button>
-              )}
-              {onDelete && (
-                <button
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.75rem',
-                    padding: '0.875rem 0.5rem',
-                    background: 'none',
-                    border: 'none',
-                    cursor: 'pointer',
-                    color: '#ef4444',
-                    fontSize: '0.9375rem',
-                    borderRadius: '0.5rem',
-                    minHeight: 48,
-                    width: '100%',
-                    textAlign: 'left',
-                  }}
-                  onClick={onDelete}
-                >
-                  <Trash2 size={18} />
-                  <span>Delete Post</span>
-                </button>
-              )}
-            </>
-          ) : (
-            <>
-              {onSave && (
-                <button
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.75rem',
-                    padding: '0.875rem 0.5rem',
-                    background: 'none',
-                    border: 'none',
-                    cursor: 'pointer',
-                    color: '#374151',
-                    fontSize: '0.9375rem',
-                    borderRadius: '0.5rem',
-                    minHeight: 48,
-                    width: '100%',
-                    textAlign: 'left',
-                  }}
-                  onClick={onSave}
-                >
-                  <Bookmark size={18} />
-                  <span>Save Post</span>
-                </button>
-              )}
-              <button
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.75rem',
-                  padding: '0.875rem 0.5rem',
-                  background: 'none',
-                  border: 'none',
-                  cursor: 'pointer',
-                  color: '#374151',
-                  fontSize: '0.9375rem',
-                  borderRadius: '0.5rem',
-                  minHeight: 48,
-                  width: '100%',
-                  textAlign: 'left',
-                }}
-                onClick={onMute}
-              >
-                <VolumeX size={18} />
-                <span>Mute Author</span>
-              </button>
-              <button
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.75rem',
-                  padding: '0.875rem 0.5rem',
-                  background: 'none',
-                  border: 'none',
-                  cursor: 'pointer',
-                  color: '#ef4444',
-                  fontSize: '0.9375rem',
-                  borderRadius: '0.5rem',
-                  minHeight: 48,
-                  width: '100%',
-                  textAlign: 'left',
-                }}
-                onClick={onBlock}
-              >
-                <Ban size={18} />
-                <span>Block Author</span>
-              </button>
-              <button
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.75rem',
-                  padding: '0.875rem 0.5rem',
-                  background: 'none',
-                  border: 'none',
-                  cursor: 'pointer',
-                  color: '#ef4444',
-                  fontSize: '0.9375rem',
-                  borderRadius: '0.5rem',
-                  minHeight: 48,
-                  width: '100%',
-                  textAlign: 'left',
-                }}
-                onClick={onReport}
-              >
-                <Flag size={18} />
-                <span>Report Post</span>
-              </button>
-            </>
+      {isOwnPost ? (
+        <>
+          {onEdit && (
+            <button
+              style={menuItemStyle}
+              onClick={() => handleAction(onEdit)}
+              onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#f3f4f6')}
+              onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+            >
+              <Edit size={16} />
+              <span>Edit Post</span>
+            </button>
           )}
-        </div>
-      </div>
+          {onDelete && (
+            <button
+              style={dangerItemStyle}
+              onClick={() => handleAction(onDelete)}
+              onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#fee2e2')}
+              onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+            >
+              <Trash2 size={16} />
+              <span>Delete Post</span>
+            </button>
+          )}
+        </>
+      ) : (
+        <>
+          {onSave && (
+            <button
+              style={menuItemStyle}
+              onClick={() => handleAction(onSave)}
+              onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#f3f4f6')}
+              onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+            >
+              <Bookmark size={16} />
+              <span>Save Post</span>
+            </button>
+          )}
+          <button
+            style={menuItemStyle}
+            onClick={() => handleAction(onMute)}
+            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#f3f4f6')}
+            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+          >
+            <VolumeX size={16} />
+            <span>Mute Author</span>
+          </button>
+          <button
+            style={dangerItemStyle}
+            onClick={() => handleAction(onBlock)}
+            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#fee2e2')}
+            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+          >
+            <Ban size={16} />
+            <span>Block Author</span>
+          </button>
+          <button
+            style={dangerItemStyle}
+            onClick={() => handleAction(onReport)}
+            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#fee2e2')}
+            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+          >
+            <Flag size={16} />
+            <span>Report Post</span>
+          </button>
+        </>
+      )}
     </div>
   );
 };

@@ -82,3 +82,9 @@ Desktop.ini
 *.crt
 *.p12
 *.pfx
+# Secrets and credentials
+*.txt
+logins*
+env.txt
+.env
+.env.*
