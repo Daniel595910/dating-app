@@ -25,6 +25,7 @@ import { ConnectionStatusCard } from '../../features/community/components/Connec
 import { BottomNav } from '../../features/community/components/BottomNav';
 import { LocationSetupSheet } from '../../features/community/components/LocationSetupSheet';
 import { OfflineBanner } from '../../features/community/components/OfflineBanner';
+import { Compass } from 'lucide-react';
 import { FeedFilter } from '../../features/community/types/community.types';
 import styles from '../../features/community/styles/CommunityPage.module.css';
 
@@ -162,6 +163,7 @@ export const CommunityPage: React.FC = () => {
         userId={user?.id || ''}
         onSearch={() => { window.location.href = '/search'; }}
         onMore={() => {}}
+        onDiscover={() => navigate('/discover-communities')}
       />
 
       <FilterBar activeFilter={filter} onFilterChange={setFilter} />
@@ -260,3 +262,4 @@ export const CommunityPage: React.FC = () => {
     </div>
   );
 };
+

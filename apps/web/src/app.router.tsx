@@ -20,6 +20,7 @@ import { ConfirmEmail } from './pages/auth/ConfirmEmail';
 import { CommunityPage } from './pages/community/CommunityPage';
 import { PostDetail } from './pages/community/PostDetail';
 import { SearchPage } from './pages/community/SearchPage';
+import { DiscoverCommunitiesPage } from './pages/community/DiscoverCommunitiesPage';
 
 // Chat Pages
 import { ChatsPage } from './pages/chat/ChatsPage';
@@ -64,6 +65,14 @@ export const AppRouter: React.FC = () => {
         element={
           <ProtectedRoute>
             <PostDetail />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/discover-communities"
+        element={
+          <ProtectedRoute>
+            <DiscoverCommunitiesPage />
           </ProtectedRoute>
         }
       />
