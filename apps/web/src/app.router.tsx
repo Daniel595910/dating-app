@@ -27,7 +27,8 @@ import { ConversationPage } from './pages/chat/ConversationPage';
 
 // Profile Pages
 import { MyProfilePage } from './pages/profile/MyProfilePage';
-import { EditProfile } from './pages/profile/EditProfile';
+import { ProfilePage } from './pages/profile/ProfilePage';
+import { EditProfilePage } from './pages/profile/EditProfilePage';
 import { VipPage } from './pages/profile/VipPage';
 import { SettingsPage } from './pages/profile/SettingsPage';
 
@@ -87,6 +88,18 @@ export const AppRouter: React.FC = () => {
           </ProtectedRoute>
         }
       />
+
+      {/* Other user's profile */}
+      <Route
+        path="/profile/:userId"
+        element={
+          <ProtectedRoute>
+            <ProfilePage />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* My profile */}
       <Route
         path={ROUTES.PROFILE}
         element={
@@ -99,7 +112,7 @@ export const AppRouter: React.FC = () => {
         path={ROUTES.PROFILE_EDIT}
         element={
           <ProtectedRoute>
-            <EditProfile />
+            <EditProfilePage />
           </ProtectedRoute>
         }
       />
@@ -126,3 +139,4 @@ export const AppRouter: React.FC = () => {
     </Routes>
   );
 };
+
