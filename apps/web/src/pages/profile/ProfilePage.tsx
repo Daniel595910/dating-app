@@ -5,6 +5,7 @@ import { supabase } from '@/config/supabase.client';
 import { profileService } from '../../features/profile/services/profile.service';
 import { ProfileData, ProfileStats, UserPost } from '../../features/profile/types/profile.types';
 import { PhotoViewer } from '../../features/profile/components/PhotoViewer';
+import { PhotoManagement } from '../../features/profile/components/PhotoManagement';
 import { ArrowLeft, Settings, BadgeCheck, MapPin, Heart, Grid, Menu, UserPlus, Check, Camera, MoreVertical, X } from 'lucide-react';
 import styles from './ProfilePage.module.css';
 
@@ -19,6 +20,8 @@ export const ProfilePage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'posts' | 'about'>('posts');
   const [photoViewerIndex, setPhotoViewerIndex] = useState<number | null>(null);
+  const [photoManagementOpen, setPhotoManagementOpen] = useState(false);
+  const [profilePhotos, setProfilePhotos] = useState<Array<{ id: string; url: string; order: number; isPrimary: boolean }>>([]);
   const [statsModal, setStatsModal] = useState<'posts' | 'followers' | 'following' | 'connections' | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -33,10 +36,12 @@ export const ProfilePage: React.FC = () => {
       const profileData = await profileService.getProfileByUserId(targetUserId);
       const profileStats = await profileService.getProfileStats(targetUserId);
       const posts = await profileService.getUserPosts(targetUserId);
+      const photos = await profileService.getProfilePhotos(targetUserId);
 
       setProfile(profileData);
       setStats(profileStats);
       setUserPosts(posts);
+      setProfilePhotos(photos);
 
       if (user && targetUserId !== user.id) {
         const following = await profileService.isFollowing(user.id, targetUserId);
@@ -101,6 +106,19 @@ export const ProfilePage: React.FC = () => {
       />
 
       {/* Stats Modal */}
+      <PhotoManagement
+        open={photoManagementOpen}
+        onClose={() => setPhotoManagementOpen(false)}
+        userId={user?.id || ''}
+        photos={profilePhotos}
+        onPhotosChanged={async () => {
+          if (user) {
+            const photos = await profileService.getProfilePhotos(user.id);
+            setProfilePhotos(photos);
+          }
+        }}
+      />
+
       {statsModal && (
         <div className={styles.statsModalOverlay} onClick={() => setStatsModal(null)}>
           <div className={styles.statsModal} onClick={(e) => e.stopPropagation()}>
@@ -204,9 +222,9 @@ export const ProfilePage: React.FC = () => {
             <button className={styles.primaryAction} onClick={() => navigate('/profile/edit')}>
               Edit Profile
             </button>
-            <button className={styles.secondaryAction} onClick={() => fileInputRef.current?.click()}>
+            <button className={styles.secondaryAction} onClick={() => setPhotoManagementOpen(true)}>
               <Camera size={18} />
-              Add Photo
+              Manage Photos
             </button>
             <input
               ref={fileInputRef}
@@ -310,3 +328,4 @@ export const ProfilePage: React.FC = () => {
     </div>
   );
 };
+
