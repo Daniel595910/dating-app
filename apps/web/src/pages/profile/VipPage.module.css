@@ -1,88 +1,260 @@
-.container {
-  padding: 1rem;
-  max-width: 600px;
+﻿.vipPage {
+  min-height: 100dvh;
+  background-color: #faf9f7;
+  max-width: 480px;
   margin: 0 auto;
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
 }
 
-.title {
-  font-size: 1.25rem;
-  font-weight: 600;
+.header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.625rem 0.75rem;
+  padding-top: calc(0.625rem + env(safe-area-inset-top));
+  background-color: #ffffff;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.headerButton {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #111827;
+  padding: 0.5rem;
+  border-radius: 9999px;
+  min-width: 44px;
+  min-height: 44px;
+}
+
+.headerTitle {
+  font-size: 1rem;
+  font-weight: 700;
   color: #111827;
   margin: 0;
 }
 
-.error {
-  color: #ef4444;
-  text-align: center;
-  padding: 2rem;
+.content {
+  padding: 1rem;
 }
 
-.upgradeSection {
-  background-color: #ffffff;
-  border: 1px solid #e5e7eb;
-  border-radius: 0.75rem;
-  padding: 1.25rem;
+.statusCard {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  background: linear-gradient(135deg, #fef3c7, #fde68a);
+  border-radius: 1rem;
+  padding: 1rem;
+  margin-bottom: 1rem;
 }
 
-.upgradeTitle {
+.statusIcon {
+  color: #f59e0b;
+  flex-shrink: 0;
+}
+
+.statusLabel {
+  font-size: 0.6875rem;
+  color: #92400e;
+  margin: 0;
+}
+
+.statusLevel {
   font-size: 1.125rem;
-  font-weight: 600;
-  color: #111827;
-  margin: 0 0 1rem;
+  font-weight: 700;
+  color: #92400e;
+  margin: 0;
 }
 
-.plans {
+.statusStats {
+  display: flex;
+  gap: 1rem;
+  margin-left: auto;
+}
+
+.statusStat {
+  text-align: center;
+}
+
+.statusStatValue {
+  display: block;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #92400e;
+}
+
+.statusStatLabel {
+  font-size: 0.625rem;
+  color: #92400e;
+  opacity: 0.7;
+}
+
+.successBanner {
+  background-color: #d1fae5;
+  color: #065f46;
+  padding: 0.75rem 1rem;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  margin-bottom: 1rem;
+}
+
+.errorBanner {
+  background-color: #fee2e2;
+  color: #991b1b;
+  padding: 0.75rem 1rem;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  margin-bottom: 1rem;
+}
+
+.plansGrid {
   display: flex;
   flex-direction: column;
   gap: 1rem;
+  margin-bottom: 1.5rem;
 }
 
-.plan {
-  padding: 1.25rem;
+.planCard {
+  background-color: #ffffff;
   border: 1px solid #e5e7eb;
-  border-radius: 0.5rem;
+  border-radius: 1rem;
+  padding: 1.25rem;
+}
+
+.planCardActive {
+  border-color: #f59e0b;
+  box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.2);
+}
+
+.planHeader {
   display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
 }
 
 .planName {
-  font-size: 1rem;
-  font-weight: 600;
+  font-size: 1.125rem;
+  font-weight: 700;
   color: #111827;
   margin: 0;
 }
 
+.currentBadge {
+  padding: 0.25rem 0.625rem;
+  background-color: #fef3c7;
+  color: #92400e;
+  border-radius: 9999px;
+  font-size: 0.6875rem;
+  font-weight: 600;
+}
+
 .planPrice {
-  font-size: 1.25rem;
+  font-size: 1.5rem;
   font-weight: 700;
-  color: #3b82f6;
-  margin: 0;
+  color: #ef4444;
+  margin: 0 0 0.25rem;
+}
+
+.planDescription {
+  font-size: 0.8125rem;
+  color: #6b7280;
+  margin: 0 0 0.75rem;
 }
 
 .planFeatures {
   list-style: none;
   padding: 0;
-  margin: 0;
+  margin: 0 0 1rem;
   display: flex;
   flex-direction: column;
   gap: 0.375rem;
 }
 
-.planFeatures li {
-  font-size: 0.875rem;
+.planFeature {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  font-size: 0.8125rem;
   color: #374151;
-  padding-left: 1.25rem;
-  position: relative;
 }
 
-.planFeatures li::before {
-  content: '✓';
-  position: absolute;
-  left: 0;
+.featureCheck {
   color: #10b981;
+  flex-shrink: 0;
+}
+
+.upgradeButton {
+  width: 100%;
+  padding: 0.75rem;
+  background-color: #ef4444;
+  color: #ffffff;
+  border: none;
+  border-radius: 9999px;
+  cursor: pointer;
+  font-size: 0.875rem;
   font-weight: 600;
+  min-height: 44px;
+}
+
+.upgradeButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.creditsSection {
+  background-color: #ffffff;
+  border-radius: 1rem;
+  padding: 1rem;
+}
+
+.creditsTitle {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #111827;
+  margin: 0 0 0.25rem;
+}
+
+.creditsDescription {
+  font-size: 0.8125rem;
+  color: #6b7280;
+  margin: 0 0 0.75rem;
+}
+
+.creditsPackages {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.creditPackage {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  background: none;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.75rem;
+  cursor: pointer;
+  font-size: 0.875rem;
+  color: #111827;
+  min-height: 48px;
+}
+
+.creditPackage:hover {
+  background-color: #fef2f2;
+  border-color: #fecaca;
+}
+
+.creditPrice {
+  margin-left: auto;
+  font-weight: 700;
+  color: #ef4444;
+}
+
+.loadingContainer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 50dvh;
+  color: #9ca3af;
 }
