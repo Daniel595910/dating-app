@@ -1,5 +1,5 @@
 ﻿import React, { useState } from 'react';
-import { Heart, MessageCircle, MapPin, BadgeCheck, MoreVertical, Share2, UserPlus, Check, Play, Pause, Mic } from 'lucide-react';
+import { Heart, MessageCircle, MapPin, BadgeCheck, Share2, UserPlus, Check, Play, Pause, Mic } from 'lucide-react';
 import { CommunityPost } from '../../types/community.types';
 import { supabase } from '@/config/supabase.client';
 import { ReportSheet } from './ReportSheet';
@@ -28,7 +28,6 @@ export const CommunityPostCard: React.FC<CommunityPostCardProps> = ({
   onShare,
   onProfileClick,
 }) => {
-  const [actionMenuOpen, setActionMenuOpen] = useState(false);
   const [reportSheetOpen, setReportSheetOpen] = useState(false);
   const [blockSheetOpen, setBlockSheetOpen] = useState(false);
   const [shareSheetOpen, setShareSheetOpen] = useState(false);
@@ -77,7 +76,7 @@ export const CommunityPostCard: React.FC<CommunityPostCardProps> = ({
   const formatTime = (seconds: number): string => {
     const mins = Math.floor(seconds / 60);
     const secs = Math.floor(seconds % 60);
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
+    return mins + ':' + secs.toString().padStart(2, '0');
   };
 
   return (
@@ -117,15 +116,6 @@ export const CommunityPostCard: React.FC<CommunityPostCardProps> = ({
             {isFollowing ? 'Following' : 'Follow'}
           </button>
         )}
-
-        {/* More Button */}
-        <button
-          className={styles.moreButton}
-          onClick={() => setActionMenuOpen(true)}
-          aria-label="More options"
-        >
-          <MoreVertical size={18} />
-        </button>
       </div>
 
       {/* Looking For Badge */}
@@ -184,48 +174,7 @@ export const CommunityPostCard: React.FC<CommunityPostCardProps> = ({
         onShare={() => setShareSheetOpen(true)}
       />
 
-      {/* Dropdown Menu */}
-      {actionMenuOpen && (
-        <>
-          <div
-            style={{ position: 'fixed', inset: 0, zIndex: 9998, background: 'transparent' }}
-            onClick={() => setActionMenuOpen(false)}
-          />
-          <div
-            style={{
-              position: 'fixed',
-              top: 'auto',
-              right: '16px',
-              zIndex: 9999,
-              backgroundColor: '#ffffff',
-              borderRadius: '12px',
-              boxShadow: '0 10px 30px rgba(0,0,0,0.2)',
-              border: '1px solid #e5e7eb',
-              minWidth: 200,
-              padding: '6px',
-              marginTop: '8px',
-            }}
-          >
-            {!isOwnPost && (
-              <>
-                <button
-                  onClick={() => { setActionMenuOpen(false); setBlockSheetOpen(true); }}
-                  style={{ display: 'flex', alignItems: 'center', gap: '10px', width: '100%', padding: '12px', background: 'none', border: 'none', cursor: 'pointer', color: '#374151', fontSize: '14px', borderRadius: '8px', textAlign: 'left' }}
-                >
-                  🚫 Block Author
-                </button>
-                <button
-                  onClick={() => { setActionMenuOpen(false); setReportSheetOpen(true); }}
-                  style={{ display: 'flex', alignItems: 'center', gap: '10px', width: '100%', padding: '12px', background: 'none', border: 'none', cursor: 'pointer', color: '#ef4444', fontSize: '14px', borderRadius: '8px', textAlign: 'left' }}
-                >
-                  🚩 Report Post
-                </button>
-              </>
-            )}
-          </div>
-        </>
-      )}
-
+      {/* Sheets */}
       <ReportSheet
         open={reportSheetOpen}
         onClose={() => setReportSheetOpen(false)}
