@@ -122,7 +122,16 @@ class ChatService {
       p_metadata: null,
     });
 
-    if (error || !data) return null;
+    if (error) {
+      if (error.message.includes('Rate limit')) {
+        throw new Error('You are sending messages too quickly. Please wait a moment.');
+      }
+      if (error.message.includes('blocked')) {
+        throw new Error('You cannot message this user.');
+      }
+      throw error;
+    }
+    if (!data) return null;
 
     const { data: message } = await supabase
       .from('messages')
@@ -182,3 +191,4 @@ class ChatService {
 }
 
 export const chatService = new ChatService();
+
