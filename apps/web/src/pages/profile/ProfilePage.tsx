@@ -7,7 +7,7 @@ import { ProfileData, ProfileStats, UserPost } from '../../features/profile/type
 import { PhotoViewer } from '../../features/profile/components/PhotoViewer';
 import { PhotoManagement } from '../../features/profile/components/PhotoManagement';
 import { CommunityCreationSheet } from '../../features/community/components/CommunityCreationSheet';
-import { ArrowLeft, Settings, BadgeCheck, MapPin, Heart, Grid, Menu, UserPlus, Check, Camera, MoreVertical, X } from 'lucide-react';
+import { ArrowLeft, Settings, BadgeCheck, MapPin, Heart, Grid, Menu, UserPlus, Check, Camera, MoreVertical, X, Star, MessageCircle } from 'lucide-react';
 import styles from './ProfilePage.module.css';
 
 export const ProfilePage: React.FC = () => {
@@ -17,12 +17,12 @@ export const ProfilePage: React.FC = () => {
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [stats, setStats] = useState<ProfileStats>({ posts: 0, followers: 0, following: 0, connections: 0 });
   const [userPosts, setUserPosts] = useState<UserPost[]>([]);
+  const [profilePhotos, setProfilePhotos] = useState<Array<{ id: string; url: string; order: number; isPrimary: boolean }>>([]);
   const [isFollowing, setIsFollowing] = useState(false);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'posts' | 'about'>('posts');
   const [photoViewerIndex, setPhotoViewerIndex] = useState<number | null>(null);
   const [photoManagementOpen, setPhotoManagementOpen] = useState(false);
-  const [profilePhotos, setProfilePhotos] = useState<Array<{ id: string; url: string; order: number; isPrimary: boolean }>>([]);
   const [communityCreationOpen, setCommunityCreationOpen] = useState(false);
   const [vipData, setVipData] = useState<{ level: string; credits: number }>({ level: 'free', credits: 0 });
   const [statsModal, setStatsModal] = useState<'posts' | 'followers' | 'following' | 'connections' | null>(null);
@@ -40,32 +40,34 @@ export const ProfilePage: React.FC = () => {
       const profileStats = await profileService.getProfileStats(targetUserId);
       const posts = await profileService.getUserPosts(targetUserId);
       const photos = await profileService.getProfilePhotos(targetUserId);
-      if (user && isOwnProfile) {
-        const { data: vipAccount } = await supabase
-          .from('vip_accounts')
-          .select('level, community_credits')
-          .eq('user_id', user.id)
-          .single();
-        if (vipAccount) {
-          setVipData({ level: vipAccount.level, credits: vipAccount.community_credits || 0 });
-        }
-      }
 
       setProfile(profileData);
       setStats(profileStats);
       setUserPosts(posts);
       setProfilePhotos(photos);
 
-      if (user && targetUserId !== user.id) {
-        const following = await profileService.isFollowing(user.id, targetUserId);
-        setIsFollowing(following);
+      if (user) {
+        if (targetUserId !== user.id) {
+          const following = await profileService.isFollowing(user.id, targetUserId);
+          setIsFollowing(following);
+        } else {
+          // Load VIP data for own profile
+          const { data: vipAccount } = await supabase
+            .from('vip_accounts')
+            .select('level, community_credits')
+            .eq('user_id', user.id)
+            .single();
+          if (vipAccount) {
+            setVipData({ level: vipAccount.level, credits: vipAccount.community_credits || 0 });
+          }
+        }
       }
 
       setLoading(false);
     };
 
     loadProfile();
-  }, [targetUserId, user]);
+  }, [targetUserId, user, isOwnProfile]);
 
   const handleFollow = async () => {
     if (!user) return;
@@ -92,6 +94,7 @@ export const ProfilePage: React.FC = () => {
   if (loading) {
     return (
       <div className={styles.loadingContainer}>
+        <div className={styles.loadingSpinner} />
         <p>Loading profile...</p>
       </div>
     );
@@ -101,7 +104,9 @@ export const ProfilePage: React.FC = () => {
     return (
       <div className={styles.errorContainer}>
         <p>Profile not found</p>
-        <button onClick={() => navigate('/community')}>Go to Community</button>
+        <button className={styles.errorButton} onClick={() => navigate('/community')}>
+          Go to Community
+        </button>
       </div>
     );
   }
@@ -118,20 +123,6 @@ export const ProfilePage: React.FC = () => {
         onPrev={() => setPhotoViewerIndex((prev) => prev === null ? null : Math.max(prev - 1, 0))}
       />
 
-      {/* Stats Modal */}
-      <PhotoManagement
-        open={photoManagementOpen}
-        onClose={() => setPhotoManagementOpen(false)}
-        userId={user?.id || ''}
-        photos={profilePhotos}
-        onPhotosChanged={async () => {
-          if (user) {
-            const photos = await profileService.getProfilePhotos(user.id);
-            setProfilePhotos(photos);
-          }
-        }}
-      />
-
       <CommunityCreationSheet
         open={communityCreationOpen}
         onClose={() => setCommunityCreationOpen(false)}
@@ -141,6 +132,22 @@ export const ProfilePage: React.FC = () => {
         onSuccess={() => {}}
       />
 
+      <PhotoManagement
+        open={photoManagementOpen}
+        onClose={() => setPhotoManagementOpen(false)}
+        userId={user?.id || ''}
+        photos={profilePhotos}
+        onPhotosChanged={async () => {
+          if (user) {
+            const photos = await profileService.getProfilePhotos(user.id);
+            setProfilePhotos(photos);
+            const profileData = await profileService.getProfileByUserId(user.id);
+            setProfile(profileData);
+          }
+        }}
+      />
+
+      {/* Stats Modal */}
       {statsModal && (
         <div className={styles.statsModalOverlay} onClick={() => setStatsModal(null)}>
           <div className={styles.statsModal} onClick={(e) => e.stopPropagation()}>
@@ -178,6 +185,7 @@ export const ProfilePage: React.FC = () => {
         </div>
       )}
 
+      {/* Header */}
       <header className={styles.header}>
         <button className={styles.headerButton} onClick={() => navigate(-1)} aria-label="Back">
           <ArrowLeft size={22} />
@@ -194,6 +202,7 @@ export const ProfilePage: React.FC = () => {
         )}
       </header>
 
+      {/* Hero Section */}
       <div className={styles.hero}>
         <div className={styles.avatarContainer}>
           {profile.avatarUrl ? (
@@ -239,34 +248,26 @@ export const ProfilePage: React.FC = () => {
 
         {profile.bio && <p className={styles.bio}>{profile.bio}</p>}
 
+        {/* Action Buttons */}
         {isOwnProfile ? (
           <div className={styles.actionRow}>
             <button className={styles.primaryAction} onClick={() => navigate('/profile/edit')}>
               Edit Profile
             </button>
-            <button className={styles.secondaryAction} onClick={() => navigate('/profile/preferences')}>
-              Preferences
-            </button>
-            {vipData.level !== 'free' && (
-              <button className={styles.secondaryAction} onClick={() => setCommunityCreationOpen(true)}>
-                Create Community
-              </button>
-            )}
             <button className={styles.secondaryAction} onClick={() => setPhotoManagementOpen(true)}>
               <Camera size={18} />
-              Manage Photos
             </button>
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/jpeg,image/png,image/webp,image/gif"
-              onChange={(e) => handlePhotoUpload(e.target.files)}
-              style={{ display: 'none' }}
-            />
+            <button className={styles.secondaryAction} onClick={() => navigate('/profile/preferences')}>
+              <Heart size={18} />
+            </button>
+            <button className={styles.secondaryAction} onClick={() => setCommunityCreationOpen(true)}>
+              <Star size={18} />
+            </button>
           </div>
         ) : (
           <div className={styles.actionRow}>
             <button className={styles.primaryAction} onClick={() => navigate(`/chats/${targetUserId}`)}>
+              <MessageCircle size={18} />
               Message
             </button>
             <button className={styles.secondaryAction} onClick={handleFollow}>
@@ -275,8 +276,18 @@ export const ProfilePage: React.FC = () => {
             </button>
           </div>
         )}
+
+        {/* VIP Badge */}
+        {isOwnProfile && vipData.level !== 'free' && (
+          <div className={styles.vipBadge}>
+            <Star size={14} />
+            <span>{vipData.level.toUpperCase()} Member</span>
+            <span className={styles.creditsBadge}>{vipData.credits} credits</span>
+          </div>
+        )}
       </div>
 
+      {/* Tabs */}
       <div className={styles.tabs}>
         <button
           className={`${styles.tab} ${activeTab === 'posts' ? styles.tabActive : ''}`}
@@ -294,6 +305,7 @@ export const ProfilePage: React.FC = () => {
         </button>
       </div>
 
+      {/* Content */}
       {activeTab === 'posts' ? (
         <div className={styles.galleryGrid}>
           {postImages.length > 0 ? (
@@ -358,6 +370,3 @@ export const ProfilePage: React.FC = () => {
     </div>
   );
 };
-
-
-
