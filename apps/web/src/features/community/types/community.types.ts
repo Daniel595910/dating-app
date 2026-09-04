@@ -39,6 +39,10 @@ export interface PostViewerState {
 }
 
 export interface CommunityPost {
+  metadata?: {
+    audioUrl?: string;
+    durationMs?: number;
+  } | null;
   id: string;
   communityId: string;
   author: CommunityPostAuthor;
@@ -117,3 +121,4 @@ export interface ConnectionStage {
   completed: boolean;
   current: boolean;
 }
+

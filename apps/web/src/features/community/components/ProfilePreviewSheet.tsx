@@ -164,6 +164,14 @@ export const ProfilePreviewSheet: React.FC<ProfilePreviewSheetProps> = ({
                 Get to Know
               </button>
               <button
+                className={styles.followButton}
+                onClick={() => {
+                  // Follow logic here
+                }}
+              >
+                Follow
+              </button>
+              <button
                 className={styles.viewProfileButton}
                 onClick={() => onViewFullProfile(profile.id)}
               >
@@ -176,3 +184,4 @@ export const ProfilePreviewSheet: React.FC<ProfilePreviewSheetProps> = ({
     </div>
   );
 };
+

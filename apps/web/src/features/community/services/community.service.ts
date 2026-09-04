@@ -342,6 +342,7 @@ class CommunityService {
       })),
       lookingFor: post.type === 'looking_for' ? this.parseLookingFor(post.content) : undefined,
       tags: post.tags || [],
+      metadata: post.metadata || null,
       stats: {
         likes: post.like_count || 0,
         comments: post.comment_count || 0,
@@ -368,4 +369,6 @@ class CommunityService {
 }
 
 export const communityService = new CommunityService();
+
+
 

@@ -1,5 +1,5 @@
 ﻿import React, { useState, useRef } from 'react';
-import { X, ArrowLeft, ArrowRight, Camera, Heart, MessageCircle, Sparkles, HelpCircle, Check, ImagePlus, Trash2 } from 'lucide-react';
+import { X, ArrowLeft, ArrowRight, Camera, Heart, MessageCircle, Sparkles, HelpCircle, Check, ImagePlus, Trash2, Mic, Square } from 'lucide-react';
 import { supabase } from '@/config/supabase.client';
 import { CommunityPostType, PostMedia } from '../../types/community.types';
 import { mediaService } from '../services/media.service';
@@ -49,7 +49,14 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const [isRecording, setIsRecording] = useState(false);
+  const [recordingTime, setRecordingTime] = useState(0);
+  const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
+  const [audioUrl, setAudioUrl] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
+  const recordingTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const handleTypeSelect = (type: CommunityPostType) => {
     setPostType(type);
@@ -62,8 +69,8 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
   };
 
   const handleNext = () => {
-    if (!content.trim() && postType !== 'photo' && media.length === 0) {
-      setError('Please write something or add a photo');
+    if (!content.trim() && !audioUrl && media.length === 0 && postType !== 'photo') {
+      setError('Please write something, record audio, or add a photo');
       return;
     }
     if (postType === 'looking_for' && !lookingFor) {
@@ -72,6 +79,75 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
     }
     setError(null);
     setStep('preview');
+  };
+
+  const startRecording = async () => {
+    setError(null);
+    audioChunksRef.current = [];
+    setRecordingTime(0);
+
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      setError('Microphone access requires HTTPS or localhost');
+      return;
+    }
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus') ? 'audio/webm;codecs=opus' : 'audio/webm';
+      const mediaRecorder = new MediaRecorder(stream, { mimeType });
+      mediaRecorderRef.current = mediaRecorder;
+
+      mediaRecorder.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          audioChunksRef.current.push(event.data);
+        }
+      };
+
+      mediaRecorder.onstop = () => {
+        const blob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+        setAudioBlob(blob);
+        setAudioUrl(URL.createObjectURL(blob));
+        stream.getTracks().forEach((track) => track.stop());
+        if (recordingTimerRef.current) clearInterval(recordingTimerRef.current);
+      };
+
+      mediaRecorder.start(1000);
+      setIsRecording(true);
+
+      recordingTimerRef.current = setInterval(() => {
+        setRecordingTime((prev) => {
+          if (prev >= 120) {
+            mediaRecorder.stop();
+            setIsRecording(false);
+            return prev;
+          }
+          return prev + 1;
+        });
+      }, 1000);
+    } catch {
+      setError('Microphone access denied. Please allow microphone access in your browser settings.');
+    }
+  };
+
+  const stopRecording = () => {
+    if (mediaRecorderRef.current && isRecording) {
+      mediaRecorderRef.current.stop();
+      setIsRecording(false);
+    }
+  };
+
+  const removeAudio = () => {
+    if (audioUrl) URL.revokeObjectURL(audioUrl);
+    setAudioBlob(null);
+    setAudioUrl(null);
+    setRecordingTime(0);
+    audioChunksRef.current = [];
+  };
+
+  const formatTime = (seconds: number): string => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return mins + ':' + secs.toString().padStart(2, '0');
   };
 
   const handleFileSelect = async (files: FileList | null) => {
@@ -118,8 +194,24 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
       const tagArray = tags.split(',').map((t) => t.trim()).filter((t) => t.length > 0);
 
       const finalContent = postType === 'looking_for' && lookingFor
-        ? `${content}\n\nLooking for: ${lookingFor}`
+        ? content + '\n\nLooking for: ' + lookingFor
         : content;
+
+      // Upload audio if exists
+      let audioMetadata = null;
+      if (audioBlob) {
+        const timestamp = Date.now();
+        const filePath = 'post-audio/' + userId + '/' + timestamp + '.webm';
+
+        const { error: audioUploadError } = await supabase.storage
+          .from('media')
+          .upload(filePath, audioBlob, { cacheControl: '3600', contentType: 'audio/webm' });
+
+        if (!audioUploadError) {
+          const { data: audioUrlData } = supabase.storage.from('media').getPublicUrl(filePath);
+          audioMetadata = { audioUrl: audioUrlData.publicUrl, durationMs: recordingTime * 1000 };
+        }
+      }
 
       const { data, error: insertError } = await supabase
         .from('posts')
@@ -131,6 +223,7 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
           status: 'published',
           images: media.map((m) => m.url),
           tags: tagArray,
+          metadata: audioMetadata,
         })
         .select()
         .single();
@@ -146,6 +239,7 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
         setLookingFor('');
         setTags('');
         setMedia([]);
+        removeAudio();
         onPostCreated(data);
         onClose();
       }, 1500);
@@ -165,7 +259,6 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
   return (
     <div className={styles.overlay} onClick={onClose}>
       <div className={styles.sheet} onClick={(e) => e.stopPropagation()}>
-        {/* Header */}
         <div className={styles.header}>
           {step !== 'type' && (
             <button onClick={handleBack} aria-label="Back" className={styles.backButton}>
@@ -173,7 +266,7 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
             </button>
           )}
           <h2 className={styles.title}>
-            {success ? 'Published!' : step === 'type' ? 'Create Post' : step === 'compose' ? `Create ${getTypeLabel(postType!)}` : 'Preview'}
+            {success ? 'Published!' : step === 'type' ? 'Create Post' : step === 'compose' ? 'Create ' + getTypeLabel(postType!) : 'Preview'}
           </h2>
           <button onClick={onClose} aria-label="Close" className={styles.closeButton}>
             <X size={20} />
@@ -223,6 +316,74 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
               maxLength={5000}
             />
 
+            {/* Voice Recording */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              {!isRecording && !audioUrl && (
+                <button
+                  type="button"
+                  onClick={startRecording}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.375rem',
+                    padding: '0.5rem 1rem',
+                    background: 'none',
+                    border: '1px dashed #d1d5db',
+                    borderRadius: '9999px',
+                    cursor: 'pointer',
+                    fontSize: '0.8125rem',
+                    fontWeight: 500,
+                    color: '#6b7280',
+                    minHeight: 40,
+                  }}
+                >
+                  <Mic size={16} />
+                  Record Voice
+                </button>
+              )}
+              {isRecording && (
+                <button
+                  type="button"
+                  onClick={stopRecording}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.375rem',
+                    padding: '0.5rem 1rem',
+                    background: '#ef4444',
+                    border: 'none',
+                    borderRadius: '9999px',
+                    cursor: 'pointer',
+                    fontSize: '0.8125rem',
+                    fontWeight: 600,
+                    color: '#ffffff',
+                    minHeight: 40,
+                  }}
+                >
+                  <Square size={14} />
+                  Stop ({formatTime(recordingTime)})
+                </button>
+              )}
+              {audioUrl && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flex: 1 }}>
+                  <audio src={audioUrl} controls style={{ flex: 1, height: 32 }} />
+                  <button
+                    type="button"
+                    onClick={removeAudio}
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      cursor: 'pointer',
+                      color: '#ef4444',
+                      padding: '0.25rem',
+                    }}
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                </div>
+              )}
+            </div>
+
             {/* Photo Upload */}
             <input
               ref={fileInputRef}
@@ -239,13 +400,12 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
               disabled={uploading || media.length >= 5}
             >
               <ImagePlus size={18} />
-              <span>{uploading ? `Uploading... ${Math.round(uploadProgress)}%` : media.length > 0 ? `Add More Photos (${media.length}/5)` : 'Add Photos'}</span>
+              <span>{uploading ? 'Uploading... ' + Math.round(uploadProgress) + '%' : media.length > 0 ? 'Add More Photos (' + media.length + '/5)' : 'Add Photos'}</span>
             </button>
 
-            {/* Media Preview */}
             {media.length > 0 && (
               <div className={styles.mediaPreview}>
-                {media.map((m, index) => (
+                {media.map((m) => (
                   <div key={m.id} className={styles.mediaPreviewItem}>
                     <img src={m.url} alt="" className={styles.mediaPreviewImage} />
                     <button
@@ -286,7 +446,12 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
                   <span>Looking for {lookingFor}</span>
                 </div>
               )}
-              <p className={styles.previewContent}>{content}</p>
+              {content && <p className={styles.previewContent}>{content}</p>}
+              {audioUrl && (
+                <div style={{ marginBottom: '0.5rem' }}>
+                  <audio src={audioUrl} controls style={{ width: '100%', height: 32 }} />
+                </div>
+              )}
               {media.length > 0 && (
                 <div className={styles.previewMediaRow}>
                   {media.map((m) => (

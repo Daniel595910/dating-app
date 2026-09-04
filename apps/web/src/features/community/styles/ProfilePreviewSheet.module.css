@@ -214,3 +214,20 @@
   from { transform: translateY(100%); }
   to { transform: translateY(0); }
 }
+
+.followButton {
+  padding: 0.875rem;
+  background: none;
+  color: #ef4444;
+  border: 1px solid #ef4444;
+  border-radius: 9999px;
+  cursor: pointer;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  min-height: 48px;
+  transition: background-color 0.2s ease;
+}
+
+.followButton:hover {
+  background-color: #fef2f2;
+}
