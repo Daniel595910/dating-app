@@ -21,6 +21,7 @@ import { ProfilePreviewSheet } from '../../features/community/components/Profile
 import { ConnectionPrompt } from '../../features/community/components/ConnectionPrompt';
 import { MatchSuccess } from '../../features/community/components/MatchSuccess';
 import { PendingRequests } from '../../features/community/components/PendingRequests';
+import { ConnectionStatusCard } from '../../features/community/components/ConnectionStatusCard';
 import { BottomNav } from '../../features/community/components/BottomNav';
 import { LocationSetupSheet } from '../../features/community/components/LocationSetupSheet';
 import { OfflineBanner } from '../../features/community/components/OfflineBanner';
@@ -35,6 +36,7 @@ export const CommunityPage: React.FC = () => {
   const [previewAuthorId, setPreviewAuthorId] = useState<string | null>(null);
   const [connectionTarget, setConnectionTarget] = useState<{ id: string; name: string } | null>(null);
   const [matchUser, setMatchUser] = useState<string | null>(null);
+  const [matchId, setMatchId] = useState<string | null>(null);
   const [newPostCount, setNewPostCount] = useState(0);
   const [locationSheetOpen, setLocationSheetOpen] = useState(false);
 
@@ -60,9 +62,12 @@ export const CommunityPage: React.FC = () => {
 
   const {
     pendingRequests,
+    activeConnections,
+    loading: connectionLoading,
     acceptRequest,
     declineRequest,
     sendRequest,
+    expressInterest,
     getOrCreateConversation,
   } = useConnection(user?.id || null);
 
@@ -103,10 +108,20 @@ export const CommunityPage: React.FC = () => {
     setConnectionTarget({ id: targetUserId, name: post?.author.name || 'this person' });
   };
 
-  const handleStartChat = async (matchId: string) => {
+  const handleExpressInterest = async (matchId: string) => {
+    const result = await expressInterest(matchId);
+    if (result?.isMatched) {
+      setMatchId(matchId);
+      setMatchUser('your match');
+    }
+  };
+
+  const handleStartChat = async () => {
+    if (!matchId) return;
     const conversationId = await getOrCreateConversation(matchId);
     if (conversationId) {
       setMatchUser(null);
+      setMatchId(null);
       window.location.href = `/chats/${conversationId}`;
     }
   };
@@ -121,10 +136,7 @@ export const CommunityPage: React.FC = () => {
           <p className={styles.errorMessage}>
             Set your location to be assigned to your regional dating community.
           </p>
-          <button
-            className={styles.retryButton}
-            onClick={() => setLocationSheetOpen(true)}
-          >
+          <button className={styles.retryButton} onClick={() => setLocationSheetOpen(true)}>
             Set My Location
           </button>
         </div>
@@ -161,6 +173,20 @@ export const CommunityPage: React.FC = () => {
       )}
 
       <main className={styles.feedContainer}>
+        {/* Active Connections - Getting to Know */}
+        {activeConnections.map((conn) => (
+          <ConnectionStatusCard
+            key={conn.matchId}
+            matchId={conn.matchId}
+            targetUserName={conn.targetUserName}
+            myInterest={conn.myInterest}
+            otherInterest={conn.otherInterest}
+            onExpressInterest={handleExpressInterest}
+            loading={connectionLoading}
+          />
+        ))}
+
+        {/* Pending Connection Requests */}
         <PendingRequests
           requests={pendingRequests.map((r) => ({ id: r.id, requesterName: r.requesterName, message: r.message }))}
           onAccept={acceptRequest}
@@ -219,9 +245,9 @@ export const CommunityPage: React.FC = () => {
 
       <MatchSuccess
         open={Boolean(matchUser)}
-        onClose={() => setMatchUser(null)}
+        onClose={() => { setMatchUser(null); setMatchId(null); }}
         matchedUserName={matchUser || ''}
-        onStartChat={() => handleStartChat(matchUser || '')}
+        onStartChat={handleStartChat}
       />
 
       <CreatePostForm

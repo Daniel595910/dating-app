@@ -1,5 +1,5 @@
 ﻿import React from 'react';
-import { X, Link2, Send } from 'lucide-react';
+import { X, Link2, Send, Check } from 'lucide-react';
 import styles from '../styles/ShareSheet.module.css';
 
 interface ShareSheetProps {
@@ -9,13 +9,29 @@ interface ShareSheetProps {
 }
 
 export const ShareSheet: React.FC<ShareSheetProps> = ({ open, onClose, postUrl }) => {
+  const [copied, setCopied] = React.useState(false);
+
   const handleCopyLink = async () => {
     try {
       await navigator.clipboard.writeText(postUrl);
-      alert('Link copied to clipboard!');
-      onClose();
+      setCopied(true);
+      setTimeout(() => {
+        setCopied(false);
+        onClose();
+      }, 1500);
     } catch {
-      alert('Failed to copy link');
+      // Fallback
+      const textArea = document.createElement('textarea');
+      textArea.value = postUrl;
+      document.body.appendChild(textArea);
+      textArea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textArea);
+      setCopied(true);
+      setTimeout(() => {
+        setCopied(false);
+        onClose();
+      }, 1500);
     }
   };
 
@@ -26,6 +42,7 @@ export const ShareSheet: React.FC<ShareSheetProps> = ({ open, onClose, postUrl }
           title: 'Check out this post on Dating App',
           url: postUrl,
         });
+        onClose();
       } catch {
         // User cancelled
       }
@@ -41,22 +58,29 @@ export const ShareSheet: React.FC<ShareSheetProps> = ({ open, onClose, postUrl }
       <div className={styles.sheet} onClick={(e) => e.stopPropagation()}>
         <div className={styles.dragHandle} />
         <div className={styles.header}>
-          <h3 className={styles.title}>Share</h3>
+          <h3 className={styles.title}>{copied ? 'Link Copied!' : 'Share'}</h3>
           <button onClick={onClose} aria-label="Close" className={styles.closeButton}>
             <X size={20} />
           </button>
         </div>
 
-        <div className={styles.options}>
-          <button className={styles.shareOption} onClick={handleNativeShare}>
-            <Send size={20} />
-            <span>Share via apps</span>
-          </button>
-          <button className={styles.shareOption} onClick={handleCopyLink}>
-            <Link2 size={20} />
-            <span>Copy link</span>
-          </button>
-        </div>
+        {copied ? (
+          <div className={styles.copiedState}>
+            <Check size={32} className={styles.copiedIcon} />
+            <p className={styles.copiedText}>Link copied to clipboard</p>
+          </div>
+        ) : (
+          <div className={styles.options}>
+            <button className={styles.shareOption} onClick={handleNativeShare}>
+              <Send size={20} />
+              <span>Share via apps</span>
+            </button>
+            <button className={styles.shareOption} onClick={handleCopyLink}>
+              <Link2 size={20} />
+              <span>Copy link</span>
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );

@@ -9,9 +9,18 @@ interface PendingRequest {
   message?: string;
 }
 
+interface ActiveConnection {
+  matchId: string;
+  targetUserId: string;
+  targetUserName: string;
+  myInterest: boolean;
+  otherInterest: boolean;
+}
+
 interface UseConnectionResult {
   connection: ConnectionState | null;
   pendingRequests: PendingRequest[];
+  activeConnections: ActiveConnection[];
   loading: boolean;
   error: string | null;
   sendRequest: (targetId: string, message?: string) => Promise<boolean>;
@@ -26,8 +35,48 @@ interface UseConnectionResult {
 export function useConnection(userId: string | null): UseConnectionResult {
   const [connection, setConnection] = useState<ConnectionState | null>(null);
   const [pendingRequests, setPendingRequests] = useState<PendingRequest[]>([]);
+  const [activeConnections, setActiveConnections] = useState<ActiveConnection[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const loadActiveConnections = useCallback(async () => {
+    if (!userId) return;
+
+    const { data: matches } = await supabase
+      .from('matches')
+      .select('*')
+      .or(`user1_id.eq.${userId},user2_id.eq.${userId}`)
+      .eq('status', 'active')
+      .eq('stage', 'getting_to_know');
+
+    if (matches && matches.length > 0) {
+      const otherUserIds = matches.map((m: any) =>
+        m.user1_id === userId ? m.user2_id : m.user1_id
+      );
+
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('user_id, display_name')
+        .in('user_id', otherUserIds);
+
+      const profileMap = new Map((profiles || []).map((p: any) => [p.user_id, p.display_name]));
+
+      const connections: ActiveConnection[] = matches.map((m: any) => {
+        const isUser1 = m.user1_id === userId;
+        const otherUserId = isUser1 ? m.user2_id : m.user1_id;
+
+        return {
+          matchId: m.id,
+          targetUserId: otherUserId,
+          targetUserName: profileMap.get(otherUserId) || 'User',
+          myInterest: isUser1 ? m.user1_interest : m.user2_interest,
+          otherInterest: isUser1 ? m.user2_interest : m.user1_interest,
+        };
+      });
+
+      setActiveConnections(connections);
+    }
+  }, [userId]);
 
   const loadPendingRequests = useCallback(async () => {
     if (!userId) return;
@@ -60,19 +109,20 @@ export function useConnection(userId: string | null): UseConnectionResult {
 
   useEffect(() => {
     loadPendingRequests();
-  }, [loadPendingRequests]);
+    loadActiveConnections();
+  }, [loadPendingRequests, loadActiveConnections]);
 
   const sendRequest = useCallback(async (targetId: string, message?: string) => {
     setLoading(true);
     setError(null);
     try {
-      const { data, error: rpcError } = await supabase.rpc('send_connection_request', {
+      const { error: rpcError } = await supabase.rpc('send_connection_request', {
         p_target_id: targetId,
         p_message: message || null,
       });
 
       if (rpcError) throw rpcError;
-      return Boolean(data);
+      return true;
     } catch (err: any) {
       setError(err.message || 'Failed to send request');
       return false;
@@ -85,16 +135,15 @@ export function useConnection(userId: string | null): UseConnectionResult {
     setLoading(true);
     setError(null);
     try {
-      const { data, error: rpcError } = await supabase.rpc('accept_connection_request', {
+      const { error: rpcError } = await supabase.rpc('accept_connection_request', {
         p_request_id: requestId,
       });
 
       if (rpcError) throw rpcError;
 
-      // Remove from pending requests
       setPendingRequests((prev) => prev.filter((r) => r.id !== requestId));
-
-      return Boolean(data);
+      await loadActiveConnections();
+      return true;
     } catch (err: any) {
       setError(err.message || 'Failed to accept request');
       return false;
@@ -102,7 +151,7 @@ export function useConnection(userId: string | null): UseConnectionResult {
       setLoading(false);
       loadPendingRequests();
     }
-  }, [loadPendingRequests]);
+  }, [loadActiveConnections, loadPendingRequests]);
 
   const declineRequest = useCallback(async (requestId: string) => {
     setLoading(true);
@@ -153,6 +202,8 @@ export function useConnection(userId: string | null): UseConnectionResult {
 
       if (rpcError) throw rpcError;
 
+      await loadActiveConnections();
+
       if (data) {
         const result = data as any;
         return {
@@ -173,25 +224,21 @@ export function useConnection(userId: string | null): UseConnectionResult {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [loadActiveConnections]);
 
   const getConnectionStatus = useCallback(async (targetUserId: string): Promise<ConnectionStatus> => {
-    // Check for match first
     const { data: match } = await supabase
       .from('matches')
       .select('*')
-      .or(`user1_id.eq.${userId},user2_id.eq.${userId}`)
-      .or(`user1_id.eq.${targetUserId},user2_id.eq.${targetUserId}`)
+      .or(`and(user1_id.eq.${userId},user2_id.eq.${targetUserId}),and(user1_id.eq.${targetUserId},user2_id.eq.${userId})`)
       .single();
 
     if (match) {
       if (match.stage === 'matched') return 'matched';
       if (match.user1_interest && match.user2_interest) return 'mutual_interest';
-      if (match.user1_interest || match.user2_interest) return 'getting_to_know';
       return 'accepted';
     }
 
-    // Check for pending request
     const { data: request } = await supabase
       .from('match_requests')
       .select('*')
@@ -224,6 +271,7 @@ export function useConnection(userId: string | null): UseConnectionResult {
   return {
     connection,
     pendingRequests,
+    activeConnections,
     loading,
     error,
     sendRequest,

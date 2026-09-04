@@ -106,3 +106,4 @@ export const CommunityPostCard: React.FC<CommunityPostCardProps> = ({
     </article>
   );
 };
+

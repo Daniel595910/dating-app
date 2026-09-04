@@ -1,0 +1,53 @@
+﻿.composer {
+  display: flex;
+  align-items: flex-end;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem calc(0.75rem + env(safe-area-inset-bottom));
+  border-top: 1px solid var(--color-border, #e5e7eb);
+  background-color: var(--color-surface, #ffffff);
+}
+
+.input {
+  flex: 1;
+  padding: 0.625rem 0.875rem;
+  border: 1px solid var(--color-border, #e5e7eb);
+  border-radius: 1.25rem;
+  resize: none;
+  font-size: var(--font-md, 0.9375rem);
+  font-family: inherit;
+  outline: none;
+  max-height: 120px;
+  min-height: 40px;
+  background-color: var(--color-bg, #f9fafb);
+}
+
+.input:focus {
+  border-color: var(--color-primary, #ef4444);
+  box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.1);
+}
+
+.sendButton {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background-color: var(--color-primary, #ef4444);
+  color: #ffffff;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: background-color 0.2s ease;
+  min-width: 44px;
+  min-height: 44px;
+}
+
+.sendButton:hover:not(:disabled) {
+  background-color: var(--color-primary-hover, #dc2626);
+}
+
+.sendButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

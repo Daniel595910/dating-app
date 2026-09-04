@@ -1,5 +1,4 @@
 ﻿import React, { useEffect, useRef } from 'react';
-import { Flag, Ban, VolumeX, Edit, Trash2, Bookmark } from 'lucide-react';
 
 interface PostActionMenuProps {
   open: boolean;
@@ -8,9 +7,6 @@ interface PostActionMenuProps {
   onReport: () => void;
   onBlock: () => void;
   onMute: () => void;
-  onEdit?: () => void;
-  onDelete?: () => void;
-  onSave?: () => void;
 }
 
 export const PostActionMenu: React.FC<PostActionMenuProps> = ({
@@ -20,9 +16,6 @@ export const PostActionMenu: React.FC<PostActionMenuProps> = ({
   onReport,
   onBlock,
   onMute,
-  onEdit,
-  onDelete,
-  onSave,
 }) => {
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -44,117 +37,114 @@ export const PostActionMenu: React.FC<PostActionMenuProps> = ({
 
   if (!open) return null;
 
-  const menuItemStyle: React.CSSProperties = {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '0.625rem',
-    width: '100%',
-    padding: '0.625rem 0.75rem',
-    background: 'none',
-    border: 'none',
-    cursor: 'pointer',
-    color: '#374151',
-    fontSize: '0.875rem',
-    fontWeight: 500,
-    borderRadius: '0.5rem',
-    transition: 'background-color 0.12s ease',
-    textAlign: 'left',
-    minHeight: 40,
-  };
-
-  const dangerItemStyle: React.CSSProperties = {
-    ...menuItemStyle,
-    color: '#ef4444',
-  };
-
-  const handleAction = (action: () => void) => {
-    action();
-    onClose();
-  };
-
   return (
-    <div
-      ref={menuRef}
-      style={{
-        position: 'absolute',
-        top: 'calc(100% + 4px)',
-        right: 0,
-        zIndex: 9999,
-        backgroundColor: '#ffffff',
-        borderRadius: '0.75rem',
-        boxShadow: '0 10px 25px rgba(0, 0, 0, 0.15), 0 4px 8px rgba(0, 0, 0, 0.08)',
-        border: '1px solid #e5e7eb',
-        minWidth: 220,
-        padding: '0.375rem',
-      }}
-    >
-      {isOwnPost ? (
-        <>
-          {onEdit && (
+    <>
+      {/* Click-away overlay */}
+      <div
+        style={{
+          position: 'fixed',
+          inset: 0,
+          zIndex: 9998,
+          background: 'transparent',
+        }}
+        onClick={onClose}
+      />
+
+      {/* Dropdown */}
+      <div
+        ref={menuRef}
+        style={{
+          position: 'fixed',
+          top: 'auto',
+          right: '16px',
+          zIndex: 9999,
+          backgroundColor: '#ffffff',
+          borderRadius: '12px',
+          boxShadow: '0 10px 30px rgba(0,0,0,0.2)',
+          border: '1px solid #e5e7eb',
+          minWidth: 200,
+          padding: '6px',
+          marginTop: '8px',
+        }}
+      >
+        {!isOwnPost && (
+          <>
             <button
-              style={menuItemStyle}
-              onClick={() => handleAction(onEdit)}
-              onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#f3f4f6')}
-              onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '10px',
+                width: '100%',
+                padding: '12px',
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                color: '#374151',
+                fontSize: '14px',
+                fontWeight: 500,
+                borderRadius: '8px',
+                textAlign: 'left',
+              }}
+              onClick={() => { onMute(); onClose(); }}
             >
-              <Edit size={16} />
-              <span>Edit Post</span>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+                <line x1="23" y1="9" x2="17" y2="15" />
+                <line x1="17" y1="9" x2="23" y2="15" />
+              </svg>
+              Mute Author
             </button>
-          )}
-          {onDelete && (
             <button
-              style={dangerItemStyle}
-              onClick={() => handleAction(onDelete)}
-              onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#fee2e2')}
-              onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '10px',
+                width: '100%',
+                padding: '12px',
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                color: '#ef4444',
+                fontSize: '14px',
+                fontWeight: 500,
+                borderRadius: '8px',
+                textAlign: 'left',
+              }}
+              onClick={() => { onBlock(); onClose(); }}
             >
-              <Trash2 size={16} />
-              <span>Delete Post</span>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="10" />
+                <line x1="4.93" y1="4.93" x2="19.07" y2="19.07" />
+              </svg>
+              Block Author
             </button>
-          )}
-        </>
-      ) : (
-        <>
-          {onSave && (
             <button
-              style={menuItemStyle}
-              onClick={() => handleAction(onSave)}
-              onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#f3f4f6')}
-              onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '10px',
+                width: '100%',
+                padding: '12px',
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                color: '#ef4444',
+                fontSize: '14px',
+                fontWeight: 500,
+                borderRadius: '8px',
+                textAlign: 'left',
+              }}
+              onClick={() => { onReport(); onClose(); }}
             >
-              <Bookmark size={16} />
-              <span>Save Post</span>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z" />
+                <line x1="4" y1="22" x2="4" y2="15" />
+              </svg>
+              Report Post
             </button>
-          )}
-          <button
-            style={menuItemStyle}
-            onClick={() => handleAction(onMute)}
-            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#f3f4f6')}
-            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
-          >
-            <VolumeX size={16} />
-            <span>Mute Author</span>
-          </button>
-          <button
-            style={dangerItemStyle}
-            onClick={() => handleAction(onBlock)}
-            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#fee2e2')}
-            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
-          >
-            <Ban size={16} />
-            <span>Block Author</span>
-          </button>
-          <button
-            style={dangerItemStyle}
-            onClick={() => handleAction(onReport)}
-            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#fee2e2')}
-            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
-          >
-            <Flag size={16} />
-            <span>Report Post</span>
-          </button>
-        </>
-      )}
-    </div>
+          </>
+        )}
+      </div>
+    </>
   );
 };
