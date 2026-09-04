@@ -33,6 +33,7 @@ import { DatingPreferencesPage } from './pages/profile/DatingPreferencesPage';
 import { VipPage } from './pages/profile/VipPage';
 import { SettingsPage } from './pages/profile/SettingsPage';
 import { BlockedUsersPage } from './pages/profile/BlockedUsersPage';
+import { CommunityManagementPage } from './pages/profile/CommunityManagementPage';
 
 // Auth Guard Component
 import { ProtectedRoute } from './components/common/ProtectedRoute';
@@ -157,3 +158,4 @@ export const AppRouter: React.FC = () => {
     </Routes>
   );
 };
+

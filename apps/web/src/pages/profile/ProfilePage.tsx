@@ -7,7 +7,7 @@ import { ProfileData, ProfileStats, UserPost } from '../../features/profile/type
 import { PhotoViewer } from '../../features/profile/components/PhotoViewer';
 import { PhotoManagement } from '../../features/profile/components/PhotoManagement';
 import { CommunityCreationSheet } from '../../features/community/components/CommunityCreationSheet';
-import { ArrowLeft, Settings, BadgeCheck, MapPin, Heart, Grid, Menu, UserPlus, Check, Camera, MoreVertical, X, Star, MessageCircle, Crown, CreditCard } from 'lucide-react';
+import { ArrowLeft, Settings, BadgeCheck, MapPin, Heart, Grid, Menu, UserPlus, Check, Camera, MoreVertical, X, Star, MessageCircle, Crown, CreditCard, Users } from 'lucide-react';
 import styles from './ProfilePage.module.css';
 
 export const ProfilePage: React.FC = () => {
@@ -284,6 +284,14 @@ export const ProfilePage: React.FC = () => {
           </div>
         )}
 
+        {/* My Communities link */}
+        {isOwnProfile && (
+          <button className={styles.createCommunityButton} onClick={() => navigate('/profile/my-communities')} style={{ background: 'none', border: '1px solid #e5e7eb', color: '#111827' }}>
+            <Users size={16} />
+            My Communities
+          </button>
+        )}
+
         {/* Create Community button for own profile */}
         {isOwnProfile && (
           <button className={styles.createCommunityButton} onClick={() => setCommunityCreationOpen(true)}>
@@ -377,3 +385,4 @@ export const ProfilePage: React.FC = () => {
     </div>
   );
 };
+
