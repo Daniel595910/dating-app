@@ -39,6 +39,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
   const [loadingMore, setLoadingMore] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
   const [isOffline, setIsOffline] = useState(!navigator.onLine);
+  const [targetOnline, setTargetOnline] = useState(false);
   const [actionMenuOpen, setActionMenuOpen] = useState(false);
   const [blockSheetOpen, setBlockSheetOpen] = useState(false);
   const [reportSheetOpen, setReportSheetOpen] = useState(false);
@@ -47,6 +48,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const previousScrollHeightRef = useRef<number>(0);
+  const presenceChannelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
 
   const scrollToBottom = useCallback((smooth = true) => {
     setTimeout(() => {
@@ -113,6 +115,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
     }
   }, [conversationId, user, scrollToBottom]);
 
+  // Initial load
   useEffect(() => {
     loadMessages(true);
 
@@ -132,6 +135,63 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
     markConversationAsRead();
   }, [markConversationAsRead]);
 
+  // Presence: Set current user as online
+  useEffect(() => {
+    if (!user) return;
+
+    chatService.updatePresence(true);
+
+    const interval = setInterval(() => {
+      chatService.updatePresence(true);
+    }, 30000); // Heartbeat every 30s
+
+    return () => {
+      clearInterval(interval);
+      chatService.updatePresence(false);
+    };
+  }, [user]);
+
+  // Presence: Check target user's online status
+  useEffect(() => {
+    if (!targetUserId) return;
+
+    const checkTargetPresence = async () => {
+      const { data } = await supabase
+        .from('presence')
+        .select('is_online')
+        .eq('user_id', targetUserId)
+        .single();
+
+      if (data) {
+        setTargetOnline(data.is_online);
+      }
+    };
+
+    checkTargetPresence();
+
+    // Check every 10 seconds
+    const interval = setInterval(checkTargetPresence, 10000);
+
+    // Subscribe to presence changes
+    const channel = supabase
+      .channel(`presence:${targetUserId}`)
+      .on('postgres_changes', {
+        event: 'UPDATE',
+        schema: 'public',
+        table: 'presence',
+        filter: `user_id=eq.${targetUserId}`,
+      }, (payload) => {
+        setTargetOnline(payload.new.is_online);
+      })
+      .subscribe();
+
+    return () => {
+      clearInterval(interval);
+      channel.unsubscribe();
+    };
+  }, [targetUserId]);
+
+  // Typing broadcast subscription
   useEffect(() => {
     const channel = supabase.channel(`typing:${conversationId}`);
     channel
@@ -155,9 +215,16 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
     };
   }, [conversationId, user]);
 
+  // Online/offline detection
   useEffect(() => {
-    const handleOnline = () => setIsOffline(false);
-    const handleOffline = () => setIsOffline(true);
+    const handleOnline = () => {
+      setIsOffline(false);
+      chatService.updatePresence(true);
+    };
+    const handleOffline = () => {
+      setIsOffline(true);
+      chatService.updatePresence(false);
+    };
     window.addEventListener('online', handleOnline);
     window.addEventListener('offline', handleOffline);
     return () => {
@@ -218,7 +285,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
         userName={targetUserName}
         userAvatar={targetUserAvatar}
         verified={verified}
-        isOnline={false}
+        isOnline={targetOnline}
         onBack={() => navigate('/chats')}
         onProfileClick={() => navigate(`/profile/${targetUserId}`)}
         onMoreClick={() => setActionMenuOpen(true)}
