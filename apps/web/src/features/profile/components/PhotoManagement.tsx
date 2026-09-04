@@ -1,5 +1,5 @@
 ﻿import React, { useState, useRef } from 'react';
-import { Camera, Trash2, X, Move } from 'lucide-react';
+import { Camera, Trash2, X, Star } from 'lucide-react';
 import { supabase } from '@/config/supabase.client';
 
 interface PhotoManagementProps {
@@ -19,6 +19,7 @@ export const PhotoManagement: React.FC<PhotoManagementProps> = ({
 }) => {
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [settingPrimary, setSettingPrimary] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleUpload = async (files: FileList | null) => {
@@ -27,13 +28,21 @@ export const PhotoManagement: React.FC<PhotoManagementProps> = ({
     setError(null);
 
     try {
+      const { data: profileRecord } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('user_id', userId)
+        .single();
+
+      if (!profileRecord) throw new Error('Profile not found');
+
       for (const file of Array.from(files)) {
         if (!file.type.startsWith('image/')) continue;
 
         const timestamp = Date.now();
         const fileExtension = file.name.split('.').pop() || 'jpg';
         const randomSuffix = Math.random().toString(36).substring(2, 8);
-        const filePath = `profile/${userId}/${timestamp}-${randomSuffix}.${fileExtension}`;
+        const filePath = 'profile/' + userId + '/' + timestamp + '-' + randomSuffix + '.' + fileExtension;
 
         const { error: uploadError } = await supabase.storage
           .from('media')
@@ -45,17 +54,28 @@ export const PhotoManagement: React.FC<PhotoManagementProps> = ({
           .from('media')
           .getPublicUrl(filePath);
 
+        const isFirstPhoto = photos.length === 0;
+
         await supabase.from('profile_photos').insert({
-          profile_id: userId,
+          profile_id: profileRecord.id,
           url: publicUrlData.publicUrl,
           thumbnail_url: publicUrlData.publicUrl,
           order: photos.length,
-          is_primary: photos.length === 0,
+          is_primary: isFirstPhoto,
         });
+
+        // If first photo, set as avatar
+        if (isFirstPhoto) {
+          await supabase
+            .from('profiles')
+            .update({ avatar_url: publicUrlData.publicUrl })
+            .eq('user_id', userId);
+        }
       }
 
       onPhotosChanged();
     } catch (err: any) {
+      console.error('Upload error:', err);
       setError(err.message || 'Upload failed');
     } finally {
       setUploading(false);
@@ -64,39 +84,63 @@ export const PhotoManagement: React.FC<PhotoManagementProps> = ({
   };
 
   const handleDelete = async (photoId: string) => {
+    setError(null);
     const { error } = await supabase
       .from('profile_photos')
       .delete()
       .eq('id', photoId);
 
-    if (!error) {
+    if (error) {
+      setError('Failed to delete photo');
+    } else {
       onPhotosChanged();
     }
   };
 
   const handleSetPrimary = async (photoId: string) => {
-    // First unset all primary
-    await supabase
-      .from('profile_photos')
-      .update({ is_primary: false })
-      .eq('profile_id', userId);
+    setSettingPrimary(photoId);
+    setError(null);
 
-    // Set new primary
-    await supabase
-      .from('profile_photos')
-      .update({ is_primary: true })
-      .eq('id', photoId);
-
-    // Update avatar
-    const photo = photos.find((p) => p.id === photoId);
-    if (photo) {
-      await supabase
+    try {
+      // Get profile record ID
+      const { data: profileRecord } = await supabase
         .from('profiles')
-        .update({ avatar_url: photo.url })
-        .eq('user_id', userId);
-    }
+        .select('id')
+        .eq('user_id', userId)
+        .single();
 
-    onPhotosChanged();
+      if (!profileRecord) throw new Error('Profile not found');
+
+      // Unset all primary
+      await supabase
+        .from('profile_photos')
+        .update({ is_primary: false })
+        .eq('profile_id', profileRecord.id);
+
+      // Set new primary
+      const { error: updateError } = await supabase
+        .from('profile_photos')
+        .update({ is_primary: true })
+        .eq('id', photoId);
+
+      if (updateError) throw updateError;
+
+      // Find the photo URL and update avatar
+      const photo = photos.find((p) => p.id === photoId);
+      if (photo) {
+        await supabase
+          .from('profiles')
+          .update({ avatar_url: photo.url })
+          .eq('user_id', userId);
+      }
+
+      onPhotosChanged();
+    } catch (err: any) {
+      console.error('Set primary error:', err);
+      setError(err.message || 'Failed to set primary photo');
+    } finally {
+      setSettingPrimary(null);
+    }
   };
 
   if (!open) return null;
@@ -122,7 +166,7 @@ export const PhotoManagement: React.FC<PhotoManagementProps> = ({
           margin: '0 auto',
           maxHeight: '80dvh',
           padding: '0.5rem 1rem calc(1.5rem + env(safe-area-inset-bottom))',
-          animation: 'slideUp 0.3s ease',
+          overflowY: 'auto',
         }}
         onClick={(e) => e.stopPropagation()}
       >
@@ -131,7 +175,7 @@ export const PhotoManagement: React.FC<PhotoManagementProps> = ({
             width: 40,
             height: 4,
             backgroundColor: '#e5e7eb',
-            borderRadius: 9999px,
+            borderRadius: '9999px',
             margin: '0 auto 0.75rem',
           }}
         />
@@ -200,7 +244,7 @@ export const PhotoManagement: React.FC<PhotoManagementProps> = ({
         </button>
 
         {error && (
-          <p style={{ color: '#ef4444', fontSize: '0.8125rem', marginBottom: '0.5rem' }}>
+          <p style={{ color: '#ef4444', fontSize: '0.8125rem', marginBottom: '0.5rem', textAlign: 'center' }}>
             {error}
           </p>
         )}
@@ -210,8 +254,6 @@ export const PhotoManagement: React.FC<PhotoManagementProps> = ({
             display: 'grid',
             gridTemplateColumns: 'repeat(3, 1fr)',
             gap: '0.5rem',
-            overflowY: 'auto',
-            maxHeight: '40dvh',
           }}
         >
           {photos.map((photo) => (
@@ -248,7 +290,7 @@ export const PhotoManagement: React.FC<PhotoManagementProps> = ({
                     borderRadius: '9999px',
                   }}
                 >
-                  Primary
+                  Main
                 </span>
               )}
               <div
@@ -263,17 +305,22 @@ export const PhotoManagement: React.FC<PhotoManagementProps> = ({
                 {!photo.isPrimary && (
                   <button
                     onClick={() => handleSetPrimary(photo.id)}
+                    disabled={settingPrimary === photo.id}
                     style={{
                       background: 'rgba(0,0,0,0.6)',
                       border: 'none',
                       cursor: 'pointer',
                       color: '#ffffff',
-                      padding: '4px',
+                      padding: '4px 8px',
                       borderRadius: '4px',
                       fontSize: '0.625rem',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '2px',
                     }}
                   >
-                    Set Main
+                    <Star size={10} />
+                    {settingPrimary === photo.id ? 'Setting...' : 'Set Main'}
                   </button>
                 )}
                 <button
@@ -286,6 +333,8 @@ export const PhotoManagement: React.FC<PhotoManagementProps> = ({
                     color: '#ffffff',
                     padding: '4px',
                     borderRadius: '4px',
+                    display: 'flex',
+                    alignItems: 'center',
                   }}
                 >
                   <Trash2 size={14} />
@@ -295,7 +344,6 @@ export const PhotoManagement: React.FC<PhotoManagementProps> = ({
           ))}
         </div>
       </div>
-      <style>{`@keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }`}</style>
     </div>
   );
 };

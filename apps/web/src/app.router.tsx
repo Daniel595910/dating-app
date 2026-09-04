@@ -29,6 +29,7 @@ import { ConversationPage } from './pages/chat/ConversationPage';
 import { MyProfilePage } from './pages/profile/MyProfilePage';
 import { ProfilePage } from './pages/profile/ProfilePage';
 import { EditProfilePage } from './pages/profile/EditProfilePage';
+import { DatingPreferencesPage } from './pages/profile/DatingPreferencesPage';
 import { VipPage } from './pages/profile/VipPage';
 import { SettingsPage } from './pages/profile/SettingsPage';
 
@@ -117,6 +118,14 @@ export const AppRouter: React.FC = () => {
         }
       />
       <Route
+        path="/profile/preferences"
+        element={
+          <ProtectedRoute>
+            <DatingPreferencesPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
         path={ROUTES.PROFILE_VIP}
         element={
           <ProtectedRoute>
@@ -139,4 +148,3 @@ export const AppRouter: React.FC = () => {
     </Routes>
   );
 };
-

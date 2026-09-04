@@ -33,10 +33,19 @@ class ProfileService {
   }
 
   async getProfilePhotos(userId: string): Promise<ProfilePhoto[]> {
+    // Get profile record ID
+    const { data: profileRecord } = await supabase
+      .from('profiles')
+      .select('id')
+      .eq('user_id', userId)
+      .single();
+
+    if (!profileRecord) return [];
+
     const { data, error } = await supabase
       .from('profile_photos')
       .select('*')
-      .eq('profile_id', userId)
+      .eq('profile_id', profileRecord.id)
       .order('order', { ascending: true });
 
     if (error || !data) return [];
@@ -121,10 +130,20 @@ class ProfileService {
   }
 
   async uploadProfilePhoto(userId: string, file: File): Promise<string | null> {
+    // Get profile record ID
+    const { data: profileRecord } = await supabase
+      .from('profiles')
+      .select('id')
+      .eq('user_id', userId)
+      .single();
+
+    if (!profileRecord) return null;
+    const profileId = profileRecord.id;
+
     const timestamp = Date.now();
     const fileExtension = file.name.split('.').pop() || 'jpg';
     const randomSuffix = Math.random().toString(36).substring(2, 8);
-    const filePath = `profile/${userId}/${timestamp}-${randomSuffix}.${fileExtension}`;
+    const filePath = 'profile/' + userId + '/' + timestamp + '-' + randomSuffix + '.' + fileExtension;
 
     const { error: uploadError } = await supabase.storage
       .from('media')
@@ -136,20 +155,18 @@ class ProfileService {
       .from('media')
       .getPublicUrl(filePath);
 
-    // Add to profile_photos
     await supabase.from('profile_photos').insert({
-      profile_id: userId,
+      profile_id: profileId,
       url: publicUrlData.publicUrl,
       thumbnail_url: publicUrlData.publicUrl,
       order: 0,
       is_primary: false,
     });
 
-    // Update avatar if first photo
     const { count } = await supabase
       .from('profile_photos')
       .select('*', { count: 'exact', head: true })
-      .eq('profile_id', userId);
+      .eq('profile_id', profileId);
 
     if (count === 1) {
       await supabase

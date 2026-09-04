@@ -222,6 +222,9 @@ export const ProfilePage: React.FC = () => {
             <button className={styles.primaryAction} onClick={() => navigate('/profile/edit')}>
               Edit Profile
             </button>
+            <button className={styles.secondaryAction} onClick={() => navigate('/profile/preferences')}>
+              Preferences
+            </button>
             <button className={styles.secondaryAction} onClick={() => setPhotoManagementOpen(true)}>
               <Camera size={18} />
               Manage Photos
@@ -328,4 +331,5 @@ export const ProfilePage: React.FC = () => {
     </div>
   );
 };
+
 
