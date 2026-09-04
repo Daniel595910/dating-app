@@ -1,4 +1,5 @@
 ﻿import { supabase } from '@/config/supabase.client';
+import { generateUUID } from '../utils/uuid';
 import { Conversation, ChatMessage, MessageCursor } from '../types/chat.types';
 
 class ChatService {
@@ -23,7 +24,6 @@ class ChatService {
 
     const profileMap = new Map((profiles || []).map((p: any) => [p.user_id, p]));
 
-    // Get presence
     const { data: presenceData } = await supabase
       .from('presence')
       .select('user_id, is_online')
@@ -92,6 +92,7 @@ class ChatService {
         senderAvatar: profile?.avatar_url || null,
         type: m.type,
         content: m.content,
+        metadata: m.metadata || undefined,
         status: m.status,
         createdAt: m.created_at,
       };
@@ -111,8 +112,7 @@ class ChatService {
     content: string,
     type: string = 'text'
   ): Promise<ChatMessage | null> {
-    // Generate client message ID for idempotency
-    const clientMessageId = crypto.randomUUID();
+    const clientMessageId = generateUUID();
 
     const { data, error } = await supabase.rpc('send_chat_message', {
       p_conversation_id: conversationId,
@@ -124,7 +124,6 @@ class ChatService {
 
     if (error || !data) return null;
 
-    // Fetch the created message
     const { data: message } = await supabase
       .from('messages')
       .select('*')
@@ -141,6 +140,7 @@ class ChatService {
       senderAvatar: null,
       type: message.type,
       content: message.content,
+      metadata: message.metadata || undefined,
       status: 'sent' as const,
       createdAt: message.created_at,
     };
@@ -182,4 +182,3 @@ class ChatService {
 }
 
 export const chatService = new ChatService();
-

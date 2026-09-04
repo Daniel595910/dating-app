@@ -13,6 +13,7 @@ import { ChatActionMenu } from './ChatActionMenu';
 import { BlockConfirmSheet } from '../../community/components/BlockConfirmSheet';
 import { ReportSheet } from '../../community/components/ReportSheet';
 import { OfflineBanner } from '../../community/components/OfflineBanner';
+import { generateUUID } from '../utils/uuid';
 import styles from '../styles/ChatWindow.module.css';
 
 interface ChatWindowProps {
@@ -43,12 +44,12 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
   const [actionMenuOpen, setActionMenuOpen] = useState(false);
   const [blockSheetOpen, setBlockSheetOpen] = useState(false);
   const [reportSheetOpen, setReportSheetOpen] = useState(false);
+  const [replyingTo, setReplyingTo] = useState<ChatMessage | null>(null);
   const cursorRef = useRef<MessageCursor | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const previousScrollHeightRef = useRef<number>(0);
-  const presenceChannelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
 
   const scrollToBottom = useCallback((smooth = true) => {
     setTimeout(() => {
@@ -57,19 +58,15 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
   }, []);
 
   const markConversationAsRead = useCallback(async () => {
-    if (!user || messages.length === 0) return;
-    const lastMessageId = messages[messages.length - 1]?.id;
-    if (!lastMessageId) return;
-
+    if (!user) return;
     try {
       await supabase.rpc('mark_conversation_read', {
         p_conversation_id: conversationId,
-        p_last_read_message_id: lastMessageId,
       });
     } catch {
-      // Ignore read receipt errors
+      // Ignore
     }
-  }, [conversationId, user, messages]);
+  }, [conversationId, user]);
 
   const loadMessages = useCallback(async (reset: boolean) => {
     if (!user) return;
@@ -115,7 +112,6 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
     }
   }, [conversationId, user, scrollToBottom]);
 
-  // Initial load
   useEffect(() => {
     loadMessages(true);
 
@@ -126,7 +122,6 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
       });
       scrollToBottom();
 
-      // Mark incoming message as delivered
       if (newMessage.sender_id !== user?.id) {
         chatService.updateMessageStatus(newMessage.id, 'delivered');
       }
@@ -135,28 +130,22 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
     return () => unsubscribe();
   }, [conversationId, user, loadMessages, scrollToBottom]);
 
-  // Mark as read when messages change
   useEffect(() => {
     markConversationAsRead();
   }, [markConversationAsRead]);
 
-  // Presence: Set current user as online
   useEffect(() => {
     if (!user) return;
-
     chatService.updatePresence(true);
-
     const interval = setInterval(() => {
       chatService.updatePresence(true);
-    }, 30000); // Heartbeat every 30s
-
+    }, 30000);
     return () => {
       clearInterval(interval);
       chatService.updatePresence(false);
     };
   }, [user]);
 
-  // Presence: Check target user's online status
   useEffect(() => {
     if (!targetUserId) return;
 
@@ -166,18 +155,11 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
         .select('is_online')
         .eq('user_id', targetUserId)
         .single();
-
-      if (data) {
-        setTargetOnline(data.is_online);
-      }
+      if (data) setTargetOnline(data.is_online);
     };
 
     checkTargetPresence();
-
-    // Check every 10 seconds
     const interval = setInterval(checkTargetPresence, 10000);
-
-    // Subscribe to presence changes
     const channel = supabase
       .channel(`presence:${targetUserId}`)
       .on('postgres_changes', {
@@ -196,7 +178,6 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
     };
   }, [targetUserId]);
 
-  // Typing broadcast subscription
   useEffect(() => {
     const channel = supabase.channel(`typing:${conversationId}`);
     channel
@@ -208,9 +189,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
         }
       })
       .on('broadcast', { event: 'stop_typing' }, (payload) => {
-        if (payload.payload.userId !== user?.id) {
-          setIsTyping(false);
-        }
+        if (payload.payload.userId !== user?.id) setIsTyping(false);
       })
       .subscribe();
 
@@ -220,16 +199,9 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
     };
   }, [conversationId, user]);
 
-  // Online/offline detection
   useEffect(() => {
-    const handleOnline = () => {
-      setIsOffline(false);
-      chatService.updatePresence(true);
-    };
-    const handleOffline = () => {
-      setIsOffline(true);
-      chatService.updatePresence(false);
-    };
+    const handleOnline = () => { setIsOffline(false); chatService.updatePresence(true); };
+    const handleOffline = () => { setIsOffline(true); chatService.updatePresence(false); };
     window.addEventListener('online', handleOnline);
     window.addEventListener('offline', handleOffline);
     return () => {
@@ -238,13 +210,17 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
     };
   }, []);
 
+  const handleReply = (message: ChatMessage) => {
+    setReplyingTo(message);
+  };
+
+  const handleCancelReply = () => {
+    setReplyingTo(null);
+  };
+
   const handleRetry = async (messageId: string, content: string) => {
     if (!user || isOffline) return;
-
-    // Remove the failed message
     setMessages((prev) => prev.filter((m) => m.id !== messageId));
-
-    // Resend
     const newMessage = await chatService.sendMessage(conversationId, user.id, content.trim());
     if (newMessage) {
       setMessages((prev) => [...prev, newMessage]);
@@ -254,10 +230,102 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
 
   const handleSend = async (content: string) => {
     if (!user || !content.trim() || isOffline) return;
-    const newMessage = await chatService.sendMessage(conversationId, user.id, content.trim());
-    if (newMessage) {
-      setMessages((prev) => [...prev, newMessage]);
+
+    const trimmedContent = content.trim();
+    const tempId = `temp-${Date.now()}-${Math.random().toString(36).substring(2, 8)}`;
+
+    const optimisticMessage: ChatMessage = {
+      id: tempId,
+      conversationId,
+      senderId: user.id,
+      senderName: 'You',
+      senderAvatar: null,
+      type: 'text',
+      content: trimmedContent,
+      status: 'sending',
+      createdAt: new Date().toISOString(),
+    };
+
+    setMessages((prev) => [...prev, optimisticMessage]);
+    scrollToBottom();
+
+    try {
+      const newMessage = await chatService.sendMessage(conversationId, user.id, trimmedContent);
+      if (newMessage) {
+        setMessages((prev) =>
+          prev.map((m) => (m.id === tempId ? newMessage : m))
+        );
+        scrollToBottom();
+      } else {
+        setMessages((prev) =>
+          prev.map((m) => (m.id === tempId ? { ...m, status: 'failed' as const } : m))
+        );
+      }
+    } catch (err) {
+      setMessages((prev) =>
+        prev.map((m) => (m.id === tempId ? { ...m, status: 'failed' as const } : m))
+      );
+    }
+  };
+
+  const handleSendImage = async (file: File) => {
+    if (!user || isOffline) return;
+
+    const tempId = `temp-${Date.now()}-${Math.random().toString(36).substring(2, 8)}`;
+
+    try {
+      const tempMessage: ChatMessage = {
+        id: tempId,
+        conversationId,
+        senderId: user.id,
+        senderName: 'You',
+        senderAvatar: null,
+        type: 'image',
+        content: '',
+        metadata: {
+          imageUrl: URL.createObjectURL(file),
+          thumbnailUrl: URL.createObjectURL(file),
+        },
+        status: 'sending',
+        createdAt: new Date().toISOString(),
+      };
+
+      setMessages((prev) => [...prev, tempMessage]);
       scrollToBottom();
+
+      const timestamp = Date.now();
+      const fileExtension = file.name.split('.').pop() || 'jpg';
+      const randomSuffix = Math.random().toString(36).substring(2, 8);
+      const filePath = `chat/${conversationId}/${timestamp}-${randomSuffix}.${fileExtension}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('media')
+        .upload(filePath, file, { cacheControl: '3600' });
+
+      if (uploadError) throw uploadError;
+
+      const { data: publicUrlData } = supabase.storage
+        .from('media')
+        .getPublicUrl(filePath);
+
+      const clientMessageId = generateUUID();
+      const { error: msgError } = await supabase.rpc('send_chat_message', {
+        p_conversation_id: conversationId,
+        p_client_message_id: clientMessageId,
+        p_content: '',
+        p_type: 'image',
+        p_metadata: { imageUrl: publicUrlData.publicUrl, thumbnailUrl: publicUrlData.publicUrl },
+      });
+
+      if (msgError) throw msgError;
+
+      setMessages((prev) => prev.filter((m) => m.id !== tempId));
+
+    } catch (err) {
+      console.error('Image send failed:', err);
+      setMessages((prev) =>
+        prev.map((m) => (m.id === tempId ? { ...m, status: 'failed' as const } : m))
+      );
     }
   };
 
@@ -335,6 +403,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
                   isOwn={message.senderId === user?.id}
                   showSenderName={group.showSenderName && groupIndex === 0}
                   onRetry={handleRetry}
+                  onReply={handleReply}
                 />
               ))}
             </React.Fragment>
@@ -349,7 +418,10 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
         conversationId={conversationId}
         userId={user?.id || ''}
         onSend={handleSend}
+        onSendImage={handleSendImage}
         onTypingChange={() => {}}
+        replyingTo={replyingTo}
+        onCancelReply={handleCancelReply}
       />
 
       <ChatActionMenu
@@ -381,4 +453,3 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
     </div>
   );
 };
-

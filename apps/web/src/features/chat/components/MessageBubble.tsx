@@ -1,6 +1,7 @@
-﻿import React from 'react';
-import { Check, CheckCheck, AlertCircle, RotateCcw } from 'lucide-react';
+﻿import React, { useState } from 'react';
+import { Check, CheckCheck, AlertCircle, RotateCcw, Reply } from 'lucide-react';
 import { ChatMessage } from '../../types/chat.types';
+import { ImagePreviewModal } from '../../community/components/ImagePreviewModal';
 import styles from '../styles/MessageBubble.module.css';
 
 interface MessageBubbleProps {
@@ -8,6 +9,7 @@ interface MessageBubbleProps {
   isOwn: boolean;
   showSenderName?: boolean;
   onRetry?: (messageId: string, content: string) => void;
+  onReply?: (message: ChatMessage) => void;
 }
 
 export const MessageBubble: React.FC<MessageBubbleProps> = ({
@@ -15,7 +17,10 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
   isOwn,
   showSenderName = false,
   onRetry,
+  onReply,
 }) => {
+  const [imagePreviewOpen, setImagePreviewOpen] = useState(false);
+  const [showActions, setShowActions] = useState(false);
   const isFailed = message.status === 'failed';
 
   const getStatusIcon = () => {
@@ -35,13 +40,54 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
     }
   };
 
+  const handleBubbleClick = () => {
+    if (message.type === 'text') {
+      setShowActions((prev) => !prev);
+    }
+  };
+
+  const handleReply = () => {
+    setShowActions(false);
+    onReply?.(message);
+  };
+
+  const renderContent = () => {
+    if (message.type === 'image' && message.metadata?.imageUrl) {
+      return (
+        <div className={styles.imageMessageContainer}>
+          <img
+            src={message.metadata.thumbnailUrl || message.metadata.imageUrl}
+            alt=""
+            loading="lazy"
+            className={styles.imageMessage}
+            onClick={() => setImagePreviewOpen(true)}
+          />
+        </div>
+      );
+    }
+
+    if (message.type === 'gift' && message.metadata?.giftIcon) {
+      return (
+        <div className={styles.giftMessageContainer}>
+          <span className={styles.giftIcon}>{message.metadata.giftIcon}</span>
+          <span className={styles.giftName}>{message.metadata.giftName || 'Gift'}</span>
+        </div>
+      );
+    }
+
+    return <p className={styles.content}>{message.content}</p>;
+  };
+
   return (
     <div className={`${styles.wrapper} ${isOwn ? styles.ownWrapper : styles.otherWrapper}`}>
-      <div className={`${styles.bubble} ${isOwn ? styles.ownBubble : styles.otherBubble} ${isFailed ? styles.failedBubble : ''}`}>
+      <div
+        className={`${styles.bubble} ${isOwn ? styles.ownBubble : styles.otherBubble} ${isFailed ? styles.failedBubble : ''} ${showActions ? styles.bubbleActive : ''}`}
+        onClick={handleBubbleClick}
+      >
         {!isOwn && showSenderName && (
           <span className={styles.senderName}>{message.senderName}</span>
         )}
-        <p className={styles.content}>{message.content}</p>
+        {renderContent()}
         <div className={styles.meta}>
           <span className={styles.timestamp}>
             {new Date(message.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
@@ -54,15 +100,31 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
         </div>
 
         {isFailed && onRetry && (
-          <button
-            className={styles.retryButton}
-            onClick={() => onRetry(message.id, message.content)}
-          >
+          <button className={styles.retryButton} onClick={() => onRetry(message.id, message.content)}>
             <RotateCcw size={12} />
             Retry
           </button>
         )}
       </div>
+
+      {/* Reply action popup */}
+      {showActions && onReply && message.type === 'text' && (
+        <button className={styles.replyAction} onClick={handleReply}>
+          <Reply size={14} />
+          Reply
+        </button>
+      )}
+
+      {message.type === 'image' && message.metadata?.imageUrl && (
+        <ImagePreviewModal
+          open={imagePreviewOpen}
+          images={[message.metadata.imageUrl]}
+          currentIndex={0}
+          onClose={() => setImagePreviewOpen(false)}
+          onNext={() => {}}
+          onPrev={() => {}}
+        />
+      )}
     </div>
   );
 };

@@ -16,9 +16,20 @@ export interface ChatMessage {
   senderId: string;
   senderName: string;
   senderAvatar: string | null;
-  type: 'text' | 'image' | 'system';
+  type: 'text' | 'image' | 'voice' | 'gift' | 'system';
   content: string;
-  status: 'sending' | 'sent' | 'delivered' | 'read' | 'failed';|  status: 'sending' | 'sent' | 'delivered' | 'read' | 'failed';|  status: 'sending' | 'sent' | 'delivered' | 'read' | 'failed';
+  metadata?: {
+    imageUrl?: string;
+    thumbnailUrl?: string;
+    width?: number;
+    height?: number;
+    durationMs?: number;
+    giftId?: string;
+    giftName?: string;
+    giftIcon?: string;
+    waveformData?: number[];
+  };
+  status: 'sending' | 'sent' | 'delivered' | 'read' | 'failed';
   createdAt: string;
 }
 
@@ -26,4 +37,3 @@ export interface MessageCursor {
   createdAt: string;
   id: string;
 }
-
