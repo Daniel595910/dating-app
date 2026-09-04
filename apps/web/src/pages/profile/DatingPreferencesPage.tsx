@@ -24,7 +24,7 @@ export const DatingPreferencesPage: React.FC = () => {
         .from('match_preferences')
         .select('*')
         .eq('user_id', user.id)
-        .single();
+        .maybeSingle();
 
       if (data) {
         setAgeMin(data.age_range?.min || 18);
@@ -187,3 +187,4 @@ export const DatingPreferencesPage: React.FC = () => {
     </div>
   );
 };
+
