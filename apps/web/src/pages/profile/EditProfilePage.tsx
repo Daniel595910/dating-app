@@ -1,25 +1,29 @@
-﻿import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '@/store/auth.store';
 import { supabase } from '@/config/supabase.client';
 import { ArrowLeft, Camera, Save, X } from 'lucide-react';
+import { AvatarCropper } from '../../features/profile/components/AvatarCropper';
 import { ProfileData } from '../../features/profile/types/profile.types';
 import styles from './EditProfilePage.module.css';
 
 export const EditProfilePage: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuthStore();
-  const [profile, setProfile] = useState<ProfileData | null>(null);
   const [displayName, setDisplayName] = useState('');
   const [bio, setBio] = useState('');
   const [interests, setInterests] = useState('');
   const [occupation, setOccupation] = useState('');
   const [location, setLocation] = useState('');
   const [lookingFor, setLookingFor] = useState('');
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const [cropperImage, setCropperImage] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     const loadProfile = async () => {
@@ -32,13 +36,13 @@ export const EditProfilePage: React.FC = () => {
         .single();
 
       if (data) {
-        setProfile(data);
         setDisplayName(data.display_name || '');
         setBio(data.bio || '');
         setInterests((data.interests || []).join(', '));
         setOccupation(data.occupation || '');
         setLocation(data.location?.city || '');
         setLookingFor(data.relationship_intent || '');
+        setAvatarUrl(data.avatar_url || null);
       }
 
       setLoading(false);
@@ -46,6 +50,60 @@ export const EditProfilePage: React.FC = () => {
 
     loadProfile();
   }, [user]);
+
+  const handleFileSelect = (files: FileList | null) => {
+    if (!files || files.length === 0) return;
+    const file = files[0];
+    if (file.type.startsWith('image/')) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setCropperImage(e.target?.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+  const handleCroppedImage = async (croppedBlob: Blob) => {
+    if (!user) return;
+    setCropperImage(null);
+    setUploading(true);
+
+    try {
+      const timestamp = Date.now();
+      const filePath = `avatar/${user.id}/${timestamp}.jpg`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('media')
+        .upload(filePath, croppedBlob, {
+          cacheControl: '3600',
+          contentType: 'image/jpeg',
+          upsert: true,
+        });
+
+      if (uploadError) throw uploadError;
+
+      const { data: publicUrlData } = supabase.storage
+        .from('media')
+        .getPublicUrl(filePath);
+
+      // Update profile avatar
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .update({ avatar_url: publicUrlData.publicUrl })
+        .eq('user_id', user.id);
+
+      if (updateError) throw updateError;
+
+      setAvatarUrl(publicUrlData.publicUrl);
+      setSuccess(true);
+      setTimeout(() => setSuccess(false), 2000);
+    } catch (err: any) {
+      setError(err.message || 'Failed to upload photo');
+    } finally {
+      setUploading(false);
+    }
+  };
 
   const handleSave = async () => {
     if (!user) return;
@@ -94,12 +152,20 @@ export const EditProfilePage: React.FC = () => {
 
   return (
     <div className={styles.editPage}>
+      {cropperImage && (
+        <AvatarCropper
+          imageSrc={cropperImage}
+          onCropComplete={handleCroppedImage}
+          onCancel={() => setCropperImage(null)}
+        />
+      )}
+
       <header className={styles.header}>
         <button className={styles.headerButton} onClick={() => navigate('/profile')} aria-label="Back">
           <ArrowLeft size={22} />
         </button>
         <h1 className={styles.headerTitle}>Edit Profile</h1>
-        <button className={styles.saveButton} onClick={handleSave} disabled={saving}>
+        <button className={styles.saveButton} onClick={handleSave} disabled={saving || uploading}>
           {saving ? 'Saving...' : <Save size={20} />}
         </button>
       </header>
@@ -117,21 +183,37 @@ export const EditProfilePage: React.FC = () => {
           </div>
         )}
 
-        {/* Avatar Section */}
+        {/* Avatar Section with Crop */}
         <div className={styles.avatarSection}>
           <div className={styles.avatarPreview}>
-            {profile?.avatarUrl ? (
-              <img src={profile.avatarUrl} alt="" className={styles.avatarImage} />
+            {avatarUrl ? (
+              <img src={avatarUrl} alt="" className={styles.avatarImage} />
             ) : (
               <span className={styles.avatarFallback}>
                 {(displayName || 'U').charAt(0).toUpperCase()}
               </span>
             )}
+            {uploading && (
+              <div className={styles.uploadOverlay}>
+                <span className={styles.uploadSpinner} />
+              </div>
+            )}
           </div>
-          <button className={styles.changePhotoButton}>
+          <button
+            className={styles.changePhotoButton}
+            onClick={() => fileInputRef.current?.click()}
+            disabled={uploading}
+          >
             <Camera size={16} />
-            Change Photo
+            {avatarUrl ? 'Change Photo' : 'Add Photo'}
           </button>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            onChange={(e) => handleFileSelect(e.target.files)}
+            style={{ display: 'none' }}
+          />
         </div>
 
         <div className={styles.fieldGroup}>

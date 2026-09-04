@@ -284,3 +284,145 @@
   text-align: center;
   color: #ef4444;
 }
+
+.galleryOverlay {
+  position: absolute;
+  bottom: 4px;
+  right: 4px;
+  color: #ffffff;
+  background: rgba(0, 0, 0, 0.5);
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.galleryItem:hover .galleryOverlay {
+  opacity: 1;
+}
+
+.emptySubtext {
+  font-size: 0.75rem;
+  color: #d1d5db;
+  margin-top: 0.25rem;
+}
+
+/* Compact clickable stats */
+.statButton {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 8px;
+  transition: background-color 0.15s ease;
+  min-height: 44px;
+  min-width: 60px;
+}
+
+.statButton:hover {
+  background-color: #f3f4f6;
+}
+
+.statButton:focus-visible {
+  outline: 2px solid #ef4444;
+  outline-offset: 2px;
+}
+
+/* Stats Modal */
+.statsModalOverlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 999;
+  display: flex;
+  align-items: flex-end;
+  animation: fadeIn 0.2s ease;
+}
+
+.statsModal {
+  background-color: #ffffff;
+  border-radius: 1.5rem 1.5rem 0 0;
+  width: 100%;
+  max-width: 480px;
+  margin: 0 auto;
+  max-height: 70dvh;
+  display: flex;
+  flex-direction: column;
+  animation: slideUp 0.3s ease;
+}
+
+.statsModalHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid #f3f4f6;
+  flex-shrink: 0;
+}
+
+.statsModalTitle {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: #111827;
+  margin: 0;
+  text-transform: capitalize;
+}
+
+.statsModalClose {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #6b7280;
+  padding: 0.5rem;
+  border-radius: 9999px;
+  min-width: 44px;
+  min-height: 44px;
+}
+
+.statsModalContent {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1rem;
+  -webkit-overflow-scrolling: touch;
+}
+
+.statsModalItem {
+  padding: 0.75rem;
+  border-bottom: 1px solid #f9fafb;
+}
+
+.statsModalItemText {
+  font-size: 0.8125rem;
+  color: #374151;
+  margin: 0 0 0.25rem;
+}
+
+.statsModalItemMeta {
+  font-size: 0.6875rem;
+  color: #9ca3af;
+}
+
+.statsModalEmpty {
+  text-align: center;
+  padding: 2rem;
+  color: #9ca3af;
+  font-size: 0.875rem;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}

@@ -4,7 +4,8 @@ import { useAuthStore } from '@/store/auth.store';
 import { supabase } from '@/config/supabase.client';
 import { profileService } from '../../features/profile/services/profile.service';
 import { ProfileData, ProfileStats, UserPost } from '../../features/profile/types/profile.types';
-import { ArrowLeft, Settings, BadgeCheck, MapPin, Heart, MessageCircle, Grid, Menu, UserPlus, Check, Camera, MoreVertical, Flag, Ban } from 'lucide-react';
+import { PhotoViewer } from '../../features/profile/components/PhotoViewer';
+import { ArrowLeft, Settings, BadgeCheck, MapPin, Heart, Grid, Menu, UserPlus, Check, Camera, MoreVertical, X } from 'lucide-react';
 import styles from './ProfilePage.module.css';
 
 export const ProfilePage: React.FC = () => {
@@ -17,8 +18,8 @@ export const ProfilePage: React.FC = () => {
   const [isFollowing, setIsFollowing] = useState(false);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'posts' | 'about'>('posts');
-  const [showActionMenu, setShowActionMenu] = useState(false);
-  const [showMoreMenu, setShowMoreMenu] = useState(false);
+  const [photoViewerIndex, setPhotoViewerIndex] = useState<number | null>(null);
+  const [statsModal, setStatsModal] = useState<'posts' | 'followers' | 'following' | 'connections' | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const isOwnProfile = !userId || userId === user?.id;
@@ -64,7 +65,6 @@ export const ProfilePage: React.FC = () => {
     const file = files[0];
     if (file.type.startsWith('image/')) {
       await profileService.uploadProfilePhoto(user.id, file);
-      // Reload profile
       const profileData = await profileService.getProfileByUserId(user.id);
       setProfile(profileData);
     }
@@ -92,24 +92,68 @@ export const ProfilePage: React.FC = () => {
 
   return (
     <div className={styles.profilePage}>
-      {/* Header */}
+      <PhotoViewer
+        photos={postImages}
+        currentIndex={photoViewerIndex}
+        onClose={() => setPhotoViewerIndex(null)}
+        onNext={() => setPhotoViewerIndex((prev) => prev === null ? null : Math.min(prev + 1, postImages.length - 1))}
+        onPrev={() => setPhotoViewerIndex((prev) => prev === null ? null : Math.max(prev - 1, 0))}
+      />
+
+      {/* Stats Modal */}
+      {statsModal && (
+        <div className={styles.statsModalOverlay} onClick={() => setStatsModal(null)}>
+          <div className={styles.statsModal} onClick={(e) => e.stopPropagation()}>
+            <div className={styles.statsModalHeader}>
+              <h3 className={styles.statsModalTitle}>
+                {statsModal === 'posts' ? 'Posts' : statsModal === 'followers' ? 'Followers' : statsModal === 'following' ? 'Following' : 'Connections'}
+              </h3>
+              <button className={styles.statsModalClose} onClick={() => setStatsModal(null)} aria-label="Close">
+                <X size={20} />
+              </button>
+            </div>
+            <div className={styles.statsModalContent}>
+              {statsModal === 'posts' ? (
+                userPosts.length > 0 ? (
+                  userPosts.map((post) => (
+                    <div key={post.id} className={styles.statsModalItem}>
+                      <p className={styles.statsModalItemText}>
+                        {post.content.length > 80 ? post.content.substring(0, 80) + '...' : post.content}
+                      </p>
+                      <span className={styles.statsModalItemMeta}>
+                        {new Date(post.createdAt).toLocaleDateString()} • {post.likeCount} likes • {post.commentCount} comments
+                      </span>
+                    </div>
+                  ))
+                ) : (
+                  <p className={styles.statsModalEmpty}>No posts yet</p>
+                )
+              ) : (
+                <p className={styles.statsModalEmpty}>
+                  {statsModal === 'followers' ? 'Followers list coming soon' : statsModal === 'following' ? 'Following list coming soon' : 'Connections list coming soon'}
+                </p>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
       <header className={styles.header}>
         <button className={styles.headerButton} onClick={() => navigate(-1)} aria-label="Back">
           <ArrowLeft size={22} />
         </button>
         <span className={styles.headerTitle}>{profile.displayName}</span>
         {isOwnProfile ? (
-          <button className={styles.headerButton} onClick={() => navigate('/settings')} aria-label="Settings">
+          <button className={styles.headerButton} onClick={() => navigate('/profile/edit')} aria-label="Edit profile">
             <Settings size={22} />
           </button>
         ) : (
-          <button className={styles.headerButton} onClick={() => setShowMoreMenu(true)} aria-label="More">
+          <button className={styles.headerButton} aria-label="More">
             <MoreVertical size={22} />
           </button>
         )}
       </header>
 
-      {/* Profile Hero */}
       <div className={styles.hero}>
         <div className={styles.avatarContainer}>
           {profile.avatarUrl ? (
@@ -121,22 +165,22 @@ export const ProfilePage: React.FC = () => {
         </div>
 
         <div className={styles.statsRow}>
-          <div className={styles.statItem}>
+          <button className={styles.statButton} onClick={() => setStatsModal('posts')}>
             <span className={styles.statValue}>{stats.posts}</span>
             <span className={styles.statLabel}>Posts</span>
-          </div>
-          <div className={styles.statItem}>
+          </button>
+          <button className={styles.statButton} onClick={() => setStatsModal('followers')}>
             <span className={styles.statValue}>{stats.followers}</span>
             <span className={styles.statLabel}>Followers</span>
-          </div>
-          <div className={styles.statItem}>
+          </button>
+          <button className={styles.statButton} onClick={() => setStatsModal('following')}>
             <span className={styles.statValue}>{stats.following}</span>
             <span className={styles.statLabel}>Following</span>
-          </div>
-          <div className={styles.statItem}>
+          </button>
+          <button className={styles.statButton} onClick={() => setStatsModal('connections')}>
             <span className={styles.statValue}>{stats.connections}</span>
             <span className={styles.statLabel}>Connections</span>
-          </div>
+          </button>
         </div>
 
         <div className={styles.nameSection}>
@@ -155,7 +199,6 @@ export const ProfilePage: React.FC = () => {
 
         {profile.bio && <p className={styles.bio}>{profile.bio}</p>}
 
-        {/* Actions */}
         {isOwnProfile ? (
           <div className={styles.actionRow}>
             <button className={styles.primaryAction} onClick={() => navigate('/profile/edit')}>
@@ -186,7 +229,6 @@ export const ProfilePage: React.FC = () => {
         )}
       </div>
 
-      {/* Tabs */}
       <div className={styles.tabs}>
         <button
           className={`${styles.tab} ${activeTab === 'posts' ? styles.tabActive : ''}`}
@@ -204,18 +246,26 @@ export const ProfilePage: React.FC = () => {
         </button>
       </div>
 
-      {/* Content */}
       {activeTab === 'posts' ? (
         <div className={styles.galleryGrid}>
           {postImages.length > 0 ? (
             postImages.map((image, index) => (
-              <div key={index} className={styles.galleryItem}>
+              <div
+                key={index}
+                className={styles.galleryItem}
+                onClick={() => setPhotoViewerIndex(index)}
+              >
                 <img src={image} alt="" loading="lazy" className={styles.galleryImage} />
+                <div className={styles.galleryOverlay}>
+                  <Heart size={14} />
+                </div>
               </div>
             ))
           ) : (
             <div className={styles.emptyPosts}>
+              <Camera size={32} />
               <p>No photos yet</p>
+              <p className={styles.emptySubtext}>Photos from community posts will appear here</p>
             </div>
           )}
         </div>
