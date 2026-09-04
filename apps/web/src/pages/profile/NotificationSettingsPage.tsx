@@ -134,7 +134,7 @@ export const NotificationSettingsPage: React.FC = () => {
               style={{
                 width: 48,
                 height: 28,
-                borderRadius: 9999px,
+                borderRadius: '9999px',
                 backgroundColor: pushEnabled ? '#ef4444' : '#d1d5db',
                 border: 'none',
                 cursor: 'pointer',
@@ -206,7 +206,7 @@ export const NotificationSettingsPage: React.FC = () => {
                 style={{
                   width: 44,
                   height: 24,
-                  borderRadius: 9999px,
+                  borderRadius: '9999px',
                   backgroundColor: preferences[option.id] ? '#ef4444' : '#d1d5db',
                   border: 'none',
                   cursor: 'pointer',
@@ -236,3 +236,4 @@ export const NotificationSettingsPage: React.FC = () => {
     </div>
   );
 };
+
