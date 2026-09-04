@@ -23,6 +23,7 @@
     "lucide-react": "^1.40.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
+    "react-easy-crop": "^6.2.3",
     "react-router-dom": "^6.21.3",
     "zustand": "^4.5.0"
   },
