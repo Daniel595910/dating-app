@@ -18,6 +18,8 @@ import { VoiceRecorder } from './VoiceRecorder';
 import { GiftPicker } from './GiftPicker';
 import { safetyService } from '../services/safety.service';
 import { ScamWarning } from './ScamWarning';
+import { SearchInConversation } from './SearchInConversation';
+import { chatNotificationService } from '../services/chat-notification.service';
 import styles from '../styles/ChatWindow.module.css';
 
 interface ChatWindowProps {
@@ -52,6 +54,8 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
   const [voiceRecorderOpen, setVoiceRecorderOpen] = useState(false);
   const [giftPickerOpen, setGiftPickerOpen] = useState(false);
   const [safetyWarning, setSafetyWarning] = useState<{ message: string; riskLevel: string } | null>(null);
+  const [rateLimitMessage, setRateLimitMessage] = useState<string | null>(null);
+  const [searchOpen, setSearchOpen] = useState(false);
   const cursorRef = useRef<MessageCursor | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
@@ -120,6 +124,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
   }, [conversationId, user, scrollToBottom]);
 
   useEffect(() => {
+    chatNotificationService.setActiveConversation(conversationId);
     loadMessages(true);
 
     const unsubscribe = chatService.subscribeToMessages(conversationId, (newMessage) => {
@@ -142,7 +147,10 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
       }
     });
 
-    return () => unsubscribe();
+    return () => {
+      unsubscribe();
+      chatNotificationService.setActiveConversation(null);
+    };
   }, [conversationId, user, loadMessages, scrollToBottom]);
 
   useEffect(() => {
@@ -281,7 +289,11 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
       } else {
         setMessages((prev) => prev.map((m) => (m.id === tempId ? { ...m, status: 'failed' as const } : m)));
       }
-    } catch {
+    } catch (err: any) {
+      if (err.message && err.message.includes('too quickly')) {
+        setRateLimitMessage(err.message);
+        setTimeout(() => setRateLimitMessage(null), 3000);
+      }
       setMessages((prev) => prev.map((m) => (m.id === tempId ? { ...m, status: 'failed' as const } : m)));
     }
   };
@@ -526,6 +538,20 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
       />
 
       <div className={styles.messagesContainer} ref={messagesContainerRef}>
+        {rateLimitMessage && (
+          <div style={{
+            backgroundColor: '#fef3c7',
+            color: '#92400e',
+            padding: '0.5rem 1rem',
+            fontSize: '0.8125rem',
+            fontWeight: 500,
+            textAlign: 'center',
+            borderRadius: '0.5rem',
+            marginBottom: '0.5rem',
+          }}>
+            {rateLimitMessage}
+          </div>
+        )}
         {safetyWarning && (
           <ScamWarning
             riskLevel={safetyWarning.riskLevel as any}
@@ -598,11 +624,19 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
         onSend={handleSendVoice}
       />
 
+      <SearchInConversation
+        open={searchOpen}
+        onClose={() => setSearchOpen(false)}
+        messages={messages}
+        onJumpToMessage={() => {}}
+      />
+
       <ChatActionMenu
         open={actionMenuOpen}
         onClose={() => setActionMenuOpen(false)}
         onViewProfile={() => navigate(`/profile/${targetUserId}`)}
         onMute={() => {}}
+        onSearch={() => setSearchOpen(true)}
         onBlock={() => setBlockSheetOpen(true)}
         onReport={() => setReportSheetOpen(true)}
       />
@@ -627,3 +661,4 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
     </div>
   );
 };
+
