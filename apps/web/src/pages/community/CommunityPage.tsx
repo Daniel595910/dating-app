@@ -6,6 +6,7 @@ import { usePostInteractions } from '../../features/community/hooks/usePostInter
 import { useCommunityRealtime } from '../../features/community/hooks/useCommunityRealtime';
 import { usePullToRefresh } from '../../features/community/hooks/usePullToRefresh';
 import { useConnection } from '../../features/community/hooks/useConnection';
+import { useOfflineFeed } from '../../features/community/hooks/useOfflineFeed';
 import { CommunityHeader } from '../../features/community/components/CommunityHeader';
 import { FilterBar } from '../../features/community/components/FilterBar';
 import { CommunityPostCard } from '../../features/community/components/CommunityPostCard';
@@ -22,6 +23,7 @@ import { MatchSuccess } from '../../features/community/components/MatchSuccess';
 import { PendingRequests } from '../../features/community/components/PendingRequests';
 import { BottomNav } from '../../features/community/components/BottomNav';
 import { LocationSetupSheet } from '../../features/community/components/LocationSetupSheet';
+import { OfflineBanner } from '../../features/community/components/OfflineBanner';
 import { FeedFilter } from '../../features/community/types/community.types';
 import styles from '../../features/community/styles/CommunityPage.module.css';
 
@@ -65,6 +67,10 @@ export const CommunityPage: React.FC = () => {
   } = useConnection(user?.id || null);
 
   const pullToRefresh = usePullToRefresh({ onRefresh: refresh, disabled: feedLoading });
+
+  const { isOffline, hasCachedFeed } = useOfflineFeed({
+    communityId: community?.id || null,
+  });
 
   useCommunityRealtime({
     communityId: community?.id || null,
@@ -137,6 +143,8 @@ export const CommunityPage: React.FC = () => {
 
   return (
     <div className={styles.communityPage}>
+      <OfflineBanner isOffline={isOffline} hasCachedFeed={hasCachedFeed} />
+
       <CommunityHeader
         community={{ ...community, onlineCount }}
         userId={user?.id || ''}
