@@ -23,6 +23,14 @@ class ChatService {
 
     const profileMap = new Map((profiles || []).map((p: any) => [p.user_id, p]));
 
+    // Get presence
+    const { data: presenceData } = await supabase
+      .from('presence')
+      .select('user_id, is_online')
+      .in('user_id', otherUserIds);
+
+    const presenceMap = new Map((presenceData || []).map((p: any) => [p.user_id, p.is_online]));
+
     return conversations.map((conv: any) => {
       const otherUserId = conv.participant_ids.find((id: string) => id !== userId);
       const profile = profileMap.get(otherUserId);
@@ -36,7 +44,7 @@ class ChatService {
         lastMessage: conv.last_message_preview || null,
         lastMessageAt: conv.last_message_at || null,
         unreadCount: conv.unread_counts?.[userId] || 0,
-        isOnline: false,
+        isOnline: presenceMap.get(otherUserId) || false,
       };
     });
   }
@@ -103,48 +111,52 @@ class ChatService {
     content: string,
     type: string = 'text'
   ): Promise<ChatMessage | null> {
-    const { data, error } = await supabase
-      .from('messages')
-      .insert({
-        conversation_id: conversationId,
-        sender_id: senderId,
-        type,
-        content,
-        status: 'sent',
-      })
-      .select()
-      .single();
+    // Generate client message ID for idempotency
+    const clientMessageId = crypto.randomUUID();
+
+    const { data, error } = await supabase.rpc('send_chat_message', {
+      p_conversation_id: conversationId,
+      p_client_message_id: clientMessageId,
+      p_content: content,
+      p_type: type,
+      p_metadata: null,
+    });
 
     if (error || !data) return null;
 
-    await supabase
-      .from('conversations')
-      .update({
-        last_message_at: data.created_at,
-        last_message_preview: content.substring(0, 100),
-      })
-      .eq('id', conversationId);
+    // Fetch the created message
+    const { data: message } = await supabase
+      .from('messages')
+      .select('*')
+      .eq('id', data.id)
+      .single();
+
+    if (!message) return null;
 
     return {
-      id: data.id,
-      conversationId: data.conversation_id,
-      senderId: data.sender_id,
+      id: message.id,
+      conversationId: message.conversation_id,
+      senderId: message.sender_id,
       senderName: 'You',
       senderAvatar: null,
-      type: data.type,
-      content: data.content,
-      status: data.status,
-      createdAt: data.created_at,
+      type: message.type,
+      content: message.content,
+      status: message.status,
+      createdAt: message.created_at,
     };
   }
 
-  async markMessagesAsRead(conversationId: string, userId: string): Promise<void> {
-    await supabase
-      .from('messages')
-      .update({ status: 'read' })
-      .eq('conversation_id', conversationId)
-      .neq('sender_id', userId)
-      .neq('status', 'read');
+  async updateMessageStatus(messageId: string, status: string): Promise<void> {
+    await supabase.rpc('update_message_status', {
+      p_message_id: messageId,
+      p_status: status,
+    });
+  }
+
+  async updatePresence(isOnline: boolean): Promise<void> {
+    await supabase.rpc('update_presence', {
+      p_is_online: isOnline,
+    });
   }
 
   subscribeToMessages(
