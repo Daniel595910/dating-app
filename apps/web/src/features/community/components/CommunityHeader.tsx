@@ -118,7 +118,7 @@ export const CommunityHeader: React.FC<CommunityHeaderProps> = ({
                   </button>
                 )}
                 <button
-                  onClick={() => { setMoreMenuOpen(false); }}
+                  onClick={() => { setMoreMenuOpen(false); window.location.href = '/community-guidelines'; }}
                   style={{ display: 'flex', alignItems: 'center', gap: '10px', width: '100%', padding: '12px', background: 'none', border: 'none', cursor: 'pointer', color: '#374151', fontSize: '14px', borderRadius: '8px', textAlign: 'left' }}
                 >
                   <Globe size={16} />
@@ -141,3 +141,4 @@ export const CommunityHeader: React.FC<CommunityHeaderProps> = ({
     </header>
   );
 };
+

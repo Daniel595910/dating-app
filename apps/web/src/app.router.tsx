@@ -21,6 +21,7 @@ import { CommunityPage } from './pages/community/CommunityPage';
 import { PostDetail } from './pages/community/PostDetail';
 import { SearchPage } from './pages/community/SearchPage';
 import { DiscoverCommunitiesPage } from './pages/community/DiscoverCommunitiesPage';
+import { CommunityGuidelinesPage } from './pages/community/CommunityGuidelinesPage';
 
 // Chat Pages
 import { ChatsPage } from './pages/chat/ChatsPage';
@@ -73,6 +74,14 @@ export const AppRouter: React.FC = () => {
         element={
           <ProtectedRoute>
             <DiscoverCommunitiesPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/community-guidelines"
+        element={
+          <ProtectedRoute>
+            <CommunityGuidelinesPage />
           </ProtectedRoute>
         }
       />
