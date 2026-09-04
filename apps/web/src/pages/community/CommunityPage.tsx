@@ -25,6 +25,7 @@ import { ConnectionStatusCard } from '../../features/community/components/Connec
 import { BottomNav } from '../../features/community/components/BottomNav';
 import { LocationSetupSheet } from '../../features/community/components/LocationSetupSheet';
 import { OfflineBanner } from '../../features/community/components/OfflineBanner';
+import { CommunitySwitcher } from '../../features/community/components/CommunitySwitcher';
 import { Compass } from 'lucide-react';
 import { FeedFilter } from '../../features/community/types/community.types';
 import styles from '../../features/community/styles/CommunityPage.module.css';
@@ -40,6 +41,8 @@ export const CommunityPage: React.FC = () => {
   const [matchId, setMatchId] = useState<string | null>(null);
   const [newPostCount, setNewPostCount] = useState(0);
   const [locationSheetOpen, setLocationSheetOpen] = useState(false);
+  const [switcherOpen, setSwitcherOpen] = useState(false);
+  const [currentCommunityId, setCurrentCommunityId] = useState<string | null>(null);
 
   const { community, loading: communityLoading, onlineCount } = useCommunity(user?.id || null);
 
@@ -163,6 +166,10 @@ export const CommunityPage: React.FC = () => {
         userId={user?.id || ''}
         onSearch={() => { window.location.href = '/search'; }}
         onMore={() => {}}
+        onSwitchCommunity={() => setSwitcherOpen(true)}
+        onDiscover={() => navigate('/discover-communities')}
+        onSwitchCommunity={() => setSwitcherOpen(true)}
+        onDiscover={() => navigate('/discover-communities')}
         onDiscover={() => navigate('/discover-communities')}
       />
 
@@ -220,6 +227,17 @@ export const CommunityPage: React.FC = () => {
       </main>
 
       <CreatePostButton onClick={() => setCreateSheetOpen(true)} />
+      <CommunitySwitcher
+        open={switcherOpen}
+        onClose={() => setSwitcherOpen(false)}
+        userId={user?.id || ''}
+        currentCommunityId={currentCommunityId || ''}
+        onSwitch={(newCommunityId) => {
+          setCurrentCommunityId(newCommunityId);
+          window.location.reload();
+        }}
+      />
+
       <BottomNav />
 
       <CommentSheet
@@ -262,4 +280,7 @@ export const CommunityPage: React.FC = () => {
     </div>
   );
 };
+
+
+
 
