@@ -16,6 +16,8 @@ import { OfflineBanner } from '../../community/components/OfflineBanner';
 import { generateUUID } from '../utils/uuid';
 import { VoiceRecorder } from './VoiceRecorder';
 import { GiftPicker } from './GiftPicker';
+import { safetyService, SafetyResult } from '../services/safety.service';
+import { ScamWarning } from './ScamWarning';
 import styles from '../styles/ChatWindow.module.css';
 
 interface ChatWindowProps {
@@ -49,6 +51,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
   const [replyingTo, setReplyingTo] = useState<ChatMessage | null>(null);
   const [voiceRecorderOpen, setVoiceRecorderOpen] = useState(false);
   const [giftPickerOpen, setGiftPickerOpen] = useState(false);
+  const [safetyWarning, setSafetyWarning] = useState<{ message: string; riskLevel: string } | null>(null);
   const cursorRef = useRef<MessageCursor | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
@@ -120,6 +123,16 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
     loadMessages(true);
 
     const unsubscribe = chatService.subscribeToMessages(conversationId, (newMessage) => {
+      // Safety check for incoming messages
+      if (newMessage.sender_id !== user?.id && newMessage.content) {
+        const safetyResult = safetyService.analyzeMessage(newMessage.content);
+        if (safetyResult.shouldShowWarning) {
+          setSafetyWarning({
+            message: safetyService.getSafetyWarning(safetyResult.riskLevel),
+            riskLevel: safetyResult.riskLevel,
+          });
+        }
+      }
       setMessages((prev) => {
         if (prev.some((m) => m.id === newMessage.id)) return prev;
         return [...prev, newMessage];
@@ -233,6 +246,21 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
   };
 
   const handleSend = async (content: string) => {
+    if (!user || !content.trim() || isOffline) return;
+
+    // Safety check
+    const safetyResult = safetyService.analyzeMessage(content);
+    if (safetyResult.shouldShowWarning) {
+      setSafetyWarning({
+        message: safetyService.getSafetyWarning(safetyResult.riskLevel),
+        riskLevel: safetyResult.riskLevel,
+      });
+
+      if (safetyResult.shouldBlockTemporarily) {
+        // Block message and show critical warning
+        return;
+      }
+    }
     if (!user || !content.trim() || isOffline) return;
 
     const trimmedContent = content.trim();
@@ -459,6 +487,17 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
       />
 
       <div className={styles.messagesContainer} ref={messagesContainerRef}>
+        {safetyWarning && (
+          <ScamWarning
+            riskLevel={safetyWarning.riskLevel as any}
+            message={safetyWarning.message}
+            onDismiss={() => setSafetyWarning(null)}
+            onReport={() => {
+              setSafetyWarning(null);
+              setReportSheetOpen(true);
+            }}
+          />
+        )}
         {hasMore && (
           <button className={styles.loadMore} onClick={() => loadMessages(false)} disabled={loadingMore}>
             {loadingMore ? 'Loading...' : 'Load older messages'}
@@ -547,5 +586,8 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
     </div>
   );
 };
+
+
+
 
 
