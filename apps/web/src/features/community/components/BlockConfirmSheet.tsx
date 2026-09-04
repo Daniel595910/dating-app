@@ -28,12 +28,11 @@ export const BlockConfirmSheet: React.FC<BlockConfirmSheetProps> = ({
     setError(null);
 
     try {
-      const { error: insertError } = await supabase.from('blocks').insert({
-        blocker_id: blockerId,
-        blocked_id: targetUserId,
+      const { error: rpcError } = await supabase.rpc('block_user', {
+        p_blocked_id: targetUserId,
       });
 
-      if (insertError) throw insertError;
+      if (rpcError) throw rpcError;
 
       onBlocked();
       onClose();
@@ -65,18 +64,10 @@ export const BlockConfirmSheet: React.FC<BlockConfirmSheetProps> = ({
         {error && <p className={styles.error}>{error}</p>}
 
         <div className={styles.actions}>
-          <button
-            className={styles.blockButton}
-            onClick={handleBlock}
-            disabled={submitting}
-          >
+          <button className={styles.blockButton} onClick={handleBlock} disabled={submitting}>
             {submitting ? 'Blocking...' : 'Block User'}
           </button>
-          <button
-            className={styles.cancelButton}
-            onClick={onClose}
-            disabled={submitting}
-          >
+          <button className={styles.cancelButton} onClick={onClose} disabled={submitting}>
             Cancel
           </button>
         </div>

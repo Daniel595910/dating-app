@@ -82,3 +82,20 @@
   opacity: 0.5;
   cursor: not-allowed;
 }
+
+.retryButton {
+  padding: 0.75rem 1.5rem;
+  background-color: #ef4444;
+  color: #ffffff;
+  border: none;
+  border-radius: 9999px;
+  cursor: pointer;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  min-height: 48px;
+  transition: background-color 0.2s ease;
+}
+
+.retryButton:hover {
+  background-color: #dc2626;
+}
