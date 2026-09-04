@@ -18,7 +18,7 @@ export interface ChatMessage {
   senderAvatar: string | null;
   type: 'text' | 'image' | 'system';
   content: string;
-  status: 'sent' | 'delivered' | 'read';
+  status: 'sending' | 'sent' | 'delivered' | 'read' | 'failed';|  status: 'sending' | 'sent' | 'delivered' | 'read' | 'failed';|  status: 'sending' | 'sent' | 'delivered' | 'read' | 'failed';
   createdAt: string;
 }
 
@@ -26,3 +26,4 @@ export interface MessageCursor {
   createdAt: string;
   id: string;
 }
+

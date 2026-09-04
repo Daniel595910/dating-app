@@ -125,6 +125,11 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
         return [...prev, newMessage];
       });
       scrollToBottom();
+
+      // Mark incoming message as delivered
+      if (newMessage.sender_id !== user?.id) {
+        chatService.updateMessageStatus(newMessage.id, 'delivered');
+      }
     });
 
     return () => unsubscribe();
@@ -233,6 +238,20 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
     };
   }, []);
 
+  const handleRetry = async (messageId: string, content: string) => {
+    if (!user || isOffline) return;
+
+    // Remove the failed message
+    setMessages((prev) => prev.filter((m) => m.id !== messageId));
+
+    // Resend
+    const newMessage = await chatService.sendMessage(conversationId, user.id, content.trim());
+    if (newMessage) {
+      setMessages((prev) => [...prev, newMessage]);
+      scrollToBottom();
+    }
+  };
+
   const handleSend = async (content: string) => {
     if (!user || !content.trim() || isOffline) return;
     const newMessage = await chatService.sendMessage(conversationId, user.id, content.trim());
@@ -315,6 +334,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
                   message={message}
                   isOwn={message.senderId === user?.id}
                   showSenderName={group.showSenderName && groupIndex === 0}
+                  onRetry={handleRetry}
                 />
               ))}
             </React.Fragment>
@@ -361,3 +381,4 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
     </div>
   );
 };
+

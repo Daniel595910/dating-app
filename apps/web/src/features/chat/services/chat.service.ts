@@ -141,7 +141,7 @@ class ChatService {
       senderAvatar: null,
       type: message.type,
       content: message.content,
-      status: message.status,
+      status: 'sent' as const,
       createdAt: message.created_at,
     };
   }
@@ -182,3 +182,4 @@ class ChatService {
 }
 
 export const chatService = new ChatService();
+
