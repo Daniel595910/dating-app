@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '@/store/auth.store';
 import { chatService } from '../../features/chat/services/chat.service';
 import { Conversation } from '../../features/chat/types/chat.types';
-import { MessageCircle } from 'lucide-react';
+import { MessageCircle, ArrowRight } from 'lucide-react';
 import styles from './ChatsPage.module.css';
 
 export const ChatsPage: React.FC = () => {
@@ -44,8 +44,15 @@ export const ChatsPage: React.FC = () => {
         </div>
         <h2 className={styles.emptyTitle}>No conversations yet</h2>
         <p className={styles.emptyText}>
-          Match with someone in your community to start chatting!
+          Matches and connections you start talking to will appear here.
         </p>
+        <button
+          className={styles.exploreButton}
+          onClick={() => navigate('/community')}
+        >
+          Explore Community
+          <ArrowRight size={16} />
+        </button>
       </div>
     );
   }

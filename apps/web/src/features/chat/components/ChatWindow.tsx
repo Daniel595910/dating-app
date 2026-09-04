@@ -54,6 +54,21 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
     }, 100);
   }, []);
 
+  const markConversationAsRead = useCallback(async () => {
+    if (!user || messages.length === 0) return;
+    const lastMessageId = messages[messages.length - 1]?.id;
+    if (!lastMessageId) return;
+
+    try {
+      await supabase.rpc('mark_conversation_read', {
+        p_conversation_id: conversationId,
+        p_last_read_message_id: lastMessageId,
+      });
+    } catch {
+      // Ignore read receipt errors
+    }
+  }, [conversationId, user, messages]);
+
   const loadMessages = useCallback(async (reset: boolean) => {
     if (!user) return;
 
@@ -100,7 +115,6 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
 
   useEffect(() => {
     loadMessages(true);
-    chatService.markMessagesAsRead(conversationId, user?.id || '');
 
     const unsubscribe = chatService.subscribeToMessages(conversationId, (newMessage) => {
       setMessages((prev) => {
@@ -108,11 +122,15 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
         return [...prev, newMessage];
       });
       scrollToBottom();
-      chatService.markMessagesAsRead(conversationId, user?.id || '');
     });
 
     return () => unsubscribe();
   }, [conversationId, user, loadMessages, scrollToBottom]);
+
+  // Mark as read when messages change
+  useEffect(() => {
+    markConversationAsRead();
+  }, [markConversationAsRead]);
 
   useEffect(() => {
     const channel = supabase.channel(`typing:${conversationId}`);
@@ -157,7 +175,6 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
     }
   };
 
-  // Group messages by date AND consecutive sender
   const groupedMessages = messages.reduce<{
     date: string;
     senderId: string | null;
@@ -167,7 +184,6 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
     const date = new Date(message.createdAt).toDateString();
     const lastGroup = acc[acc.length - 1];
 
-    // New date or different sender = new group
     if (!lastGroup || lastGroup.date !== date || lastGroup.senderId !== message.senderId) {
       acc.push({
         date,

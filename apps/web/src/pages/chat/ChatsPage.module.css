@@ -157,3 +157,24 @@
   padding: 0 6px;
   flex-shrink: 0;
 }
+
+.exploreButton {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  background-color: var(--color-primary, #ef4444);
+  color: #ffffff;
+  border: none;
+  border-radius: 9999px;
+  cursor: pointer;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  min-height: 48px;
+  transition: background-color 0.2s ease;
+  margin-top: 0.5rem;
+}
+
+.exploreButton:hover {
+  background-color: var(--color-primary-hover, #dc2626);
+}
