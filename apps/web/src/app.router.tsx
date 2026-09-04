@@ -32,6 +32,7 @@ import { EditProfilePage } from './pages/profile/EditProfilePage';
 import { DatingPreferencesPage } from './pages/profile/DatingPreferencesPage';
 import { VipPage } from './pages/profile/VipPage';
 import { SettingsPage } from './pages/profile/SettingsPage';
+import { BlockedUsersPage } from './pages/profile/BlockedUsersPage';
 
 // Auth Guard Component
 import { ProtectedRoute } from './components/common/ProtectedRoute';
@@ -138,6 +139,14 @@ export const AppRouter: React.FC = () => {
         element={
           <ProtectedRoute>
             <SettingsPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/settings/blocked-users"
+        element={
+          <ProtectedRoute>
+            <BlockedUsersPage />
           </ProtectedRoute>
         }
       />

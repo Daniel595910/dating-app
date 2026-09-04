@@ -39,7 +39,7 @@ export const SettingsPage: React.FC = () => {
       title: 'Privacy & Safety',
       items: [
         { icon: Lock, label: 'Privacy Settings', action: () => {} },
-        { icon: Ban, label: 'Blocked Users', action: () => {} },
+        { icon: Ban, label: 'Blocked Users', action: () => navigate('/settings/blocked-users') },
         { icon: MapPin, label: 'Location Settings', action: () => navigate('/location') },
       ],
     },
@@ -210,3 +210,4 @@ export const SettingsPage: React.FC = () => {
     </div>
   );
 };
+
