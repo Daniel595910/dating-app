@@ -62,7 +62,6 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
       cursorRef.current = null;
     } else {
       setLoadingMore(true);
-      // Preserve scroll position
       if (messagesContainerRef.current) {
         previousScrollHeightRef.current = messagesContainerRef.current.scrollHeight;
       }
@@ -81,7 +80,6 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
           return [...newMessages, ...prev];
         });
 
-        // Restore scroll position after inserting older messages
         setTimeout(() => {
           if (messagesContainerRef.current) {
             const newScrollHeight = messagesContainerRef.current.scrollHeight;
@@ -100,7 +98,6 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
     }
   }, [conversationId, user, scrollToBottom]);
 
-  // Initial load + realtime subscription
   useEffect(() => {
     loadMessages(true);
     chatService.markMessagesAsRead(conversationId, user?.id || '');
@@ -117,10 +114,8 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
     return () => unsubscribe();
   }, [conversationId, user, loadMessages, scrollToBottom]);
 
-  // Typing broadcast subscription
   useEffect(() => {
     const channel = supabase.channel(`typing:${conversationId}`);
-
     channel
       .on('broadcast', { event: 'typing' }, (payload) => {
         if (payload.payload.userId !== user?.id) {
@@ -142,7 +137,6 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
     };
   }, [conversationId, user]);
 
-  // Online/offline detection
   useEffect(() => {
     const handleOnline = () => setIsOffline(false);
     const handleOffline = () => setIsOffline(true);
@@ -156,7 +150,6 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
 
   const handleSend = async (content: string) => {
     if (!user || !content.trim() || isOffline) return;
-
     const newMessage = await chatService.sendMessage(conversationId, user.id, content.trim());
     if (newMessage) {
       setMessages((prev) => [...prev, newMessage]);
@@ -164,13 +157,26 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
     }
   };
 
-  const groupedMessages = messages.reduce<{ date: string; messages: ChatMessage[] }[]>((acc, message) => {
+  // Group messages by date AND consecutive sender
+  const groupedMessages = messages.reduce<{
+    date: string;
+    senderId: string | null;
+    showSenderName: boolean;
+    messages: ChatMessage[];
+  }[]>((acc, message) => {
     const date = new Date(message.createdAt).toDateString();
     const lastGroup = acc[acc.length - 1];
-    if (lastGroup && lastGroup.date === date) {
-      lastGroup.messages.push(message);
+
+    // New date or different sender = new group
+    if (!lastGroup || lastGroup.date !== date || lastGroup.senderId !== message.senderId) {
+      acc.push({
+        date,
+        senderId: message.senderId,
+        showSenderName: message.senderId !== user?.id,
+        messages: [message],
+      });
     } else {
-      acc.push({ date, messages: [message] });
+      lastGroup.messages.push(message);
     }
     return acc;
   }, []);
@@ -215,11 +221,18 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
             <p className={styles.emptyText}>Start the conversation and get to know each other.</p>
           </div>
         ) : (
-          groupedMessages.map((group) => (
-            <React.Fragment key={group.date}>
-              <DateSeparator date={group.date} />
+          groupedMessages.map((group, groupIndex) => (
+            <React.Fragment key={`${group.date}-${groupIndex}`}>
+              {groupIndex === 0 || groupedMessages[groupIndex - 1]!.date !== group.date ? (
+                <DateSeparator date={group.date} />
+              ) : null}
               {group.messages.map((message) => (
-                <MessageBubble key={message.id} message={message} isOwn={message.senderId === user?.id} />
+                <MessageBubble
+                  key={message.id}
+                  message={message}
+                  isOwn={message.senderId === user?.id}
+                  showSenderName={group.showSenderName && groupIndex === 0}
+                />
               ))}
             </React.Fragment>
           ))
@@ -233,9 +246,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
         conversationId={conversationId}
         userId={user?.id || ''}
         onSend={handleSend}
-        onTypingChange={(typing) => {
-          // Local typing state handled by composer
-        }}
+        onTypingChange={() => {}}
       />
 
       <ChatActionMenu

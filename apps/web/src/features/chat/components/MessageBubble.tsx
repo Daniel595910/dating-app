@@ -6,13 +6,16 @@ import styles from '../styles/MessageBubble.module.css';
 interface MessageBubbleProps {
   message: ChatMessage;
   isOwn: boolean;
+  showSenderName?: boolean;
 }
 
-export const MessageBubble: React.FC<MessageBubbleProps> = ({ message, isOwn }) => {
+export const MessageBubble: React.FC<MessageBubbleProps> = ({ message, isOwn, showSenderName = false }) => {
   return (
     <div className={`${styles.wrapper} ${isOwn ? styles.ownWrapper : styles.otherWrapper}`}>
       <div className={`${styles.bubble} ${isOwn ? styles.ownBubble : styles.otherBubble}`}>
-        {!isOwn && <span className={styles.senderName}>{message.senderName}</span>}
+        {!isOwn && showSenderName && (
+          <span className={styles.senderName}>{message.senderName}</span>
+        )}
         <p className={styles.content}>{message.content}</p>
         <div className={styles.meta}>
           <span className={styles.timestamp}>

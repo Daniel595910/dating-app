@@ -13,8 +13,13 @@ export const ConversationPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (!conversationId) {
+      navigate('/chats', { replace: true });
+      return;
+    }
+
     const loadConversationInfo = async () => {
-      if (!conversationId || !user) return;
+      if (!user) return;
 
       const { data: conversation } = await supabase
         .from('conversations')
@@ -46,15 +51,14 @@ export const ConversationPage: React.FC = () => {
     };
 
     loadConversationInfo();
-  }, [conversationId, user]);
+  }, [conversationId, user, navigate]);
 
   if (loading) {
     return <div style={{ textAlign: 'center', padding: '2rem', color: '#9ca3af' }}>Loading...</div>;
   }
 
   if (!conversationId || !otherUser) {
-    navigate('/chats');
-    return null;
+    return <div style={{ textAlign: 'center', padding: '2rem', color: '#9ca3af' }}>Conversation not found</div>;
   }
 
   return (
