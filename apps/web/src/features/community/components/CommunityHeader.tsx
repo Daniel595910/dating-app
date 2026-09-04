@@ -2,6 +2,7 @@
 import { Search, MoreVertical, Users } from 'lucide-react';
 import { CommunityInfo } from '../../types/community.types';
 import { NotificationBell } from './NotificationBell';
+import styles from '../styles/CommunityHeader.module.css';
 
 interface CommunityHeaderProps {
   community: CommunityInfo;
@@ -17,83 +18,27 @@ export const CommunityHeader: React.FC<CommunityHeaderProps> = ({
   onMore,
 }) => {
   return (
-    <header
-      style={{
-        backgroundColor: '#ffffff',
-        borderBottom: '1px solid #f3f4f6',
-        paddingTop: 'env(safe-area-inset-top)',
-        position: 'sticky',
-        top: 0,
-        zIndex: 10,
-      }}
-    >
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          padding: '0.75rem 0.75rem',
-        }}
-      >
-        <div>
-          <h1 style={{ fontSize: '1.125rem', fontWeight: 700, margin: 0, color: '#111827' }}>
+    <header className={styles.header}>
+      <div className={styles.headerContent}>
+        <div className={styles.headerLeft}>
+          <h1 className={styles.title}>
             {community.flag} {community.name}
           </h1>
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.25rem',
-              fontSize: '0.75rem',
-              color: '#6b7280',
-              marginTop: '0.125rem',
-            }}
-          >
+          <div className={styles.subtitleRow}>
             <Users size={12} />
             <span>{community.memberCount.toLocaleString()} members</span>
             <span>•</span>
-            <span style={{ color: '#10b981' }}>{community.onlineCount} online</span>
+            <span className={styles.onlineDot} />
+            <span>{community.onlineCount} online</span>
           </div>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+        <div className={styles.headerActions}>
           <NotificationBell userId={userId} />
-          <button
-            onClick={onSearch}
-            aria-label="Search"
-            style={{
-              background: 'none',
-              border: 'none',
-              padding: '0.5rem',
-              cursor: 'pointer',
-              color: '#6b7280',
-              borderRadius: '9999px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              minWidth: 44,
-              minHeight: 44,
-            }}
-          >
+          <button className={styles.iconButton} onClick={onSearch} aria-label="Search">
             <Search size={20} />
           </button>
-          <button
-            onClick={onMore}
-            aria-label="More options"
-            style={{
-              background: 'none',
-              border: 'none',
-              padding: '0.5rem',
-              cursor: 'pointer',
-              color: '#6b7280',
-              borderRadius: '9999px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              minWidth: 44,
-              minHeight: 44,
-            }}
-          >
+          <button className={styles.iconButton} onClick={onMore} aria-label="More options">
             <MoreVertical size={20} />
           </button>
         </div>

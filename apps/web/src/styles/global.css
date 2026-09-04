@@ -1,15 +1,4 @@
-:root {
-  --color-primary: #3b82f6;
-  --color-primary-hover: #2563eb;
-  --color-background: #f9fafb;
-  --color-surface: #ffffff;
-  --color-text: #111827;
-  --color-text-secondary: #6b7280;
-  --color-border: #e5e7eb;
-  --color-error: #ef4444;
-  --color-success: #10b981;
-  --color-warning: #f59e0b;
-}
+﻿@import './tokens.css';
 
 * {
   margin: 0;
@@ -24,7 +13,7 @@ html {
 
 body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
-  background-color: var(--color-background);
+  background-color: var(--color-bg);
   color: var(--color-text);
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
@@ -32,12 +21,13 @@ body {
 }
 
 #root {
-  min-height: 100vh;
+  min-height: 100dvh;
 }
 
 button {
   cursor: pointer;
   font-family: inherit;
+  touch-action: manipulation;
 }
 
 input, textarea, select {
@@ -49,7 +39,26 @@ img {
   height: auto;
 }
 
-a {
-  color: var(--color-primary);
-  text-decoration: none;
+/* Accessibility */
+:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Safe areas */
+.safe-area-top {
+  padding-top: env(safe-area-inset-top);
+}
+
+.safe-area-bottom {
+  padding-bottom: env(safe-area-inset-bottom);
 }

@@ -4,13 +4,13 @@
   left: 50%;
   transform: translateX(-50%);
   width: 100%;
-  max-width: 480px;
+  max-width: var(--max-width, 480px);
   display: flex;
   justify-content: space-around;
   align-items: center;
-  background-color: #ffffff;
-  border-top: 1px solid #e5e7eb;
-  padding: 0.5rem 1rem calc(0.5rem + env(safe-area-inset-bottom));
+  background-color: var(--color-surface, #ffffff);
+  border-top: 1px solid var(--color-border, #e5e7eb);
+  padding: 0.5rem 0.5rem calc(0.5rem + env(safe-area-inset-bottom));
   z-index: 40;
 }
 
@@ -22,31 +22,44 @@
   background: none;
   border: none;
   cursor: pointer;
-  color: #9ca3af;
+  color: var(--color-muted, #9ca3af);
   padding: 0.25rem 0.75rem;
   border-radius: 0.5rem;
   transition: color 0.2s ease;
   min-width: 64px;
+  min-height: 44px;
 }
 
 .navItem:hover {
-  color: #6b7280;
-}
-
-.navItem:focus-visible {
-  outline: 2px solid #ef4444;
-  outline-offset: 2px;
+  color: var(--color-text-secondary, #374151);
 }
 
 .navItemActive {
-  color: #ef4444;
+  color: var(--color-primary, #ef4444);
 }
 
 .navItemActive:hover {
-  color: #ef4444;
+  color: var(--color-primary, #ef4444);
 }
 
 .navLabel {
-  font-size: 0.6875rem;
+  font-size: var(--font-xs, 0.6875rem);
   font-weight: 500;
+}
+
+.navBadge {
+  position: absolute;
+  top: 2px;
+  right: 8px;
+  min-width: 18px;
+  height: 18px;
+  border-radius: 9999px;
+  background-color: var(--color-danger, #ef4444);
+  color: #ffffff;
+  font-size: 10px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 4px;
 }
