@@ -16,7 +16,7 @@ import { OfflineBanner } from '../../community/components/OfflineBanner';
 import { generateUUID } from '../utils/uuid';
 import { VoiceRecorder } from './VoiceRecorder';
 import { GiftPicker } from './GiftPicker';
-import { safetyService, SafetyResult } from '../services/safety.service';
+import { safetyService } from '../services/safety.service';
 import { ScamWarning } from './ScamWarning';
 import styles from '../styles/ChatWindow.module.css';
 
@@ -123,7 +123,6 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
     loadMessages(true);
 
     const unsubscribe = chatService.subscribeToMessages(conversationId, (newMessage) => {
-      // Safety check for incoming messages
       if (newMessage.sender_id !== user?.id && newMessage.content) {
         const safetyResult = safetyService.analyzeMessage(newMessage.content);
         if (safetyResult.shouldShowWarning) {
@@ -248,20 +247,14 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
   const handleSend = async (content: string) => {
     if (!user || !content.trim() || isOffline) return;
 
-    // Safety check
     const safetyResult = safetyService.analyzeMessage(content);
     if (safetyResult.shouldShowWarning) {
       setSafetyWarning({
         message: safetyService.getSafetyWarning(safetyResult.riskLevel),
         riskLevel: safetyResult.riskLevel,
       });
-
-      if (safetyResult.shouldBlockTemporarily) {
-        // Block message and show critical warning
-        return;
-      }
+      if (safetyResult.shouldBlockTemporarily) return;
     }
-    if (!user || !content.trim() || isOffline) return;
 
     const trimmedContent = content.trim();
     const tempId = `temp-${Date.now()}-${Math.random().toString(36).substring(2, 8)}`;
@@ -284,25 +277,18 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
     try {
       const newMessage = await chatService.sendMessage(conversationId, user.id, trimmedContent);
       if (newMessage) {
-        setMessages((prev) =>
-          prev.map((m) => (m.id === tempId ? newMessage : m))
-        );
+        setMessages((prev) => prev.map((m) => (m.id === tempId ? newMessage : m)));
         scrollToBottom();
       } else {
-        setMessages((prev) =>
-          prev.map((m) => (m.id === tempId ? { ...m, status: 'failed' as const } : m))
-        );
+        setMessages((prev) => prev.map((m) => (m.id === tempId ? { ...m, status: 'failed' as const } : m)));
       }
-    } catch (err) {
-      setMessages((prev) =>
-        prev.map((m) => (m.id === tempId ? { ...m, status: 'failed' as const } : m))
-      );
+    } catch {
+      setMessages((prev) => prev.map((m) => (m.id === tempId ? { ...m, status: 'failed' as const } : m)));
     }
   };
 
   const handleSendGift = async (gift: { id: string; name: string; icon: string }) => {
     if (!user || isOffline) return;
-
     try {
       const clientMessageId = generateUUID();
       await supabase.rpc('send_chat_message', {
@@ -320,7 +306,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
   const handleSendVoice = async (audioBlob: Blob, duration: number) => {
     if (!user || isOffline) return;
 
-    const tempId = 	emp--;
+    const tempId = `temp-${Date.now()}-${Math.random().toString(36).substring(2, 8)}`;
 
     try {
       const tempMessage: ChatMessage = {
@@ -331,9 +317,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
         senderAvatar: null,
         type: 'voice',
         content: '',
-        metadata: {
-          durationMs: duration * 1000,
-        },
+        metadata: { durationMs: duration * 1000 },
         status: 'sending',
         createdAt: new Date().toISOString(),
       };
@@ -343,7 +327,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
 
       const timestamp = Date.now();
       const randomSuffix = Math.random().toString(36).substring(2, 8);
-      const filePath = oice//-.webm;
+      const filePath = `voice/${conversationId}/${timestamp}-${randomSuffix}.webm`;
 
       const { error: uploadError } = await supabase.storage
         .from('media')
@@ -367,7 +351,6 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
       if (msgError) throw msgError;
 
       setMessages((prev) => prev.filter((m) => m.id !== tempId));
-
     } catch (err) {
       console.error('Voice send failed:', err);
       setMessages((prev) =>
@@ -428,7 +411,6 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
       if (msgError) throw msgError;
 
       setMessages((prev) => prev.filter((m) => m.id !== tempId));
-
     } catch (err) {
       console.error('Image send failed:', err);
       setMessages((prev) =>
@@ -523,6 +505,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
                   showSenderName={group.showSenderName && groupIndex === 0}
                   onRetry={handleRetry}
                   onReply={handleReply}
+                  onReportMessage={() => setReportSheetOpen(true)}
                 />
               ))}
             </React.Fragment>
@@ -586,8 +569,3 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
     </div>
   );
 };
-
-
-
-
-

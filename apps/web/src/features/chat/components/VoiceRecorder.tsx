@@ -1,5 +1,5 @@
 ﻿import React, { useState, useRef, useEffect } from 'react';
-import { Mic, Square, Trash2, Send, X } from 'lucide-react';
+import { Mic, Square, Trash2, Send, X, AlertTriangle } from 'lucide-react';
 import styles from '../styles/VoiceRecorder.module.css';
 
 interface VoiceRecorderProps {
@@ -22,7 +22,7 @@ export const VoiceRecorder: React.FC<VoiceRecorderProps> = ({
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
 
-  const MAX_DURATION = 120; // 2 minutes
+  const MAX_DURATION = 120;
 
   useEffect(() => {
     return () => {
@@ -40,16 +40,55 @@ export const VoiceRecorder: React.FC<VoiceRecorderProps> = ({
     }
   };
 
+  // Get supported MIME type across browsers
+  const getSupportedMimeType = (): string => {
+    const types = [
+      'audio/webm;codecs=opus',
+      'audio/webm',
+      'audio/mp4',
+      'audio/ogg;codecs=opus',
+      'audio/wav',
+      'audio/aac',
+    ];
+
+    for (const type of types) {
+      try {
+        if (MediaRecorder.isTypeSupported(type)) {
+          return type;
+        }
+      } catch {
+        // Continue to next type
+      }
+    }
+    return '';
+  };
+
   const startRecording = async () => {
     setError(null);
     chunksRef.current = [];
     setRecordingTime(0);
 
+    // Check for microphone support
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      setError('Microphone access requires HTTPS or localhost. Please use https:// or localhost to record voice messages.');
+      return;
+    }
+
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true,
+        },
+      });
       streamRef.current = stream;
 
-      const mediaRecorder = new MediaRecorder(stream);
+      const mimeType = getSupportedMimeType();
+      const mediaRecorder = mimeType
+        ? new MediaRecorder(stream, { mimeType })
+        : new MediaRecorder(stream);
+
       mediaRecorderRef.current = mediaRecorder;
 
       mediaRecorder.ondataavailable = (event) => {
@@ -59,13 +98,20 @@ export const VoiceRecorder: React.FC<VoiceRecorderProps> = ({
       };
 
       mediaRecorder.onstop = () => {
-        const blob = new Blob(chunksRef.current, { type: 'audio/webm' });
+        const mimeType = mediaRecorder.mimeType || 'audio/webm';
+        const blob = new Blob(chunksRef.current, { type: mimeType });
         const url = URL.createObjectURL(blob);
         setAudioUrl(url);
         stopTimer();
       };
 
-      mediaRecorder.start();
+      mediaRecorder.onerror = () => {
+        setError('Recording failed. Please try again.');
+        setIsRecording(false);
+        stopTimer();
+      };
+
+      mediaRecorder.start(1000);
       setIsRecording(true);
 
       timerRef.current = setInterval(() => {
@@ -79,19 +125,30 @@ export const VoiceRecorder: React.FC<VoiceRecorderProps> = ({
       }, 1000);
 
     } catch (err: any) {
-      if (err.name === 'NotAllowedError') {
-        setError('Microphone access denied. Please enable in your browser settings.');
+      console.error('Voice recording error:', err);
+      setIsRecording(false);
+
+      if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+        setError('Microphone access denied. Tap the lock icon in your browser address bar and allow microphone access.');
       } else if (err.name === 'NotFoundError') {
-        setError('No microphone found.');
+        setError('No microphone found. Please connect a microphone and try again.');
+      } else if (err.name === 'NotReadableError') {
+        setError('Microphone is already in use by another application.');
+      } else if (err.name === 'SecurityError') {
+        setError('Microphone access requires HTTPS or localhost.');
       } else {
-        setError('Failed to start recording.');
+        setError('Could not access microphone. Please check your browser settings and try again.');
       }
     }
   };
 
   const stopRecording = () => {
     if (mediaRecorderRef.current && isRecording) {
-      mediaRecorderRef.current.stop();
+      try {
+        mediaRecorderRef.current.stop();
+      } catch {
+        // Ignore
+      }
       setIsRecording(false);
       if (streamRef.current) {
         streamRef.current.getTracks().forEach((track) => track.stop());
@@ -108,7 +165,8 @@ export const VoiceRecorder: React.FC<VoiceRecorderProps> = ({
 
   const handleSend = () => {
     if (audioUrl && chunksRef.current.length > 0) {
-      const blob = new Blob(chunksRef.current, { type: 'audio/webm' });
+      const mimeType = mediaRecorderRef.current?.mimeType || 'audio/webm';
+      const blob = new Blob(chunksRef.current, { type: mimeType });
       onSend(blob, recordingTime);
       handleDelete();
       onClose();
@@ -139,7 +197,13 @@ export const VoiceRecorder: React.FC<VoiceRecorderProps> = ({
 
         <div className={styles.content}>
           {error ? (
-            <p className={styles.error}>{error}</p>
+            <div className={styles.errorState}>
+              <AlertTriangle size={28} className={styles.errorIcon} />
+              <p className={styles.error}>{error}</p>
+              <button className={styles.retryButton} onClick={() => setError(null)}>
+                Try Again
+              </button>
+            </div>
           ) : isRecording ? (
             <div className={styles.recordingState}>
               <div className={styles.recordingIndicator}>
@@ -176,7 +240,7 @@ export const VoiceRecorder: React.FC<VoiceRecorderProps> = ({
         </div>
 
         <div className={styles.actions}>
-          {!isRecording && !audioUrl && (
+          {!isRecording && !audioUrl && !error && (
             <button className={styles.recordButton} onClick={startRecording}>
               <Mic size={18} />
               Start Recording
@@ -207,3 +271,4 @@ export const VoiceRecorder: React.FC<VoiceRecorderProps> = ({
     </div>
   );
 };
+

@@ -52,6 +52,7 @@ export default defineConfig({
     }
   },
   server: {
+
     port: 3000,
     host: true
   },
@@ -61,3 +62,5 @@ export default defineConfig({
     outDir: 'dist'
   }
 });
+
+
