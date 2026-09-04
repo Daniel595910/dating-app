@@ -111,7 +111,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
 
       cursorRef.current = result.nextCursor;
       setHasMore(result.hasMore);
-    } catch (err) {
+    } catch {
       setError('Failed to load messages');
     } finally {
       setLoading(false);
@@ -137,7 +137,6 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
         return [...prev, newMessage];
       });
       scrollToBottom();
-
       if (newMessage.sender_id !== user?.id) {
         chatService.updateMessageStatus(newMessage.id, 'delivered');
       }
@@ -257,7 +256,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
     }
 
     const trimmedContent = content.trim();
-    const tempId = `temp-${Date.now()}-${Math.random().toString(36).substring(2, 8)}`;
+    const tempId = 'temp-' + Date.now() + '-' + Math.random().toString(36).substring(2, 8);
 
     const optimisticMessage: ChatMessage = {
       id: tempId,
@@ -305,8 +304,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
 
   const handleSendVoice = async (audioBlob: Blob, duration: number) => {
     if (!user || isOffline) return;
-
-    const tempId = `temp-${Date.now()}-${Math.random().toString(36).substring(2, 8)}`;
+    const tempId = 'temp-' + Date.now() + '-' + Math.random().toString(36).substring(2, 8);
 
     try {
       const tempMessage: ChatMessage = {
@@ -327,7 +325,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
 
       const timestamp = Date.now();
       const randomSuffix = Math.random().toString(36).substring(2, 8);
-      const filePath = `voice/${conversationId}/${timestamp}-${randomSuffix}.webm`;
+      const filePath = 'voice/' + conversationId + '/' + timestamp + '-' + randomSuffix + '.webm';
 
       const { error: uploadError } = await supabase.storage
         .from('media')
@@ -361,8 +359,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
 
   const handleSendImage = async (file: File) => {
     if (!user || isOffline) return;
-
-    const tempId = `temp-${Date.now()}-${Math.random().toString(36).substring(2, 8)}`;
+    const tempId = 'temp-' + Date.now() + '-' + Math.random().toString(36).substring(2, 8);
 
     try {
       const tempMessage: ChatMessage = {
@@ -387,7 +384,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
       const timestamp = Date.now();
       const fileExtension = file.name.split('.').pop() || 'jpg';
       const randomSuffix = Math.random().toString(36).substring(2, 8);
-      const filePath = `chat/${conversationId}/${timestamp}-${randomSuffix}.${fileExtension}`;
+      const filePath = 'chat/' + conversationId + '/' + timestamp + '-' + randomSuffix + '.' + fileExtension;
 
       const { error: uploadError } = await supabase.storage
         .from('media')
@@ -413,6 +410,66 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
       setMessages((prev) => prev.filter((m) => m.id !== tempId));
     } catch (err) {
       console.error('Image send failed:', err);
+      setMessages((prev) =>
+        prev.map((m) => (m.id === tempId ? { ...m, status: 'failed' as const } : m))
+      );
+    }
+  };
+
+  const handleSendAudio = async (file: File) => {
+    if (!user || isOffline) return;
+    const tempId = 'temp-' + Date.now() + '-' + Math.random().toString(36).substring(2, 8);
+
+    try {
+      const tempMessage: ChatMessage = {
+        id: tempId,
+        conversationId,
+        senderId: user.id,
+        senderName: 'You',
+        senderAvatar: null,
+        type: 'audio',
+        content: '',
+        metadata: {
+          audioUrl: URL.createObjectURL(file),
+          durationMs: 0,
+          fileName: file.name,
+        },
+        status: 'sending',
+        createdAt: new Date().toISOString(),
+      };
+
+      setMessages((prev) => [...prev, tempMessage]);
+      scrollToBottom();
+
+      const timestamp = Date.now();
+      const fileExtension = file.name.split('.').pop() || 'mp3';
+      const randomSuffix = Math.random().toString(36).substring(2, 8);
+      const filePath = 'audio/' + conversationId + '/' + timestamp + '-' + randomSuffix + '.' + fileExtension;
+
+      const { error: uploadError } = await supabase.storage
+        .from('media')
+        .upload(filePath, file, { cacheControl: '3600', contentType: file.type || 'audio/mpeg' });
+
+      if (uploadError) throw uploadError;
+
+      const { data: publicUrlData } = supabase.storage
+        .from('media')
+        .getPublicUrl(filePath);
+
+      const clientMessageId = generateUUID();
+      const { error: msgError } = await supabase.rpc('send_chat_message', {
+        p_conversation_id: conversationId,
+        p_client_message_id: clientMessageId,
+        p_content: '',
+        p_type: 'audio',
+        p_metadata: { audioUrl: publicUrlData.publicUrl, durationMs: 0, fileName: file.name },
+      });
+
+      if (msgError) throw msgError;
+
+      setMessages((prev) => prev.filter((m) => m.id !== tempId));
+    } catch (err) {
+      console.error('Audio send failed:', err);
       setMessages((prev) =>
         prev.map((m) => (m.id === tempId ? { ...m, status: 'failed' as const } : m))
       );
@@ -493,7 +550,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
           </div>
         ) : (
           groupedMessages.map((group, groupIndex) => (
-            <React.Fragment key={`${group.date}-${groupIndex}`}>
+            <React.Fragment key={group.date + '-' + groupIndex}>
               {groupIndex === 0 || groupedMessages[groupIndex - 1]!.date !== group.date ? (
                 <DateSeparator date={group.date} />
               ) : null}
@@ -521,6 +578,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
         userId={user?.id || ''}
         onSend={handleSend}
         onSendImage={handleSendImage}
+        onSendAudio={handleSendAudio}
         onTypingChange={() => {}}
         replyingTo={replyingTo}
         onCancelReply={handleCancelReply}

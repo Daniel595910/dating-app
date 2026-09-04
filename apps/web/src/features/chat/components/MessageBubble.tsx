@@ -144,7 +144,7 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
       );
     }
 
-    if (message.type === 'voice' && message.metadata) {
+    if ((message.type === 'voice' || message.type === 'audio') && message.metadata) {
       const audioUrl = message.metadata.audioUrl || message.content;
       const duration = message.metadata.durationMs ? message.metadata.durationMs / 1000 : 0;
       const progress = duration > 0 ? (currentTime / duration) * 100 : 0;
@@ -294,3 +294,4 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
     </div>
   );
 };
+
