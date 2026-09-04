@@ -104,6 +104,48 @@ class CommunityService {
         return { posts: [], nextCursor: null, hasMore: false };
       }
     } else if (filter === 'nearby') {
+      // Use RPC for distance-based filtering
+      const { data: nearbyPosts, error: nearbyError } = await supabase.rpc('get_nearby_posts', {
+        p_user_id: userId,
+        p_community_id: communityId,
+        p_radius_km: 50,
+        p_cursor: cursor?.createdAt || null,
+        p_limit: limit + 1,
+      });
+
+      if (nearbyError) {
+        console.error('Nearby filter error:', nearbyError);
+        return { posts: [], nextCursor: null, hasMore: false };
+      }
+
+      if (!nearbyPosts || nearbyPosts.length === 0) {
+        return { posts: [], nextCursor: null, hasMore: false };
+      }
+
+      const hasMoreNearby = nearbyPosts.length > limit;
+      const nearbyFeedPosts = hasMoreNearby ? nearbyPosts.slice(0, limit) : nearbyPosts;
+
+      // Get author profiles
+      const nearbyAuthorIds = [...new Set(nearbyFeedPosts.map((p: any) => p.author_id))];
+      const { data: nearbyProfiles } = await supabase
+        .from('profiles')
+        .select('*')
+        .in('user_id', nearbyAuthorIds);
+
+      const nearbyProfileMap = new Map((nearbyProfiles || []).map((p: any) => [p.user_id, p]));
+
+      const nearbyCommunityPosts: CommunityPost[] = nearbyFeedPosts.map((post: any) => {
+        const profile = nearbyProfileMap.get(post.author_id);
+        return this.mapPostToCommunityPost(post, profile, false);
+      });
+
+      const nearbyLastPost = nearbyFeedPosts[nearbyFeedPosts.length - 1];
+      const nearbyNextCursor: FeedCursor | null = hasMoreNearby
+        ? { createdAt: nearbyLastPost.created_at, id: nearbyLastPost.id }
+        : null;
+
+      return { posts: nearbyCommunityPosts, nextCursor: nearbyNextCursor, hasMore: hasMoreNearby };
+    } else if (filter === 'following') {
       console.log('Filtering by nearby users');
       const { data: userProfile } = await supabase
         .from('profiles')
@@ -326,3 +368,4 @@ class CommunityService {
 }
 
 export const communityService = new CommunityService();
+
