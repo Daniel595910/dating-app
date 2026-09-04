@@ -6,6 +6,7 @@ import { profileService } from '../../features/profile/services/profile.service'
 import { ProfileData, ProfileStats, UserPost } from '../../features/profile/types/profile.types';
 import { PhotoViewer } from '../../features/profile/components/PhotoViewer';
 import { PhotoManagement } from '../../features/profile/components/PhotoManagement';
+import { CommunityCreationSheet } from '../../features/community/components/CommunityCreationSheet';
 import { ArrowLeft, Settings, BadgeCheck, MapPin, Heart, Grid, Menu, UserPlus, Check, Camera, MoreVertical, X } from 'lucide-react';
 import styles from './ProfilePage.module.css';
 
@@ -22,6 +23,8 @@ export const ProfilePage: React.FC = () => {
   const [photoViewerIndex, setPhotoViewerIndex] = useState<number | null>(null);
   const [photoManagementOpen, setPhotoManagementOpen] = useState(false);
   const [profilePhotos, setProfilePhotos] = useState<Array<{ id: string; url: string; order: number; isPrimary: boolean }>>([]);
+  const [communityCreationOpen, setCommunityCreationOpen] = useState(false);
+  const [vipData, setVipData] = useState<{ level: string; credits: number }>({ level: 'free', credits: 0 });
   const [statsModal, setStatsModal] = useState<'posts' | 'followers' | 'following' | 'connections' | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -37,6 +40,16 @@ export const ProfilePage: React.FC = () => {
       const profileStats = await profileService.getProfileStats(targetUserId);
       const posts = await profileService.getUserPosts(targetUserId);
       const photos = await profileService.getProfilePhotos(targetUserId);
+      if (user && isOwnProfile) {
+        const { data: vipAccount } = await supabase
+          .from('vip_accounts')
+          .select('level, community_credits')
+          .eq('user_id', user.id)
+          .single();
+        if (vipAccount) {
+          setVipData({ level: vipAccount.level, credits: vipAccount.community_credits || 0 });
+        }
+      }
 
       setProfile(profileData);
       setStats(profileStats);
@@ -117,6 +130,15 @@ export const ProfilePage: React.FC = () => {
             setProfilePhotos(photos);
           }
         }}
+      />
+
+      <CommunityCreationSheet
+        open={communityCreationOpen}
+        onClose={() => setCommunityCreationOpen(false)}
+        userId={user?.id || ''}
+        vipLevel={vipData.level}
+        credits={vipData.credits}
+        onSuccess={() => {}}
       />
 
       {statsModal && (
@@ -225,6 +247,11 @@ export const ProfilePage: React.FC = () => {
             <button className={styles.secondaryAction} onClick={() => navigate('/profile/preferences')}>
               Preferences
             </button>
+            {vipData.level !== 'free' && (
+              <button className={styles.secondaryAction} onClick={() => setCommunityCreationOpen(true)}>
+                Create Community
+              </button>
+            )}
             <button className={styles.secondaryAction} onClick={() => setPhotoManagementOpen(true)}>
               <Camera size={18} />
               Manage Photos
@@ -331,5 +358,6 @@ export const ProfilePage: React.FC = () => {
     </div>
   );
 };
+
 
 
