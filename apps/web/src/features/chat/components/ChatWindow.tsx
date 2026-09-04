@@ -1,6 +1,7 @@
 ﻿import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useAuthStore } from '@/store/auth.store';
 import { useNavigate } from 'react-router-dom';
+import { supabase } from '@/config/supabase.client';
 import { chatService } from '../services/chat.service';
 import { ChatMessage, MessageCursor } from '../types/chat.types';
 import { ChatHeader } from './ChatHeader';
@@ -11,6 +12,7 @@ import { TypingIndicator } from './TypingIndicator';
 import { ChatActionMenu } from './ChatActionMenu';
 import { BlockConfirmSheet } from '../../community/components/BlockConfirmSheet';
 import { ReportSheet } from '../../community/components/ReportSheet';
+import { OfflineBanner } from '../../community/components/OfflineBanner';
 import styles from '../styles/ChatWindow.module.css';
 
 interface ChatWindowProps {
@@ -36,6 +38,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
   const [hasMore, setHasMore] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
+  const [isOffline, setIsOffline] = useState(!navigator.onLine);
   const [actionMenuOpen, setActionMenuOpen] = useState(false);
   const [blockSheetOpen, setBlockSheetOpen] = useState(false);
   const [reportSheetOpen, setReportSheetOpen] = useState(false);
@@ -43,7 +46,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
   const bottomRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const broadcastChannelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
+  const previousScrollHeightRef = useRef<number>(0);
 
   const scrollToBottom = useCallback((smooth = true) => {
     setTimeout(() => {
@@ -59,6 +62,10 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
       cursorRef.current = null;
     } else {
       setLoadingMore(true);
+      // Preserve scroll position
+      if (messagesContainerRef.current) {
+        previousScrollHeightRef.current = messagesContainerRef.current.scrollHeight;
+      }
     }
 
     try {
@@ -73,6 +80,14 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
           const newMessages = result.messages.filter((m) => !existingIds.has(m.id));
           return [...newMessages, ...prev];
         });
+
+        // Restore scroll position after inserting older messages
+        setTimeout(() => {
+          if (messagesContainerRef.current) {
+            const newScrollHeight = messagesContainerRef.current.scrollHeight;
+            messagesContainerRef.current.scrollTop = newScrollHeight - previousScrollHeightRef.current;
+          }
+        }, 50);
       }
 
       cursorRef.current = result.nextCursor;
@@ -85,6 +100,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
     }
   }, [conversationId, user, scrollToBottom]);
 
+  // Initial load + realtime subscription
   useEffect(() => {
     loadMessages(true);
     chatService.markMessagesAsRead(conversationId, user?.id || '');
@@ -101,8 +117,45 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
     return () => unsubscribe();
   }, [conversationId, user, loadMessages, scrollToBottom]);
 
+  // Typing broadcast subscription
+  useEffect(() => {
+    const channel = supabase.channel(`typing:${conversationId}`);
+
+    channel
+      .on('broadcast', { event: 'typing' }, (payload) => {
+        if (payload.payload.userId !== user?.id) {
+          setIsTyping(true);
+          if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+          typingTimeoutRef.current = setTimeout(() => setIsTyping(false), 3000);
+        }
+      })
+      .on('broadcast', { event: 'stop_typing' }, (payload) => {
+        if (payload.payload.userId !== user?.id) {
+          setIsTyping(false);
+        }
+      })
+      .subscribe();
+
+    return () => {
+      channel.unsubscribe();
+      if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+    };
+  }, [conversationId, user]);
+
+  // Online/offline detection
+  useEffect(() => {
+    const handleOnline = () => setIsOffline(false);
+    const handleOffline = () => setIsOffline(true);
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
+
   const handleSend = async (content: string) => {
-    if (!user || !content.trim()) return;
+    if (!user || !content.trim() || isOffline) return;
 
     const newMessage = await chatService.sendMessage(conversationId, user.id, content.trim());
     if (newMessage) {
@@ -111,17 +164,6 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
     }
   };
 
-  const handleTyping = (typing: boolean) => {
-    if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
-    if (typing) {
-      typingTimeoutRef.current = setTimeout(() => {
-        setIsTyping(false);
-      }, 3000);
-    }
-    setIsTyping(typing);
-  };
-
-  // Group messages by date
   const groupedMessages = messages.reduce<{ date: string; messages: ChatMessage[] }[]>((acc, message) => {
     const date = new Date(message.createdAt).toDateString();
     const lastGroup = acc[acc.length - 1];
@@ -138,11 +180,18 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
   }
 
   if (error && messages.length === 0) {
-    return <div className={styles.error}>{error}</div>;
+    return (
+      <div className={styles.error}>
+        <p>{error}</p>
+        <button onClick={() => loadMessages(true)}>Retry</button>
+      </div>
+    );
   }
 
   return (
     <div className={styles.chatWindow}>
+      <OfflineBanner isOffline={isOffline} hasCachedFeed={messages.length > 0} />
+
       <ChatHeader
         userName={targetUserName}
         userAvatar={targetUserAvatar}
@@ -160,20 +209,34 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
           </button>
         )}
 
-        {groupedMessages.map((group) => (
-          <React.Fragment key={group.date}>
-            <DateSeparator date={group.date} />
-            {group.messages.map((message) => (
-              <MessageBubble key={message.id} message={message} isOwn={message.senderId === user?.id} />
-            ))}
-          </React.Fragment>
-        ))}
+        {messages.length === 0 ? (
+          <div className={styles.emptyState}>
+            <p className={styles.emptyTitle}>Say hello to {targetUserName}!</p>
+            <p className={styles.emptyText}>Start the conversation and get to know each other.</p>
+          </div>
+        ) : (
+          groupedMessages.map((group) => (
+            <React.Fragment key={group.date}>
+              <DateSeparator date={group.date} />
+              {group.messages.map((message) => (
+                <MessageBubble key={message.id} message={message} isOwn={message.senderId === user?.id} />
+              ))}
+            </React.Fragment>
+          ))
+        )}
 
         {isTyping && <TypingIndicator userName={targetUserName} />}
         <div ref={bottomRef} />
       </div>
 
-      <MessageComposer onSend={handleSend} onTyping={handleTyping} />
+      <MessageComposer
+        conversationId={conversationId}
+        userId={user?.id || ''}
+        onSend={handleSend}
+        onTypingChange={(typing) => {
+          // Local typing state handled by composer
+        }}
+      />
 
       <ChatActionMenu
         open={actionMenuOpen}

@@ -1,28 +1,56 @@
 ﻿import React, { useState, useRef, useEffect } from 'react';
 import { Send } from 'lucide-react';
+import { supabase } from '@/config/supabase.client';
 import styles from '../styles/MessageComposer.module.css';
 
 interface MessageComposerProps {
+  conversationId: string;
+  userId: string;
   onSend: (content: string) => void;
-  onTyping: (isTyping: boolean) => void;
+  onTypingChange: (isTyping: boolean) => void;
 }
 
-export const MessageComposer: React.FC<MessageComposerProps> = ({ onSend, onTyping }) => {
+export const MessageComposer: React.FC<MessageComposerProps> = ({
+  conversationId,
+  userId,
+  onSend,
+  onTypingChange,
+}) => {
   const [content, setContent] = useState('');
   const [sending, setSending] = useState(false);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastTypingBroadcastRef = useRef<number>(0);
 
   useEffect(() => {
     inputRef.current?.focus();
   }, []);
+
+  const broadcastTyping = async (isTyping: boolean) => {
+    const now = Date.now();
+    // Throttle: only broadcast every 2 seconds max
+    if (isTyping && now - lastTypingBroadcastRef.current < 2000) return;
+    lastTypingBroadcastRef.current = now;
+
+    try {
+      const channel = supabase.channel(`typing:${conversationId}`);
+      await channel.send({
+        type: 'broadcast',
+        event: isTyping ? 'typing' : 'stop_typing',
+        payload: { userId },
+      });
+    } catch {
+      // Ignore broadcast errors
+    }
+  };
 
   const handleSend = async () => {
     const trimmed = content.trim();
     if (!trimmed || sending) return;
 
     setSending(true);
-    onTyping(false);
+    await broadcastTyping(false);
+    onTypingChange(false);
     onSend(trimmed);
     setContent('');
     setSending(false);
@@ -38,12 +66,15 @@ export const MessageComposer: React.FC<MessageComposerProps> = ({ onSend, onTypi
 
   const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setContent(e.target.value);
-    onTyping(e.target.value.length > 0);
+    const isTyping = e.target.value.length > 0;
+    onTypingChange(isTyping);
+    broadcastTyping(isTyping);
 
     if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
     typingTimeoutRef.current = setTimeout(() => {
-      onTyping(false);
-    }, 2000);
+      onTypingChange(false);
+      broadcastTyping(false);
+    }, 2500);
   };
 
   return (
