@@ -66,6 +66,26 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
       );
     }
 
+    if (message.type === 'voice' && message.metadata?.durationMs) {
+      return (
+        <div className={styles.voiceMessageContainer}>
+          <button className={styles.voicePlayButton} aria-label="Play voice message">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+              <polygon points="8 5 19 12 8 19 8 5" />
+            </svg>
+          </button>
+          <div className={styles.voiceWaveform}>
+            {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((i) => (
+              <span key={i} className={styles.voiceWaveformBar} />
+            ))}
+          </div>
+          <span className={styles.voiceDuration}>
+            {Math.floor(message.metadata.durationMs / 1000)}s
+          </span>
+        </div>
+      );
+    }
+
     if (message.type === 'gift' && message.metadata?.giftIcon) {
       return (
         <div className={styles.giftMessageContainer}>
@@ -107,7 +127,6 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
         )}
       </div>
 
-      {/* Reply action popup */}
       {showActions && onReply && message.type === 'text' && (
         <button className={styles.replyAction} onClick={handleReply}>
           <Reply size={14} />

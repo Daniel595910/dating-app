@@ -1,5 +1,5 @@
 ﻿import React, { useState, useRef, useEffect } from 'react';
-import { Send, Plus, X } from 'lucide-react';
+import { Send, Plus, X, Mic, Gift } from 'lucide-react';
 import { supabase } from '@/config/supabase.client';
 import { ChatMessage } from '../../types/chat.types';
 import styles from '../styles/MessageComposer.module.css';
@@ -12,6 +12,8 @@ interface MessageComposerProps {
   onTypingChange: (isTyping: boolean) => void;
   replyingTo?: ChatMessage | null;
   onCancelReply?: () => void;
+  onOpenVoice?: () => void;
+  onOpenGift?: () => void;
 }
 
 export const MessageComposer: React.FC<MessageComposerProps> = ({
@@ -22,6 +24,8 @@ export const MessageComposer: React.FC<MessageComposerProps> = ({
   onTypingChange,
   replyingTo,
   onCancelReply,
+  onOpenVoice,
+  onOpenGift,
 }) => {
   const [content, setContent] = useState('');
   const [sending, setSending] = useState(false);
@@ -31,7 +35,6 @@ export const MessageComposer: React.FC<MessageComposerProps> = ({
   const lastTypingBroadcastRef = useRef<number>(0);
 
   useEffect(() => {
-    inputRef.current?.focus();
     if (replyingTo) {
       inputRef.current?.focus();
     }
@@ -99,7 +102,6 @@ export const MessageComposer: React.FC<MessageComposerProps> = ({
 
   return (
     <div className={styles.composerWrapper}>
-      {/* Reply indicator */}
       {replyingTo && (
         <div className={styles.replyIndicator}>
           <div className={styles.replyIndicatorContent}>
@@ -140,6 +142,14 @@ export const MessageComposer: React.FC<MessageComposerProps> = ({
           maxLength={10000}
           disabled={sending}
         />
+
+        <button className={styles.voiceButton} onClick={onOpenGift} aria-label="Send gift">
+          <Gift size={18} />
+        </button>
+
+        <button className={styles.voiceButton} onClick={onOpenVoice} aria-label="Record voice message">
+          <Mic size={18} />
+        </button>
 
         <button className={styles.sendButton} onClick={handleSend} disabled={!content.trim() || sending} aria-label="Send message">
           <Send size={18} />

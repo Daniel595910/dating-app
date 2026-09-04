@@ -129,3 +129,25 @@
   background-color: #fee2e2;
   color: var(--color-primary, #ef4444);
 }
+
+.voiceButton {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background-color: #f3f4f6;
+  color: #6b7280;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: all 0.2s ease;
+  min-width: 44px;
+  min-height: 44px;
+}
+
+.voiceButton:hover {
+  background-color: #e5e7eb;
+  color: #111827;
+}

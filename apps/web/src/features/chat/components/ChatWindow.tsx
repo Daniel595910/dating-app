@@ -14,6 +14,8 @@ import { BlockConfirmSheet } from '../../community/components/BlockConfirmSheet'
 import { ReportSheet } from '../../community/components/ReportSheet';
 import { OfflineBanner } from '../../community/components/OfflineBanner';
 import { generateUUID } from '../utils/uuid';
+import { VoiceRecorder } from './VoiceRecorder';
+import { GiftPicker } from './GiftPicker';
 import styles from '../styles/ChatWindow.module.css';
 
 interface ChatWindowProps {
@@ -45,6 +47,8 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
   const [blockSheetOpen, setBlockSheetOpen] = useState(false);
   const [reportSheetOpen, setReportSheetOpen] = useState(false);
   const [replyingTo, setReplyingTo] = useState<ChatMessage | null>(null);
+  const [voiceRecorderOpen, setVoiceRecorderOpen] = useState(false);
+  const [giftPickerOpen, setGiftPickerOpen] = useState(false);
   const cursorRef = useRef<MessageCursor | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
@@ -268,6 +272,82 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
     }
   };
 
+  const handleSendGift = async (gift: { id: string; name: string; icon: string }) => {
+    if (!user || isOffline) return;
+
+    try {
+      const clientMessageId = generateUUID();
+      await supabase.rpc('send_chat_message', {
+        p_conversation_id: conversationId,
+        p_client_message_id: clientMessageId,
+        p_content: gift.name,
+        p_type: 'gift',
+        p_metadata: { giftId: gift.id, giftName: gift.name, giftIcon: gift.icon },
+      });
+    } catch (err) {
+      console.error('Gift send failed:', err);
+    }
+  };
+
+  const handleSendVoice = async (audioBlob: Blob, duration: number) => {
+    if (!user || isOffline) return;
+
+    const tempId = 	emp--;
+
+    try {
+      const tempMessage: ChatMessage = {
+        id: tempId,
+        conversationId,
+        senderId: user.id,
+        senderName: 'You',
+        senderAvatar: null,
+        type: 'voice',
+        content: '',
+        metadata: {
+          durationMs: duration * 1000,
+        },
+        status: 'sending',
+        createdAt: new Date().toISOString(),
+      };
+
+      setMessages((prev) => [...prev, tempMessage]);
+      scrollToBottom();
+
+      const timestamp = Date.now();
+      const randomSuffix = Math.random().toString(36).substring(2, 8);
+      const filePath = oice//-.webm;
+
+      const { error: uploadError } = await supabase.storage
+        .from('media')
+        .upload(filePath, audioBlob, { cacheControl: '3600', contentType: 'audio/webm' });
+
+      if (uploadError) throw uploadError;
+
+      const { data: publicUrlData } = supabase.storage
+        .from('media')
+        .getPublicUrl(filePath);
+
+      const clientMessageId = generateUUID();
+      const { error: msgError } = await supabase.rpc('send_chat_message', {
+        p_conversation_id: conversationId,
+        p_client_message_id: clientMessageId,
+        p_content: '',
+        p_type: 'voice',
+        p_metadata: { audioUrl: publicUrlData.publicUrl, durationMs: duration * 1000 },
+      });
+
+      if (msgError) throw msgError;
+
+      setMessages((prev) => prev.filter((m) => m.id !== tempId));
+
+    } catch (err) {
+      console.error('Voice send failed:', err);
+      setMessages((prev) =>
+        prev.map((m) => (m.id === tempId ? { ...m, status: 'failed' as const } : m))
+      );
+    }
+  };
+
   const handleSendImage = async (file: File) => {
     if (!user || isOffline) return;
 
@@ -422,6 +502,20 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
         onTypingChange={() => {}}
         replyingTo={replyingTo}
         onCancelReply={handleCancelReply}
+        onOpenVoice={() => setVoiceRecorderOpen(true)}
+        onOpenGift={() => setGiftPickerOpen(true)}
+      />
+
+      <GiftPicker
+        open={giftPickerOpen}
+        onClose={() => setGiftPickerOpen(false)}
+        onSelectGift={handleSendGift}
+      />
+
+      <VoiceRecorder
+        open={voiceRecorderOpen}
+        onClose={() => setVoiceRecorderOpen(false)}
+        onSend={handleSendVoice}
       />
 
       <ChatActionMenu
@@ -453,3 +547,5 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
     </div>
   );
 };
+
+
