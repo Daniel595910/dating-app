@@ -128,6 +128,14 @@ export const AppRouter: React.FC = () => {
         }
       />
       <Route
+        path="/profile/my-communities"
+        element={
+          <ProtectedRoute>
+            <CommunityManagementPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
         path={ROUTES.PROFILE_VIP}
         element={
           <ProtectedRoute>
@@ -158,4 +166,3 @@ export const AppRouter: React.FC = () => {
     </Routes>
   );
 };
-

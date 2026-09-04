@@ -7,7 +7,7 @@ import { ProfileData, ProfileStats, UserPost } from '../../features/profile/type
 import { PhotoViewer } from '../../features/profile/components/PhotoViewer';
 import { PhotoManagement } from '../../features/profile/components/PhotoManagement';
 import { CommunityCreationSheet } from '../../features/community/components/CommunityCreationSheet';
-import { ArrowLeft, Settings, BadgeCheck, MapPin, Heart, Grid, Menu, UserPlus, Check, Camera, MoreVertical, X, Star, MessageCircle, Crown, CreditCard, Users } from 'lucide-react';
+import { ArrowLeft, Settings, BadgeCheck, MapPin, Heart, Grid, Menu, UserPlus, Check, Camera, MoreVertical, X, Star, MessageCircle, Crown, Users } from 'lucide-react';
 import styles from './ProfilePage.module.css';
 
 export const ProfilePage: React.FC = () => {
@@ -31,7 +31,9 @@ export const ProfilePage: React.FC = () => {
     planExpiresAt: null,
   });
   const [statsModal, setStatsModal] = useState<'posts' | 'followers' | 'following' | 'connections' | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [followersList, setFollowersList] = useState<Array<{ userId: string; name: string; avatarUrl: string | null }>>([]);
+  const [followingList, setFollowingList] = useState<Array<{ userId: string; name: string; avatarUrl: string | null }>>([]);
+  const [connectionsList, setConnectionsList] = useState<Array<{ userId: string; name: string; avatarUrl: string | null }>>([]);
 
   const isOwnProfile = !userId || userId === user?.id;
   const targetUserId = userId || user?.id || '';
@@ -60,7 +62,7 @@ export const ProfilePage: React.FC = () => {
             .from('vip_accounts')
             .select('level, community_credits, points_balance, plan_expires_at')
             .eq('user_id', user.id)
-            .single();
+            .maybeSingle();
           if (vipAccount) {
             setVipData({
               level: vipAccount.level,
@@ -77,6 +79,82 @@ export const ProfilePage: React.FC = () => {
 
     loadProfile();
   }, [targetUserId, user, isOwnProfile]);
+
+  const loadStatsLists = async (type: 'followers' | 'following' | 'connections') => {
+    if (!targetUserId) return;
+
+    if (type === 'followers') {
+      const { data: followers } = await supabase
+        .from('follows')
+        .select('follower_id')
+        .eq('following_id', targetUserId)
+        .limit(20);
+
+      if (followers && followers.length > 0) {
+        const followerIds = followers.map((f: any) => f.follower_id);
+        const { data: profiles } = await supabase
+          .from('profiles')
+          .select('user_id, display_name, avatar_url')
+          .in('user_id', followerIds);
+        setFollowersList((profiles || []).map((p: any) => ({
+          userId: p.user_id,
+          name: p.display_name || 'User',
+          avatarUrl: p.avatar_url,
+        })));
+      } else {
+        setFollowersList([]);
+      }
+    }
+
+    if (type === 'following') {
+      const { data: following } = await supabase
+        .from('follows')
+        .select('following_id')
+        .eq('follower_id', targetUserId)
+        .limit(20);
+
+      if (following && following.length > 0) {
+        const followingIds = following.map((f: any) => f.following_id);
+        const { data: profiles } = await supabase
+          .from('profiles')
+          .select('user_id, display_name, avatar_url')
+          .in('user_id', followingIds);
+        setFollowingList((profiles || []).map((p: any) => ({
+          userId: p.user_id,
+          name: p.display_name || 'User',
+          avatarUrl: p.avatar_url,
+        })));
+      } else {
+        setFollowingList([]);
+      }
+    }
+
+    if (type === 'connections') {
+      const { data: matches } = await supabase
+        .from('matches')
+        .select('user1_id, user2_id')
+        .or('user1_id.eq.' + targetUserId + ',user2_id.eq.' + targetUserId)
+        .in('status', ['active', 'completed'])
+        .limit(20);
+
+      if (matches && matches.length > 0) {
+        const otherUserIds = matches.map((m: any) =>
+          m.user1_id === targetUserId ? m.user2_id : m.user1_id
+        );
+        const { data: profiles } = await supabase
+          .from('profiles')
+          .select('user_id, display_name, avatar_url')
+          .in('user_id', otherUserIds);
+        setConnectionsList((profiles || []).map((p: any) => ({
+          userId: p.user_id,
+          name: p.display_name || 'User',
+          avatarUrl: p.avatar_url,
+        })));
+      } else {
+        setConnectionsList([]);
+      }
+    }
+  };
 
   const handleFollow = async () => {
     if (!user) return;
@@ -145,7 +223,6 @@ export const ProfilePage: React.FC = () => {
         }}
       />
 
-      {/* Stats Modal */}
       {statsModal && (
         <div className={styles.statsModalOverlay} onClick={() => setStatsModal(null)}>
           <div className={styles.statsModal} onClick={(e) => e.stopPropagation()}>
@@ -173,17 +250,51 @@ export const ProfilePage: React.FC = () => {
                 ) : (
                   <p className={styles.statsModalEmpty}>No posts yet</p>
                 )
+              ) : statsModal === 'followers' ? (
+                followersList.length > 0 ? (
+                  followersList.map((follower) => (
+                    <button key={follower.userId} className={styles.statsModalUser} onClick={() => { setStatsModal(null); navigate('/profile/' + follower.userId); }}>
+                      <div className={styles.statsModalAvatar}>
+                        {follower.avatarUrl ? <img src={follower.avatarUrl} alt={follower.name} /> : follower.name.charAt(0).toUpperCase()}
+                      </div>
+                      <span className={styles.statsModalName}>{follower.name}</span>
+                    </button>
+                  ))
+                ) : (
+                  <p className={styles.statsModalEmpty}>No followers yet</p>
+                )
+              ) : statsModal === 'following' ? (
+                followingList.length > 0 ? (
+                  followingList.map((following) => (
+                    <button key={following.userId} className={styles.statsModalUser} onClick={() => { setStatsModal(null); navigate('/profile/' + following.userId); }}>
+                      <div className={styles.statsModalAvatar}>
+                        {following.avatarUrl ? <img src={following.avatarUrl} alt={following.name} /> : following.name.charAt(0).toUpperCase()}
+                      </div>
+                      <span className={styles.statsModalName}>{following.name}</span>
+                    </button>
+                  ))
+                ) : (
+                  <p className={styles.statsModalEmpty}>Not following anyone yet</p>
+                )
               ) : (
-                <p className={styles.statsModalEmpty}>
-                  {statsModal === 'followers' ? 'Followers list coming soon' : statsModal === 'following' ? 'Following list coming soon' : 'Connections list coming soon'}
-                </p>
+                connectionsList.length > 0 ? (
+                  connectionsList.map((connection) => (
+                    <button key={connection.userId} className={styles.statsModalUser} onClick={() => { setStatsModal(null); navigate('/profile/' + connection.userId); }}>
+                      <div className={styles.statsModalAvatar}>
+                        {connection.avatarUrl ? <img src={connection.avatarUrl} alt={connection.name} /> : connection.name.charAt(0).toUpperCase()}
+                      </div>
+                      <span className={styles.statsModalName}>{connection.name}</span>
+                    </button>
+                  ))
+                ) : (
+                  <p className={styles.statsModalEmpty}>No connections yet</p>
+                )
               )}
             </div>
           </div>
         </div>
       )}
 
-      {/* Header */}
       <header className={styles.header}>
         <button className={styles.headerButton} onClick={() => navigate(-1)} aria-label="Back">
           <ArrowLeft size={22} />
@@ -200,7 +311,6 @@ export const ProfilePage: React.FC = () => {
         )}
       </header>
 
-      {/* Hero Section */}
       <div className={styles.hero}>
         <div className={styles.avatarContainer}>
           {profile.avatarUrl ? (
@@ -216,15 +326,15 @@ export const ProfilePage: React.FC = () => {
             <span className={styles.statValue}>{stats.posts}</span>
             <span className={styles.statLabel}>Posts</span>
           </button>
-          <button className={styles.statButton} onClick={() => setStatsModal('followers')}>
+          <button className={styles.statButton} onClick={() => { setStatsModal('followers'); loadStatsLists('followers'); }}>
             <span className={styles.statValue}>{stats.followers}</span>
             <span className={styles.statLabel}>Followers</span>
           </button>
-          <button className={styles.statButton} onClick={() => setStatsModal('following')}>
+          <button className={styles.statButton} onClick={() => { setStatsModal('following'); loadStatsLists('following'); }}>
             <span className={styles.statValue}>{stats.following}</span>
             <span className={styles.statLabel}>Following</span>
           </button>
-          <button className={styles.statButton} onClick={() => setStatsModal('connections')}>
+          <button className={styles.statButton} onClick={() => { setStatsModal('connections'); loadStatsLists('connections'); }}>
             <span className={styles.statValue}>{stats.connections}</span>
             <span className={styles.statLabel}>Connections</span>
           </button>
@@ -246,7 +356,6 @@ export const ProfilePage: React.FC = () => {
 
         {profile.bio && <p className={styles.bio}>{profile.bio}</p>}
 
-        {/* VIP Badge for own profile */}
         {isOwnProfile && vipData.level !== 'free' && (
           <button className={styles.vipBadge} onClick={() => navigate('/profile/vip')}>
             <Crown size={14} />
@@ -255,7 +364,6 @@ export const ProfilePage: React.FC = () => {
           </button>
         )}
 
-        {/* Action Buttons */}
         {isOwnProfile ? (
           <div className={styles.actionRow}>
             <button className={styles.primaryAction} onClick={() => navigate('/profile/edit')}>
@@ -267,13 +375,57 @@ export const ProfilePage: React.FC = () => {
             <button className={styles.secondaryAction} onClick={() => navigate('/profile/preferences')} aria-label="Dating Preferences">
               <Heart size={18} />
             </button>
-            <button className={styles.secondaryAction} onClick={() => navigate('/profile/vip')} aria-label="VIP & Credits">
+            <button className={styles.secondaryAction} onClick={() => navigate('/profile/vip')} aria-label="VIP and Credits">
               <Star size={18} />
             </button>
           </div>
         ) : (
           <div className={styles.actionRow}>
-            <button className={styles.primaryAction} onClick={() => navigate(`/chats/${targetUserId}`)}>
+            <button className={styles.primaryAction} onClick={async () => {
+              if (!user) return;
+
+              try {
+                // Find existing conversation between these users
+                const { data: existingConv } = await supabase
+                  .from('conversations')
+                  .select('id')
+                  .contains('participant_ids', [user.id, targetUserId])
+                  .limit(1)
+                  .maybeSingle();
+
+                if (existingConv) {
+                  navigate('/chats/' + existingConv.id);
+                  return;
+                }
+
+                // Find a match between these users
+                const { data: match } = await supabase
+                  .from('matches')
+                  .select('id')
+                  .or('user1_id.eq.' + user.id + ',user2_id.eq.' + user.id)
+                  .or('user1_id.eq.' + targetUserId + ',user2_id.eq.' + targetUserId)
+                  .limit(1)
+                  .maybeSingle();
+
+                if (match) {
+                  // Create conversation from match
+                  const { data: convId, error: rpcError } = await supabase.rpc('get_or_create_conversation', {
+                    p_match_id: match.id,
+                  });
+
+                  if (rpcError) throw rpcError;
+
+                  if (convId) {
+                    navigate('/chats/' + convId);
+                  }
+                } else {
+                  // No match yet - show alert
+                  alert('You need to match with this user before messaging them.');
+                }
+              } catch (err) {
+                console.error('Failed to open conversation:', err);
+              }
+            }}>
               <MessageCircle size={18} />
               Message
             </button>
@@ -284,7 +436,6 @@ export const ProfilePage: React.FC = () => {
           </div>
         )}
 
-        {/* My Communities link */}
         {isOwnProfile && (
           <button className={styles.createCommunityButton} onClick={() => navigate('/profile/my-communities')} style={{ background: 'none', border: '1px solid #e5e7eb', color: '#111827' }}>
             <Users size={16} />
@@ -292,7 +443,6 @@ export const ProfilePage: React.FC = () => {
           </button>
         )}
 
-        {/* Create Community button for own profile */}
         {isOwnProfile && (
           <button className={styles.createCommunityButton} onClick={() => setCommunityCreationOpen(true)}>
             <Crown size={16} />
@@ -302,7 +452,6 @@ export const ProfilePage: React.FC = () => {
         )}
       </div>
 
-      {/* Tabs */}
       <div className={styles.tabs}>
         <button
           className={`${styles.tab} ${activeTab === 'posts' ? styles.tabActive : ''}`}
@@ -320,7 +469,6 @@ export const ProfilePage: React.FC = () => {
         </button>
       </div>
 
-      {/* Content */}
       {activeTab === 'posts' ? (
         <div className={styles.galleryGrid}>
           {postImages.length > 0 ? (
@@ -385,4 +533,6 @@ export const ProfilePage: React.FC = () => {
     </div>
   );
 };
+
+
 

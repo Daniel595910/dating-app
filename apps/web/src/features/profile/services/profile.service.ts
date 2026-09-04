@@ -196,14 +196,20 @@ class ProfileService {
   }
 
   async isFollowing(followerId: string, followingId: string): Promise<boolean> {
-    const { data } = await supabase
-      .from('follows')
-      .select('id')
-      .eq('follower_id', followerId)
-      .eq('following_id', followingId)
-      .single();
-    return Boolean(data);
+    try {
+      const { data } = await supabase
+        .from('follows')
+        .select('id')
+        .eq('follower_id', followerId)
+        .eq('following_id', followingId)
+        .maybeSingle();
+      return Boolean(data);
+    } catch {
+      return false;
+    }
   }
 }
 
 export const profileService = new ProfileService();
+
+
