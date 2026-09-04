@@ -36,6 +36,7 @@ import { VipPage } from './pages/profile/VipPage';
 import { SettingsPage } from './pages/profile/SettingsPage';
 import { BlockedUsersPage } from './pages/profile/BlockedUsersPage';
 import { CommunityManagementPage } from './pages/profile/CommunityManagementPage';
+import { NotificationSettingsPage } from './pages/profile/NotificationSettingsPage';
 
 // Auth Guard Component
 import { ProtectedRoute } from './components/common/ProtectedRoute';
@@ -166,6 +167,14 @@ export const AppRouter: React.FC = () => {
         element={
           <ProtectedRoute>
             <SettingsPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/settings/notifications"
+        element={
+          <ProtectedRoute>
+            <NotificationSettingsPage />
           </ProtectedRoute>
         }
       />

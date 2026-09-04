@@ -46,7 +46,7 @@ export const SettingsPage: React.FC = () => {
     {
       title: 'Notifications',
       items: [
-        { icon: Bell, label: 'Notification Preferences', action: () => {} },
+        { icon: Bell, label: 'Notification Preferences', action: () => navigate('/settings/notifications') },
       ],
     },
     {
@@ -210,4 +210,5 @@ export const SettingsPage: React.FC = () => {
     </div>
   );
 };
+
 
