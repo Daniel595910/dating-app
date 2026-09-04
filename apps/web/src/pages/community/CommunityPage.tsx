@@ -1,4 +1,5 @@
 ﻿import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '@/store/auth.store';
 import { useCommunity } from '../../features/community/hooks/useCommunity';
 import { useCommunityFeed } from '../../features/community/hooks/useCommunityFeed';
@@ -26,11 +27,11 @@ import { BottomNav } from '../../features/community/components/BottomNav';
 import { LocationSetupSheet } from '../../features/community/components/LocationSetupSheet';
 import { OfflineBanner } from '../../features/community/components/OfflineBanner';
 import { CommunitySwitcher } from '../../features/community/components/CommunitySwitcher';
-import { Compass } from 'lucide-react';
 import { FeedFilter } from '../../features/community/types/community.types';
 import styles from '../../features/community/styles/CommunityPage.module.css';
 
 export const CommunityPage: React.FC = () => {
+  const navigate = useNavigate();
   const { user } = useAuthStore();
   const [filter, setFilter] = useState<FeedFilter>('all');
   const [createSheetOpen, setCreateSheetOpen] = useState(false);
@@ -42,7 +43,6 @@ export const CommunityPage: React.FC = () => {
   const [newPostCount, setNewPostCount] = useState(0);
   const [locationSheetOpen, setLocationSheetOpen] = useState(false);
   const [switcherOpen, setSwitcherOpen] = useState(false);
-  const [currentCommunityId, setCurrentCommunityId] = useState<string | null>(null);
 
   const { community, loading: communityLoading, onlineCount } = useCommunity(user?.id || null);
 
@@ -126,7 +126,7 @@ export const CommunityPage: React.FC = () => {
     if (conversationId) {
       setMatchUser(null);
       setMatchId(null);
-      window.location.href = `/chats/${conversationId}`;
+      navigate(`/chats/${conversationId}`);
     }
   };
 
@@ -164,12 +164,9 @@ export const CommunityPage: React.FC = () => {
       <CommunityHeader
         community={{ ...community, onlineCount }}
         userId={user?.id || ''}
-        onSearch={() => { window.location.href = '/search'; }}
+        onSearch={() => navigate('/search')}
         onMore={() => {}}
         onSwitchCommunity={() => setSwitcherOpen(true)}
-        onDiscover={() => navigate('/discover-communities')}
-        onSwitchCommunity={() => setSwitcherOpen(true)}
-        onDiscover={() => navigate('/discover-communities')}
         onDiscover={() => navigate('/discover-communities')}
       />
 
@@ -182,7 +179,6 @@ export const CommunityPage: React.FC = () => {
       )}
 
       <main className={styles.feedContainer}>
-        {/* Active Connections - Getting to Know */}
         {activeConnections.map((conn) => (
           <ConnectionStatusCard
             key={conn.matchId}
@@ -195,7 +191,6 @@ export const CommunityPage: React.FC = () => {
           />
         ))}
 
-        {/* Pending Connection Requests */}
         <PendingRequests
           requests={pendingRequests.map((r) => ({ id: r.id, requesterName: r.requesterName, message: r.message }))}
           onAccept={acceptRequest}
@@ -227,13 +222,14 @@ export const CommunityPage: React.FC = () => {
       </main>
 
       <CreatePostButton onClick={() => setCreateSheetOpen(true)} />
+
       <CommunitySwitcher
         open={switcherOpen}
         onClose={() => setSwitcherOpen(false)}
         userId={user?.id || ''}
-        currentCommunityId={currentCommunityId || ''}
-        onSwitch={(newCommunityId) => {
-          setCurrentCommunityId(newCommunityId);
+        currentCommunityId={community.id}
+        onSwitch={() => {
+          setSwitcherOpen(false);
           window.location.reload();
         }}
       />
@@ -252,7 +248,7 @@ export const CommunityPage: React.FC = () => {
         onClose={() => setPreviewAuthorId(null)}
         authorId={previewAuthorId}
         onGetToKnow={(id) => { setPreviewAuthorId(null); handleGetToKnow(id); }}
-        onViewFullProfile={(id) => { setPreviewAuthorId(null); window.location.href = `/profile/${id}`; }}
+        onViewFullProfile={(id) => { setPreviewAuthorId(null); navigate(`/profile/${id}`); }}
       />
 
       <ConnectionPrompt
@@ -280,7 +276,3 @@ export const CommunityPage: React.FC = () => {
     </div>
   );
 };
-
-
-
-

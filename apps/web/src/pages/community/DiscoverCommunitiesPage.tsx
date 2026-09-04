@@ -1,8 +1,8 @@
-﻿import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '@/store/auth.store';
 import { supabase } from '@/config/supabase.client';
-import { ArrowLeft, Search, Users, MapPin, Star, Lock, Globe, Compass, Check } from 'lucide-react';
+import { ArrowLeft, Search, Users, MapPin, Star, Lock, Globe, Compass, Check, TrendingUp, Filter, X, ChevronRight } from 'lucide-react';
 import styles from './DiscoverCommunitiesPage.module.css';
 
 interface DiscoverCommunity {
@@ -19,28 +19,35 @@ interface DiscoverCommunity {
   postCount: number;
   isPrivate: boolean;
   isSponsored: boolean;
+  isJoined: boolean;
+  isAdmin: boolean;
   rules: string[];
+  createdAt: string;
 }
+
+type SortOption = 'popular' | 'newest' | 'sponsored' | 'nearest';
+type FilterType = 'all' | 'city' | 'state' | 'country' | 'private' | 'public';
 
 export const DiscoverCommunitiesPage: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuthStore();
   const [communities, setCommunities] = useState<DiscoverCommunity[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
-  const [filterType, setFilterType] = useState<'all' | 'city' | 'state' | 'country'>('all');
-  const [joinedIds, setJoinedIds] = useState<Set<string>>(new Set());
+  const [filterType, setFilterType] = useState<FilterType>('all');
+  const [sortBy, setSortBy] = useState<SortOption>('popular');
   const [joiningId, setJoiningId] = useState<string | null>(null);
+  const [showFilters, setShowFilters] = useState(false);
+  const [userLocation, setUserLocation] = useState<string>('');
 
-  useEffect(() => {
-    loadCommunities();
-  }, [user]);
-
-  const loadCommunities = async () => {
+  const loadCommunities = useCallback(async () => {
     if (!user) return;
+    setLoading(true);
+    setError(null);
 
     try {
-      // Get user's location
+      // Get user location
       const { data: userProfile } = await supabase
         .from('profiles')
         .select('location')
@@ -51,23 +58,27 @@ export const DiscoverCommunitiesPage: React.FC = () => {
       const userState = userProfile?.location?.state || null;
       const userCity = userProfile?.location?.city || null;
 
+      setUserLocation([userCity, userState, userCountry].filter(Boolean).join(', '));
+
       // Get all communities in user's country
-      const { data: communityData } = await supabase
+      const { data: communityData, error: communityError } = await supabase
         .from('communities')
         .select('*')
         .eq('country', userCountry)
         .eq('status', 'active')
         .order('member_count', { ascending: false });
 
-      // Get user's joined communities
+      if (communityError) throw communityError;
+
+      // Get user's memberships
       const { data: memberships } = await supabase
         .from('community_members')
-        .select('community_id')
+        .select('community_id, role')
         .eq('user_id', user.id);
 
-      setJoinedIds(new Set((memberships || []).map((m: any) => m.community_id)));
+      const membershipMap = new Map((memberships || []).map((m: any) => [m.community_id, m.role]));
 
-      // Mark sponsored communities (check sponsorships)
+      // Get sponsorships
       const { data: sponsorships } = await supabase
         .from('community_sponsorships')
         .select('community_id')
@@ -90,56 +101,106 @@ export const DiscoverCommunitiesPage: React.FC = () => {
           postCount: c.post_count || 0,
           isPrivate: c.status === 'locked',
           isSponsored: sponsoredIds.has(c.id),
+          isJoined: membershipMap.has(c.id),
+          isAdmin: membershipMap.get(c.id) === 'admin',
           rules: c.rules || [],
+          createdAt: c.created_at,
         }))
       );
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed to load communities:', err);
+      setError('Failed to load communities. Please try again.');
     }
 
     setLoading(false);
-  };
+  }, [user]);
+
+  useEffect(() => {
+    loadCommunities();
+  }, [loadCommunities]);
 
   const handleJoin = async (communityId: string) => {
     if (!user) return;
     setJoiningId(communityId);
+    setError(null);
 
     try {
-      await supabase.from('community_members').insert({
-        community_id: communityId,
-        user_id: user.id,
-        role: 'member',
-      });
+      const { error: joinError } = await supabase
+        .from('community_members')
+        .insert({
+          community_id: communityId,
+          user_id: user.id,
+          role: 'member',
+        });
 
-      setJoinedIds((prev) => new Set([...prev, communityId]));
-    } catch (err) {
+      if (joinError && joinError.code !== '23505') throw joinError;
+
+      // Update local state
+      setCommunities((prev) =>
+        prev.map((c) =>
+          c.id === communityId
+            ? { ...c, isJoined: true, memberCount: c.memberCount + 1 }
+            : c
+        )
+      );
+    } catch (err: any) {
       console.error('Failed to join:', err);
+      setError('Failed to join community. Please try again.');
     } finally {
       setJoiningId(null);
     }
   };
 
-  const handleEnter = (communityId: string) => {
-    navigate('/community/' + communityId);
+  const handleEnter = (communityId: string, communityName: string) => {
+    // Store selected community in localStorage
+    localStorage.setItem('selectedCommunityId', communityId);
+    localStorage.setItem('selectedCommunityName', communityName);
+    navigate('/community');
   };
 
-  const filteredCommunities = communities
-    .filter((c) => {
-      if (filterType === 'city') return c.city !== null;
-      if (filterType === 'state') return c.state !== null;
-      if (filterType === 'country') return c.type === 'country';
-      return true;
-    })
-    .filter((c) => {
-      if (!searchTerm) return true;
+  const getSortedAndFiltered = () => {
+    let result = [...communities];
+
+    // Filter
+    if (filterType === 'city') result = result.filter((c) => c.city !== null);
+    if (filterType === 'state') result = result.filter((c) => c.state !== null);
+    if (filterType === 'country') result = result.filter((c) => c.type === 'country');
+    if (filterType === 'private') result = result.filter((c) => c.isPrivate);
+    if (filterType === 'public') result = result.filter((c) => !c.isPrivate);
+
+    // Search
+    if (searchTerm.trim()) {
       const term = searchTerm.toLowerCase();
-      return (
-        c.name.toLowerCase().includes(term) ||
-        (c.city && c.city.toLowerCase().includes(term)) ||
-        (c.state && c.state.toLowerCase().includes(term)) ||
-        c.country.toLowerCase().includes(term)
+      result = result.filter(
+        (c) =>
+          c.name.toLowerCase().includes(term) ||
+          (c.city && c.city.toLowerCase().includes(term)) ||
+          (c.state && c.state.toLowerCase().includes(term)) ||
+          c.country.toLowerCase().includes(term) ||
+          (c.description && c.description.toLowerCase().includes(term))
       );
-    });
+    }
+
+    // Sort
+    if (sortBy === 'popular') {
+      result.sort((a, b) => b.memberCount - a.memberCount);
+    } else if (sortBy === 'newest') {
+      result.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    } else if (sortBy === 'sponsored') {
+      result.sort((a, b) => Number(b.isSponsored) - Number(a.isSponsored));
+    } else if (sortBy === 'nearest') {
+      // Sort by whether city matches user's city
+      result.sort((a, b) => {
+        const aNear = a.city === userLocation.split(', ')[0] ? 1 : 0;
+        const bNear = b.city === userLocation.split(', ')[0] ? 1 : 0;
+        return bNear - aNear;
+      });
+    }
+
+    return result;
+  };
+
+  const displayedCommunities = getSortedAndFiltered();
 
   return (
     <div className={styles.page}>
@@ -155,69 +216,113 @@ export const DiscoverCommunitiesPage: React.FC = () => {
             placeholder="Search communities..."
             className={styles.searchInput}
           />
+          {searchTerm && (
+            <button className={styles.clearSearch} onClick={() => setSearchTerm('')} aria-label="Clear search">
+              <X size={16} />
+            </button>
+          )}
         </div>
+        <button
+          className={`${styles.headerButton} ${showFilters ? styles.headerButtonActive : ''}`}
+          onClick={() => setShowFilters((prev) => !prev)}
+          aria-label="Filters"
+        >
+          <Filter size={20} />
+        </button>
       </header>
 
       <div className={styles.content}>
         <div className={styles.titleRow}>
-          <Compass size={20} className={styles.titleIcon} />
-          <h1 className={styles.title}>Discover Communities</h1>
+          <div>
+            <h1 className={styles.title}>Discover Communities</h1>
+            <p className={styles.subtitle}>
+              <MapPin size={12} />
+              {userLocation || 'Your location'}
+            </p>
+          </div>
+          <span className={styles.communityCount}>
+            {communities.length} communities
+          </span>
         </div>
 
-        {/* Filter chips */}
-        <div className={styles.filterRow}>
-          {(['all', 'city', 'state', 'country'] as const).map((type) => (
+        {/* Sort options */}
+        <div className={styles.sortRow}>
+          {(['popular', 'newest', 'sponsored', 'nearest'] as SortOption[]).map((sort) => (
             <button
-              key={type}
-              onClick={() => setFilterType(type)}
-              className={`${styles.filterChip} ${filterType === type ? styles.filterChipActive : ''}`}
+              key={sort}
+              onClick={() => setSortBy(sort)}
+              className={`${styles.sortChip} ${sortBy === sort ? styles.sortChipActive : ''}`}
             >
-              {type === 'all' ? 'All' : type === 'city' ? 'City' : type === 'state' ? 'State' : 'Country'}
+              {sort === 'popular' ? <TrendingUp size={12} /> : sort === 'sponsored' ? <Star size={12} /> : null}
+              {sort.charAt(0).toUpperCase() + sort.slice(1)}
             </button>
           ))}
         </div>
 
+        {/* Expanded filters */}
+        {showFilters && (
+          <div className={styles.filterPanel}>
+            <div className={styles.filterPanelHeader}>
+              <h3 className={styles.filterPanelTitle}>Filter by</h3>
+              <button className={styles.clearFilters} onClick={() => setFilterType('all')}>
+                Clear
+              </button>
+            </div>
+            <div className={styles.filterGrid}>
+              {(['all', 'city', 'state', 'country', 'private', 'public'] as FilterType[]).map((type) => (
+                <button
+                  key={type}
+                  onClick={() => setFilterType(type)}
+                  className={`${styles.filterOption} ${filterType === type ? styles.filterOptionActive : ''}`}
+                >
+                  {type.charAt(0).toUpperCase() + type.slice(1)}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {error && (
+          <div className={styles.errorBanner}>
+            <p>{error}</p>
+            <button onClick={loadCommunities} className={styles.retryButton}>
+              Retry
+            </button>
+          </div>
+        )}
+
         {loading ? (
           <div className={styles.loadingState}>
+            <div className={styles.loadingSpinner} />
             <p>Loading communities...</p>
           </div>
-        ) : filteredCommunities.length === 0 ? (
+        ) : displayedCommunities.length === 0 ? (
           <div className={styles.emptyState}>
             <Compass size={40} className={styles.emptyIcon} />
             <p className={styles.emptyTitle}>No communities found</p>
             <p className={styles.emptyText}>
-              Try a different search or filter
+              {searchTerm
+                ? `No results for "${searchTerm}"`
+                : 'Try adjusting your filters'}
             </p>
+            {searchTerm && (
+              <button className={styles.clearSearchButton} onClick={() => setSearchTerm('')}>
+                Clear Search
+              </button>
+            )}
           </div>
         ) : (
           <div className={styles.communitiesList}>
-            {/* Sponsored first */}
-            {filteredCommunities
-              .filter((c) => c.isSponsored)
-              .map((community) => (
-                <CommunityCard
-                  key={community.id}
-                  community={community}
-                  isJoined={joinedIds.has(community.id)}
-                  isJoining={joiningId === community.id}
-                  onJoin={() => handleJoin(community.id)}
-                  onEnter={() => handleEnter(community.id)}
-                />
-              ))}
-
-            {/* Non-sponsored */}
-            {filteredCommunities
-              .filter((c) => !c.isSponsored)
-              .map((community) => (
-                <CommunityCard
-                  key={community.id}
-                  community={community}
-                  isJoined={joinedIds.has(community.id)}
-                  isJoining={joiningId === community.id}
-                  onJoin={() => handleJoin(community.id)}
-                  onEnter={() => handleEnter(community.id)}
-                />
-              ))}
+            {displayedCommunities.map((community) => (
+              <CommunityCard
+                key={community.id}
+                community={community}
+                isJoining={joiningId === community.id}
+                onJoin={() => handleJoin(community.id)}
+                onEnter={() => handleEnter(community.id, community.name)}
+                onViewRules={() => navigate('/community-guidelines')}
+              />
+            ))}
           </div>
         )}
       </div>
@@ -227,13 +332,13 @@ export const DiscoverCommunitiesPage: React.FC = () => {
 
 interface CommunityCardProps {
   community: DiscoverCommunity;
-  isJoined: boolean;
   isJoining: boolean;
   onJoin: () => void;
   onEnter: () => void;
+  onViewRules: () => void;
 }
 
-const CommunityCard: React.FC<CommunityCardProps> = ({ community, isJoined, isJoining, onJoin, onEnter }) => {
+const CommunityCard: React.FC<CommunityCardProps> = ({ community, isJoining, onJoin, onEnter, onViewRules }) => {
   return (
     <div className={`${styles.card} ${community.isSponsored ? styles.cardSponsored : ''}`}>
       {community.isSponsored && (
@@ -245,11 +350,16 @@ const CommunityCard: React.FC<CommunityCardProps> = ({ community, isJoined, isJo
 
       <div className={styles.cardHeader}>
         <h3 className={styles.cardName}>{community.name}</h3>
-        {community.isPrivate ? (
-          <Lock size={14} className={styles.privateIcon} />
-        ) : (
-          <Globe size={14} className={styles.publicIcon} />
-        )}
+        <div className={styles.cardBadges}>
+          {community.isAdmin && (
+            <span className={styles.adminBadge}>Admin</span>
+          )}
+          {community.isPrivate ? (
+            <Lock size={14} className={styles.privateIcon} />
+          ) : (
+            <Globe size={14} className={styles.publicIcon} />
+          )}
+        </div>
       </div>
 
       {community.description && (
@@ -265,9 +375,20 @@ const CommunityCard: React.FC<CommunityCardProps> = ({ community, isJoined, isJo
           <Users size={12} />
           {community.memberCount.toLocaleString()} members
         </span>
+        <span className={styles.metaItem}>
+          <TrendingUp size={12} />
+          {community.postCount} posts
+        </span>
       </div>
 
-      {isJoined ? (
+      {community.rules.length > 0 && (
+        <button className={styles.rulesLink} onClick={onViewRules}>
+          View Guidelines
+          <ChevronRight size={12} />
+        </button>
+      )}
+
+      {community.isJoined ? (
         <button className={styles.enterButton} onClick={onEnter}>
           <Check size={14} />
           Enter Community

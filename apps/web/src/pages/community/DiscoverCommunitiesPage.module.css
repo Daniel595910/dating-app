@@ -27,6 +27,14 @@
   border-radius: 9999px;
   min-width: 44px;
   min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.headerButtonActive {
+  color: #ef4444;
+  background-color: #fef2f2;
 }
 
 .searchContainer {
@@ -55,78 +63,213 @@
   color: #111827;
 }
 
+.clearSearch {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #9ca3af;
+  padding: 0.25rem;
+  border-radius: 9999px;
+  display: flex;
+  align-items: center;
+}
+
 .content {
   padding: 1rem;
 }
 
 .titleRow {
   display: flex;
-  align-items: center;
-  gap: 0.5rem;
+  align-items: flex-start;
+  justify-content: space-between;
   margin-bottom: 0.75rem;
 }
 
-.titleIcon {
-  color: #ef4444;
-}
-
 .title {
-  font-size: 1.125rem;
+  font-size: 1.25rem;
   font-weight: 700;
   color: #111827;
+  margin: 0 0 0.25rem;
+}
+
+.subtitle {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.75rem;
+  color: #6b7280;
   margin: 0;
 }
 
-.filterRow {
+.communityCount {
+  font-size: 0.75rem;
+  color: #9ca3af;
+  background-color: #f3f4f6;
+  padding: 0.25rem 0.625rem;
+  border-radius: 9999px;
+  white-space: nowrap;
+}
+
+.sortRow {
   display: flex;
   gap: 0.375rem;
-  margin-bottom: 1rem;
+  margin-bottom: 0.75rem;
   overflow-x: auto;
   scrollbar-width: none;
 }
 
-.filterChip {
-  padding: 0.375rem 0.875rem;
+.sortChip {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.375rem 0.75rem;
   background-color: #ffffff;
   border: 1px solid #e5e7eb;
   border-radius: 9999px;
   cursor: pointer;
-  font-size: 0.8125rem;
+  font-size: 0.75rem;
   font-weight: 500;
   color: #6b7280;
   white-space: nowrap;
-  transition: all 0.15s ease;
 }
 
-.filterChipActive {
+.sortChipActive {
+  background-color: #111827;
+  border-color: #111827;
+  color: #ffffff;
+}
+
+.filterPanel {
+  background-color: #ffffff;
+  border-radius: 1rem;
+  padding: 1rem;
+  margin-bottom: 0.75rem;
+  border: 1px solid #e5e7eb;
+  animation: slideDown 0.2s ease;
+}
+
+.filterPanelHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+}
+
+.filterPanelTitle {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #111827;
+  margin: 0;
+}
+
+.clearFilters {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: #ef4444;
+}
+
+.filterGrid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+}
+
+.filterOption {
+  padding: 0.375rem 0.75rem;
+  background-color: #f3f4f6;
+  border: 1px solid #e5e7eb;
+  border-radius: 9999px;
+  cursor: pointer;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: #6b7280;
+  text-transform: capitalize;
+}
+
+.filterOptionActive {
   background-color: #ef4444;
   border-color: #ef4444;
   color: #ffffff;
 }
 
-.loadingState,
-.emptyState {
+.errorBanner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  background-color: #fee2e2;
+  color: #991b1b;
+  padding: 0.75rem 1rem;
+  border-radius: 0.5rem;
+  margin-bottom: 0.75rem;
+  font-size: 0.8125rem;
+}
+
+.retryButton {
+  padding: 0.375rem 0.75rem;
+  background-color: #ef4444;
+  color: #ffffff;
+  border: none;
+  border-radius: 9999px;
+  cursor: pointer;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.loadingState {
   text-align: center;
   padding: 3rem 1rem;
   color: #9ca3af;
 }
 
+.loadingSpinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid #f3f4f6;
+  border-top-color: #ef4444;
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+  margin: 0 auto 0.5rem;
+}
+
+.emptyState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 3rem 1rem;
+  text-align: center;
+}
+
 .emptyIcon {
   color: #d1d5db;
-  margin-bottom: 0.5rem;
 }
 
 .emptyTitle {
   font-size: 1rem;
   font-weight: 700;
   color: #111827;
-  margin: 0 0 0.25rem;
+  margin: 0;
 }
 
 .emptyText {
   font-size: 0.8125rem;
   color: #6b7280;
   margin: 0;
+}
+
+.clearSearchButton {
+  padding: 0.5rem 1rem;
+  background: none;
+  border: 1px solid #e5e7eb;
+  border-radius: 9999px;
+  cursor: pointer;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: #111827;
 }
 
 .communitiesList {
@@ -141,6 +284,11 @@
   border-radius: 1rem;
   padding: 1rem;
   position: relative;
+  transition: box-shadow 0.15s ease;
+}
+
+.card:hover {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
 }
 
 .cardSponsored {
@@ -175,6 +323,21 @@
   margin: 0;
 }
 
+.cardBadges {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.adminBadge {
+  padding: 0.125rem 0.5rem;
+  background-color: #dbeafe;
+  color: #1e40af;
+  border-radius: 9999px;
+  font-size: 0.625rem;
+  font-weight: 600;
+}
+
 .privateIcon {
   color: #f59e0b;
 }
@@ -193,7 +356,7 @@
 .cardMeta {
   display: flex;
   gap: 0.75rem;
-  margin-bottom: 0.75rem;
+  margin-bottom: 0.5rem;
   flex-wrap: wrap;
 }
 
@@ -203,6 +366,20 @@
   gap: 0.25rem;
   font-size: 0.75rem;
   color: #6b7280;
+}
+
+.rulesLink {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: #3b82f6;
+  padding: 0;
+  margin-bottom: 0.5rem;
 }
 
 .enterButton,
@@ -218,6 +395,7 @@
   font-size: 0.8125rem;
   font-weight: 600;
   min-height: 40px;
+  transition: background-color 0.15s ease;
 }
 
 .enterButton {
@@ -226,13 +404,30 @@
   border: none;
 }
 
+.enterButton:hover {
+  background-color: #dc2626;
+}
+
 .joinButton {
   background: none;
   border: 1px solid #ef4444;
   color: #ef4444;
 }
 
+.joinButton:hover:not(:disabled) {
+  background-color: #fef2f2;
+}
+
 .joinButton:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes slideDown {
+  from { transform: translateY(-8px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
 }
