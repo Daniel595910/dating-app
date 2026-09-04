@@ -7,7 +7,7 @@ import { ProfileData, ProfileStats, UserPost } from '../../features/profile/type
 import { PhotoViewer } from '../../features/profile/components/PhotoViewer';
 import { PhotoManagement } from '../../features/profile/components/PhotoManagement';
 import { CommunityCreationSheet } from '../../features/community/components/CommunityCreationSheet';
-import { ArrowLeft, Settings, BadgeCheck, MapPin, Heart, Grid, Menu, UserPlus, Check, Camera, MoreVertical, X, Star, MessageCircle } from 'lucide-react';
+import { ArrowLeft, Settings, BadgeCheck, MapPin, Heart, Grid, Menu, UserPlus, Check, Camera, MoreVertical, X, Star, MessageCircle, Crown, CreditCard } from 'lucide-react';
 import styles from './ProfilePage.module.css';
 
 export const ProfilePage: React.FC = () => {
@@ -24,7 +24,12 @@ export const ProfilePage: React.FC = () => {
   const [photoViewerIndex, setPhotoViewerIndex] = useState<number | null>(null);
   const [photoManagementOpen, setPhotoManagementOpen] = useState(false);
   const [communityCreationOpen, setCommunityCreationOpen] = useState(false);
-  const [vipData, setVipData] = useState<{ level: string; credits: number }>({ level: 'free', credits: 0 });
+  const [vipData, setVipData] = useState<{ level: string; credits: number; points: number; planExpiresAt: string | null }>({
+    level: 'free',
+    credits: 0,
+    points: 0,
+    planExpiresAt: null,
+  });
   const [statsModal, setStatsModal] = useState<'posts' | 'followers' | 'following' | 'connections' | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -51,14 +56,18 @@ export const ProfilePage: React.FC = () => {
           const following = await profileService.isFollowing(user.id, targetUserId);
           setIsFollowing(following);
         } else {
-          // Load VIP data for own profile
           const { data: vipAccount } = await supabase
             .from('vip_accounts')
-            .select('level, community_credits')
+            .select('level, community_credits, points_balance, plan_expires_at')
             .eq('user_id', user.id)
             .single();
           if (vipAccount) {
-            setVipData({ level: vipAccount.level, credits: vipAccount.community_credits || 0 });
+            setVipData({
+              level: vipAccount.level,
+              credits: vipAccount.community_credits || 0,
+              points: vipAccount.points_balance || 0,
+              planExpiresAt: vipAccount.plan_expires_at || null,
+            });
           }
         }
       }
@@ -78,17 +87,6 @@ export const ProfilePage: React.FC = () => {
       await profileService.followUser(user.id, targetUserId);
       setIsFollowing(true);
     }
-  };
-
-  const handlePhotoUpload = async (files: FileList | null) => {
-    if (!files || files.length === 0 || !user) return;
-    const file = files[0];
-    if (file.type.startsWith('image/')) {
-      await profileService.uploadProfilePhoto(user.id, file);
-      const profileData = await profileService.getProfileByUserId(user.id);
-      setProfile(profileData);
-    }
-    if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
   if (loading) {
@@ -192,7 +190,7 @@ export const ProfilePage: React.FC = () => {
         </button>
         <span className={styles.headerTitle}>{profile.displayName}</span>
         {isOwnProfile ? (
-          <button className={styles.headerButton} onClick={() => navigate('/profile/edit')} aria-label="Edit profile">
+          <button className={styles.headerButton} onClick={() => navigate('/settings')} aria-label="Settings">
             <Settings size={22} />
           </button>
         ) : (
@@ -248,19 +246,28 @@ export const ProfilePage: React.FC = () => {
 
         {profile.bio && <p className={styles.bio}>{profile.bio}</p>}
 
+        {/* VIP Badge for own profile */}
+        {isOwnProfile && vipData.level !== 'free' && (
+          <button className={styles.vipBadge} onClick={() => navigate('/profile/vip')}>
+            <Crown size={14} />
+            <span>{vipData.level.toUpperCase()} Member</span>
+            <span className={styles.creditsBadge}>{vipData.credits} credits</span>
+          </button>
+        )}
+
         {/* Action Buttons */}
         {isOwnProfile ? (
           <div className={styles.actionRow}>
             <button className={styles.primaryAction} onClick={() => navigate('/profile/edit')}>
               Edit Profile
             </button>
-            <button className={styles.secondaryAction} onClick={() => setPhotoManagementOpen(true)}>
+            <button className={styles.secondaryAction} onClick={() => setPhotoManagementOpen(true)} aria-label="Manage Photos">
               <Camera size={18} />
             </button>
-            <button className={styles.secondaryAction} onClick={() => navigate('/profile/preferences')}>
+            <button className={styles.secondaryAction} onClick={() => navigate('/profile/preferences')} aria-label="Dating Preferences">
               <Heart size={18} />
             </button>
-            <button className={styles.secondaryAction} onClick={() => setCommunityCreationOpen(true)}>
+            <button className={styles.secondaryAction} onClick={() => navigate('/profile/vip')} aria-label="VIP & Credits">
               <Star size={18} />
             </button>
           </div>
@@ -277,13 +284,13 @@ export const ProfilePage: React.FC = () => {
           </div>
         )}
 
-        {/* VIP Badge */}
-        {isOwnProfile && vipData.level !== 'free' && (
-          <div className={styles.vipBadge}>
-            <Star size={14} />
-            <span>{vipData.level.toUpperCase()} Member</span>
-            <span className={styles.creditsBadge}>{vipData.credits} credits</span>
-          </div>
+        {/* Create Community button for own profile */}
+        {isOwnProfile && (
+          <button className={styles.createCommunityButton} onClick={() => setCommunityCreationOpen(true)}>
+            <Crown size={16} />
+            Create Community
+            <span className={styles.createCommunityCost}>100 credits</span>
+          </button>
         )}
       </div>
 

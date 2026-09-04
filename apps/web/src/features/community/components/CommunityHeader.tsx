@@ -21,6 +21,7 @@ export const CommunityHeader: React.FC<CommunityHeaderProps> = ({
     <header className={styles.header}>
       <div className={styles.headerContent}>
         <div className={styles.headerLeft}>
+          <span className={styles.sponsoredBadge}>Sponsored</span>
           <h1 className={styles.title}>
             {community.flag} {community.name}
           </h1>
@@ -46,3 +47,4 @@ export const CommunityHeader: React.FC<CommunityHeaderProps> = ({
     </header>
   );
 };
+
