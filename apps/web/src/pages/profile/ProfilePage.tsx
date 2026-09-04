@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useRef } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '@/store/auth.store';
 import { supabase } from '@/config/supabase.client';
@@ -7,7 +7,9 @@ import { ProfileData, ProfileStats, UserPost } from '../../features/profile/type
 import { PhotoViewer } from '../../features/profile/components/PhotoViewer';
 import { PhotoManagement } from '../../features/profile/components/PhotoManagement';
 import { CommunityCreationSheet } from '../../features/community/components/CommunityCreationSheet';
-import { ArrowLeft, Settings, BadgeCheck, MapPin, Heart, Grid, Menu, UserPlus, Check, Camera, MoreVertical, X, Star, MessageCircle, Crown, Users } from 'lucide-react';
+import { ReportSheet } from '../../features/community/components/ReportSheet';
+import { BlockConfirmSheet } from '../../features/community/components/BlockConfirmSheet';
+import { ArrowLeft, Settings, BadgeCheck, MapPin, Heart, Grid, Menu, UserPlus, Check, Camera, MoreVertical, X, Star, MessageCircle, Crown, Users, Ban, Flag } from 'lucide-react';
 import styles from './ProfilePage.module.css';
 
 export const ProfilePage: React.FC = () => {
@@ -34,6 +36,9 @@ export const ProfilePage: React.FC = () => {
   const [followersList, setFollowersList] = useState<Array<{ userId: string; name: string; avatarUrl: string | null }>>([]);
   const [followingList, setFollowingList] = useState<Array<{ userId: string; name: string; avatarUrl: string | null }>>([]);
   const [connectionsList, setConnectionsList] = useState<Array<{ userId: string; name: string; avatarUrl: string | null }>>([]);
+  const [showMoreMenu, setShowMoreMenu] = useState(false);
+  const [reportSheetOpen, setReportSheetOpen] = useState(false);
+  const [blockSheetOpen, setBlockSheetOpen] = useState(false);
 
   const isOwnProfile = !userId || userId === user?.id;
   const targetUserId = userId || user?.id || '';
@@ -43,35 +48,39 @@ export const ProfilePage: React.FC = () => {
       if (!targetUserId) return;
       setLoading(true);
 
-      const profileData = await profileService.getProfileByUserId(targetUserId);
-      const profileStats = await profileService.getProfileStats(targetUserId);
-      const posts = await profileService.getUserPosts(targetUserId);
-      const photos = await profileService.getProfilePhotos(targetUserId);
+      try {
+        const profileData = await profileService.getProfileByUserId(targetUserId);
+        const profileStats = await profileService.getProfileStats(targetUserId);
+        const posts = await profileService.getUserPosts(targetUserId);
+        const photos = await profileService.getProfilePhotos(targetUserId);
 
-      setProfile(profileData);
-      setStats(profileStats);
-      setUserPosts(posts);
-      setProfilePhotos(photos);
+        setProfile(profileData);
+        setStats(profileStats);
+        setUserPosts(posts);
+        setProfilePhotos(photos);
 
-      if (user) {
-        if (targetUserId !== user.id) {
-          const following = await profileService.isFollowing(user.id, targetUserId);
-          setIsFollowing(following);
-        } else {
-          const { data: vipAccount } = await supabase
-            .from('vip_accounts')
-            .select('level, community_credits, points_balance, plan_expires_at')
-            .eq('user_id', user.id)
-            .maybeSingle();
-          if (vipAccount) {
-            setVipData({
-              level: vipAccount.level,
-              credits: vipAccount.community_credits || 0,
-              points: vipAccount.points_balance || 0,
-              planExpiresAt: vipAccount.plan_expires_at || null,
-            });
+        if (user) {
+          if (targetUserId !== user.id) {
+            const following = await profileService.isFollowing(user.id, targetUserId);
+            setIsFollowing(following);
+          } else {
+            const { data: vipAccount } = await supabase
+              .from('vip_accounts')
+              .select('level, community_credits, points_balance, plan_expires_at')
+              .eq('user_id', user.id)
+              .maybeSingle();
+            if (vipAccount) {
+              setVipData({
+                level: vipAccount.level,
+                credits: vipAccount.community_credits || 0,
+                points: vipAccount.points_balance || 0,
+                planExpiresAt: vipAccount.plan_expires_at || null,
+              });
+            }
           }
         }
+      } catch (err) {
+        console.error('Failed to load profile:', err);
       }
 
       setLoading(false);
@@ -83,87 +92,135 @@ export const ProfilePage: React.FC = () => {
   const loadStatsLists = async (type: 'followers' | 'following' | 'connections') => {
     if (!targetUserId) return;
 
-    if (type === 'followers') {
-      const { data: followers } = await supabase
-        .from('follows')
-        .select('follower_id')
-        .eq('following_id', targetUserId)
-        .limit(20);
+    try {
+      if (type === 'followers') {
+        const { data: followers } = await supabase
+          .from('follows')
+          .select('follower_id')
+          .eq('following_id', targetUserId)
+          .limit(20);
 
-      if (followers && followers.length > 0) {
-        const followerIds = followers.map((f: any) => f.follower_id);
-        const { data: profiles } = await supabase
-          .from('profiles')
-          .select('user_id, display_name, avatar_url')
-          .in('user_id', followerIds);
-        setFollowersList((profiles || []).map((p: any) => ({
-          userId: p.user_id,
-          name: p.display_name || 'User',
-          avatarUrl: p.avatar_url,
-        })));
-      } else {
-        setFollowersList([]);
+        if (followers && followers.length > 0) {
+          const followerIds = followers.map((f: any) => f.follower_id);
+          const { data: profiles } = await supabase
+            .from('profiles')
+            .select('user_id, display_name, avatar_url')
+            .in('user_id', followerIds);
+          setFollowersList((profiles || []).map((p: any) => ({
+            userId: p.user_id,
+            name: p.display_name || 'User',
+            avatarUrl: p.avatar_url,
+          })));
+        } else {
+          setFollowersList([]);
+        }
       }
-    }
 
-    if (type === 'following') {
-      const { data: following } = await supabase
-        .from('follows')
-        .select('following_id')
-        .eq('follower_id', targetUserId)
-        .limit(20);
+      if (type === 'following') {
+        const { data: following } = await supabase
+          .from('follows')
+          .select('following_id')
+          .eq('follower_id', targetUserId)
+          .limit(20);
 
-      if (following && following.length > 0) {
-        const followingIds = following.map((f: any) => f.following_id);
-        const { data: profiles } = await supabase
-          .from('profiles')
-          .select('user_id, display_name, avatar_url')
-          .in('user_id', followingIds);
-        setFollowingList((profiles || []).map((p: any) => ({
-          userId: p.user_id,
-          name: p.display_name || 'User',
-          avatarUrl: p.avatar_url,
-        })));
-      } else {
-        setFollowingList([]);
+        if (following && following.length > 0) {
+          const followingIds = following.map((f: any) => f.following_id);
+          const { data: profiles } = await supabase
+            .from('profiles')
+            .select('user_id, display_name, avatar_url')
+            .in('user_id', followingIds);
+          setFollowingList((profiles || []).map((p: any) => ({
+            userId: p.user_id,
+            name: p.display_name || 'User',
+            avatarUrl: p.avatar_url,
+          })));
+        } else {
+          setFollowingList([]);
+        }
       }
-    }
 
-    if (type === 'connections') {
-      const { data: matches } = await supabase
-        .from('matches')
-        .select('user1_id, user2_id')
-        .or('user1_id.eq.' + targetUserId + ',user2_id.eq.' + targetUserId)
-        .in('status', ['active', 'completed'])
-        .limit(20);
+      if (type === 'connections') {
+        const { data: matches } = await supabase
+          .from('matches')
+          .select('user1_id, user2_id')
+          .or('user1_id.eq.' + targetUserId + ',user2_id.eq.' + targetUserId)
+          .in('status', ['active', 'completed'])
+          .limit(20);
 
-      if (matches && matches.length > 0) {
-        const otherUserIds = matches.map((m: any) =>
-          m.user1_id === targetUserId ? m.user2_id : m.user1_id
-        );
-        const { data: profiles } = await supabase
-          .from('profiles')
-          .select('user_id, display_name, avatar_url')
-          .in('user_id', otherUserIds);
-        setConnectionsList((profiles || []).map((p: any) => ({
-          userId: p.user_id,
-          name: p.display_name || 'User',
-          avatarUrl: p.avatar_url,
-        })));
-      } else {
-        setConnectionsList([]);
+        if (matches && matches.length > 0) {
+          const otherUserIds = matches.map((m: any) =>
+            m.user1_id === targetUserId ? m.user2_id : m.user1_id
+          );
+          const { data: profiles } = await supabase
+            .from('profiles')
+            .select('user_id, display_name, avatar_url')
+            .in('user_id', otherUserIds);
+          setConnectionsList((profiles || []).map((p: any) => ({
+            userId: p.user_id,
+            name: p.display_name || 'User',
+            avatarUrl: p.avatar_url,
+          })));
+        } else {
+          setConnectionsList([]);
+        }
       }
+    } catch (err) {
+      console.error('Failed to load stats:', err);
     }
   };
 
   const handleFollow = async () => {
     if (!user) return;
-    if (isFollowing) {
-      await profileService.unfollowUser(user.id, targetUserId);
-      setIsFollowing(false);
-    } else {
-      await profileService.followUser(user.id, targetUserId);
-      setIsFollowing(true);
+    try {
+      if (isFollowing) {
+        await profileService.unfollowUser(user.id, targetUserId);
+        setIsFollowing(false);
+      } else {
+        await profileService.followUser(user.id, targetUserId);
+        setIsFollowing(true);
+      }
+    } catch (err) {
+      console.error('Follow error:', err);
+    }
+  };
+
+  const handleMessage = async () => {
+    if (!user) return;
+
+    try {
+      const { data: existingConv } = await supabase
+        .from('conversations')
+        .select('id')
+        .contains('participant_ids', [user.id, targetUserId])
+        .limit(1)
+        .maybeSingle();
+
+      if (existingConv) {
+        navigate('/chats/' + existingConv.id);
+        return;
+      }
+
+      const { data: match } = await supabase
+        .from('matches')
+        .select('id')
+        .or('user1_id.eq.' + user.id + ',user2_id.eq.' + user.id)
+        .or('user1_id.eq.' + targetUserId + ',user2_id.eq.' + targetUserId)
+        .limit(1)
+        .maybeSingle();
+
+      if (match) {
+        const { data: convId, error: rpcError } = await supabase.rpc('get_or_create_conversation', {
+          p_match_id: match.id,
+        });
+        if (rpcError) throw rpcError;
+        if (convId) {
+          navigate('/chats/' + convId);
+        }
+      } else {
+        alert('You need to match with this user before messaging them.');
+      }
+    } catch (err) {
+      console.error('Failed to open conversation:', err);
     }
   };
 
@@ -197,6 +254,24 @@ export const ProfilePage: React.FC = () => {
         onClose={() => setPhotoViewerIndex(null)}
         onNext={() => setPhotoViewerIndex((prev) => prev === null ? null : Math.min(prev + 1, postImages.length - 1))}
         onPrev={() => setPhotoViewerIndex((prev) => prev === null ? null : Math.max(prev - 1, 0))}
+      />
+
+      <ReportSheet
+        open={reportSheetOpen}
+        onClose={() => setReportSheetOpen(false)}
+        reporterId={user?.id || ''}
+        targetType="user"
+        targetId={targetUserId}
+        reportedUserId={targetUserId}
+      />
+
+      <BlockConfirmSheet
+        open={blockSheetOpen}
+        onClose={() => setBlockSheetOpen(false)}
+        blockerId={user?.id || ''}
+        targetUserId={targetUserId}
+        targetUserName={profile.displayName}
+        onBlocked={() => navigate('/community')}
       />
 
       <CommunityCreationSheet
@@ -305,9 +380,47 @@ export const ProfilePage: React.FC = () => {
             <Settings size={22} />
           </button>
         ) : (
-          <button className={styles.headerButton} aria-label="More">
-            <MoreVertical size={22} />
-          </button>
+          <div style={{ position: 'relative' }}>
+            <button
+              className={styles.headerButton}
+              onClick={() => setShowMoreMenu((prev) => !prev)}
+              aria-label="More options"
+            >
+              <MoreVertical size={22} />
+            </button>
+
+            {showMoreMenu && (
+              <div
+                style={{
+                  position: 'absolute',
+                  top: 'calc(100% + 4px)',
+                  right: 0,
+                  zIndex: 9999,
+                  backgroundColor: '#ffffff',
+                  borderRadius: '12px',
+                  boxShadow: '0 10px 30px rgba(0,0,0,0.2)',
+                  border: '1px solid #e5e7eb',
+                  minWidth: 200,
+                  padding: '6px',
+                }}
+              >
+                <button
+                  onClick={() => { setShowMoreMenu(false); setBlockSheetOpen(true); }}
+                  style={{ display: 'flex', alignItems: 'center', gap: '10px', width: '100%', padding: '12px', background: 'none', border: 'none', cursor: 'pointer', color: '#374151', fontSize: '14px', borderRadius: '8px', textAlign: 'left' }}
+                >
+                  <Ban size={16} />
+                  Block User
+                </button>
+                <button
+                  onClick={() => { setShowMoreMenu(false); setReportSheetOpen(true); }}
+                  style={{ display: 'flex', alignItems: 'center', gap: '10px', width: '100%', padding: '12px', background: 'none', border: 'none', cursor: 'pointer', color: '#ef4444', fontSize: '14px', borderRadius: '8px', textAlign: 'left' }}
+                >
+                  <Flag size={16} />
+                  Report User
+                </button>
+              </div>
+            )}
+          </div>
         )}
       </header>
 
@@ -381,51 +494,7 @@ export const ProfilePage: React.FC = () => {
           </div>
         ) : (
           <div className={styles.actionRow}>
-            <button className={styles.primaryAction} onClick={async () => {
-              if (!user) return;
-
-              try {
-                // Find existing conversation between these users
-                const { data: existingConv } = await supabase
-                  .from('conversations')
-                  .select('id')
-                  .contains('participant_ids', [user.id, targetUserId])
-                  .limit(1)
-                  .maybeSingle();
-
-                if (existingConv) {
-                  navigate('/chats/' + existingConv.id);
-                  return;
-                }
-
-                // Find a match between these users
-                const { data: match } = await supabase
-                  .from('matches')
-                  .select('id')
-                  .or('user1_id.eq.' + user.id + ',user2_id.eq.' + user.id)
-                  .or('user1_id.eq.' + targetUserId + ',user2_id.eq.' + targetUserId)
-                  .limit(1)
-                  .maybeSingle();
-
-                if (match) {
-                  // Create conversation from match
-                  const { data: convId, error: rpcError } = await supabase.rpc('get_or_create_conversation', {
-                    p_match_id: match.id,
-                  });
-
-                  if (rpcError) throw rpcError;
-
-                  if (convId) {
-                    navigate('/chats/' + convId);
-                  }
-                } else {
-                  // No match yet - show alert
-                  alert('You need to match with this user before messaging them.');
-                }
-              } catch (err) {
-                console.error('Failed to open conversation:', err);
-              }
-            }}>
+            <button className={styles.primaryAction} onClick={handleMessage}>
               <MessageCircle size={18} />
               Message
             </button>
@@ -533,6 +602,3 @@ export const ProfilePage: React.FC = () => {
     </div>
   );
 };
-
-
-
