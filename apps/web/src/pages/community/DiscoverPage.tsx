@@ -5,8 +5,8 @@ import { discoverService } from '../../features/discover/services/discover.servi
 import { mediaService } from '../../features/community/services/media.service';
 import { DiscoverCandidate } from '../../features/discover/types/discover.types';
 import { 
-  BadgeCheck, MapPin, Heart, X, User, 
-  Play, Pause, Video, Upload, Loader, XCircle
+  BadgeCheck, MapPin, Heart, X, Play, Pause, Video, Upload, 
+  Loader, ArrowLeft, Grid3x3, Plus, Clock, CheckCircle2, XCircle
 } from 'lucide-react';
 import styles from './DiscoverPage.module.css';
 
@@ -115,7 +115,6 @@ export const DiscoverPage: React.FC = () => {
   const skipToNextPerson = useCallback((currentUserId: string) => {
     setCurrentIndex((prev) => {
       let next = prev + 1;
-      // Skip all videos of the same user
       while (next < candidates.length && candidates[next].userId === currentUserId) {
         next++;
       }
@@ -126,25 +125,10 @@ export const DiscoverPage: React.FC = () => {
     setSwipeDirection(null);
   }, [candidates]);
 
-  const nextCandidate = useCallback(() => {
-    setCurrentIndex((prev) => Math.min(prev + 1, candidates.length));
-    setIsPlaying(false);
-    setSwipe({ isDragging: false, startX: 0, startY: 0, currentX: 0, currentY: 0, deltaX: 0, deltaY: 0 });
-    setSwipeDirection(null);
-  }, [candidates.length]);
-
-  const previousCandidate = useCallback(() => {
-    setCurrentIndex((prev) => Math.max(prev - 1, 0));
-    setIsPlaying(false);
-    setSwipe({ isDragging: false, startX: 0, startY: 0, currentX: 0, currentY: 0, deltaX: 0, deltaY: 0 });
-    setSwipeDirection(null);
-  }, []);
-
   // Touch handlers
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
     const touch = e.touches[0];
     if (!touch) return;
-    
     setSwipe({
       isDragging: true,
       startX: touch.clientX,
@@ -159,20 +143,13 @@ export const DiscoverPage: React.FC = () => {
   const handleTouchMove = useCallback((e: React.TouchEvent) => {
     const state = swipeStateRef.current;
     if (!state.isDragging) return;
-    
     const touch = e.touches[0];
     if (!touch) return;
     
     const deltaX = touch.clientX - state.startX;
     const deltaY = touch.clientY - state.startY;
     
-    setSwipe((prev) => ({
-      ...prev,
-      currentX: touch.clientX,
-      currentY: touch.clientY,
-      deltaX,
-      deltaY,
-    }));
+    setSwipe((prev) => ({ ...prev, currentX: touch.clientX, currentY: touch.clientY, deltaX, deltaY }));
     
     if (Math.abs(deltaX) > 10 || Math.abs(deltaY) > 10) {
       if (Math.abs(deltaX) > Math.abs(deltaY)) {
@@ -184,75 +161,6 @@ export const DiscoverPage: React.FC = () => {
   }, []);
 
   const handleTouchEnd = useCallback(() => {
-    const state = swipeStateRef.current;
-    if (!state.isDragging) return;
-    
-    const threshold = 80;
-    
-    if (Math.abs(state.deltaX) > Math.abs(state.deltaY)) {
-      // Horizontal - switch profile
-      if (state.deltaX < -threshold) {
-        setCurrentIndex((prev) => Math.min(prev + 1, candidates.length));
-        setIsPlaying(false);
-      } else if (state.deltaX > threshold) {
-        setCurrentIndex((prev) => Math.max(prev - 1, 0));
-        setIsPlaying(false);
-      }
-    } else {
-      // Vertical - also switch profile for now
-      if (state.deltaY < -threshold) {
-        // Swipe up - next
-        setCurrentIndex((prev) => Math.min(prev + 1, candidates.length));
-        setIsPlaying(false);
-      } else if (state.deltaY > threshold) {
-        // Swipe down - previous
-        setCurrentIndex((prev) => Math.max(prev - 1, 0));
-        setIsPlaying(false);
-      }
-    }
-    
-    setSwipe({ isDragging: false, startX: 0, startY: 0, currentX: 0, currentY: 0, deltaX: 0, deltaY: 0 });
-    setSwipeDirection(null);
-  }, [candidates.length]);
-
-  // Mouse handlers
-  const handleMouseDown = useCallback((e: React.MouseEvent) => {
-    setSwipe({
-      isDragging: true,
-      startX: e.clientX,
-      startY: e.clientY,
-      currentX: e.clientX,
-      currentY: e.clientY,
-      deltaX: 0,
-      deltaY: 0,
-    });
-  }, []);
-
-  const handleMouseMove = useCallback((e: React.MouseEvent) => {
-    const state = swipeStateRef.current;
-    if (!state.isDragging) return;
-    
-    const deltaX = e.clientX - state.startX;
-    const deltaY = e.clientY - state.startY;
-    
-    setSwipe((prev) => ({
-      ...prev,
-      currentX: e.clientX,
-      currentY: e.clientY,
-      deltaX,
-      deltaY,
-    }));
-    
-    if (Math.abs(deltaX) > 10 || Math.abs(deltaY) > 10) {
-      if (Math.abs(deltaX) > Math.abs(deltaY)) {
-        setSwipeDirection(deltaX > 0 ? 'right' : 'left');
-      } else {
-        setSwipeDirection(deltaY > 0 ? 'down' : 'up');
-      }
-    }
-  }, []);
-
-  const handleMouseUp = useCallback(() => {
     const state = swipeStateRef.current;
     if (!state.isDragging) return;
     
@@ -294,7 +202,6 @@ export const DiscoverPage: React.FC = () => {
 
   const handleVideoUpload = async (files: FileList | null) => {
     if (!files || files.length === 0 || !user) return;
-
     setUploading(true);
     setUploadProgress(0);
     setError(null);
@@ -346,10 +253,6 @@ export const DiscoverPage: React.FC = () => {
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
-      onMouseDown={handleMouseDown}
-      onMouseMove={handleMouseMove}
-      onMouseUp={handleMouseUp}
-      onMouseLeave={handleMouseUp}
       style={{
         touchAction: 'none',
         userSelect: 'none',
@@ -358,8 +261,15 @@ export const DiscoverPage: React.FC = () => {
         overscrollBehavior: 'none',
       }}
     >
-      {/* Header */}
+      {/* Header with Back Button */}
       <header className={styles.header}>
+        <button 
+          className={styles.backButton}
+          onClick={() => navigate('/community')}
+          aria-label="Back to Community"
+        >
+          <ArrowLeft size={20} />
+        </button>
         <h1 className={styles.headerTitle}>Discover</h1>
         <div style={{ display: 'flex', gap: '0.5rem' }}>
           <button 
@@ -372,7 +282,7 @@ export const DiscoverPage: React.FC = () => {
             aria-label="My Videos"
             style={{ pointerEvents: 'auto', zIndex: 100 }}
           >
-            <Video size={22} />
+            <Grid3x3 size={20} />
           </button>
           <button 
             className={styles.headerButton} 
@@ -384,76 +294,218 @@ export const DiscoverPage: React.FC = () => {
             aria-label="Upload Video"
             style={{ pointerEvents: 'auto', zIndex: 100 }}
           >
-            <Upload size={22} />
+            <Upload size={20} />
           </button>
         </div>
       </header>
 
-      {/* My Videos Panel */}
+      {/* My Videos Modal - Instagram Style Grid */}
       {showMyVideos && (
         <div 
-          className={styles.myVideosOverlay} 
+          style={{ 
+            position: 'fixed', 
+            inset: 0, 
+            backgroundColor: 'rgba(0,0,0,0.85)', 
+            zIndex: 999,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '0',
+          }}
           onClick={() => setShowMyVideos(false)}
-          style={{ zIndex: 999, position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.7)' }}
         >
           <div 
-            className={styles.myVideosDialog} 
             onClick={(e) => e.stopPropagation()}
-            style={{ backgroundColor: '#fff', borderRadius: '16px', padding: '24px', maxWidth: '400px', width: '100%', margin: 'auto', maxHeight: '80vh', overflowY: 'auto' }}
+            style={{ 
+              backgroundColor: '#ffffff', 
+              width: '100%',
+              maxWidth: '480px',
+              height: '100dvh',
+              display: 'flex',
+              flexDirection: 'column',
+              overflow: 'hidden',
+            }}
           >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-              <h2 style={{ fontSize: '18px', fontWeight: 700, margin: 0 }}>My Discover Videos</h2>
-              <button 
-                onClick={() => setShowMyVideos(false)}
-                style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '8px' }}
+            {/* Modal Header */}
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              padding: '16px',
+              borderBottom: '1px solid #f3f4f6',
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <button 
+                  onClick={() => setShowMyVideos(false)}
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px' }}
+                >
+                  <ArrowLeft size={24} />
+                </button>
+                <h2 style={{ fontSize: '18px', fontWeight: '700', margin: 0 }}>My Videos</h2>
+              </div>
+              <button
+                onClick={() => { setShowMyVideos(false); setShowUpload(true); }}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  padding: '8px',
+                  color: '#ef4444',
+                }}
               >
-                <XCircle size={24} />
+                <Plus size={24} />
               </button>
             </div>
-            
-            {myVideos.length === 0 ? (
-              <p style={{ color: '#6b7280', textAlign: 'center', padding: '20px 0' }}>
-                You haven't uploaded any videos yet.
-              </p>
-            ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                {myVideos.map((video) => (
-                  <div key={video.video_id} style={{ border: '1px solid #e5e7eb', borderRadius: '12px', overflow: 'hidden' }}>
-                    <video
-                      src={video.video_url}
-                      controls
-                      style={{ width: '100%', maxHeight: '200px', objectFit: 'cover' }}
-                    />
-                    <div style={{ padding: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <span style={{ fontSize: '14px', fontWeight: 600, textTransform: 'capitalize' }}>
-                        Status: {video.status}
-                      </span>
-                      <span style={{ fontSize: '12px', color: '#6b7280' }}>
-                        {new Date(video.created_at).toLocaleDateString()}
-                      </span>
+
+            {/* Instagram-style Grid */}
+            <div style={{
+              flex: 1,
+              overflowY: 'auto',
+              padding: '4px',
+            }}>
+              {myVideos.length === 0 ? (
+                <div style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  height: '100%',
+                  gap: '16px',
+                  padding: '24px',
+                  textAlign: 'center',
+                }}>
+                  <Video size={48} style={{ color: '#d1d5db' }} />
+                  <p style={{ fontSize: '16px', fontWeight: 600, color: '#111827', margin: 0 }}>
+                    No videos yet
+                  </p>
+                  <p style={{ fontSize: '14px', color: '#6b7280', margin: 0 }}>
+                    Upload your first video to start discovering!
+                  </p>
+                  <button
+                    onClick={() => { setShowMyVideos(false); setShowUpload(true); }}
+                    style={{
+                      padding: '12px 24px',
+                      backgroundColor: '#ef4444',
+                      color: '#ffffff',
+                      border: 'none',
+                      borderRadius: '9999px',
+                      cursor: 'pointer',
+                      fontSize: '14px',
+                      fontWeight: 600,
+                    }}
+                  >
+                    Upload Video
+                  </button>
+                </div>
+              ) : (
+                <div style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(3, 1fr)',
+                  gap: '4px',
+                }}>
+                  {myVideos.map((video, index) => (
+                    <div
+                      key={video.video_id}
+                      style={{
+                        position: 'relative',
+                        aspectRatio: '9/16',
+                        backgroundColor: '#f3f4f6',
+                        borderRadius: '4px',
+                        overflow: 'hidden',
+                      }}
+                    >
+                      <video
+                        src={video.video_url}
+                        muted
+                        playsInline
+                        style={{
+                          width: '100%',
+                          height: '100%',
+                          objectFit: 'cover',
+                        }}
+                        onMouseEnter={(e) => e.currentTarget.play()}
+                        onMouseLeave={(e) => e.currentTarget.pause()}
+                      />
+                      {/* Status Badge */}
+                      <div style={{
+                        position: 'absolute',
+                        top: '8px',
+                        left: '8px',
+                        padding: '4px 8px',
+                        borderRadius: '9999px',
+                        fontSize: '10px',
+                        fontWeight: 700,
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '4px',
+                      }}>
+                        {video.status === 'approved' && (
+                          <span style={{ backgroundColor: '#10b981', color: '#ffffff', padding: '4px 8px', borderRadius: '9999px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                            <CheckCircle2 size={12} /> Approved
+                          </span>
+                        )}
+                        {video.status === 'pending' && (
+                          <span style={{ backgroundColor: '#f59e0b', color: '#ffffff', padding: '4px 8px', borderRadius: '9999px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                            <Clock size={12} /> Pending
+                          </span>
+                        )}
+                        {video.status === 'rejected' && (
+                          <span style={{ backgroundColor: '#ef4444', color: '#ffffff', padding: '4px 8px', borderRadius: '9999px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                            <XCircle size={12} /> Rejected
+                          </span>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                ))}
-              </div>
-            )}
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         </div>
       )}
 
-      {/* Upload Video Modal */}
+      {/* Upload Modal */}
       {showUpload && (
         <div 
-          className={styles.uploadOverlay} 
+          style={{ 
+            position: 'fixed', 
+            inset: 0, 
+            backgroundColor: 'rgba(0,0,0,0.85)', 
+            zIndex: 999,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '24px',
+          }}
           onClick={() => !uploading && setShowUpload(false)}
-          style={{ zIndex: 999, position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px' }}
         >
           <div 
-            className={styles.uploadDialog} 
             onClick={(e) => e.stopPropagation()}
-            style={{ backgroundColor: '#fff', borderRadius: '16px', padding: '24px', maxWidth: '400px', width: '100%', textAlign: 'center' }}
+            style={{ 
+              backgroundColor: '#ffffff', 
+              borderRadius: '24px', 
+              padding: '32px 24px',
+              maxWidth: '400px',
+              width: '100%',
+              textAlign: 'center',
+            }}
           >
-            <h2 style={{ fontSize: '18px', fontWeight: 700, marginBottom: '8px' }}>Upload Your Video</h2>
-            <p style={{ fontSize: '14px', color: '#6b7280', marginBottom: '16px' }}>
+            <div style={{
+              width: '64px',
+              height: '64px',
+              borderRadius: '50%',
+              backgroundColor: '#fef2f2',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              margin: '0 auto 16px',
+            }}>
+              <Video size={32} style={{ color: '#ef4444' }} />
+            </div>
+            <h2 style={{ fontSize: '20px', fontWeight: '700', marginBottom: '8px', color: '#111827' }}>
+              Upload Your Video
+            </h2>
+            <p style={{ fontSize: '14px', color: '#6b7280', marginBottom: '24px', lineHeight: '1.5' }}>
               Share a video introducing yourself. Your video will be reviewed before appearing in Discover.
             </p>
             <input
@@ -468,13 +520,13 @@ export const DiscoverPage: React.FC = () => {
               disabled={uploading}
               style={{
                 width: '100%',
-                padding: '12px',
+                padding: '14px',
                 backgroundColor: '#ef4444',
                 color: '#fff',
                 border: 'none',
                 borderRadius: '9999px',
                 cursor: 'pointer',
-                fontSize: '15px',
+                fontSize: '16px',
                 fontWeight: 600,
                 marginBottom: '8px',
                 display: 'flex',
@@ -486,11 +538,11 @@ export const DiscoverPage: React.FC = () => {
               {uploading ? (
                 <>
                   <Loader size={20} style={{ animation: 'spin 1s linear infinite' }} />
-                  Uploading...
+                  Uploading... {Math.round(uploadProgress)}%
                 </>
               ) : (
                 <>
-                  <Video size={20} />
+                  <Upload size={20} />
                   Choose Video
                 </>
               )}
@@ -500,13 +552,13 @@ export const DiscoverPage: React.FC = () => {
               disabled={uploading}
               style={{
                 width: '100%',
-                padding: '12px',
+                padding: '14px',
                 background: 'none',
                 color: '#6b7280',
                 border: '1px solid #e5e7eb',
                 borderRadius: '9999px',
                 cursor: 'pointer',
-                fontSize: '15px',
+                fontSize: '16px',
                 fontWeight: 500,
               }}
             >
@@ -606,19 +658,10 @@ export const DiscoverPage: React.FC = () => {
                 <img 
                   src={current.avatarUrl} 
                   alt={current.displayName}
-                  style={{ 
-                    width: '100%', 
-                    height: '100%', 
-                    objectFit: 'cover',
-                    display: 'block'
-                  }}
+                  style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
                 />
               ) : (
-                <span style={{
-                  fontSize: '20px',
-                  fontWeight: '700',
-                  color: '#6b7280',
-                }}>
+                <span style={{ fontSize: '20px', fontWeight: '700', color: '#6b7280' }}>
                   {current.displayName.charAt(0).toUpperCase()}
                 </span>
               )}
@@ -633,13 +676,7 @@ export const DiscoverPage: React.FC = () => {
           </div>
 
           {swipeDirection && (Math.abs(swipe.deltaX) > 20 || Math.abs(swipe.deltaY) > 20) && (
-            <div 
-              className={`${styles.swipeIndicator} ${
-                swipeDirection === 'left' ? styles.swipeLeft : 
-                swipeDirection === 'right' ? styles.swipeRight :
-                swipeDirection === 'up' ? styles.swipeUp : styles.swipeDown
-              }`}
-            >
+            <div className={`${styles.swipeIndicator} ${swipeDirection === 'left' ? styles.swipeLeft : swipeDirection === 'right' ? styles.swipeRight : swipeDirection === 'up' ? styles.swipeUp : styles.swipeDown}`}>
               {swipeDirection === 'left' && <span>Next</span>}
               {swipeDirection === 'right' && <span>Previous</span>}
               {swipeDirection === 'up' && <span>Next</span>}
@@ -654,13 +691,8 @@ export const DiscoverPage: React.FC = () => {
         <div className={styles.emptyContainer}>
           <Heart size={48} className={styles.emptyIcon} />
           <p className={styles.emptyTitle}>No profiles yet</p>
-          <p className={styles.emptyText}>
-            {error || 'Upload your video to start discovering!'}
-          </p>
-          <button 
-            className={styles.refreshButton}
-            onClick={() => setShowUpload(true)}
-          >
+          <p className={styles.emptyText}>{error || 'Upload your video to start discovering!'}</p>
+          <button className={styles.refreshButton} onClick={() => setShowUpload(true)}>
             Upload Your Video
           </button>
         </div>
@@ -668,7 +700,4 @@ export const DiscoverPage: React.FC = () => {
     </div>
   );
 };
-
-
-
 

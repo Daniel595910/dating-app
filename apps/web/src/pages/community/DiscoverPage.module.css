@@ -12,15 +12,26 @@
 .header {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  padding: 0.625rem 0.75rem;
-  padding-top: calc(0.625rem + env(safe-area-inset-top));
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  padding-top: calc(0.75rem + env(safe-area-inset-top));
   position: absolute;
   top: 0;
   left: 0;
   right: 0;
   z-index: 20;
-  background: linear-gradient(180deg, rgba(0,0,0,0.6) 0%, transparent 100%);
+  background: linear-gradient(180deg, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.3) 60%, transparent 100%);
+}
+
+.headerTitle {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: #ffffff;
+  margin: 0;
+  flex: 1;
+  text-align: center;
+  letter-spacing: -0.01em;
+  text-shadow: 0 1px 3px rgba(0,0,0,0.3);
 }
 
 .headerButton {
@@ -502,6 +513,7 @@
   font-size: 0.75rem;
   color: #6b7280;
 }
+
 
 
 
