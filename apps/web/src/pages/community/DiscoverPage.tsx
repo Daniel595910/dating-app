@@ -47,6 +47,7 @@ export const DiscoverPage: React.FC = () => {
   const [myVideos, setMyVideos] = useState<any[]>([]);
   const [showMyVideos, setShowMyVideos] = useState(false);
   const [previewVideo, setPreviewVideo] = useState<any>(null);
+  const [previewPlaying, setPreviewPlaying] = useState(true);
   const [videoProgress, setVideoProgress] = useState(0);
   const [videoDuration, setVideoDuration] = useState(0);
   const [isSeeking, setIsSeeking] = useState(false);
@@ -56,6 +57,7 @@ export const DiscoverPage: React.FC = () => {
   const videoInputRef = useRef<HTMLInputElement>(null);
   const swipeStateRef = useRef(swipe);
   const progressBarRef = useRef<HTMLDivElement>(null);
+  const previewVideoRef = useRef<HTMLVideoElement>(null);
 
   useEffect(() => {
     swipeStateRef.current = swipe;
@@ -249,6 +251,18 @@ export const DiscoverPage: React.FC = () => {
     return mins + ':' + secs.toString().padStart(2, '0');
   };
 
+  const handlePreviewPlayPause = () => {
+    if (previewVideoRef.current) {
+      if (previewVideoRef.current.paused) {
+        previewVideoRef.current.play();
+        setPreviewPlaying(true);
+      } else {
+        previewVideoRef.current.pause();
+        setPreviewPlaying(false);
+      }
+    }
+  };
+
   const handleVideoUpload = async (files: FileList | null) => {
     if (!files || files.length === 0 || !user) return;
     setUploading(true);
@@ -342,7 +356,7 @@ export const DiscoverPage: React.FC = () => {
               ) : (
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 4 }}>
                   {myVideos.map((video) => (
-                    <div key={video.video_id} style={{ position: 'relative', aspectRatio: '9/16', backgroundColor: '#f3f4f6', borderRadius: 4, overflow: 'hidden', cursor: 'pointer' }} onClick={() => setPreviewVideo(video)}>
+                    <div key={video.video_id} style={{ position: 'relative', aspectRatio: '9/16', backgroundColor: '#f3f4f6', borderRadius: 4, overflow: 'hidden', cursor: 'pointer' }} onClick={() => { setPreviewVideo(video); setPreviewPlaying(true); }}>
                       <video src={video.video_url} muted playsInline style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                       <div style={{ position: 'absolute', top: 8, left: 8 }}>
                         {video.status === 'approved' && <span style={{ backgroundColor: '#10b981', color: '#fff', padding: '4px 8px', borderRadius: 9999, fontSize: 10, fontWeight: 700 }}>Approved</span>}
@@ -361,7 +375,24 @@ export const DiscoverPage: React.FC = () => {
       {previewVideo && (
         <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.95)', zIndex: 1000, display: 'flex' }} onClick={() => setPreviewVideo(null)}>
           <div onClick={(e) => e.stopPropagation()} style={{ width: '100%', maxWidth: 480, height: '100dvh', display: 'flex', flexDirection: 'column', position: 'relative' }}>
-            <video src={previewVideo.video_url} controls autoPlay playsInline style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+            <video 
+              ref={previewVideoRef}
+              src={previewVideo.video_url} 
+              autoPlay 
+              playsInline 
+              loop
+              muted
+              onPlay={() => setPreviewPlaying(true)}
+              onPause={() => setPreviewPlaying(false)}
+              style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+            />
+            <button 
+              onClick={handlePreviewPlayPause}
+              style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', background: 'rgba(0,0,0,0.5)', border: 'none', borderRadius: '50%', width: 60, height: 60, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#fff', zIndex: 5 }}
+              aria-label="Play/Pause"
+            >
+              {previewPlaying ? <Pause size={28} /> : <Play size={28} />}
+            </button>
             <button onClick={() => setPreviewVideo(null)} style={{ position: 'absolute', top: 16, left: 16, background: 'rgba(0,0,0,0.5)', border: 'none', borderRadius: '50%', width: 44, height: 44, cursor: 'pointer', color: '#fff', zIndex: 10 }}>
               <ArrowLeft size={24} />
             </button>
@@ -416,7 +447,6 @@ export const DiscoverPage: React.FC = () => {
             {current.bio && <p className={styles.profileBio}>{current.bio}</p>}
           </div>
 
-          {/* Draggable Progress Bar */}
           <div 
             ref={progressBarRef}
             style={{ position: 'absolute', bottom: 65, left: 0, right: 0, padding: '0 16px', zIndex: 20, cursor: 'pointer' }}
@@ -459,7 +489,3 @@ export const DiscoverPage: React.FC = () => {
     </div>
   );
 };
-
-
-
-
