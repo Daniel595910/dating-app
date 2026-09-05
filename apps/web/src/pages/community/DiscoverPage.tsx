@@ -12,8 +12,11 @@ import styles from './DiscoverPage.module.css';
 
 interface SwipeState {
   isDragging: boolean;
+  startX: number;
   startY: number;
+  currentX: number;
   currentY: number;
+  deltaX: number;
   deltaY: number;
 }
 
@@ -30,11 +33,14 @@ export const DiscoverPage: React.FC = () => {
   const [matchedId, setMatchedId] = useState<string | null>(null);
   const [swipe, setSwipe] = useState<SwipeState>({
     isDragging: false,
+    startX: 0,
     startY: 0,
+    currentX: 0,
     currentY: 0,
+    deltaX: 0,
     deltaY: 0,
   });
-  const [swipeDirection, setSwipeDirection] = useState<'up' | 'down' | null>(null);
+  const [swipeDirection, setSwipeDirection] = useState<'left' | 'right' | 'up' | 'down' | null>(null);
   const [showUpload, setShowUpload] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
@@ -45,6 +51,11 @@ export const DiscoverPage: React.FC = () => {
   const containerRef = useRef<HTMLDivElement>(null);
   const nextVideoRef = useRef<HTMLVideoElement>(null);
   const videoInputRef = useRef<HTMLInputElement>(null);
+  const swipeStateRef = useRef(swipe);
+
+  useEffect(() => {
+    swipeStateRef.current = swipe;
+  }, [swipe]);
 
   useEffect(() => {
     loadCandidates();
@@ -109,59 +120,138 @@ export const DiscoverPage: React.FC = () => {
   const nextCandidate = useCallback(() => {
     setCurrentIndex((prev) => Math.min(prev + 1, candidates.length));
     setIsPlaying(false);
-    setSwipe({ isDragging: false, startY: 0, currentY: 0, deltaY: 0 });
+    setSwipe({ isDragging: false, startX: 0, startY: 0, currentX: 0, currentY: 0, deltaX: 0, deltaY: 0 });
     setSwipeDirection(null);
   }, [candidates.length]);
 
   const previousCandidate = useCallback(() => {
     setCurrentIndex((prev) => Math.max(prev - 1, 0));
     setIsPlaying(false);
-    setSwipe({ isDragging: false, startY: 0, currentY: 0, deltaY: 0 });
+    setSwipe({ isDragging: false, startX: 0, startY: 0, currentX: 0, currentY: 0, deltaX: 0, deltaY: 0 });
     setSwipeDirection(null);
   }, []);
 
-  const handlePointerDown = (e: React.PointerEvent) => {
+  // Touch event handlers for mobile
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    const touch = e.touches[0];
+    if (!touch) return;
+    
     setSwipe({
       isDragging: true,
-      startY: e.clientY,
-      currentY: e.clientY,
+      startX: touch.clientX,
+      startY: touch.clientY,
+      currentX: touch.clientX,
+      currentY: touch.clientY,
+      deltaX: 0,
       deltaY: 0,
     });
-  };
+  }, []);
 
-  const handlePointerMove = (e: React.PointerEvent) => {
-    if (!swipe.isDragging) return;
+  const handleTouchMove = useCallback((e: React.TouchEvent) => {
+    const state = swipeStateRef.current;
+    if (!state.isDragging) return;
     
-    const deltaY = e.clientY - swipe.startY;
+    const touch = e.touches[0];
+    if (!touch) return;
+    
+    const deltaX = touch.clientX - state.startX;
+    const deltaY = touch.clientY - state.startY;
+    
     setSwipe((prev) => ({
       ...prev,
-      currentY: e.clientY,
+      currentX: touch.clientX,
+      currentY: touch.clientY,
+      deltaX,
       deltaY,
     }));
     
-    if (Math.abs(deltaY) > 10) {
-      setSwipeDirection(deltaY > 0 ? 'down' : 'up');
+    if (Math.abs(deltaX) > 10 || Math.abs(deltaY) > 10) {
+      if (Math.abs(deltaX) > Math.abs(deltaY)) {
+        setSwipeDirection(deltaX > 0 ? 'right' : 'left');
+      } else {
+        setSwipeDirection(deltaY > 0 ? 'down' : 'up');
+      }
     }
-  };
+  }, []);
 
-  const handlePointerUp = () => {
-    if (!swipe.isDragging) return;
+  const handleTouchEnd = useCallback(() => {
+    const state = swipeStateRef.current;
+    if (!state.isDragging) return;
     
-    const threshold = 100;
+    const threshold = 80; // Lower threshold for mobile
     
-    if (swipe.deltaY < -threshold) {
-      if (currentIndex < candidates.length - 1) {
-        nextCandidate();
-      }
-    } else if (swipe.deltaY > threshold) {
-      if (currentIndex > 0) {
-        previousCandidate();
+    if (Math.abs(state.deltaX) > Math.abs(state.deltaY)) {
+      if (state.deltaX < -threshold) {
+        // Swiped LEFT - next person
+        setCurrentIndex((prev) => Math.min(prev + 1, candidates.length));
+        setIsPlaying(false);
+      } else if (state.deltaX > threshold) {
+        // Swiped RIGHT - previous person
+        setCurrentIndex((prev) => Math.max(prev - 1, 0));
+        setIsPlaying(false);
       }
     }
     
-    setSwipe({ isDragging: false, startY: 0, currentY: 0, deltaY: 0 });
+    setSwipe({ isDragging: false, startX: 0, startY: 0, currentX: 0, currentY: 0, deltaX: 0, deltaY: 0 });
     setSwipeDirection(null);
-  };
+  }, [candidates.length]);
+
+  // Mouse event handlers for desktop
+  const handleMouseDown = useCallback((e: React.MouseEvent) => {
+    setSwipe({
+      isDragging: true,
+      startX: e.clientX,
+      startY: e.clientY,
+      currentX: e.clientX,
+      currentY: e.clientY,
+      deltaX: 0,
+      deltaY: 0,
+    });
+  }, []);
+
+  const handleMouseMove = useCallback((e: React.MouseEvent) => {
+    const state = swipeStateRef.current;
+    if (!state.isDragging) return;
+    
+    const deltaX = e.clientX - state.startX;
+    const deltaY = e.clientY - state.startY;
+    
+    setSwipe((prev) => ({
+      ...prev,
+      currentX: e.clientX,
+      currentY: e.clientY,
+      deltaX,
+      deltaY,
+    }));
+    
+    if (Math.abs(deltaX) > 10 || Math.abs(deltaY) > 10) {
+      if (Math.abs(deltaX) > Math.abs(deltaY)) {
+        setSwipeDirection(deltaX > 0 ? 'right' : 'left');
+      } else {
+        setSwipeDirection(deltaY > 0 ? 'down' : 'up');
+      }
+    }
+  }, []);
+
+  const handleMouseUp = useCallback(() => {
+    const state = swipeStateRef.current;
+    if (!state.isDragging) return;
+    
+    const threshold = 80;
+    
+    if (Math.abs(state.deltaX) > Math.abs(state.deltaY)) {
+      if (state.deltaX < -threshold) {
+        setCurrentIndex((prev) => Math.min(prev + 1, candidates.length));
+        setIsPlaying(false);
+      } else if (state.deltaX > threshold) {
+        setCurrentIndex((prev) => Math.max(prev - 1, 0));
+        setIsPlaying(false);
+      }
+    }
+    
+    setSwipe({ isDragging: false, startX: 0, startY: 0, currentX: 0, currentY: 0, deltaX: 0, deltaY: 0 });
+    setSwipeDirection(null);
+  }, [candidates.length]);
 
   const togglePlay = () => {
     if (videoRef.current) {
@@ -186,7 +276,6 @@ export const DiscoverPage: React.FC = () => {
       const result = await mediaService.uploadVideo(files[0]!, user.id, 'discover_video');
       
       if (result.success && result.media) {
-        // Submit to discover
         const submitted = await discoverService.submitVideo(
           result.media.url,
           'Check out my video!',
@@ -196,7 +285,6 @@ export const DiscoverPage: React.FC = () => {
         if (submitted) {
           setShowUpload(false);
           await loadMyVideos();
-          // Show success message
           setError('Video submitted for review! It will appear in Discover once approved.');
         } else {
           setError('Failed to submit video. Please try again.');
@@ -228,14 +316,19 @@ export const DiscoverPage: React.FC = () => {
     <div 
       ref={containerRef}
       className={styles.discoverPage}
-      onPointerDown={handlePointerDown}
-      onPointerMove={handlePointerMove}
-      onPointerUp={handlePointerUp}
-      onPointerCancel={handlePointerUp}
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
+      onMouseDown={handleMouseDown}
+      onMouseMove={handleMouseMove}
+      onMouseUp={handleMouseUp}
+      onMouseLeave={handleMouseUp}
       style={{
         touchAction: 'none',
         userSelect: 'none',
         WebkitUserSelect: 'none',
+        WebkitTouchCallout: 'none',
+        overscrollBehavior: 'none',
       }}
     >
       {/* Header */}
@@ -302,64 +395,24 @@ export const DiscoverPage: React.FC = () => {
         </div>
       )}
 
-      {/* My Videos Panel */}
-      {showMyVideos && (
-        <div className={styles.myVideosOverlay} onClick={() => setShowMyVideos(false)}>
-          <div className={styles.myVideosDialog} onClick={(e) => e.stopPropagation()}>
-            <h2 className={styles.uploadTitle}>My Discover Videos</h2>
-            {myVideos.length === 0 ? (
-              <p className={styles.uploadText}>You haven't uploaded any videos yet.</p>
-            ) : (
-              <div className={styles.myVideosList}>
-                {myVideos.map((video) => (
-                  <div key={video.video_id} className={styles.myVideoItem}>
-                    <video
-                      src={video.video_url}
-                      controls
-                      className={styles.myVideoPreview}
-                    />
-                    <div className={styles.myVideoInfo}>
-                      <span className={styles.myVideoStatus}>
-                        Status: {video.status}
-                      </span>
-                      <span className={styles.myVideoDate}>
-                        {new Date(video.created_at).toLocaleDateString()}
-                      </span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-            <button
-              className={styles.cancelButton}
-              onClick={() => setShowMyVideos(false)}
-            >
-              Close
-            </button>
-          </div>
-        </div>
-      )}
-
       {/* Current Video Card */}
       {current && (
         <div 
           className={styles.videoCard}
           style={{
-            transform: `translateY(${swipe.deltaY}px)`,
+            transform: `translateX(${swipe.deltaX}px)`,
             transition: swipe.isDragging ? 'none' : 'transform 0.3s ease',
-            opacity: swipe.isDragging ? Math.max(0.5, 1 - Math.abs(swipe.deltaY) / 400) : 1,
+            opacity: swipe.isDragging ? Math.max(0.5, 1 - Math.abs(swipe.deltaX) / 400) : 1,
           }}
         >
           <video
             ref={videoRef}
             src={current.videoUrl}
-            poster={current.thumbnailUrl || undefined}
             loop
             muted
             playsInline
             autoPlay
-            onPlay={() => setIsPlaying(true)}
-            onPause={() => setIsPlaying(false)}
+            preload="auto"
             className={styles.video}
             onClick={togglePlay}
           />
@@ -423,11 +476,18 @@ export const DiscoverPage: React.FC = () => {
             </button>
           </div>
 
-          {swipeDirection && Math.abs(swipe.deltaY) > 20 && (
+          {swipeDirection && (Math.abs(swipe.deltaX) > 20 || Math.abs(swipe.deltaY) > 20) && (
             <div 
-              className={`${styles.swipeIndicator} ${swipeDirection === 'up' ? styles.swipeUp : styles.swipeDown}`}
+              className={`${styles.swipeIndicator} ${
+                swipeDirection === 'left' ? styles.swipeLeft : 
+                swipeDirection === 'right' ? styles.swipeRight :
+                swipeDirection === 'up' ? styles.swipeUp : styles.swipeDown
+              }`}
             >
-              {swipeDirection === 'up' ? <span>Next profile</span> : <span>Previous profile</span>}
+              {swipeDirection === 'left' && <span>Next person</span>}
+              {swipeDirection === 'right' && <span>Previous person</span>}
+              {swipeDirection === 'up' && <span>More videos</span>}
+              {swipeDirection === 'down' && <span>Previous video</span>}
             </div>
           )}
         </div>
@@ -482,3 +542,6 @@ export const DiscoverPage: React.FC = () => {
     </div>
   );
 };
+
+
+

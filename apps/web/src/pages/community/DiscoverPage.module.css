@@ -213,8 +213,20 @@
   animation: fadeIn 0.2s ease;
 }
 
-.swipeUp {
+.swipeLeft {
   border: 2px solid #ef4444;
+}
+
+.swipeRight {
+  border: 2px solid #3b82f6;
+}
+
+.swipeUp {
+  border: 2px solid #10b981;
+}
+
+.swipeDown {
+  border: 2px solid #f59e0b;
 }
 
 .swipeDown {
@@ -475,3 +487,4 @@
   font-size: 0.75rem;
   color: #6b7280;
 }
+
