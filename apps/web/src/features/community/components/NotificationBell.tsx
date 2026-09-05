@@ -283,3 +283,4 @@ export const NotificationBell: React.FC<NotificationBellProps> = ({ userId }) =>
     </div>
   );
 };
+

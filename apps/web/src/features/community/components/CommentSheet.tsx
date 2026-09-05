@@ -105,7 +105,7 @@ export const CommentSheet: React.FC<CommentSheetProps> = ({
   const buildTree = useCallback((flatComments: any[]): CommentNode[] => {
     const nodeMap = new Map<string, CommentNode>();
     
-    // First pass: create all nodes
+    // First pass: create all nodes with proper author profiles
     flatComments.forEach((c: any) => {
       const profile = commentMapRef.current.get(c.author_id);
       nodeMap.set(c.id, {
@@ -113,7 +113,7 @@ export const CommentSheet: React.FC<CommentSheetProps> = ({
         postId: c.post_id,
         author: {
           id: c.author_id,
-          name: profile?.name || 'User',
+          name: profile?.name || 'User ' + c.author_id.substring(0, 4),
           avatarUrl: profile?.avatarUrl || null,
           verified: profile?.verified || false,
         },
@@ -195,6 +195,8 @@ export const CommentSheet: React.FC<CommentSheetProps> = ({
           .limit(200);
 
         const allComments = [...topList, ...(allReplies || [])];
+        
+        // CRITICAL: Fetch profiles BEFORE building tree
         await fetchProfiles(allComments);
 
         // Get reactions
@@ -560,3 +562,5 @@ export const CommentSheet: React.FC<CommentSheetProps> = ({
     </div>
   );
 };
+
+
