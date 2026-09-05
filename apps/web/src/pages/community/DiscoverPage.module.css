@@ -219,6 +219,61 @@
   justify-content: center;
   transition: all 0.15s ease;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  pointer-events: auto;
+  position: relative;
+  z-index: 10;
+}
+
+.actionButton:hover {
+  transform: scale(1.1);
+}
+
+.actionButton:active {
+  transform: scale(0.95);
+}
+
+.passButton {
+  background-color: #ffffff;
+  color: #111827;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  transition: all 0.15s ease;
+}
+
+.passButton:hover {
+  transform: scale(1.1);
+  background-color: #f3f4f6;
+}
+
+.likeButton {
+  background-color: #ef4444;
+  color: #ffffff;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
+  transition: all 0.15s ease;
+}
+
+.likeButton:hover {
+  transform: scale(1.1);
+  background-color: #dc2626;
+}
+
+.likeButton svg {
+  fill: #ffffff;
 }
 
 .actionButton:hover {
@@ -333,3 +388,4 @@
     transition: none;
   }
 }
+

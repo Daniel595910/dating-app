@@ -12,8 +12,6 @@ class DiscoverService {
       return [];
     }
 
-    console.log('Discover candidates raw data:', data);
-
     return (data || []).map((c: any) => ({
       userId: c.user_id,
       displayName: c.display_name,
@@ -22,13 +20,13 @@ class DiscoverService {
       thumbnailUrl: c.thumbnail_url || null,
       bio: c.caption || '',
       age: c.age,
-      city: null,
-      state: null,
+      city: c.location_city || null,
+      state: c.location_state || null,
       relationshipIntent: c.relationship_intent,
       interests: c.interests || [],
       isVerified: c.is_verified || false,
       verificationBadge: c.verification_badge || 'none',
-      distanceKm: c.distance_km || 0,
+      distanceKm: 0,
     }));
   }
 

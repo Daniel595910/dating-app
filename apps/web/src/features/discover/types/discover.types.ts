@@ -15,7 +15,7 @@
   distanceKm: number;
 }
 
-export type SwipeAction = 'like' | 'pass' | 'super_like' | 'get_to_know';
+export type SwipeAction = 'like' | 'pass' | 'get_to_know';
 
 export interface SwipeResult {
   matched: boolean;
