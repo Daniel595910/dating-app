@@ -12,21 +12,23 @@ class DiscoverService {
       return [];
     }
 
+    console.log('Discover candidates raw data:', data);
+
     return (data || []).map((c: any) => ({
       userId: c.user_id,
       displayName: c.display_name,
-      avatarUrl: c.avatar_url,
+      avatarUrl: c.avatar_url || null,
       videoUrl: c.video_url,
-      thumbnailUrl: c.thumbnail_url,
-      bio: c.caption,
+      thumbnailUrl: c.thumbnail_url || null,
+      bio: c.caption || '',
       age: c.age,
       city: null,
       state: null,
       relationshipIntent: c.relationship_intent,
       interests: c.interests || [],
-      isVerified: c.is_verified,
-      verificationBadge: c.verification_badge,
-      distanceKm: c.distance_km,
+      isVerified: c.is_verified || false,
+      verificationBadge: c.verification_badge || 'none',
+      distanceKm: c.distance_km || 0,
     }));
   }
 
