@@ -22,6 +22,7 @@ import { PostDetail } from './pages/community/PostDetail';
 import { SearchPage } from './pages/community/SearchPage';
 import { DiscoverCommunitiesPage } from './pages/community/DiscoverCommunitiesPage';
 import { CommunityGuidelinesPage } from './pages/community/CommunityGuidelinesPage';
+import { DiscoverPage } from './pages/community/DiscoverPage';
 
 // Chat Pages
 import { ChatsPage } from './pages/chat/ChatsPage';
@@ -70,6 +71,18 @@ export const AppRouter: React.FC = () => {
           </ProtectedRoute>
         }
       />
+
+      {/* Discover - Video Dating */}
+      <Route
+        path="/discover"
+        element={
+          <ProtectedRoute>
+            <DiscoverPage />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* Discover Communities */}
       <Route
         path="/discover-communities"
         element={
@@ -78,6 +91,8 @@ export const AppRouter: React.FC = () => {
           </ProtectedRoute>
         }
       />
+
+      {/* Community Guidelines */}
       <Route
         path="/community-guidelines"
         element={
@@ -86,6 +101,7 @@ export const AppRouter: React.FC = () => {
           </ProtectedRoute>
         }
       />
+
       <Route
         path={ROUTES.SEARCH}
         element={
