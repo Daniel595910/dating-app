@@ -2,9 +2,8 @@
 import { DiscoverCandidate, SwipeAction, SwipeResult } from '../types/discover.types';
 
 class DiscoverService {
-  async getCandidates(userId: string, limit: number = 10): Promise<DiscoverCandidate[]> {
-    const { data, error } = await supabase.rpc('get_discover_candidates', {
-      p_user_id: userId,
+  async getCandidates(limit: number = 10): Promise<DiscoverCandidate[]> {
+    const { data, error } = await supabase.rpc('get_discover_feed', {
       p_limit: limit,
     });
 
@@ -19,19 +18,19 @@ class DiscoverService {
       avatarUrl: c.avatar_url,
       videoUrl: c.video_url,
       thumbnailUrl: c.thumbnail_url,
-      bio: c.bio,
+      bio: c.caption,
       age: c.age,
-      city: c.location_city,
-      state: c.location_state,
+      city: null,
+      state: null,
       relationshipIntent: c.relationship_intent,
       interests: c.interests || [],
       isVerified: c.is_verified,
       verificationBadge: c.verification_badge,
-      distanceKm: c.distance_km || 0,
+      distanceKm: c.distance_km,
     }));
   }
 
-  async swipe(userId: string, targetId: string, action: SwipeAction): Promise<SwipeResult | null> {
+  async swipe(targetId: string, action: SwipeAction): Promise<SwipeResult | null> {
     const { data, error } = await supabase.rpc('discover_swipe', {
       p_target_id: targetId,
       p_action: action,
@@ -45,64 +44,30 @@ class DiscoverService {
     return data as SwipeResult;
   }
 
-  async uploadVideoProfile(userId: string, videoBlob: Blob, thumbnailBlob?: Blob): Promise<string | null> {
-    const timestamp = Date.now();
-    const randomSuffix = Math.random().toString(36).substring(2, 8);
-    const videoPath = 'video-profile/' + userId + '/' + timestamp + '-' + randomSuffix + '.webm';
-
-    const { error: videoUploadError } = await supabase.storage
-      .from('media')
-      .upload(videoPath, videoBlob, { cacheControl: '3600', contentType: 'video/webm' });
-
-    if (videoUploadError) return null;
-
-    const { data: videoUrlData } = supabase.storage
-      .from('media')
-      .getPublicUrl(videoPath);
-
-    let thumbnailUrl = null;
-    if (thumbnailBlob) {
-      const thumbPath = 'video-profile/' + userId + '/' + timestamp + '-thumb.jpg';
-      const { error: thumbError } = await supabase.storage
-        .from('media')
-        .upload(thumbPath, thumbnailBlob, { cacheControl: '3600', contentType: 'image/jpeg' });
-
-      if (!thumbError) {
-        const { data: thumbUrlData } = supabase.storage
-          .from('media')
-          .getPublicUrl(thumbPath);
-        thumbnailUrl = thumbUrlData.publicUrl;
-      }
-    }
-
-    // Save video profile
-    await supabase.from('video_profiles').upsert({
-      user_id: userId,
-      video_url: videoUrlData.publicUrl,
-      thumbnail_url: thumbnailUrl,
-      status: 'pending',
+  async submitVideo(videoUrl: string, caption?: string, thumbnailUrl?: string): Promise<boolean> {
+    const { error } = await supabase.rpc('submit_discover_video', {
+      p_video_url: videoUrl,
+      p_caption: caption || null,
+      p_thumbnail_url: thumbnailUrl || null,
     });
 
-    return videoUrlData.publicUrl;
+    if (error) {
+      console.error('Failed to submit video:', error);
+      return false;
+    }
+
+    return true;
   }
 
-  async getMyVideoProfile(userId: string): Promise<{ videoUrl: string; status: string } | null> {
-    const { data } = await supabase
-      .from('video_profiles')
-      .select('video_url, status')
-      .eq('user_id', userId)
-      .maybeSingle();
+  async getMyVideos(): Promise<any[]> {
+    const { data, error } = await supabase.rpc('get_my_discover_videos');
 
-    return data || null;
-  }
+    if (error) {
+      console.error('Failed to get my videos:', error);
+      return [];
+    }
 
-  async deleteVideoProfile(userId: string): Promise<boolean> {
-    const { error } = await supabase
-      .from('video_profiles')
-      .delete()
-      .eq('user_id', userId);
-
-    return !error;
+    return data || [];
   }
 }
 

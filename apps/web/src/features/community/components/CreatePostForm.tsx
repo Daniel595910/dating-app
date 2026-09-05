@@ -1,8 +1,9 @@
 ﻿import React, { useState, useRef } from 'react';
-import { X, ArrowLeft, ArrowRight, Camera, Heart, MessageCircle, Sparkles, HelpCircle, Check, ImagePlus, Trash2, Mic, Square } from 'lucide-react';
+import { X, ArrowLeft, ArrowRight, Camera, Heart, MessageCircle, Sparkles, HelpCircle, Check, ImagePlus, Trash2, Mic, Square, Video, Globe } from 'lucide-react';
 import { supabase } from '@/config/supabase.client';
 import { CommunityPostType, PostMedia } from '../../types/community.types';
 import { mediaService } from '../services/media.service';
+import { discoverService } from '../../discover/services/discover.service';
 import styles from '../styles/CreatePostForm.module.css';
 
 interface CreatePostFormProps {
@@ -44,6 +45,8 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
   const [lookingFor, setLookingFor] = useState('');
   const [tags, setTags] = useState('');
   const [media, setMedia] = useState<PostMedia[]>([]);
+  const [videoMedia, setVideoMedia] = useState<PostMedia | null>(null);
+  const [showInDiscover, setShowInDiscover] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [submitting, setSubmitting] = useState(false);
@@ -54,6 +57,7 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const videoInputRef = useRef<HTMLInputElement>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
   const recordingTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -69,8 +73,8 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
   };
 
   const handleNext = () => {
-    if (!content.trim() && !audioUrl && media.length === 0 && postType !== 'photo') {
-      setError('Please write something, record audio, or add a photo');
+    if (!content.trim() && !audioUrl && media.length === 0 && !videoMedia && postType !== 'photo') {
+      setError('Please write something, record audio, or add a photo/video');
       return;
     }
     if (postType === 'looking_for' && !lookingFor) {
@@ -182,8 +186,39 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
     }
   };
 
+  const handleVideoSelect = async (files: FileList | null) => {
+    if (!files || files.length === 0) return;
+
+    setUploading(true);
+    setUploadProgress(0);
+    setError(null);
+
+    try {
+      const result = await mediaService.uploadVideo(files[0]!, userId, 'post_video');
+      
+      if (result.success && result.media) {
+        setVideoMedia(result.media);
+        // Auto-enable Discover option for videos
+        setShowInDiscover(true);
+      } else {
+        setError(result.error || 'Failed to upload video');
+      }
+    } catch (err: any) {
+      setError(err.message || 'Video upload failed');
+    } finally {
+      setUploading(false);
+      setUploadProgress(0);
+      if (videoInputRef.current) videoInputRef.current.value = '';
+    }
+  };
+
   const handleRemoveMedia = (mediaId: string) => {
     setMedia((prev) => prev.filter((m) => m.id !== mediaId));
+  };
+
+  const handleRemoveVideo = () => {
+    setVideoMedia(null);
+    setShowInDiscover(false);
   };
 
   const handlePublish = async () => {
@@ -198,7 +233,8 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
         : content;
 
       // Upload audio if exists
-      let audioMetadata = null;
+      let metadata: any = {};
+      
       if (audioBlob) {
         const timestamp = Date.now();
         const filePath = 'post-audio/' + userId + '/' + timestamp + '.webm';
@@ -209,22 +245,36 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
 
         if (!audioUploadError) {
           const { data: audioUrlData } = supabase.storage.from('media').getPublicUrl(filePath);
-          audioMetadata = { audioUrl: audioUrlData.publicUrl, durationMs: recordingTime * 1000 };
+          metadata.audioUrl = audioUrlData.publicUrl;
+          metadata.durationMs = recordingTime * 1000;
         }
       }
 
+      // Add video metadata
+      if (videoMedia) {
+        metadata.videoUrl = videoMedia.url;
+        metadata.thumbnailUrl = videoMedia.thumbnailUrl || null;
+        metadata.videoDuration = videoMedia.durationSeconds || null;
+      }
+
+      // Prepare post data
+      const postData: any = {
+        community_id: communityId,
+        author_id: userId,
+        type: videoMedia ? 'photo' : postType, // Use photo type for video posts temporarily
+        content: finalContent,
+        status: 'published',
+        images: media.map((m) => m.url),
+        tags: tagArray,
+        metadata: Object.keys(metadata).length > 0 ? metadata : null,
+        is_discover_eligible: showInDiscover && videoMedia ? true : false,
+        discover_status: showInDiscover && videoMedia ? 'pending' : null,
+        discover_submitted_at: showInDiscover && videoMedia ? new Date().toISOString() : null,
+      };
+
       const { data, error: insertError } = await supabase
         .from('posts')
-        .insert({
-          community_id: communityId,
-          author_id: userId,
-          type: postType,
-          content: finalContent,
-          status: 'published',
-          images: media.map((m) => m.url),
-          tags: tagArray,
-          metadata: audioMetadata,
-        })
+        .insert(postData)
         .select()
         .single();
 
@@ -239,6 +289,8 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
         setLookingFor('');
         setTags('');
         setMedia([]);
+        setVideoMedia(null);
+        setShowInDiscover(false);
         removeAudio();
         onPostCreated(data);
         onClose();
@@ -394,15 +446,64 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
               style={{ display: 'none' }}
             />
 
-            <button
-              className={styles.photoUploadButton}
-              onClick={() => fileInputRef.current?.click()}
-              disabled={uploading || media.length >= 5}
-            >
-              <ImagePlus size={18} />
-              <span>{uploading ? 'Uploading... ' + Math.round(uploadProgress) + '%' : media.length > 0 ? 'Add More Photos (' + media.length + '/5)' : 'Add Photos'}</span>
-            </button>
+            {/* Video Upload */}
+            <input
+              ref={videoInputRef}
+              type="file"
+              accept="video/mp4,video/webm,video/quicktime"
+              onChange={(e) => handleVideoSelect(e.target.files)}
+              style={{ display: 'none' }}
+            />
 
+            <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={uploading || media.length >= 5}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.375rem',
+                  padding: '0.5rem 1rem',
+                  background: 'none',
+                  border: '1px solid #e5e7eb',
+                  borderRadius: '9999px',
+                  cursor: 'pointer',
+                  fontSize: '0.8125rem',
+                  fontWeight: 500,
+                  color: '#374151',
+                  minHeight: 40,
+                }}
+              >
+                <ImagePlus size={16} />
+                <span>{uploading ? 'Uploading... ' + Math.round(uploadProgress) + '%' : media.length > 0 ? 'Add More Photos (' + media.length + '/5)' : 'Add Photos'}</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => videoInputRef.current?.click()}
+                disabled={uploading || !!videoMedia}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.375rem',
+                  padding: '0.5rem 1rem',
+                  background: 'none',
+                  border: '1px solid #e5e7eb',
+                  borderRadius: '9999px',
+                  cursor: videoMedia ? 'not-allowed' : 'pointer',
+                  fontSize: '0.8125rem',
+                  fontWeight: 500,
+                  color: videoMedia ? '#9ca3af' : '#374151',
+                  minHeight: 40,
+                }}
+              >
+                <Video size={16} />
+                <span>{videoMedia ? 'Video Added' : 'Add Video'}</span>
+              </button>
+            </div>
+
+            {/* Image Preview */}
             {media.length > 0 && (
               <div className={styles.mediaPreview}>
                 {media.map((m) => (
@@ -417,6 +518,88 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
                     </button>
                   </div>
                 ))}
+              </div>
+            )}
+
+            {/* Video Preview */}
+            {videoMedia && (
+              <div style={{ position: 'relative', marginTop: '0.5rem' }}>
+                <video
+                  src={videoMedia.url}
+                  controls
+                  style={{ width: '100%', maxHeight: '300px', borderRadius: '8px' }}
+                />
+                <button
+                  type="button"
+                  onClick={handleRemoveVideo}
+                  style={{
+                    position: 'absolute',
+                    top: '8px',
+                    right: '8px',
+                    background: 'rgba(0,0,0,0.7)',
+                    border: 'none',
+                    borderRadius: '50%',
+                    width: '32px',
+                    height: '32px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    cursor: 'pointer',
+                    color: '#ffffff',
+                  }}
+                >
+                  <Trash2 size={14} />
+                </button>
+              </div>
+            )}
+
+            {/* Discover Opt-in */}
+            {videoMedia && (
+              <div style={{
+                marginTop: '1rem',
+                padding: '1rem',
+                backgroundColor: '#fef2f2',
+                borderRadius: '12px',
+                border: '1px solid #fecaca',
+              }}>
+                <label style={{
+                  display: 'flex',
+                  alignItems: 'flex-start',
+                  gap: '0.75rem',
+                  cursor: 'pointer',
+                }}>
+                  <input
+                    type="checkbox"
+                    checked={showInDiscover}
+                    onChange={(e) => setShowInDiscover(e.target.checked)}
+                    style={{
+                      marginTop: '2px',
+                      width: '18px',
+                      height: '18px',
+                      cursor: 'pointer',
+                    }}
+                  />
+                  <div>
+                    <div style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.375rem',
+                      fontWeight: 600,
+                      fontSize: '0.875rem',
+                      color: '#111827',
+                    }}>
+                      <Globe size={16} />
+                      Show this video in Discover
+                    </div>
+                    <p style={{
+                      fontSize: '0.75rem',
+                      color: '#6b7280',
+                      margin: '0.25rem 0 0 0',
+                    }}>
+                      Your video will be reviewed before appearing in Discover. It must be appropriate and follow community guidelines.
+                    </p>
+                  </div>
+                </label>
               </div>
             )}
 
@@ -452,11 +635,32 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
                   <audio src={audioUrl} controls style={{ width: '100%', height: 32 }} />
                 </div>
               )}
+              {videoMedia && (
+                <div style={{ marginBottom: '0.5rem' }}>
+                  <video src={videoMedia.url} controls style={{ width: '100%', maxHeight: '300px', borderRadius: '8px' }} />
+                </div>
+              )}
               {media.length > 0 && (
                 <div className={styles.previewMediaRow}>
                   {media.map((m) => (
                     <img key={m.id} src={m.url} alt="" className={styles.previewMediaImage} />
                   ))}
+                </div>
+              )}
+              {showInDiscover && videoMedia && (
+                <div style={{
+                  marginTop: '0.5rem',
+                  padding: '0.5rem',
+                  backgroundColor: '#fef2f2',
+                  borderRadius: '8px',
+                  fontSize: '0.75rem',
+                  color: '#dc2626',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.375rem',
+                }}>
+                  <Globe size={14} />
+                  Will be submitted to Discover for review
                 </div>
               )}
               {tags && (

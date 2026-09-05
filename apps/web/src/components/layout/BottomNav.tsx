@@ -1,14 +1,19 @@
-import React from 'react';
+﻿import React from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { BOTTOM_NAVIGATION, IconName } from '@/config/navigation';
 
-const ICONS: Record < IconName, React.ReactNode > = {
+const ICONS: Record<IconName, React.ReactNode> = {
   community: (
     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
       <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
       <circle cx="9" cy="7" r="4" />
       <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
       <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+    </svg>
+  ),
+  discover: (
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <path d="M12 21s-7-4.35-9.5-8.5C.5 8 2.5 4 6.5 4c2 0 3.5 1 5.5 3 2-2 3.5-3 5.5-3 4 0 6 4 4 8.5C19 16.65 12 21 12 21z" />
     </svg>
   ),
   chat: (
@@ -40,6 +45,11 @@ export const BottomNav: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
   
+  // Hide BottomNav on Discover page for full-screen experience
+  if (location.pathname === '/discover') {
+    return null;
+  }
+  
   return (
     <nav style={{
       display: 'flex',
@@ -64,8 +74,11 @@ export const BottomNav: React.FC = () => {
               gap: '0.25rem',
               background: 'none',
               border: 'none',
-              color: isActive ? '#3b82f6' : '#6b7280',
-              fontSize: '0.75rem'
+              color: isActive ? '#ef4444' : '#6b7280',
+              fontSize: '0.75rem',
+              cursor: 'pointer',
+              minWidth: '60px',
+              minHeight: '44px'
             }}
           >
             {item.icon && ICONS[item.icon]}
