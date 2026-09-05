@@ -1,5 +1,5 @@
 ﻿import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { X, Send, Trash2, Heart, MessageCircle, ChevronDown, ChevronUp, Smile, MoreVertical, Flag } from 'lucide-react';
+import { X, Send, Trash2, Heart, ChevronDown, ChevronUp, Smile, Reply, CornerDownRight, MessageCircle, Gift, Sticker, Film } from 'lucide-react';
 import { supabase } from '@/config/supabase.client';
 import { Comment } from '../../types/community.types';
 import styles from '../styles/CommentSheet.module.css';
@@ -12,15 +12,19 @@ interface CommentSheetProps {
   onCommentAdded?: () => void;
 }
 
-interface CommentWithReplies extends Comment {
-  replies: Comment[];
-  showReplies: boolean;
+interface CommentNode extends Comment {
+  children: CommentNode[];
   reactionCount: number;
   userReacted: boolean;
   isOwn: boolean;
+  replyCount: number;
+  contentType: string;
+  mediaUrl: string | null;
+  depth: number;
 }
 
-const EMOJIS = ['❤️', '😂', '😮', '😢', '😡', '👍', '🎉', '💯'];
+const EMOJIS = ['😀', '😂', '😍', '😭', '😡', '👍', '🙏', '🔥', '❤️', '💯', '🎉', '🌹', '💐', '🎁', '💝', '🥰', '😮', '😢', '✨', '💋', '🦋', '🌈', '⭐', '💎', '👑'];
+const MAX_DEPTH = 3;
 
 export const CommentSheet: React.FC<CommentSheetProps> = ({
   open,
@@ -29,20 +33,54 @@ export const CommentSheet: React.FC<CommentSheetProps> = ({
   userId,
   onCommentAdded,
 }) => {
-  const [comments, setComments] = useState<CommentWithReplies[]>([]);
+  const [commentTree, setCommentTree] = useState<CommentNode[]>([]);
   const [loading, setLoading] = useState(false);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [newComment, setNewComment] = useState('');
   const [replyingTo, setReplyingTo] = useState<Comment | null>(null);
-  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [hasMore, setHasMore] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
-  const [expandedComments, setExpandedComments] = useState<Set<string>>(new Set());
+  const [expandedThreads, setExpandedThreads] = useState<Set<string>>(new Set());
+  const [commentToDelete, setCommentToDelete] = useState<string | null>(null);
+  const [likedComments, setLikedComments] = useState<Set<string>>(new Set());
+  const [activePanel, setActivePanel] = useState<'emoji' | 'gif' | 'sticker' | 'gift' | null>(null);
+  const [stickers, setStickers] = useState<any[]>([]);
+  const [gifts, setGifts] = useState<any[]>([]);
+  
   const cursorRef = useRef<string | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const commentMapRef = useRef<Map<string, { name: string; avatarUrl: string | null; verified: boolean }>>(new Map());
+
+  const timeAgo = (dateString: string): string => {
+    const seconds = Math.floor((Date.now() - new Date(dateString).getTime()) / 1000);
+    if (seconds < 60) return 'Just now';
+    const minutes = Math.floor(seconds / 60);
+    if (minutes < 60) return minutes + 'm';
+    const hours = Math.floor(minutes / 60);
+    if (hours < 24) return hours + 'h';
+    const days = Math.floor(hours / 24);
+    if (days < 7) return days + 'd';
+    const weeks = Math.floor(days / 7);
+    if (weeks < 4) return weeks + 'w';
+    return new Date(dateString).toLocaleDateString();
+  };
+
+  const loadStickers = useCallback(async () => {
+    const { data } = await supabase.from('stickers').select('*').eq('is_active', true).limit(50);
+    setStickers(data || []);
+  }, []);
+
+  const loadGifts = useCallback(async () => {
+    const { data } = await supabase.from('gifts').select('*').eq('is_active', true).order('sort_order');
+    setGifts(data || []);
+  }, []);
+
+  useEffect(() => {
+    loadStickers();
+    loadGifts();
+  }, [loadStickers, loadGifts]);
 
   const fetchProfiles = useCallback(async (commentList: any[]) => {
     const authorIds = [...new Set(commentList.map((c: any) => c.author_id))];
@@ -64,18 +102,66 @@ export const CommentSheet: React.FC<CommentSheetProps> = ({
     }
   }, []);
 
+  const buildTree = useCallback((flatComments: any[]): CommentNode[] => {
+    const nodeMap = new Map<string, CommentNode>();
+    
+    // First pass: create all nodes
+    flatComments.forEach((c: any) => {
+      const profile = commentMapRef.current.get(c.author_id);
+      nodeMap.set(c.id, {
+        id: c.id,
+        postId: c.post_id,
+        author: {
+          id: c.author_id,
+          name: profile?.name || 'User',
+          avatarUrl: profile?.avatarUrl || null,
+          verified: profile?.verified || false,
+        },
+        content: c.content,
+        createdAt: c.created_at,
+        children: [],
+        reactionCount: 0,
+        userReacted: false,
+        isOwn: c.author_id === userId,
+        replyCount: 0,
+        contentType: c.content_type || 'text',
+        mediaUrl: c.media_url || null,
+        depth: 0,
+      });
+    });
+
+    // Second pass: build tree
+    const roots: CommentNode[] = [];
+    flatComments.forEach((c: any) => {
+      const node = nodeMap.get(c.id)!;
+      if (c.parent_id && nodeMap.has(c.parent_id)) {
+        const parent = nodeMap.get(c.parent_id)!;
+        node.depth = Math.min(parent.depth + 1, MAX_DEPTH);
+        parent.children.push(node);
+      } else {
+        node.depth = 0;
+        roots.push(node);
+      }
+    });
+
+    // Set reply counts
+    flatComments.forEach((c: any) => {
+      if (c.parent_id && nodeMap.has(c.parent_id)) {
+        nodeMap.get(c.parent_id)!.replyCount++;
+      }
+    });
+
+    return roots;
+  }, [userId]);
+
   const fetchComments = useCallback(async (reset: boolean) => {
     if (!open) return;
-
-    if (reset) {
-      setLoading(true);
-      cursorRef.current = null;
-    } else {
-      setLoadingMore(true);
-    }
+    if (reset) { setLoading(true); cursorRef.current = null; } else { setLoadingMore(true); }
 
     try {
       setError(null);
+      
+      // Fetch top-level comments
       let query = supabase
         .from('comments')
         .select('*')
@@ -85,26 +171,38 @@ export const CommentSheet: React.FC<CommentSheetProps> = ({
         .order('created_at', { ascending: false })
         .limit(21);
 
-      if (!reset && cursorRef.current) {
-        query = query.lt('created_at', cursorRef.current);
-      }
+      if (!reset && cursorRef.current) query = query.lt('created_at', cursorRef.current);
 
-      const { data: rawComments, error: fetchError } = await query;
-
+      const { data: topLevelComments, error: fetchError } = await query;
       if (fetchError) throw fetchError;
 
-      if (rawComments) {
-        const hasMoreComments = rawComments.length > 20;
-        const commentList = hasMoreComments ? rawComments.slice(0, 20) : rawComments;
+      if (topLevelComments && topLevelComments.length > 0) {
+        const hasMoreComments = topLevelComments.length > 20;
+        const topList = hasMoreComments ? topLevelComments.slice(0, 20) : topLevelComments;
+        
+        // Get all top-level comment IDs
+        const topIds = topList.map((c: any) => c.id);
+        
+        // Fetch ALL replies for these top-level comments (including nested)
+        const { data: allReplies } = await supabase
+          .from('comments')
+          .select('*')
+          .eq('post_id', postId)
+          .eq('status', 'published')
+          .not('parent_id', 'is', null)
+          .in('root_id', topIds)
+          .order('created_at', { ascending: true })
+          .limit(200);
 
-        await fetchProfiles(commentList);
+        const allComments = [...topList, ...(allReplies || [])];
+        await fetchProfiles(allComments);
 
-        // Get reactions for these comments
-        const commentIds = commentList.map((c: any) => c.id);
+        // Get reactions
+        const allCommentIds = allComments.map((c: any) => c.id);
         const { data: reactions } = await supabase
           .from('comment_reactions')
           .select('comment_id, user_id')
-          .in('comment_id', commentIds);
+          .in('comment_id', allCommentIds);
 
         const reactionMap = new Map<string, string[]>();
         (reactions || []).forEach((r: any) => {
@@ -112,41 +210,30 @@ export const CommentSheet: React.FC<CommentSheetProps> = ({
           reactionMap.get(r.comment_id)!.push(r.user_id);
         });
 
-        const mappedComments: CommentWithReplies[] = commentList.map((c: any) => {
-          const profile = commentMapRef.current.get(c.author_id);
-          const commentReactions = reactionMap.get(c.id) || [];
-          return {
-            id: c.id,
-            postId: c.post_id,
-            author: {
-              id: c.author_id,
-              name: profile?.name || 'User',
-              avatarUrl: profile?.avatarUrl || null,
-              verified: profile?.verified || false,
-            },
-            content: c.content,
-            createdAt: c.created_at,
-            replies: [],
-            showReplies: false,
-            reactionCount: commentReactions.length,
-            userReacted: commentReactions.includes(userId),
-            isOwn: c.author_id === userId,
-          };
-        });
+        // Apply reactions to nodes
+        const tree = buildTree(allComments);
+        
+        const applyReactions = (nodes: CommentNode[]) => {
+          nodes.forEach((node) => {
+            const nodeReactions = reactionMap.get(node.id) || [];
+            node.reactionCount = nodeReactions.length;
+            node.userReacted = nodeReactions.includes(userId);
+            if (node.children.length > 0) applyReactions(node.children);
+          });
+        };
+        applyReactions(tree);
 
         if (reset) {
-          setComments(mappedComments);
+          setCommentTree(tree);
         } else {
-          setComments((prev) => {
+          setCommentTree((prev) => {
             const existingIds = new Set(prev.map((c) => c.id));
-            const newComments = mappedComments.filter((c) => !existingIds.has(c.id));
-            return [...prev, ...newComments];
+            const newRoots = tree.filter((c) => !existingIds.has(c.id));
+            return [...prev, ...newRoots];
           });
         }
 
-        if (commentList.length > 0) {
-          cursorRef.current = commentList[commentList.length - 1].created_at;
-        }
+        if (topList.length > 0) cursorRef.current = topList[topList.length - 1].created_at;
         setHasMore(hasMoreComments);
       }
     } catch (err) {
@@ -156,7 +243,7 @@ export const CommentSheet: React.FC<CommentSheetProps> = ({
       setLoading(false);
       setLoadingMore(false);
     }
-  }, [open, postId, userId, fetchProfiles]);
+  }, [open, postId, userId, fetchProfiles, buildTree]);
 
   useEffect(() => {
     if (open) {
@@ -165,94 +252,51 @@ export const CommentSheet: React.FC<CommentSheetProps> = ({
     }
   }, [open, fetchComments]);
 
-  // Realtime subscription
-  useEffect(() => {
-    if (!open) return;
-
-    const channel = supabase
-      .channel(`comments:${postId}`)
-      .on(
-        'postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'comments', filter: `post_id=eq.${postId}` },
-        async (payload) => {
-          const newCommentData = payload.new;
-          await fetchProfiles([newCommentData]);
-          const profile = commentMapRef.current.get(newCommentData.author_id);
-
-          const newCommentObj: CommentWithReplies = {
-            id: newCommentData.id,
-            postId: newCommentData.post_id,
-            author: {
-              id: newCommentData.author_id,
-              name: profile?.name || 'User',
-              avatarUrl: profile?.avatarUrl || null,
-              verified: profile?.verified || false,
-            },
-            content: newCommentData.content,
-            createdAt: newCommentData.created_at,
-            replies: [],
-            showReplies: false,
-            reactionCount: 0,
-            userReacted: false,
-            isOwn: newCommentData.author_id === userId,
-          };
-
-          setComments((prev) => [...prev, newCommentObj]);
-          onCommentAdded?.();
-          setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
-        }
-      )
-      .subscribe();
-
-    return () => channel.unsubscribe();
-  }, [open, postId, userId, fetchProfiles, onCommentAdded]);
-
-  const handleSend = async () => {
-    const trimmed = newComment.trim();
-    if (!trimmed || sending) return;
+  const handleSend = async (contentType: string = 'text', mediaUrl: string | null = null, content?: string) => {
+    const finalContent = content || newComment.trim();
+    if (!finalContent || sending) return;
 
     setSending(true);
     setError(null);
 
     try {
-      const tempComment: CommentWithReplies = {
-        id: `temp-${Date.now()}`,
-        postId,
-        author: { id: userId, name: 'You', avatarUrl: null, verified: false },
-        content: trimmed,
-        createdAt: new Date().toISOString(),
-        replies: [],
-        showReplies: false,
-        reactionCount: 0,
-        userReacted: false,
-        isOwn: true,
-      };
-
-      setComments((prev) => [...prev, tempComment]);
       setNewComment('');
       setReplyingTo(null);
-      setShowEmojiPicker(false);
+      setActivePanel(null);
+      if (inputRef.current) inputRef.current.style.height = 'auto';
+
+      const parentId = replyingTo?.id || null;
+      const rootId = replyingTo?.id || null;
 
       const { error: insertError } = await supabase.from('comments').insert({
         post_id: postId,
         author_id: userId,
-        content: trimmed,
+        content: finalContent,
+        content_type: contentType,
+        media_url: mediaUrl,
         status: 'published',
-        parent_id: replyingTo?.id || null,
+        parent_id: parentId,
+        root_id: rootId,
       });
 
-      if (insertError) {
-        setComments((prev) => prev.filter((c) => c.id !== tempComment.id));
-        setNewComment(trimmed);
-        throw insertError;
-      }
-
+      if (insertError) { setNewComment(finalContent); throw insertError; }
       onCommentAdded?.();
+      await fetchComments(true);
+      setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
     } catch (err: any) {
-      setError(err.message || 'Failed to send comment');
+      setError(err.message || 'Failed to send');
     } finally {
       setSending(false);
+      inputRef.current?.focus();
     }
+  };
+
+  const handleSendSticker = async (sticker: any) => {
+    await handleSend('sticker', sticker.image_url, sticker.name || '');
+  };
+
+  const handleSendGift = async (gift: any) => {
+    await handleSend('gift', gift.icon_url, gift.name || '');
   };
 
   const handleReply = (comment: Comment) => {
@@ -261,42 +305,51 @@ export const CommentSheet: React.FC<CommentSheetProps> = ({
   };
 
   const handleDelete = async (commentId: string) => {
-    setComments((prev) => prev.filter((c) => c.id !== commentId));
+    setCommentToDelete(null);
     await supabase.from('comments').delete().eq('id', commentId);
+    await fetchComments(true);
   };
 
-  const handleReact = async (commentId: string, emoji: string) => {
-    setComments((prev) =>
-      prev.map((c) =>
-        c.id === commentId
-          ? {
-              ...c,
-              reactionCount: c.userReacted ? Math.max(c.reactionCount - 1, 0) : c.reactionCount + 1,
-              userReacted: !c.userReacted,
-            }
-          : c
-      )
-    );
+  const handleReact = async (commentId: string) => {
+    const isLiked = likedComments.has(commentId);
+    setLikedComments((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(commentId)) newSet.delete(commentId);
+      else newSet.add(commentId);
+      return newSet;
+    });
 
-    setShowEmojiPicker(false);
+    const updateNode = (nodes: CommentNode[]): CommentNode[] => {
+      return nodes.map((node) => {
+        if (node.id === commentId) {
+          return {
+            ...node,
+            reactionCount: node.userReacted ? Math.max(node.reactionCount - 1, 0) : node.reactionCount + 1,
+            userReacted: !node.userReacted,
+          };
+        }
+        if (node.children.length > 0) {
+          return { ...node, children: updateNode(node.children) };
+        }
+        return node;
+      });
+    };
+
+    setCommentTree((prev) => updateNode(prev));
 
     try {
-      if (comments.find((c) => c.id === commentId)?.userReacted) {
+      if (isLiked) {
         await supabase.from('comment_reactions').delete().eq('comment_id', commentId).eq('user_id', userId);
       } else {
-        await supabase.from('comment_reactions').insert({
-          comment_id: commentId,
-          user_id: userId,
-          reaction_type: 'like',
-        });
+        await supabase.from('comment_reactions').insert({ comment_id: commentId, user_id: userId, reaction_type: 'like' });
       }
     } catch (err) {
       console.error('Reaction failed:', err);
     }
   };
 
-  const toggleReplies = (commentId: string) => {
-    setExpandedComments((prev) => {
+  const toggleThread = (commentId: string) => {
+    setExpandedThreads((prev) => {
       const newSet = new Set(prev);
       if (newSet.has(commentId)) newSet.delete(commentId);
       else newSet.add(commentId);
@@ -304,12 +357,84 @@ export const CommentSheet: React.FC<CommentSheetProps> = ({
     });
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
-      handleSend();
+      e.stopPropagation();
+      handleSend('text', null);
     }
     if (e.key === 'Escape') onClose();
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setNewComment(e.target.value);
+    e.target.style.height = 'auto';
+    e.target.style.height = e.target.scrollHeight + 'px';
+  };
+
+  const renderCommentContent = (comment: CommentNode) => {
+    switch (comment.contentType) {
+      case 'gif':
+        return <img src={comment.mediaUrl || ''} alt="GIF" style={{ maxWidth: '180px', borderRadius: '12px' }} />;
+      case 'sticker':
+        return <img src={comment.mediaUrl || ''} alt="Sticker" style={{ maxWidth: '80px', height: '80px', objectFit: 'contain' }} />;
+      case 'gift':
+        return <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><span style={{ fontSize: '36px' }}>{comment.mediaUrl}</span><span style={{ fontSize: '13px', fontWeight: 600 }}>{comment.content}</span></div>;
+      case 'emoji':
+        return <span style={{ fontSize: '40px' }}>{comment.content}</span>;
+      default:
+        return <span>{comment.content}</span>;
+    }
+  };
+
+  const renderCommentNode = (comment: CommentNode) => {
+    const isExpanded = expandedThreads.has(comment.id);
+    const showChildren = isExpanded && comment.children.length > 0;
+
+    return (
+      <div key={comment.id} className={styles.commentItem} style={{ marginLeft: comment.depth > 0 ? Math.min(comment.depth * 20, 40) : 0 }}>
+        <div className={styles.commentAvatar}>
+          {comment.author.avatarUrl ? <img src={comment.author.avatarUrl} alt={comment.author.name} /> : comment.author.name.charAt(0).toUpperCase()}
+        </div>
+        <div className={styles.commentBody}>
+          <div className={styles.commentBubble}>
+            <div className={styles.commentHeaderRow}>
+              <span className={styles.commentName}>{comment.author.name}</span>
+              <span className={styles.commentTime}>{timeAgo(comment.createdAt)}</span>
+            </div>
+            {renderCommentContent(comment)}
+          </div>
+          
+          <div className={styles.commentActionsRow}>
+            <button className={`${styles.likeButton} ${comment.userReacted ? styles.likeButtonActive : ''}`} onClick={() => handleReact(comment.id)}>
+              <Heart size={13} fill={comment.userReacted ? '#ef4444' : 'none'} />
+              {comment.reactionCount > 0 && <span>{comment.reactionCount}</span>}
+            </button>
+            <button className={styles.replyButton} onClick={() => handleReply(comment)}>
+              <Reply size={13} /> Reply
+            </button>
+            {comment.replyCount > 0 && (
+              <button className={styles.viewRepliesButton} onClick={() => toggleThread(comment.id)}>
+                {isExpanded ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
+                {isExpanded ? 'Hide replies' : `View ${comment.replyCount} ${comment.replyCount === 1 ? 'reply' : 'replies'}`}
+              </button>
+            )}
+            {comment.isOwn && (
+              <button className={styles.deleteButton} onClick={() => setCommentToDelete(comment.id)}>
+                <Trash2 size={13} />
+              </button>
+            )}
+          </div>
+
+          {/* Recursive children */}
+          {showChildren && (
+            <div className={styles.repliesContainer}>
+              {comment.children.map((child) => renderCommentNode(child))}
+            </div>
+          )}
+        </div>
+      </div>
+    );
   };
 
   if (!open) return null;
@@ -320,157 +445,117 @@ export const CommentSheet: React.FC<CommentSheetProps> = ({
         <div className={styles.dragHandle} />
 
         <div className={styles.header}>
-          <h2 className={styles.title}>Comments ({comments.length})</h2>
-          <button onClick={onClose} aria-label="Close comments" className={styles.closeButton}>
-            <X size={20} />
-          </button>
+          <h2 className={styles.title}>Comments <span className={styles.commentCount}>{commentTree.length}</span></h2>
+          <button onClick={onClose} aria-label="Close" className={styles.closeButton}><X size={20} /></button>
         </div>
 
         <div className={styles.commentsList}>
           {loading ? (
-            <div className={styles.loading}>Loading comments...</div>
-          ) : error && comments.length === 0 ? (
-            <div className={styles.error}>
-              <p>{error}</p>
-              <button onClick={() => fetchComments(true)}>Try Again</button>
-            </div>
-          ) : comments.length === 0 ? (
+            <div className={styles.loading}><div className={styles.spinner} /><span>Loading...</span></div>
+          ) : commentTree.length === 0 ? (
             <div className={styles.empty}>
-              <p>No comments yet</p>
-              <p>Be the first to comment!</p>
+              <MessageCircle size={48} className={styles.emptyIcon} />
+              <p className={styles.emptyTitle}>No comments yet</p>
+              <p className={styles.emptyText}>Be the first to share your thoughts!</p>
             </div>
           ) : (
             <>
-              {hasMore && (
-                <button className={styles.loadMore} onClick={() => fetchComments(false)} disabled={loadingMore}>
-                  {loadingMore ? 'Loading...' : 'Load more comments'}
-                </button>
-              )}
-
-              {comments.map((comment) => (
-                <div key={comment.id} className={styles.commentItem}>
-                  <div className={styles.commentAvatar}>
-                    {comment.author.avatarUrl ? (
-                      <img src={comment.author.avatarUrl} alt={comment.author.name} />
-                    ) : (
-                      comment.author.name.charAt(0).toUpperCase()
-                    )}
-                  </div>
-                  <div className={styles.commentBody}>
-                    <div className={styles.commentBubble}>
-                      <span className={styles.commentName}>{comment.author.name}</span>
-                      <p className={styles.commentText}>{comment.content}</p>
-                    </div>
-                    <div className={styles.commentActions}>
-                      <span className={styles.commentTime}>
-                        {new Date(comment.createdAt).toLocaleString()}
-                      </span>
-                      <button className={styles.replyButton} onClick={() => handleReply(comment)}>
-                        Reply
-                      </button>
-                      {comment.isOwn && (
-                        <button className={styles.deleteButton} onClick={() => handleDelete(comment.id)} aria-label="Delete comment">
-                          <Trash2 size={12} />
-                        </button>
-                      )}
-                    </div>
-
-                    {/* Reaction row */}
-                    <div className={styles.reactionRow}>
-                      <button
-                        className={`${styles.reactionButton} ${comment.userReacted ? styles.reactionButtonActive : ''}`}
-                        onClick={() => handleReact(comment.id, '❤️')}
-                      >
-                        <Heart size={14} fill={comment.userReacted ? '#ef4444' : 'none'} />
-                        {comment.reactionCount > 0 && <span>{comment.reactionCount}</span>}
-                      </button>
-                      <button
-                        className={styles.emojiButton}
-                        onClick={() => setShowEmojiPicker(showEmojiPicker ? false : true)}
-                        aria-label="Add reaction"
-                      >
-                        <Smile size={14} />
-                      </button>
-
-                      {showEmojiPicker && (
-                        <div className={styles.emojiPicker}>
-                          {EMOJIS.map((emoji) => (
-                            <button
-                              key={emoji}
-                              className={styles.emojiOption}
-                              onClick={() => handleReact(comment.id, emoji)}
-                            >
-                              {emoji}
-                            </button>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Nested replies */}
-                    {comment.replies.length > 0 && (
-                      <button className={styles.toggleReplies} onClick={() => toggleReplies(comment.id)}>
-                        {expandedComments.has(comment.id) ? (
-                          <ChevronUp size={12} />
-                        ) : (
-                          <ChevronDown size={12} />
-                        )}
-                        {comment.replies.length} {comment.replies.length === 1 ? 'reply' : 'replies'}
-                      </button>
-                    )}
-
-                    {expandedComments.has(comment.id) && comment.replies.map((reply) => (
-                      <div key={reply.id} className={styles.replyItem}>
-                        <div className={styles.commentAvatarSmall}>
-                          {reply.author.name.charAt(0).toUpperCase()}
-                        </div>
-                        <div className={styles.commentBody}>
-                          <div className={styles.commentBubble}>
-                            <span className={styles.commentName}>{reply.author.name}</span>
-                            <p className={styles.commentText}>{reply.content}</p>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              ))}
+              {hasMore && <button className={styles.loadMore} onClick={() => fetchComments(false)}>View earlier comments</button>}
+              {commentTree.map((comment) => renderCommentNode(comment))}
               <div ref={bottomRef} />
             </>
           )}
         </div>
 
-        {/* Reply indicator */}
         {replyingTo && (
           <div className={styles.replyIndicator}>
-            <span>Replying to {replyingTo.author.name}</span>
-            <button onClick={() => setReplyingTo(null)} aria-label="Cancel reply">
-              <X size={14} />
-            </button>
+            <CornerDownRight size={14} />
+            <span>Replying to <strong>{replyingTo.author.name}</strong></span>
+            <button onClick={() => setReplyingTo(null)}><X size={14} /></button>
           </div>
         )}
 
-        {/* Input */}
-        <div className={styles.inputContainer}>
-          <textarea
-            ref={inputRef}
-            className={styles.input}
-            value={newComment}
-            onChange={(e) => setNewComment(e.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder={replyingTo ? 'Write a reply...' : 'Add a comment...'}
-            rows={1}
-            disabled={sending}
-          />
-          <button
-            className={styles.sendButton}
-            onClick={handleSend}
-            disabled={!newComment.trim() || sending}
-            aria-label="Send comment"
-          >
-            {sending ? <div className={styles.spinner} /> : <Send size={18} />}
+        {/* Toolbar */}
+        <div className={styles.toolbar}>
+          <button className={`${styles.toolbarButton} ${activePanel === 'emoji' ? styles.toolbarButtonActive : ''}`} onClick={() => setActivePanel(activePanel === 'emoji' ? null : 'emoji')}>
+            <Smile size={20} />
+          </button>
+          <button className={`${styles.toolbarButton} ${activePanel === 'sticker' ? styles.toolbarButtonActive : ''}`} onClick={() => setActivePanel(activePanel === 'sticker' ? null : 'sticker')}>
+            <Sticker size={20} />
+          </button>
+          <button className={`${styles.toolbarButton} ${activePanel === 'gift' ? styles.toolbarButtonActive : ''}`} onClick={() => setActivePanel(activePanel === 'gift' ? null : 'gift')}>
+            <Gift size={20} />
           </button>
         </div>
+
+        {/* Panels */}
+        {activePanel === 'emoji' && (
+          <div className={styles.panel}>
+            <div className={styles.emojiGrid}>
+              {EMOJIS.map((emoji) => (
+                <button key={emoji} className={styles.emojiOption} onClick={() => setNewComment((prev) => prev + emoji)}>{emoji}</button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {activePanel === 'sticker' && (
+          <div className={styles.panel}>
+            <div className={styles.emojiGrid}>
+              {stickers.map((sticker) => (
+                <button key={sticker.id} className={styles.stickerOption} onClick={() => handleSendSticker(sticker)}>
+                  <img src={sticker.image_url || sticker.thumbnail_url} alt={sticker.name || 'Sticker'} style={{ width: '56px', height: '56px', objectFit: 'contain' }} />
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {activePanel === 'gift' && (
+          <div className={styles.panel}>
+            <div className={styles.emojiGrid}>
+              {gifts.map((gift) => (
+                <button key={gift.id} className={styles.giftOption} onClick={() => handleSendGift(gift)}>
+                  <span style={{ fontSize: '32px' }}>{gift.icon_url}</span>
+                  <span style={{ fontSize: '10px', fontWeight: 600 }}>{gift.name}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        <div className={styles.inputContainer}>
+          <div className={styles.inputWrapper}>
+            <textarea
+              ref={inputRef}
+              className={styles.input}
+              value={newComment}
+              onChange={handleInputChange}
+              onKeyDown={handleKeyDown}
+              placeholder={replyingTo ? 'Write a reply...' : 'Add a comment...'}
+              rows={1}
+              disabled={sending}
+              enterKeyHint="send"
+            />
+            <button className={styles.sendButton} onClick={() => handleSend('text', null)} disabled={!newComment.trim() || sending}>
+              {sending ? <div className={styles.spinner} /> : <Send size={18} />}
+            </button>
+          </div>
+        </div>
+
+        {commentToDelete && (
+          <div className={styles.deleteConfirmOverlay} onClick={() => setCommentToDelete(null)}>
+            <div className={styles.deleteConfirmDialog} onClick={(e) => e.stopPropagation()}>
+              <Trash2 size={32} className={styles.deleteConfirmIcon} />
+              <h3>Delete comment?</h3>
+              <p>This action cannot be undone.</p>
+              <div className={styles.deleteConfirmActions}>
+                <button className={styles.cancelDelete} onClick={() => setCommentToDelete(null)}>Cancel</button>
+                <button className={styles.confirmDelete} onClick={() => handleDelete(commentToDelete)}>Delete</button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
