@@ -65,7 +65,10 @@ class MediaService {
       // 100MB max for Discover videos
       const maxSize = 100 * 1024 * 1024;
       if (file.size > maxSize) {
-        return { success: false, error: 'Video file size exceeds 100MB limit' };
+        return { 
+            success: false, 
+            error: `This video is too large (${(file.size / (1024 * 1024)).toFixed(1)}MB). Please upload a video under 100MB. For best results, use a short vertical video (9:16, 1080x1920) between 3-60 seconds.` 
+          };
       }
 
       // Get video metadata
@@ -74,10 +77,16 @@ class MediaService {
       // Duration validation for Discover
       if (purpose === 'discover_video' && metadata.duration > 0) {
         if (metadata.duration < 3) {
-          return { success: false, error: 'Video must be at least 3 seconds long' };
+          return { 
+            success: false, 
+            error: `This video is too short (${metadata.duration.toFixed(1)} seconds). Please upload a video between 3-60 seconds for Discover.` 
+          };
         }
         if (metadata.duration > 60) {
-          return { success: false, error: 'Video must be 60 seconds or less. Short vertical videos work best!' };
+          return { 
+            success: false, 
+            error: `This video is too long (${metadata.duration.toFixed(1)} seconds). Please upload a video between 3-60 seconds. Short vertical videos work best for Discover!` 
+          };
         }
       }
 
@@ -179,3 +188,4 @@ class MediaService {
 }
 
 export const mediaService = new MediaService();
+

@@ -44,6 +44,7 @@ export const DiscoverPage: React.FC = () => {
   const [showUpload, setShowUpload] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
+  const [uploadError, setUploadError] = useState<string | null>(null);
   const [myVideos, setMyVideos] = useState<any[]>([]);
   const [showMyVideos, setShowMyVideos] = useState(false);
   const [previewVideo, setPreviewVideo] = useState<any>(null);
@@ -280,10 +281,10 @@ export const DiscoverPage: React.FC = () => {
           setError('Failed to submit video.');
         }
       } else {
-        setError(result.error || 'Failed to upload video');
+        setUploadError(result.error || 'Failed to upload video');
       }
     } catch (err: any) {
-      setError(err.message || 'Video upload failed');
+      setUploadError(err.message || 'Video upload failed');
     } finally {
       setUploading(false);
       setUploadProgress(0);
@@ -478,6 +479,21 @@ export const DiscoverPage: React.FC = () => {
         </div>
       )}
 
+      {uploadError && (
+        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.85)', zIndex: 1001, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }} onClick={() => setUploadError(null)}>
+          <div onClick={(e) => e.stopPropagation()} style={{ backgroundColor: '#fff', borderRadius: 24, padding: '32px 24px', maxWidth: 400, width: '100%', textAlign: 'center' }}>
+            <div style={{ width: 64, height: 64, borderRadius: '50%', backgroundColor: '#fef2f2', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
+              <XCircle size={32} style={{ color: '#ef4444' }} />
+            </div>
+            <h2 style={{ fontSize: 20, fontWeight: 700, marginBottom: 8, color: '#111827' }}>Video Upload Failed</h2>
+            <p style={{ fontSize: 14, color: '#6b7280', marginBottom: 24, lineHeight: 1.5 }}>{uploadError}</p>
+            <button onClick={() => setUploadError(null)} style={{ width: '100%', padding: 14, backgroundColor: '#ef4444', color: '#fff', border: 'none', borderRadius: 9999, cursor: 'pointer', fontSize: 16, fontWeight: 600 }}>
+              Got it
+            </button>
+          </div>
+        </div>
+      )}
+
       {!current && !loading && (
         <div className={styles.emptyContainer}>
           <Heart size={48} className={styles.emptyIcon} />
@@ -489,3 +505,6 @@ export const DiscoverPage: React.FC = () => {
     </div>
   );
 };
+
+
+
