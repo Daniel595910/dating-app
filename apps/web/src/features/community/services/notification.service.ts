@@ -68,6 +68,24 @@ export const notificationService = {
     });
   },
 
+  async notifyCommentReply(userId: string, replierName: string): Promise<void> {
+    await this.createNotification({
+      userId,
+      type: 'comment',
+      title: 'New Reply',
+      body: `${replierName} replied to your comment.`,
+    });
+  },
+
+  async notifyPostComment(userId: string, commenterName: string): Promise<void> {
+    await this.createNotification({
+      userId,
+      type: 'comment',
+      title: 'New Comment',
+      body: `${commenterName} commented on your post.`,
+    });
+  },
+
   async notifyComment(userId: string, commenterName: string, preview: string): Promise<void> {
     await this.createNotification({
       userId,
@@ -77,3 +95,4 @@ export const notificationService = {
     });
   },
 };
+
