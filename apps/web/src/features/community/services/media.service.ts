@@ -31,30 +31,19 @@ class MediaService {
 
       const { error: uploadError } = await supabase.storage
         .from('media')
-        .upload(filePath, file, {
-          cacheControl: '3600',
-          upsert: false,
-        });
+        .upload(filePath, file, { cacheControl: '3600', upsert: false });
 
       if (uploadError) {
-        console.error('Upload error:', uploadError);
         return { success: false, error: 'Failed to upload image' };
       }
 
-      const { data: publicUrlData } = supabase.storage
-        .from('media')
-        .getPublicUrl(filePath);
+      const { data: publicUrlData } = supabase.storage.from('media').getPublicUrl(filePath);
 
-      const media: PostMedia = {
-        id: `${timestamp}-${randomSuffix}`,
-        type: 'image',
-        url: publicUrlData.publicUrl,
-        sortOrder: 0,
+      return {
+        success: true,
+        media: { id: `${timestamp}-${randomSuffix}`, type: 'image', url: publicUrlData.publicUrl, sortOrder: 0 },
       };
-
-      return { success: true, media };
     } catch (err: any) {
-      console.error('Media upload error:', err);
       return { success: false, error: err.message || 'Upload failed' };
     }
   }
@@ -65,24 +54,51 @@ class MediaService {
     purpose: 'post_video' | 'discover_video'
   ): Promise<UploadResult> {
     try {
-      // Accept all common video formats
-      const allowedTypes = [
-        'video/mp4', 'video/webm', 'video/quicktime', 'video/x-msvideo',
-        'video/x-matroska', 'video/3gpp', 'video/3gpp2', 'video/mpeg',
-        'video/ogg', 'video/x-flv', 'video/x-ms-wmv', 'application/octet-stream'
-      ];
-      
-      // Also check by extension if type is octet-stream
+      const allowedTypes = ['video/mp4', 'video/webm', 'video/quicktime', 'video/x-msvideo', 'video/x-matroska'];
       const extension = file.name.split('.').pop()?.toLowerCase();
-      const allowedExtensions = ['mp4', 'webm', 'mov', 'avi', 'mkv', '3gp', '3g2', 'mpeg', 'mpg', 'ogg', 'ogv', 'flv', 'wmv', 'm4v', 'ts'];
+      const allowedExtensions = ['mp4', 'webm', 'mov', 'avi', 'mkv', 'm4v'];
       
       if (!allowedTypes.includes(file.type) && !allowedExtensions.includes(extension || '')) {
         return { success: false, error: `Video format .${extension} not supported. Use MP4, WebM, or MOV.` };
       }
 
-      const maxSize = 200 * 1024 * 1024; // 200MB max
+      // 100MB max for Discover videos
+      const maxSize = 100 * 1024 * 1024;
       if (file.size > maxSize) {
-        return { success: false, error: 'Video file size exceeds 200MB limit' };
+        return { success: false, error: 'Video file size exceeds 100MB limit' };
+      }
+
+      // Get video metadata
+      const metadata = await this.getVideoMetadata(file);
+
+      // Duration validation for Discover
+      if (purpose === 'discover_video' && metadata.duration > 0) {
+        if (metadata.duration < 3) {
+          return { success: false, error: 'Video must be at least 3 seconds long' };
+        }
+        if (metadata.duration > 60) {
+          return { success: false, error: 'Video must be 60 seconds or less. Short vertical videos work best!' };
+        }
+      }
+
+      // Dimension validation for Discover (require vertical 9:16)
+      if (purpose === 'discover_video' && metadata.width > 0 && metadata.height > 0) {
+        // Require portrait orientation
+        if (metadata.height <= metadata.width) {
+          return { 
+            success: false, 
+            error: `Please upload a vertical video (portrait). Your video is ${metadata.width}x${metadata.height}. A 9:16 vertical video (1080x1920) works best.` 
+          };
+        }
+
+        // Check aspect ratio is close to 9:16
+        const aspectRatio = metadata.width / metadata.height;
+        if (aspectRatio < 0.4 || aspectRatio > 0.75) {
+          return { 
+            success: false, 
+            error: `Aspect ratio should be close to 9:16. Your video is ${metadata.width}x${metadata.height}. Recommended: 1080x1920.` 
+          };
+        }
       }
 
       const timestamp = Date.now();
@@ -92,33 +108,60 @@ class MediaService {
 
       const { error: uploadError } = await supabase.storage
         .from('media')
-        .upload(filePath, file, {
-          cacheControl: '3600',
-          upsert: false,
-          contentType: file.type || 'video/mp4',
-        });
+        .upload(filePath, file, { cacheControl: '3600', upsert: false, contentType: file.type || 'video/mp4' });
 
       if (uploadError) {
-        console.error('Video upload error:', uploadError);
         return { success: false, error: 'Failed to upload video' };
       }
 
-      const { data: publicUrlData } = supabase.storage
-        .from('media')
-        .getPublicUrl(filePath);
+      const { data: publicUrlData } = supabase.storage.from('media').getPublicUrl(filePath);
 
-      const media: PostMedia = {
-        id: `${timestamp}-${randomSuffix}`,
-        type: 'video',
-        url: publicUrlData.publicUrl,
-        sortOrder: 0,
+      return {
+        success: true,
+        media: { 
+          id: `${timestamp}-${randomSuffix}`, 
+          type: 'video', 
+          url: publicUrlData.publicUrl, 
+          sortOrder: 0,
+          width: metadata.width,
+          height: metadata.height,
+          durationSeconds: metadata.duration,
+        },
       };
-
-      return { success: true, media };
     } catch (err: any) {
-      console.error('Video upload error:', err);
       return { success: false, error: err.message || 'Video upload failed' };
     }
+  }
+
+  private async getVideoMetadata(file: File): Promise<{ duration: number; width: number; height: number }> {
+    return new Promise((resolve) => {
+      const video = document.createElement('video');
+      video.preload = 'metadata';
+      
+      const timeout = setTimeout(() => {
+        window.URL.revokeObjectURL(video.src);
+        resolve({ duration: 0, width: 0, height: 0 });
+      }, 10000);
+
+      video.onloadedmetadata = () => {
+        clearTimeout(timeout);
+        const result = {
+          duration: video.duration,
+          width: video.videoWidth,
+          height: video.videoHeight,
+        };
+        setTimeout(() => window.URL.revokeObjectURL(video.src), 1000);
+        resolve(result);
+      };
+
+      video.onerror = () => {
+        clearTimeout(timeout);
+        window.URL.revokeObjectURL(video.src);
+        resolve({ duration: 0, width: 0, height: 0 });
+      };
+
+      video.src = URL.createObjectURL(file);
+    });
   }
 
   async uploadMultipleImages(
