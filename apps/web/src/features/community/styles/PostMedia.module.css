@@ -1,34 +1,82 @@
 ﻿.singleContainer {
-  padding: 0 1rem 0.75rem;
+  position: relative;
+  border-radius: 12px;
+  overflow: hidden;
 }
 
 .singleImage {
   width: 100%;
-  height: auto;
-  max-height: 320px;
+  max-height: 400px;
   object-fit: cover;
-  border-radius: 0.75rem;
-  border: 1px solid #f3f4f6;
+  border-radius: 12px;
+  display: block;
+  transition: transform 0.2s ease;
+}
+
+.singleImage:hover {
+  transform: scale(1.01);
 }
 
 .multiContainer {
-  display: flex;
-  gap: 0.375rem;
-  padding: 0 1rem 0.75rem;
-  overflow-x: auto;
-  scrollbar-width: none;
-  -webkit-overflow-scrolling: touch;
+  display: grid;
+  gap: 4px;
+  border-radius: 12px;
+  overflow: hidden;
 }
 
-.multiContainer::-webkit-scrollbar {
-  display: none;
+/* 2 images - side by side */
+.multiContainer img:nth-child(1):nth-last-child(2),
+.multiContainer img:nth-child(2):nth-last-child(1) {
+  grid-column: span 1;
+}
+
+.multiContainer:has(img:nth-child(2):last-child) {
+  grid-template-columns: 1fr 1fr;
+}
+
+/* 3 images - one large, two small */
+.multiContainer:has(img:nth-child(3):last-child) {
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr 1fr;
+}
+
+.multiContainer:has(img:nth-child(3):last-child) img:first-child {
+  grid-row: span 2;
+}
+
+/* 4 images - 2x2 grid */
+.multiContainer:has(img:nth-child(4):last-child) {
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr 1fr;
+}
+
+/* 5 images - 2x3 grid */
+.multiContainer:has(img:nth-child(5):last-child) {
+  grid-template-columns: 1fr 1fr;
 }
 
 .multiImage {
-  width: 110px;
-  height: 110px;
+  width: 100%;
+  height: 100%;
   object-fit: cover;
-  border-radius: 0.75rem;
-  flex-shrink: 0;
-  border: 1px solid #f3f4f6;
+  aspect-ratio: 1;
+  border-radius: 4px;
+  transition: transform 0.2s ease;
+}
+
+.multiImage:hover {
+  transform: scale(1.02);
+}
+
+/* Image count badge */
+.imageCountBadge {
+  position: absolute;
+  bottom: 8px;
+  right: 8px;
+  background: rgba(0, 0, 0, 0.6);
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 9999px;
 }

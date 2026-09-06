@@ -1,7 +1,8 @@
 ﻿import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/config/supabase.client';
-import { Bell } from 'lucide-react';
+import { Bell, Heart, MessageCircle, UserPlus, BadgeCheck, Crown, X, CheckCheck, Trash2 } from 'lucide-react';
+import styles from '../styles/NotificationBell.module.css';
 
 interface NotificationBellProps {
   userId: string;
@@ -23,6 +24,7 @@ export const NotificationBell: React.FC<NotificationBellProps> = ({ userId }) =>
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [open, setOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState<'all' | 'unread'>('all');
   const bellRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -34,7 +36,7 @@ export const NotificationBell: React.FC<NotificationBellProps> = ({ userId }) =>
         .select('*')
         .eq('user_id', userId)
         .order('created_at', { ascending: false })
-        .limit(20);
+        .limit(30);
 
       if (data) {
         setNotifications(
@@ -80,9 +82,7 @@ export const NotificationBell: React.FC<NotificationBellProps> = ({ userId }) =>
       )
       .subscribe();
 
-    return () => {
-      channel.unsubscribe();
-    };
+    return () => { channel.unsubscribe(); };
   }, [userId]);
 
   useEffect(() => {
@@ -95,10 +95,7 @@ export const NotificationBell: React.FC<NotificationBellProps> = ({ userId }) =>
     if (open) {
       document.addEventListener('mousedown', handleClickOutside);
     }
-
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
+    return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [open]);
 
   const markAsRead = async (notificationId: string) => {
@@ -124,191 +121,158 @@ export const NotificationBell: React.FC<NotificationBellProps> = ({ userId }) =>
     setUnreadCount(0);
   };
 
+  const deleteNotification = async (notificationId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    await supabase.from('notifications').delete().eq('id', notificationId);
+    setNotifications((prev) => prev.filter((n) => n.id !== notificationId));
+  };
+
+  const clearAll = async () => {
+    await supabase.from('notifications').delete().eq('user_id', userId);
+    setNotifications([]);
+    setUnreadCount(0);
+  };
+
   const handleNotificationClick = async (notification: AppNotification) => {
-    // Mark as read
     await markAsRead(notification.id);
     setOpen(false);
 
-    // Navigate based on notification type
     if (notification.actionUrl) {
-      // Use action_url if available
       window.location.href = notification.actionUrl;
     } else if (notification.data?.post_id) {
-      // Navigate to post with comment
-      navigate(`/community?postId=${notification.data.post_id}&commentId=${notification.data.comment_id || ''}`);
+      window.location.href = `/community?postId=${notification.data.post_id}`;
     } else if (notification.type === 'match') {
-      // Navigate to chats
       navigate('/chats');
     } else if (notification.type === 'connection') {
-      // Navigate to community
       navigate('/community');
     }
   };
 
   const getTypeIcon = (type: string) => {
     switch (type) {
-      case 'match': return '❤️';
-      case 'message': return '💬';
-      case 'like': return '👍';
-      case 'comment': return '💭';
-      case 'connection': return '🤝';
-      case 'verification': return '✅';
-      case 'vip': return '💎';
-      case 'system': return '📢';
-      default: return '🔔';
+      case 'match': return <Heart size={16} className={styles.iconMatch} />;
+      case 'message': return <MessageCircle size={16} className={styles.iconMessage} />;
+      case 'like': return <Heart size={16} className={styles.iconLike} />;
+      case 'comment': return <MessageCircle size={16} className={styles.iconComment} />;
+      case 'connection': return <UserPlus size={16} className={styles.iconConnection} />;
+      case 'verification': return <BadgeCheck size={16} className={styles.iconVerify} />;
+      case 'vip': return <Crown size={16} className={styles.iconVip} />;
+      default: return <Bell size={16} className={styles.iconDefault} />;
     }
   };
 
+  const filteredNotifications = activeTab === 'unread' 
+    ? notifications.filter((n) => n.status === 'unread')
+    : notifications;
+
+  const timeAgo = (dateString: string): string => {
+    const seconds = Math.floor((Date.now() - new Date(dateString).getTime()) / 1000);
+    if (seconds < 60) return 'Just now';
+    const minutes = Math.floor(seconds / 60);
+    if (minutes < 60) return minutes + 'm';
+    const hours = Math.floor(minutes / 60);
+    if (hours < 24) return hours + 'h';
+    const days = Math.floor(hours / 24);
+    if (days < 7) return days + 'd';
+    return new Date(dateString).toLocaleDateString();
+  };
+
   return (
-    <div ref={bellRef} style={{ position: 'relative' }}>
+    <div ref={bellRef} className={styles.container}>
       <button
         onClick={() => setOpen(!open)}
-        aria-label={`Notifications${unreadCount > 0 ? ` (${unreadCount} unread)` : ''}`}
-        style={{
-          background: 'none',
-          border: 'none',
-          cursor: 'pointer',
-          color: '#6b7280',
-          padding: '8px',
-          borderRadius: '9999px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          minWidth: 44,
-          minHeight: 44,
-          position: 'relative',
-        }}
+        aria-label={`Notifications (${unreadCount} unread)`}
+        className={styles.bellButton}
       >
         <Bell size={22} />
         {unreadCount > 0 && (
-          <span
-            style={{
-              position: 'absolute',
-              top: '4px',
-              right: '4px',
-              minWidth: 18,
-              height: 18,
-              borderRadius: '9999px',
-              backgroundColor: '#ef4444',
-              color: '#ffffff',
-              fontSize: '10px',
-              fontWeight: 700,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              padding: '0 4px',
-            }}
-          >
+          <span className={styles.badge}>
             {unreadCount > 9 ? '9+' : unreadCount}
           </span>
         )}
       </button>
 
       {open && (
-        <div
-          style={{
-            position: 'fixed',
-            top: '60px',
-            right: '8px',
-            zIndex: 99999,
-            backgroundColor: '#ffffff',
-            borderRadius: '16px',
-            boxShadow: '0 10px 30px rgba(0,0,0,0.15)',
-            border: '1px solid #e5e7eb',
-            width: '320px',
-            maxWidth: 'calc(100vw - 16px)',
-            maxHeight: '400px',
-            overflowY: 'auto',
-          }}
-        >
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              padding: '12px 16px',
-              borderBottom: '1px solid #f3f4f6',
-            }}
-          >
-            <h3 style={{ fontSize: '16px', fontWeight: 700, color: '#111827', margin: 0 }}>
-              Notifications
-            </h3>
-            {unreadCount > 0 && (
-              <button
-                onClick={markAllAsRead}
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  cursor: 'pointer',
-                  color: '#3b82f6',
-                  fontSize: '12px',
-                  fontWeight: 500,
-                }}
-              >
-                Mark all as read
+        <div className={styles.dropdown}>
+          <div className={styles.header}>
+            <div className={styles.headerLeft}>
+              <h3 className={styles.title}>Notifications</h3>
+              {unreadCount > 0 && (
+                <span className={styles.unreadBadge}>{unreadCount} new</span>
+              )}
+            </div>
+            <div className={styles.headerActions}>
+              <button className={styles.iconButton} onClick={markAllAsRead} title="Mark all as read">
+                <CheckCheck size={18} />
               </button>
-            )}
+              <button className={styles.iconButton} onClick={clearAll} title="Clear all">
+                <Trash2 size={16} />
+              </button>
+              <button className={styles.iconButton} onClick={() => setOpen(false)}>
+                <X size={18} />
+              </button>
+            </div>
           </div>
 
-          {notifications.length === 0 ? (
-            <div style={{ padding: '24px', textAlign: 'center', color: '#9ca3af', fontSize: '14px' }}>
-              No notifications yet
-            </div>
-          ) : (
-            notifications.map((notification) => (
-              <button
-                key={notification.id}
-                onClick={() => handleNotificationClick(notification)}
-                style={{
-                  display: 'flex',
-                  gap: '12px',
-                  width: '100%',
-                  padding: '12px 16px',
-                  background: notification.status === 'unread' ? '#fef2f2' : 'transparent',
-                  border: 'none',
-                  borderBottom: '1px solid #f9fafb',
-                  cursor: 'pointer',
-                  textAlign: 'left',
-                }}
-              >
-                <span style={{ fontSize: '20px', flexShrink: 0 }}>
-                  {getTypeIcon(notification.type)}
-                </span>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <p
-                    style={{
-                      fontSize: '13px',
-                      fontWeight: notification.status === 'unread' ? 600 : 400,
-                      color: '#111827',
-                      margin: 0,
-                    }}
+          <div className={styles.tabs}>
+            <button
+              className={`${styles.tab} ${activeTab === 'all' ? styles.tabActive : ''}`}
+              onClick={() => setActiveTab('all')}
+            >
+              All
+            </button>
+            <button
+              className={`${styles.tab} ${activeTab === 'unread' ? styles.tabActive : ''}`}
+              onClick={() => setActiveTab('unread')}
+            >
+              Unread {unreadCount > 0 && <span className={styles.tabBadge}>{unreadCount}</span>}
+            </button>
+          </div>
+
+          <div className={styles.list}>
+            {filteredNotifications.length === 0 ? (
+              <div className={styles.empty}>
+                <Bell size={40} className={styles.emptyIcon} />
+                <p className={styles.emptyText}>
+                  {activeTab === 'unread' ? 'No unread notifications' : 'No notifications yet'}
+                </p>
+              </div>
+            ) : (
+              filteredNotifications.map((notification) => (
+                <div
+                  key={notification.id}
+                  className={`${styles.notificationItem} ${notification.status === 'unread' ? styles.notificationUnread : ''}`}
+                  onClick={() => handleNotificationClick(notification)}
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') handleNotificationClick(notification);
+                  }}
+                >
+                  <div className={styles.notificationIcon}>
+                    {getTypeIcon(notification.type)}
+                  </div>
+                  <div className={styles.notificationContent}>
+                    <p className={styles.notificationTitle}>{notification.title}</p>
+                    <p className={styles.notificationBody}>{notification.body}</p>
+                    <span className={styles.notificationTime}>{timeAgo(notification.createdAt)}</span>
+                  </div>
+                  {notification.status === 'unread' && (
+                    <span className={styles.unreadDot} />
+                  )}
+                  <button
+                    className={styles.deleteButton}
+                    onClick={(e) => deleteNotification(notification.id, e)}
+                    aria-label="Delete notification"
                   >
-                    {notification.title}
-                  </p>
-                  <p
-                    style={{
-                      fontSize: '12px',
-                      color: '#6b7280',
-                      margin: '2px 0 0',
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                      display: '-webkit-box',
-                      WebkitLineClamp: 2,
-                      WebkitBoxOrient: 'vertical',
-                    }}
-                  >
-                    {notification.body}
-                  </p>
-                  <p style={{ fontSize: '10px', color: '#9ca3af', margin: '4px 0 0' }}>
-                    {new Date(notification.createdAt).toLocaleString()}
-                  </p>
+                    <X size={14} />
+                  </button>
                 </div>
-              </button>
-            ))
-          )}
+              ))
+            )}
+          </div>
         </div>
       )}
     </div>
   );
 };
-

@@ -236,16 +236,9 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
       let metadata: any = {};
       
       if (audioBlob) {
-        const timestamp = Date.now();
-        const filePath = 'post-audio/' + userId + '/' + timestamp + '.webm';
-
-        const { error: audioUploadError } = await supabase.storage
-          .from('media')
-          .upload(filePath, audioBlob, { cacheControl: '3600', contentType: 'audio/webm' });
-
-        if (!audioUploadError) {
-          const { data: audioUrlData } = supabase.storage.from('media').getPublicUrl(filePath);
-          metadata.audioUrl = audioUrlData.publicUrl;
+        const audioResult = await mediaService.uploadAudio(audioBlob, userId, 'post_audio');
+        if (audioResult.success && audioResult.media) {
+          metadata.audioUrl = audioResult.media.url;
           metadata.durationMs = recordingTime * 1000;
         }
       }
@@ -684,3 +677,4 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
     </div>
   );
 };
+
