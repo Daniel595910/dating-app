@@ -1,9 +1,8 @@
-﻿import React, { useState, useRef } from 'react';
-import { X, ArrowLeft, ArrowRight, Camera, Heart, MessageCircle, Sparkles, HelpCircle, Check, ImagePlus, Trash2, Mic, Square, Video, Globe } from 'lucide-react';
+﻿import React, { useState, useRef, useCallback } from 'react';
+import { X, ArrowLeft, ArrowRight, Camera, Heart, MessageCircle, Sparkles, HelpCircle, Check, ImagePlus, Trash2, Mic, Square, Upload, Scissors, Play, Pause } from 'lucide-react';
 import { supabase } from '@/config/supabase.client';
 import { CommunityPostType, PostMedia } from '../../types/community.types';
 import { mediaService } from '../services/media.service';
-import { discoverService } from '../../discover/services/discover.service';
 import styles from '../styles/CreatePostForm.module.css';
 
 interface CreatePostFormProps {
@@ -31,6 +30,50 @@ const LOOKING_FOR_OPTIONS = [
   'Someone to Talk To',
 ];
 
+const MAX_AUDIO_SECONDS = 15;
+
+function audioBufferToWav(buffer: AudioBuffer): Blob {
+  const numChannels = buffer.numberOfChannels;
+  const sampleRate = buffer.sampleRate;
+  const bytesPerSample = 2;
+  const blockAlign = numChannels * bytesPerSample;
+  const dataSize = buffer.length * blockAlign;
+  const totalSize = 44 + dataSize;
+  const arrayBuffer = new ArrayBuffer(totalSize);
+  const dataView = new DataView(arrayBuffer);
+
+  const writeString = (offset: number, str: string) => {
+    for (let i = 0; i < str.length; i++) {
+      dataView.setUint8(offset + i, str.charCodeAt(i));
+    }
+  };
+
+  writeString(0, 'RIFF');
+  dataView.setUint32(4, totalSize - 8, true);
+  writeString(8, 'WAVE');
+  writeString(12, 'fmt ');
+  dataView.setUint32(16, 16, true);
+  dataView.setUint16(20, 1, true);
+  dataView.setUint16(22, numChannels, true);
+  dataView.setUint32(24, sampleRate, true);
+  dataView.setUint32(28, sampleRate * blockAlign, true);
+  dataView.setUint16(32, blockAlign, true);
+  dataView.setUint16(34, 16, true);
+  writeString(36, 'data');
+  dataView.setUint32(40, dataSize, true);
+
+  let offset = 44;
+  for (let i = 0; i < buffer.length; i++) {
+    for (let channel = 0; channel < numChannels; channel++) {
+      const sample = Math.max(-1, Math.min(1, buffer.getChannelData(channel)[i]));
+      dataView.setInt16(offset, sample * 0x7FFF, true);
+      offset += 2;
+    }
+  }
+
+  return new Blob([arrayBuffer], { type: 'audio/wav' });
+}
+
 export const CreatePostForm: React.FC<CreatePostFormProps> = ({
   open,
   onClose,
@@ -45,8 +88,6 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
   const [lookingFor, setLookingFor] = useState('');
   const [tags, setTags] = useState('');
   const [media, setMedia] = useState<PostMedia[]>([]);
-  const [videoMedia, setVideoMedia] = useState<PostMedia | null>(null);
-  const [showInDiscover, setShowInDiscover] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [submitting, setSubmitting] = useState(false);
@@ -54,13 +95,21 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
   const [success, setSuccess] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [recordingTime, setRecordingTime] = useState(0);
+  const [showRecordPrompt, setShowRecordPrompt] = useState(false);
+  const [audioFile, setAudioFile] = useState<File | null>(null);
+  const [showTrimModal, setShowTrimModal] = useState(false);
+  const [trimStart, setTrimStart] = useState(0);
+  const [trimEnd, setTrimEnd] = useState(MAX_AUDIO_SECONDS);
+  const [audioDuration, setAudioDuration] = useState(0);
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
+  
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const videoInputRef = useRef<HTMLInputElement>(null);
+  const audioFileInputRef = useRef<HTMLInputElement>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
   const recordingTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const trimAudioRef = useRef<HTMLAudioElement>(null);
 
   const handleTypeSelect = (type: CommunityPostType) => {
     setPostType(type);
@@ -73,8 +122,8 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
   };
 
   const handleNext = () => {
-    if (!content.trim() && !audioUrl && media.length === 0 && !videoMedia && postType !== 'photo') {
-      setError('Please write something, record audio, or add a photo/video');
+    if (!content.trim() && !audioUrl && media.length === 0 && postType !== 'photo') {
+      setError('Please write something, record audio, or add a photo');
       return;
     }
     if (postType === 'looking_for' && !lookingFor) {
@@ -86,6 +135,7 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
   };
 
   const startRecording = async () => {
+    setShowRecordPrompt(false);
     setError(null);
     audioChunksRef.current = [];
     setRecordingTime(0);
@@ -120,7 +170,7 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
 
       recordingTimerRef.current = setInterval(() => {
         setRecordingTime((prev) => {
-          if (prev >= 120) {
+          if (prev >= MAX_AUDIO_SECONDS) {
             mediaRecorder.stop();
             setIsRecording(false);
             return prev;
@@ -149,14 +199,14 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
   };
 
   const formatTime = (seconds: number): string => {
+    if (!seconds || isNaN(seconds)) return '0:00';
     const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
+    const secs = Math.floor(seconds % 60);
     return mins + ':' + secs.toString().padStart(2, '0');
   };
 
   const handleFileSelect = async (files: FileList | null) => {
     if (!files || files.length === 0) return;
-
     setUploading(true);
     setUploadProgress(0);
     setError(null);
@@ -170,7 +220,6 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
       for (let i = 0; i < filesToUpload.length; i++) {
         const result = await mediaService.uploadImage(filesToUpload[i]!, userId, 'post_image');
         setUploadProgress(((i + 1) / filesToUpload.length) * 100);
-
         if (result.success && result.media) {
           setMedia((prev) => [...prev, { ...result.media!, sortOrder: prev.length }]);
         } else {
@@ -186,39 +235,48 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
     }
   };
 
-  const handleVideoSelect = async (files: FileList | null) => {
+  const handleAudioFileSelect = (files: FileList | null) => {
     if (!files || files.length === 0) return;
-
-    setUploading(true);
-    setUploadProgress(0);
-    setError(null);
-
-    try {
-      const result = await mediaService.uploadVideo(files[0]!, userId, 'post_video');
-      
-      if (result.success && result.media) {
-        setVideoMedia(result.media);
-        // Auto-enable Discover option for videos
-        setShowInDiscover(true);
-      } else {
-        setError(result.error || 'Failed to upload video');
-      }
-    } catch (err: any) {
-      setError(err.message || 'Video upload failed');
-    } finally {
-      setUploading(false);
-      setUploadProgress(0);
-      if (videoInputRef.current) videoInputRef.current.value = '';
+    const file = files[0]!;
+    const allowedExtensions = /\.(mp3|wav|webm|ogg|m4a)$/i;
+    if (!allowedExtensions.test(file.name)) {
+      setError('Please select a valid audio file (MP3, WAV, WebM, OGG, M4A)');
+      return;
     }
+    if (file.size > 10 * 1024 * 1024) {
+      setError('Audio file is too large. Max 10MB.');
+      return;
+    }
+    setAudioFile(file);
+    setTrimStart(0);
+    setTrimEnd(MAX_AUDIO_SECONDS);
+    setShowTrimModal(true);
   };
 
-  const handleRemoveMedia = (mediaId: string) => {
-    setMedia((prev) => prev.filter((m) => m.id !== mediaId));
-  };
-
-  const handleRemoveVideo = () => {
-    setVideoMedia(null);
-    setShowInDiscover(false);
+  const handleTrimConfirm = async () => {
+    if (!audioFile) return;
+    
+    const audioContext = new AudioContext();
+    const arrayBuffer = await audioFile.arrayBuffer();
+    const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+    const startSample = Math.floor(trimStart * audioBuffer.sampleRate);
+    const endSample = Math.floor(trimEnd * audioBuffer.sampleRate);
+    const trimmedLength = endSample - startSample;
+    const trimmedBuffer = audioContext.createBuffer(
+      audioBuffer.numberOfChannels,
+      trimmedLength,
+      audioBuffer.sampleRate
+    );
+    for (let i = 0; i < audioBuffer.numberOfChannels; i++) {
+      trimmedBuffer.copyToChannel(audioBuffer.getChannelData(i).slice(startSample, endSample), i);
+    }
+    const wavBlob = audioBufferToWav(trimmedBuffer);
+    setAudioBlob(wavBlob);
+    setAudioUrl(URL.createObjectURL(wavBlob));
+    setRecordingTime(Math.floor(trimEnd - trimStart));
+    setShowTrimModal(false);
+    setAudioFile(null);
+    setError(null);
   };
 
   const handlePublish = async () => {
@@ -227,12 +285,10 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
 
     try {
       const tagArray = tags.split(',').map((t) => t.trim()).filter((t) => t.length > 0);
-
       const finalContent = postType === 'looking_for' && lookingFor
         ? content + '\n\nLooking for: ' + lookingFor
         : content;
 
-      // Upload audio if exists
       let metadata: any = {};
       
       if (audioBlob) {
@@ -243,26 +299,15 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
         }
       }
 
-      // Add video metadata
-      if (videoMedia) {
-        metadata.videoUrl = videoMedia.url;
-        metadata.thumbnailUrl = videoMedia.thumbnailUrl || null;
-        metadata.videoDuration = videoMedia.durationSeconds || null;
-      }
-
-      // Prepare post data
       const postData: any = {
         community_id: communityId,
         author_id: userId,
-        type: videoMedia ? 'photo' : postType, // Use photo type for video posts temporarily
+        type: postType,
         content: finalContent,
         status: 'published',
         images: media.map((m) => m.url),
         tags: tagArray,
         metadata: Object.keys(metadata).length > 0 ? metadata : null,
-        is_discover_eligible: showInDiscover && videoMedia ? true : false,
-        discover_status: showInDiscover && videoMedia ? 'pending' : null,
-        discover_submitted_at: showInDiscover && videoMedia ? new Date().toISOString() : null,
       };
 
       const { data, error: insertError } = await supabase
@@ -282,8 +327,6 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
         setLookingFor('');
         setTags('');
         setMedia([]);
-        setVideoMedia(null);
-        setShowInDiscover(false);
         removeAudio();
         onPostCreated(data);
         onClose();
@@ -361,152 +404,48 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
               maxLength={5000}
             />
 
-            {/* Voice Recording */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
               {!isRecording && !audioUrl && (
-                <button
-                  type="button"
-                  onClick={startRecording}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.375rem',
-                    padding: '0.5rem 1rem',
-                    background: 'none',
-                    border: '1px dashed #d1d5db',
-                    borderRadius: '9999px',
-                    cursor: 'pointer',
-                    fontSize: '0.8125rem',
-                    fontWeight: 500,
-                    color: '#6b7280',
-                    minHeight: 40,
-                  }}
-                >
-                  <Mic size={16} />
-                  Record Voice
-                </button>
+                <>
+                  <button type="button" onClick={() => setShowRecordPrompt(true)} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 14px', background: 'none', border: '1px dashed #d1d5db', borderRadius: 9999, cursor: 'pointer', fontSize: 13, fontWeight: 500, color: '#6b7280', minHeight: 38 }}>
+                    <Mic size={16} /> Record Voice
+                  </button>
+                  <button type="button" onClick={() => audioFileInputRef.current?.click()} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 14px', background: 'none', border: '1px dashed #d1d5db', borderRadius: 9999, cursor: 'pointer', fontSize: 13, fontWeight: 500, color: '#6b7280', minHeight: 38 }}>
+                    <Upload size={16} /> Upload Audio
+                  </button>
+                </>
               )}
               {isRecording && (
-                <button
-                  type="button"
-                  onClick={stopRecording}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.375rem',
-                    padding: '0.5rem 1rem',
-                    background: '#ef4444',
-                    border: 'none',
-                    borderRadius: '9999px',
-                    cursor: 'pointer',
-                    fontSize: '0.8125rem',
-                    fontWeight: 600,
-                    color: '#ffffff',
-                    minHeight: 40,
-                  }}
-                >
-                  <Square size={14} />
-                  Stop ({formatTime(recordingTime)})
+                <button type="button" onClick={stopRecording} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 14px', background: '#ef4444', border: 'none', borderRadius: 9999, cursor: 'pointer', fontSize: 13, fontWeight: 600, color: '#ffffff', minHeight: 38 }}>
+                  <Square size={14} /> Stop ({formatTime(recordingTime)})
                 </button>
               )}
               {audioUrl && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flex: 1 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1 }}>
                   <audio src={audioUrl} controls style={{ flex: 1, height: 32 }} />
-                  <button
-                    type="button"
-                    onClick={removeAudio}
-                    style={{
-                      background: 'none',
-                      border: 'none',
-                      cursor: 'pointer',
-                      color: '#ef4444',
-                      padding: '0.25rem',
-                    }}
-                  >
+                  <button type="button" onClick={removeAudio} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ef4444', padding: 6 }}>
                     <Trash2 size={14} />
                   </button>
                 </div>
               )}
             </div>
 
-            {/* Photo Upload */}
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/jpeg,image/png,image/webp,image/gif"
-              multiple
-              onChange={(e) => handleFileSelect(e.target.files)}
-              style={{ display: 'none' }}
-            />
+            <input ref={fileInputRef} type="file" accept="image/jpeg,image/png,image/webp,image/gif" multiple onChange={(e) => handleFileSelect(e.target.files)} style={{ display: 'none' }} />
+            <input ref={audioFileInputRef} type="file" accept="audio/*,.mp3,.wav,.webm,.ogg,.m4a" onChange={(e) => handleAudioFileSelect(e.target.files)} style={{ display: 'none' }} />
 
-            {/* Video Upload */}
-            <input
-              ref={videoInputRef}
-              type="file"
-              accept="video/mp4,video/webm,video/quicktime"
-              onChange={(e) => handleVideoSelect(e.target.files)}
-              style={{ display: 'none' }}
-            />
-
-            <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-              <button
-                type="button"
-                onClick={() => fileInputRef.current?.click()}
-                disabled={uploading || media.length >= 5}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.375rem',
-                  padding: '0.5rem 1rem',
-                  background: 'none',
-                  border: '1px solid #e5e7eb',
-                  borderRadius: '9999px',
-                  cursor: 'pointer',
-                  fontSize: '0.8125rem',
-                  fontWeight: 500,
-                  color: '#374151',
-                  minHeight: 40,
-                }}
-              >
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 8 }}>
+              <button type="button" onClick={() => fileInputRef.current?.click()} disabled={uploading || media.length >= 5} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 14px', background: 'none', border: '1px solid #e5e7eb', borderRadius: 9999, cursor: 'pointer', fontSize: 13, fontWeight: 500, color: '#374151', minHeight: 38 }}>
                 <ImagePlus size={16} />
                 <span>{uploading ? 'Uploading... ' + Math.round(uploadProgress) + '%' : media.length > 0 ? 'Add More Photos (' + media.length + '/5)' : 'Add Photos'}</span>
               </button>
-
-              <button
-                type="button"
-                onClick={() => videoInputRef.current?.click()}
-                disabled={uploading || !!videoMedia}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.375rem',
-                  padding: '0.5rem 1rem',
-                  background: 'none',
-                  border: '1px solid #e5e7eb',
-                  borderRadius: '9999px',
-                  cursor: videoMedia ? 'not-allowed' : 'pointer',
-                  fontSize: '0.8125rem',
-                  fontWeight: 500,
-                  color: videoMedia ? '#9ca3af' : '#374151',
-                  minHeight: 40,
-                }}
-              >
-                <Video size={16} />
-                <span>{videoMedia ? 'Video Added' : 'Add Video'}</span>
-              </button>
             </div>
 
-            {/* Image Preview */}
             {media.length > 0 && (
               <div className={styles.mediaPreview}>
                 {media.map((m) => (
                   <div key={m.id} className={styles.mediaPreviewItem}>
                     <img src={m.url} alt="" className={styles.mediaPreviewImage} />
-                    <button
-                      className={styles.mediaRemoveButton}
-                      onClick={() => handleRemoveMedia(m.id)}
-                      aria-label="Remove image"
-                    >
+                    <button className={styles.mediaRemoveButton} onClick={() => handleRemoveMedia(m.id)} aria-label="Remove image">
                       <Trash2 size={12} />
                     </button>
                   </div>
@@ -514,94 +453,7 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
               </div>
             )}
 
-            {/* Video Preview */}
-            {videoMedia && (
-              <div style={{ position: 'relative', marginTop: '0.5rem' }}>
-                <video
-                  src={videoMedia.url}
-                  controls
-                  style={{ width: '100%', maxHeight: '300px', borderRadius: '8px' }}
-                />
-                <button
-                  type="button"
-                  onClick={handleRemoveVideo}
-                  style={{
-                    position: 'absolute',
-                    top: '8px',
-                    right: '8px',
-                    background: 'rgba(0,0,0,0.7)',
-                    border: 'none',
-                    borderRadius: '50%',
-                    width: '32px',
-                    height: '32px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    cursor: 'pointer',
-                    color: '#ffffff',
-                  }}
-                >
-                  <Trash2 size={14} />
-                </button>
-              </div>
-            )}
-
-            {/* Discover Opt-in */}
-            {videoMedia && (
-              <div style={{
-                marginTop: '1rem',
-                padding: '1rem',
-                backgroundColor: '#fef2f2',
-                borderRadius: '12px',
-                border: '1px solid #fecaca',
-              }}>
-                <label style={{
-                  display: 'flex',
-                  alignItems: 'flex-start',
-                  gap: '0.75rem',
-                  cursor: 'pointer',
-                }}>
-                  <input
-                    type="checkbox"
-                    checked={showInDiscover}
-                    onChange={(e) => setShowInDiscover(e.target.checked)}
-                    style={{
-                      marginTop: '2px',
-                      width: '18px',
-                      height: '18px',
-                      cursor: 'pointer',
-                    }}
-                  />
-                  <div>
-                    <div style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '0.375rem',
-                      fontWeight: 600,
-                      fontSize: '0.875rem',
-                      color: '#111827',
-                    }}>
-                      <Globe size={16} />
-                      Show this video in Discover
-                    </div>
-                    <p style={{
-                      fontSize: '0.75rem',
-                      color: '#6b7280',
-                      margin: '0.25rem 0 0 0',
-                    }}>
-                      Your video will be reviewed before appearing in Discover. It must be appropriate and follow community guidelines.
-                    </p>
-                  </div>
-                </label>
-              </div>
-            )}
-
-            <input
-              className={styles.tagsInput}
-              value={tags}
-              onChange={(e) => setTags(e.target.value)}
-              placeholder="Tags (comma-separated, optional)"
-            />
+            <input className={styles.tagsInput} value={tags} onChange={(e) => setTags(e.target.value)} placeholder="Tags (comma-separated, optional)" />
 
             {error && <p className={styles.error}>{error}</p>}
 
@@ -624,13 +476,8 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
               )}
               {content && <p className={styles.previewContent}>{content}</p>}
               {audioUrl && (
-                <div style={{ marginBottom: '0.5rem' }}>
+                <div style={{ marginBottom: 8 }}>
                   <audio src={audioUrl} controls style={{ width: '100%', height: 32 }} />
-                </div>
-              )}
-              {videoMedia && (
-                <div style={{ marginBottom: '0.5rem' }}>
-                  <video src={videoMedia.url} controls style={{ width: '100%', maxHeight: '300px', borderRadius: '8px' }} />
                 </div>
               )}
               {media.length > 0 && (
@@ -638,22 +485,6 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
                   {media.map((m) => (
                     <img key={m.id} src={m.url} alt="" className={styles.previewMediaImage} />
                   ))}
-                </div>
-              )}
-              {showInDiscover && videoMedia && (
-                <div style={{
-                  marginTop: '0.5rem',
-                  padding: '0.5rem',
-                  backgroundColor: '#fef2f2',
-                  borderRadius: '8px',
-                  fontSize: '0.75rem',
-                  color: '#dc2626',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.375rem',
-                }}>
-                  <Globe size={14} />
-                  Will be submitted to Discover for review
                 </div>
               )}
               {tags && (
@@ -674,7 +505,122 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
           </div>
         )}
       </div>
+
+      {/* Record Prompt Modal */}
+      {showRecordPrompt && (
+        <div onClick={(e) => e.stopPropagation()} style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.6)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
+          <div style={{ backgroundColor: '#fff', borderRadius: 20, padding: '28px 24px', maxWidth: 400, width: '100%', textAlign: 'center' }}>
+            <div style={{ width: 64, height: 64, borderRadius: '50%', backgroundColor: '#fef2f2', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
+              <Mic size={32} style={{ color: '#ef4444' }} />
+            </div>
+            <h3 style={{ fontSize: 18, fontWeight: 700, margin: '0 0 8px', color: '#111827' }}>Record Your Voice</h3>
+            <p style={{ fontSize: 13, color: '#6b7280', margin: '0 0 16px', lineHeight: 1.5 }}>
+              Record a short voice message to introduce yourself! Talk about what you're looking for, your interests, or just say hi!
+            </p>
+            <p style={{ fontSize: 12, color: '#ef4444', fontWeight: 600, margin: '0 0 20px' }}>
+              Maximum {MAX_AUDIO_SECONDS} seconds
+            </p>
+            <div style={{ display: 'flex', gap: 10 }}>
+              <button onClick={startRecording} style={{ flex: 1, padding: 14, backgroundColor: '#ef4444', color: '#fff', border: 'none', borderRadius: 9999, cursor: 'pointer', fontSize: 15, fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+                <Mic size={18} /> Start Recording
+              </button>
+              <button onClick={() => setShowRecordPrompt(false)} style={{ flex: 1, padding: 14, background: 'none', color: '#6b7280', border: '1px solid #e5e7eb', borderRadius: 9999, cursor: 'pointer', fontSize: 15, fontWeight: 500 }}>
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* CapCut-style Trim Modal */}
+      {showTrimModal && audioFile && (
+        <div onClick={(e) => e.stopPropagation()} style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.85)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
+          <div style={{ backgroundColor: '#fff', borderRadius: 20, padding: '20px 16px', maxWidth: 420, width: '100%' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+              <h3 style={{ fontSize: 17, fontWeight: 700, margin: 0, color: '#111827' }}>Trim Audio</h3>
+              <button onClick={() => { setShowTrimModal(false); setAudioFile(null); }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#6b7280', padding: 6 }}>
+                <X size={20} />
+              </button>
+            </div>
+
+            <audio 
+              ref={trimAudioRef}
+              src={URL.createObjectURL(audioFile)} 
+              controls 
+              style={{ width: '100%', marginBottom: 16 }}
+              onLoadedMetadata={(e) => {
+                const dur = e.currentTarget.duration;
+                setAudioDuration(dur);
+                setTrimEnd(Math.min(MAX_AUDIO_SECONDS, dur));
+              }}
+            />
+
+            {/* Timeline */}
+            <div style={{ marginBottom: 16 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: '#9ca3af', marginBottom: 6 }}>
+                <span>0:00</span>
+                <span>{formatTime(audioDuration)}</span>
+              </div>
+              
+              {/* Track with selected range */}
+              <div style={{ position: 'relative', height: 44, marginBottom: 6 }}>
+                <div style={{ position: 'absolute', top: '50%', transform: 'translateY(-50%)', left: 0, right: 0, height: 6, backgroundColor: '#e5e7eb', borderRadius: 9999 }} />
+                <div style={{ 
+                  position: 'absolute', 
+                  top: '50%', 
+                  transform: 'translateY(-50%)', 
+                  left: (trimStart / (audioDuration || MAX_AUDIO_SECONDS)) * 100 + '%', 
+                  width: ((trimEnd - trimStart) / (audioDuration || MAX_AUDIO_SECONDS)) * 100 + '%', 
+                  height: 6, 
+                  backgroundColor: '#ef4444', 
+                  borderRadius: 9999 
+                }} />
+                
+                {/* Start slider */}
+                <input
+                  type="range"
+                  min={0}
+                  max={audioDuration || MAX_AUDIO_SECONDS}
+                  step={0.1}
+                  value={trimStart}
+                  onChange={(e) => setTrimStart(Math.min(Number(e.target.value), trimEnd - 0.5))}
+                  style={{ position: 'absolute', top: '50%', transform: 'translateY(-50%)', left: 0, width: '100%', height: 44, opacity: 0, cursor: 'pointer', zIndex: 2 }}
+                />
+                {/* End slider */}
+                <input
+                  type="range"
+                  min={0}
+                  max={audioDuration || MAX_AUDIO_SECONDS}
+                  step={0.1}
+                  value={trimEnd}
+                  onChange={(e) => setTrimEnd(Math.max(Number(e.target.value), trimStart + 0.5))}
+                  style={{ position: 'absolute', top: '50%', transform: 'translateY(-50%)', left: 0, width: '100%', height: 44, opacity: 0, cursor: 'pointer', zIndex: 3 }}
+                />
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: '#ef4444', fontWeight: 600 }}>
+                <span>Start: {formatTime(trimStart)}</span>
+                <span>End: {formatTime(trimEnd)}</span>
+                <span>Length: {formatTime(trimEnd - trimStart)}</span>
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', gap: 10 }}>
+              <button onClick={handleTrimConfirm} style={{ flex: 1, padding: 13, backgroundColor: '#ef4444', color: '#fff', border: 'none', borderRadius: 9999, cursor: 'pointer', fontSize: 14, fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+                <Scissors size={16} /> Apply Trim
+              </button>
+              <button onClick={() => { setShowTrimModal(false); setAudioFile(null); }} style={{ flex: 1, padding: 13, background: 'none', color: '#6b7280', border: '1px solid #e5e7eb', borderRadius: 9999, cursor: 'pointer', fontSize: 14, fontWeight: 500 }}>
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
+
+
+
+
 
