@@ -31,6 +31,7 @@ export const ProfileSwipeDeck: React.FC<ProfileSwipeDeckProps> = ({ userId, comm
   const [swipe, setSwipe] = useState({ isDragging: false, startX: 0, deltaX: 0 });
   const [swipeDirection, setSwipeDirection] = useState<'left' | 'right' | null>(null);
   const [likedProfiles, setLikedProfiles] = useState<Set<string>>(new Set());
+  const [matchScores, setMatchScores] = useState<Map<string, { total: number; reasons: string[] }>>(new Map());
   const [passedProfiles, setPassedProfiles] = useState<Set<string>>(new Set());
   const cardRef = useRef<HTMLDivElement>(null);
 
@@ -101,6 +102,23 @@ export const ProfileSwipeDeck: React.FC<ProfileSwipeDeckProps> = ({ userId, comm
         });
 
       setProfiles(cards);
+
+      // Calculate match scores
+      const scores = new Map();
+      for (const card of cards) {
+        if (card.userId === userId) continue;
+        const { data: scoreData } = await supabase.rpc('calculate_match_score', {
+          p_user1_id: userId,
+          p_user2_id: card.userId,
+        });
+        if (scoreData && scoreData.total_score !== undefined) {
+          scores.set(card.userId, {
+            total: scoreData.total_score,
+            reasons: scoreData.reasons || [],
+          });
+        }
+      }
+      setMatchScores(scores);
     } catch (err) {
       console.error('Failed to fetch profile shares:', err);
     } finally {
@@ -239,6 +257,16 @@ export const ProfileSwipeDeck: React.FC<ProfileSwipeDeckProps> = ({ userId, comm
           )}
         </div>
 
+        {/* Compatibility Score */}
+        {matchScores.has(current.userId) && (
+          <div className={styles.matchScoreBadge}>
+            <span className={styles.matchScoreValue}>
+              {matchScores.get(current.userId)!.total}%
+            </span>
+            <span className={styles.matchScoreLabel}>Match</span>
+          </div>
+        )}
+
         {/* Profile info overlay */}
         <div className={styles.infoOverlay}>
           <div className={styles.nameRow}>
@@ -294,3 +322,8 @@ export const ProfileSwipeDeck: React.FC<ProfileSwipeDeckProps> = ({ userId, comm
     </div>
   );
 };
+
+
+
+
+

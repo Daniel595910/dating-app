@@ -41,6 +41,7 @@ export const ProfilePage: React.FC = () => {
   const [blockSheetOpen, setBlockSheetOpen] = useState(false);
   const [shareProfileOpen, setShareProfileOpen] = useState(false);
   const [shareLoading, setShareLoading] = useState(false);
+  const [hasShared, setHasShared] = useState(false);
   const [shareSuccess, setShareSuccess] = useState(false);
 
   const handleShareProfile = async () => {
@@ -102,6 +103,17 @@ export const ProfilePage: React.FC = () => {
         setProfilePhotos(photos);
 
         if (user) {
+          if (targetUserId === user.id) {
+            // Check if already shared profile
+            const { data: existingShare } = await supabase
+              .from('posts')
+              .select('id')
+              .eq('author_id', user.id)
+              .eq('type', 'profile_share')
+              .eq('status', 'published')
+              .maybeSingle();
+            setHasShared(Boolean(existingShare));
+          }
           if (targetUserId !== user.id) {
             const following = await profileService.isFollowing(user.id, targetUserId);
             setIsFollowing(following);
@@ -521,9 +533,14 @@ export const ProfilePage: React.FC = () => {
 
         {isOwnProfile ? (
           <div className={styles.actionRow}>
-            <button className={styles.primaryAction} onClick={handleShareProfile} disabled={shareLoading}>
+            <button className={styles.primaryAction} onClick={handleShareProfile}
+              disabled={shareLoading || hasShared}
+              style={{
+                opacity: hasShared ? 0.7 : 1,
+                cursor: hasShared ? 'not-allowed' : 'pointer',
+              }}>
               <Share2 size={18} />
-              {shareLoading ? 'Sharing...' : 'Share Profile'}
+              {shareLoading ? 'Sharing...' : hasShared ? 'Profile Shared' : 'Share Profile'}
             </button>
             <button className={styles.primaryAction} onClick={() => navigate('/profile/edit')}>
               Edit Profile
@@ -665,6 +682,8 @@ export const ProfilePage: React.FC = () => {
     </div>
   );
 };
+
+
 
 
 

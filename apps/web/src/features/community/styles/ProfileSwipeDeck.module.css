@@ -242,3 +242,38 @@
 @keyframes spin {
   to { transform: rotate(360deg); }
 }
+
+.matchScoreBadge {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: rgba(239, 68, 68, 0.9);
+  border-radius: 16px;
+  padding: 8px 12px;
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
+  animation: scoreIn 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+.matchScoreValue {
+  font-size: 20px;
+  font-weight: 800;
+  color: #ffffff;
+  line-height: 1;
+}
+
+.matchScoreLabel {
+  font-size: 9px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.8);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-top: 2px;
+}
+
+@keyframes scoreIn {
+  from { transform: scale(0); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
