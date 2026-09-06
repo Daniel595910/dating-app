@@ -90,7 +90,7 @@ export interface FeedResponse {
   hasMore: boolean;
 }
 
-export type FeedFilter = 'all' | 'new' | 'looking' | 'nearby' | 'following';
+export type FeedFilter = 'all' | 'new' | 'looking' | 'profiles' | 'nearby' | 'following';
 
 export interface Comment {
   id: string;
@@ -139,3 +139,4 @@ export interface ConnectionStage {
   completed: boolean;
   current: boolean;
 }
+

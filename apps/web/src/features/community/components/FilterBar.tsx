@@ -1,5 +1,5 @@
 ﻿import React, { useState } from 'react';
-import { LayoutGrid, Sparkles, Heart, MapPin, Users } from 'lucide-react';
+import { LayoutGrid, Sparkles, Heart, MapPin, Users, UserRound } from 'lucide-react';
 import { FeedFilter } from '../../types/community.types';
 import styles from '../styles/FilterBar.module.css';
 
@@ -18,14 +18,13 @@ interface FilterItem {
 const FILTER_ITEMS: FilterItem[] = [
   { id: 'all', label: 'All', icon: <LayoutGrid size={14} />, description: 'Show all community posts' },
   { id: 'new', label: 'New', icon: <Sparkles size={14} />, description: 'Posts from last 24 hours' },
-  { id: 'looking', label: 'Looking For', icon: <Heart size={14} />, description: 'People looking for connections' },
+  { id: 'looking', label: 'Looking', icon: <Heart size={14} />, description: 'People looking for connections' },
+  { id: 'profiles', label: 'Profiles', icon: <UserRound size={14} />, description: 'Swipe through shared profiles' },
   { id: 'nearby', label: 'Nearby', icon: <MapPin size={14} />, description: 'Posts from people near you' },
   { id: 'following', label: 'Following', icon: <Users size={14} />, description: 'Posts from people you follow' },
 ];
 
 export const FilterBar: React.FC<FilterBarProps> = ({ activeFilter, onFilterChange }) => {
-  const [showDescriptions, setShowDescriptions] = useState(false);
-
   return (
     <div className={styles.container}>
       <div className={styles.filterBar} role="tablist" aria-label="Community filters">
@@ -40,8 +39,6 @@ export const FilterBar: React.FC<FilterBarProps> = ({ activeFilter, onFilterChan
               title={filter.description}
               className={`${styles.filterButton} ${isActive ? styles.filterButtonActive : ''}`}
               onClick={() => onFilterChange(filter.id)}
-              onMouseEnter={() => setShowDescriptions(true)}
-              onMouseLeave={() => setShowDescriptions(false)}
             >
               <span className={styles.filterIcon}>{filter.icon}</span>
               <span>{filter.label}</span>
@@ -52,13 +49,6 @@ export const FilterBar: React.FC<FilterBarProps> = ({ activeFilter, onFilterChan
           );
         })}
       </div>
-
-      {/* Active filter description */}
-      {showDescriptions && (
-        <div className={styles.descriptionBar}>
-          {FILTER_ITEMS.find((f) => f.id === activeFilter)?.description}
-        </div>
-      )}
     </div>
   );
 };

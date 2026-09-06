@@ -9,7 +9,7 @@ import { PhotoManagement } from '../../features/profile/components/PhotoManageme
 import { CommunityCreationSheet } from '../../features/community/components/CommunityCreationSheet';
 import { ReportSheet } from '../../features/community/components/ReportSheet';
 import { BlockConfirmSheet } from '../../features/community/components/BlockConfirmSheet';
-import { ArrowLeft, Settings, BadgeCheck, MapPin, Heart, Grid, Menu, UserPlus, Check, Camera, MoreVertical, X, Star, MessageCircle, Crown, Users, Ban, Flag } from 'lucide-react';
+import { ArrowLeft, Settings, BadgeCheck, MapPin, Heart, Grid, Menu, UserPlus, Check, Camera, MoreVertical, X, Star, MessageCircle, Crown, Users, Ban, Flag, Share2 } from 'lucide-react';
 import styles from './ProfilePage.module.css';
 
 export const ProfilePage: React.FC = () => {
@@ -39,6 +39,48 @@ export const ProfilePage: React.FC = () => {
   const [showMoreMenu, setShowMoreMenu] = useState(false);
   const [reportSheetOpen, setReportSheetOpen] = useState(false);
   const [blockSheetOpen, setBlockSheetOpen] = useState(false);
+  const [shareProfileOpen, setShareProfileOpen] = useState(false);
+  const [shareLoading, setShareLoading] = useState(false);
+  const [shareSuccess, setShareSuccess] = useState(false);
+
+  const handleShareProfile = async () => {
+    if (!user || !profile) return;
+    setShareLoading(true);
+    try {
+      const { data: membership } = await supabase
+        .from('community_members')
+        .select('community_id')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      if (!membership) return;
+
+      const { error: insertError } = await supabase.from('posts').insert({
+        community_id: membership.community_id,
+        author_id: user.id,
+        type: 'profile_share',
+        content: profile.bio || 'Check out my profile!',
+        status: 'published',
+        images: profile.avatarUrl ? [profile.avatarUrl] : [],
+        metadata: {
+          profileShare: true,
+          displayName: profile.displayName,
+          age: profile.age || null,
+          location: profile.location ? [profile.location.city, profile.location.state].filter(Boolean).join(', ') : null,
+          interests: profile.interests || [],
+          relationshipIntent: profile.relationship_intent || null,
+        },
+      });
+
+      if (insertError) throw insertError;
+      setShareSuccess(true);
+      setTimeout(() => setShareSuccess(false), 4000);
+    } catch (err) {
+      console.error('Share profile failed:', err);
+    } finally {
+      setShareLoading(false);
+    }
+  };
 
   const isOwnProfile = !userId || userId === user?.id;
   const targetUserId = userId || user?.id || '';
@@ -376,9 +418,9 @@ export const ProfilePage: React.FC = () => {
         </button>
         <span className={styles.headerTitle}>{profile.displayName}</span>
         {isOwnProfile ? (
-          <button className={styles.headerButton} onClick={() => navigate('/settings')} aria-label="Settings">
-            <Settings size={22} />
-          </button>
+            <button className={styles.headerButton} onClick={() => navigate('/settings')} aria-label="Settings">
+              <Settings size={22} />
+            </button>
         ) : (
           <div style={{ position: 'relative' }}>
             <button
@@ -479,6 +521,10 @@ export const ProfilePage: React.FC = () => {
 
         {isOwnProfile ? (
           <div className={styles.actionRow}>
+            <button className={styles.primaryAction} onClick={handleShareProfile} disabled={shareLoading}>
+              <Share2 size={18} />
+              {shareLoading ? 'Sharing...' : 'Share Profile'}
+            </button>
             <button className={styles.primaryAction} onClick={() => navigate('/profile/edit')}>
               Edit Profile
             </button>
@@ -599,6 +645,31 @@ export const ProfilePage: React.FC = () => {
           )}
         </div>
       )}
+    {shareSuccess && (
+        <div style={{ position: 'fixed', bottom: '80px', left: '50%', transform: 'translateX(-50%)', zIndex: 9999, backgroundColor: '#10b981', color: '#ffffff', padding: '16px 24px', borderRadius: '16px', boxShadow: '0 10px 30px rgba(16, 185, 129, 0.3)', display: 'flex', alignItems: 'center', gap: '12px', animation: 'slideUp 0.3s ease', maxWidth: '90%' }}>
+          <Check size={24} />
+          <div>
+            <p style={{ fontSize: '15px', fontWeight: 700, margin: 0 }}>Profile Shared!</p>
+            <p style={{ fontSize: '13px', margin: '4px 0 0', opacity: 0.9 }}>
+              Your profile has been posted to your community.
+            </p>
+          </div>
+          <button 
+            onClick={() => navigate('/community')}
+            style={{ background: 'none', border: '1px solid rgba(255,255,255,0.5)', color: '#ffffff', padding: '8px 14px', borderRadius: 9999, cursor: 'pointer', fontSize: '13px', fontWeight: 600, whiteSpace: 'nowrap' }}
+          >
+            View Post
+          </button>
+        </div>
+      )}
     </div>
   );
 };
+
+
+
+
+
+
+
+

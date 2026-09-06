@@ -1,7 +1,6 @@
-﻿import React, { useState, useEffect } from 'react';
-import { X, MapPin, Heart, BadgeCheck, MessageCircle, Handshake, Crown } from 'lucide-react';
+﻿import React, { useState, useEffect, useCallback } from 'react';
+import { X, MapPin, Heart, BadgeCheck, MessageCircle, Handshake, Crown, UserPlus, Check } from 'lucide-react';
 import { supabase } from '@/config/supabase.client';
-import { CommunityPostAuthor } from '../../types/community.types';
 import styles from '../styles/ProfilePreviewSheet.module.css';
 
 interface ProfilePreviewSheetProps {
@@ -10,6 +9,7 @@ interface ProfilePreviewSheetProps {
   authorId: string | null;
   onGetToKnow: (authorId: string) => void;
   onViewFullProfile: (authorId: string) => void;
+  currentUserId?: string;
 }
 
 interface PreviewProfile {
@@ -21,7 +21,6 @@ interface PreviewProfile {
   location?: string;
   bio?: string;
   interests: string[];
-  lookingFor?: string;
   relationshipIntent?: string;
 }
 
@@ -31,9 +30,12 @@ export const ProfilePreviewSheet: React.FC<ProfilePreviewSheetProps> = ({
   authorId,
   onGetToKnow,
   onViewFullProfile,
+  currentUserId,
 }) => {
   const [profile, setProfile] = useState<PreviewProfile | null>(null);
   const [loading, setLoading] = useState(false);
+  const [isFollowing, setIsFollowing] = useState(false);
+  const [followLoading, setFollowLoading] = useState(false);
 
   useEffect(() => {
     if (!open || !authorId) return;
@@ -73,6 +75,48 @@ export const ProfilePreviewSheet: React.FC<ProfilePreviewSheetProps> = ({
     fetchProfile();
   }, [open, authorId]);
 
+  useEffect(() => {
+    if (!open || !authorId || !currentUserId) return;
+
+    const checkFollowStatus = async () => {
+      const { data } = await supabase
+        .from('follows')
+        .select('id')
+        .eq('follower_id', currentUserId)
+        .eq('following_id', authorId)
+        .maybeSingle();
+      
+      setIsFollowing(Boolean(data));
+    };
+
+    checkFollowStatus();
+  }, [open, authorId, currentUserId]);
+
+  const handleFollow = async () => {
+    if (!currentUserId || !authorId || followLoading) return;
+    setFollowLoading(true);
+
+    try {
+      if (isFollowing) {
+        const { error } = await supabase
+          .from('follows')
+          .delete()
+          .eq('follower_id', currentUserId)
+          .eq('following_id', authorId);
+        if (!error) setIsFollowing(false);
+      } else {
+        const { error } = await supabase
+          .from('follows')
+          .insert({ follower_id: currentUserId, following_id: authorId });
+        if (!error) setIsFollowing(true);
+      }
+    } catch (err) {
+      console.error('Follow error:', err);
+    } finally {
+      setFollowLoading(false);
+    }
+  };
+
   const getLookingForIcon = (intent?: string) => {
     if (!intent) return null;
     if (intent.includes('marriage')) return Crown;
@@ -86,10 +130,8 @@ export const ProfilePreviewSheet: React.FC<ProfilePreviewSheetProps> = ({
   return (
     <div className={styles.overlay} onClick={onClose}>
       <div className={styles.sheet} onClick={(e) => e.stopPropagation()}>
-        {/* Drag handle */}
         <div className={styles.dragHandle} />
 
-        {/* Close button */}
         <button onClick={onClose} aria-label="Close" className={styles.closeButton}>
           <X size={20} />
         </button>
@@ -100,7 +142,6 @@ export const ProfilePreviewSheet: React.FC<ProfilePreviewSheetProps> = ({
           <div className={styles.error}>Profile not found</div>
         ) : (
           <>
-            {/* Profile Photo */}
             <div className={styles.photoContainer}>
               {profile.avatarUrl ? (
                 <img src={profile.avatarUrl} alt={profile.name} className={styles.photo} />
@@ -111,7 +152,6 @@ export const ProfilePreviewSheet: React.FC<ProfilePreviewSheetProps> = ({
               )}
             </div>
 
-            {/* Name and verified */}
             <div className={styles.nameRow}>
               <h2 className={styles.name}>
                 {profile.name}
@@ -120,7 +160,6 @@ export const ProfilePreviewSheet: React.FC<ProfilePreviewSheetProps> = ({
               {profile.verified && <BadgeCheck size={18} className={styles.verifiedIcon} />}
             </div>
 
-            {/* Location */}
             {profile.location && (
               <div className={styles.locationRow}>
                 <MapPin size={14} />
@@ -128,7 +167,6 @@ export const ProfilePreviewSheet: React.FC<ProfilePreviewSheetProps> = ({
               </div>
             )}
 
-            {/* Looking For */}
             {profile.relationshipIntent && (
               <div className={styles.lookingFor}>
                 {(() => {
@@ -141,10 +179,8 @@ export const ProfilePreviewSheet: React.FC<ProfilePreviewSheetProps> = ({
               </div>
             )}
 
-            {/* Bio */}
             {profile.bio && <p className={styles.bio}>{profile.bio}</p>}
 
-            {/* Interests */}
             {profile.interests.length > 0 && (
               <div className={styles.interests}>
                 {profile.interests.slice(0, 5).map((interest, index) => (
@@ -155,7 +191,6 @@ export const ProfilePreviewSheet: React.FC<ProfilePreviewSheetProps> = ({
               </div>
             )}
 
-            {/* Actions */}
             <div className={styles.actions}>
               <button
                 className={styles.getToKnowButton}
@@ -164,12 +199,12 @@ export const ProfilePreviewSheet: React.FC<ProfilePreviewSheetProps> = ({
                 Get to Know
               </button>
               <button
-                className={styles.followButton}
-                onClick={() => {
-                  // Follow logic here
-                }}
+                className={`${styles.followButton} ${isFollowing ? styles.followButtonActive : ''}`}
+                onClick={handleFollow}
+                disabled={followLoading}
               >
-                Follow
+                {isFollowing ? <Check size={16} /> : <UserPlus size={16} />}
+                {isFollowing ? 'Following' : 'Follow'}
               </button>
               <button
                 className={styles.viewProfileButton}
@@ -184,4 +219,3 @@ export const ProfilePreviewSheet: React.FC<ProfilePreviewSheetProps> = ({
     </div>
   );
 };
-

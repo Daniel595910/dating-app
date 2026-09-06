@@ -18,6 +18,7 @@ import { CommunityEmptyState } from '../../features/community/components/Communi
 import { FeedErrorState } from '../../features/community/components/FeedErrorState';
 import { InfiniteScrollSentinel } from '../../features/community/components/InfiniteScrollSentinel';
 import { CommentSheet } from '../../features/community/components/CommentSheet';
+import { ProfileSwipeDeck } from '../../features/community/components/ProfileSwipeDeck';
 import { ProfilePreviewSheet } from '../../features/community/components/ProfilePreviewSheet';
 import { ConnectionPrompt } from '../../features/community/components/ConnectionPrompt';
 import { MatchSuccess } from '../../features/community/components/MatchSuccess';
@@ -209,7 +210,9 @@ export const CommunityPage: React.FC = () => {
           onReject={declineRequest}
         />
 
-        {feedLoading && posts.length === 0 ? (
+        {filter === 'profiles' ? (
+            <ProfileSwipeDeck userId={user?.id || ''} communityId={community.id} />
+          ) : feedLoading && posts.length === 0 ? (
           <CommunitySkeleton />
         ) : feedError && posts.length === 0 ? (
           <FeedErrorState onRetry={refresh} />
@@ -259,6 +262,7 @@ export const CommunityPage: React.FC = () => {
         open={Boolean(previewAuthorId)}
         onClose={() => setPreviewAuthorId(null)}
         authorId={previewAuthorId}
+        currentUserId={user?.id || ''}
         onGetToKnow={(id) => { setPreviewAuthorId(null); handleGetToKnow(id); }}
         onViewFullProfile={(id) => { setPreviewAuthorId(null); navigate(`/profile/${id}`); }}
       />
@@ -288,6 +292,9 @@ export const CommunityPage: React.FC = () => {
     </div>
   );
 };
+
+
+
 
 
 

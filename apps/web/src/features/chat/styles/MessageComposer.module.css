@@ -1,91 +1,17 @@
-﻿.composer {
-  display: flex;
-  align-items: flex-end;
-  gap: 0.5rem;
-  padding: 0.75rem 1rem calc(0.75rem + env(safe-area-inset-bottom));
-  border-top: 1px solid var(--color-border, #e5e7eb);
-  background-color: var(--color-surface, #ffffff);
-}
-
-.input {
-  flex: 1;
-  padding: 0.625rem 0.875rem;
-  border: 1px solid var(--color-border, #e5e7eb);
-  border-radius: 1.25rem;
-  resize: none;
-  font-size: var(--font-md, 0.9375rem);
-  font-family: inherit;
-  outline: none;
-  max-height: 120px;
-  min-height: 40px;
-  background-color: var(--color-bg, #f9fafb);
-}
-
-.input:focus {
-  border-color: var(--color-primary, #ef4444);
-  box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.1);
-}
-
-.sendButton {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  background-color: var(--color-primary, #ef4444);
-  color: #ffffff;
-  border: none;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  transition: background-color 0.2s ease;
-  min-width: 44px;
-  min-height: 44px;
-}
-
-.sendButton:hover:not(:disabled) {
-  background-color: var(--color-primary-hover, #dc2626);
-}
-
-.sendButton:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.attachButton {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  background-color: #f3f4f6;
-  color: #6b7280;
-  border: none;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  transition: all 0.2s ease;
-  min-width: 44px;
-  min-height: 44px;
-}
-
-.attachButton:hover {
-  background-color: #e5e7eb;
-  color: #111827;
-}
-
-.composerWrapper {
-  border-top: 1px solid var(--color-border, #e5e7eb);
-  background-color: var(--color-surface, #ffffff);
+﻿.composerWrapper {
+  border-top: 1px solid #f3f4f6;
+  background: #ffffff;
+  padding-bottom: env(safe-area-inset-bottom);
 }
 
 .replyIndicator {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  padding: 0.5rem 1rem;
-  background-color: #fef2f2;
-  border-bottom: 1px solid #fee2e2;
+  gap: 10px;
+  padding: 10px 14px;
+  background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+  border-bottom: 1px solid #fecaca;
+  animation: slideDown 0.2s ease;
 }
 
 .replyIndicatorContent {
@@ -95,16 +21,16 @@
 
 .replyLabel {
   display: block;
-  font-size: 0.6875rem;
-  font-weight: 600;
-  color: var(--color-primary, #ef4444);
-  margin-bottom: 0.125rem;
+  font-size: 11px;
+  font-weight: 700;
+  color: #ef4444;
+  margin-bottom: 2px;
 }
 
 .replyPreview {
   display: block;
-  font-size: 0.75rem;
-  color: var(--color-muted, #6b7280);
+  font-size: 12px;
+  color: #6b7280;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -114,27 +40,62 @@
   background: none;
   border: none;
   cursor: pointer;
-  color: var(--color-muted, #6b7280);
-  padding: 0.375rem;
-  border-radius: 9999px;
+  color: #6b7280;
+  padding: 6px;
+  border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  min-width: 32px;
-  min-height: 32px;
+  min-width: 28px;
+  min-height: 28px;
   flex-shrink: 0;
+  transition: all 0.15s;
 }
 
 .cancelReplyButton:hover {
-  background-color: #fee2e2;
-  color: var(--color-primary, #ef4444);
+  background: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
 }
 
-.voiceButton {
-  width: 40px;
-  height: 40px;
+.composer {
+  display: flex;
+  align-items: flex-end;
+  gap: 6px;
+  padding: 10px 12px;
+  background: #ffffff;
+}
+
+.input {
+  flex: 1;
+  padding: 10px 16px;
+  border: 1px solid #e5e7eb;
+  border-radius: 24px;
+  resize: none;
+  font-size: 14px;
+  font-family: inherit;
+  outline: none;
+  max-height: 120px;
+  min-height: 42px;
+  background: #f9fafb;
+  line-height: 1.4;
+  transition: all 0.2s ease;
+}
+
+.input:focus {
+  border-color: #ef4444;
+  background: #ffffff;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.08);
+}
+
+.input::placeholder {
+  color: #9ca3af;
+}
+
+.attachButton {
+  width: 42px;
+  height: 42px;
   border-radius: 50%;
-  background-color: #f3f4f6;
+  background: #f3f4f6;
   color: #6b7280;
   border: none;
   cursor: pointer;
@@ -143,46 +104,115 @@
   justify-content: center;
   flex-shrink: 0;
   transition: all 0.2s ease;
-  min-width: 44px;
-  min-height: 44px;
+  min-width: 42px;
+  min-height: 42px;
+}
+
+.attachButton:hover {
+  background: #e5e7eb;
+  color: #111827;
+  transform: scale(1.05);
+}
+
+.voiceButton {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: #f3f4f6;
+  color: #6b7280;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: all 0.2s ease;
+  min-width: 42px;
+  min-height: 42px;
 }
 
 .voiceButton:hover {
-  background-color: #e5e7eb;
+  background: #e5e7eb;
   color: #111827;
+  transform: scale(1.05);
+}
+
+.sendButton {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  color: #ffffff;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: all 0.2s ease;
+  min-width: 42px;
+  min-height: 42px;
+  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
+}
+
+.sendButton:hover:not(:disabled) {
+  transform: scale(1.08);
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
+}
+
+.sendButton:active:not(:disabled) {
+  transform: scale(0.95);
+}
+
+.sendButton:disabled {
+  background: #f3f4f6;
+  color: #d1d5db;
+  box-shadow: none;
+  cursor: not-allowed;
 }
 
 .attachmentMenu {
   display: flex;
-  gap: 0.375rem;
-  padding: 0.5rem 0.75rem;
-  background-color: #f9fafb;
+  gap: 8px;
+  padding: 10px 14px;
+  background: #f9fafb;
   border-top: 1px solid #f3f4f6;
-  animation: slideUp 0.2s ease;
+  animation: slideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  overflow-x: auto;
 }
 
 .attachmentOption {
   display: flex;
   align-items: center;
-  gap: 0.375rem;
-  padding: 0.5rem 0.875rem;
-  background-color: #ffffff;
+  gap: 6px;
+  padding: 10px 14px;
+  background: #ffffff;
   border: 1px solid #e5e7eb;
   border-radius: 9999px;
   cursor: pointer;
-  font-size: 0.8125rem;
-  font-weight: 500;
+  font-size: 13px;
+  font-weight: 600;
   color: #374151;
   min-height: 40px;
   transition: all 0.15s ease;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .attachmentOption:hover {
-  background-color: #f3f4f6;
-  border-color: #d1d5db;
+  background: #fef2f2;
+  border-color: #fecaca;
+  color: #dc2626;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
 }
 
 @keyframes slideUp {
-  from { transform: translateY(8px); opacity: 0; }
+  from { transform: translateY(10px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes slideDown {
+  from { transform: translateY(-10px); opacity: 0; }
   to { transform: translateY(0); opacity: 1; }
 }

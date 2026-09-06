@@ -81,6 +81,7 @@ class CommunityService {
       .from('posts')
       .select('*')
       .eq('community_id', communityId)
+      .neq('type', 'profile_share')
       .eq('status', 'published')
       .order('created_at', { ascending: false })
       .limit(limit + 1);
@@ -369,6 +370,7 @@ class CommunityService {
 }
 
 export const communityService = new CommunityService();
+
 
 
 

@@ -1,4 +1,4 @@
-﻿import React, { useState, useRef } from 'react';
+﻿import React, { useState, useRef, useEffect } from 'react';
 import { Heart, MessageCircle, MapPin, BadgeCheck, Share2, UserPlus, Check, Play, Pause, Mic, MoreHorizontal, Flag, Ban } from 'lucide-react';
 import { CommunityPost } from '../../types/community.types';
 import { supabase } from '@/config/supabase.client';
@@ -43,7 +43,26 @@ export const CommunityPostCard: React.FC<CommunityPostCardProps> = ({
   const [showMenu, setShowMenu] = useState(false);
   const audioRef = useRef<HTMLAudioElement>(null);
 
+  
+
   const isOwnPost = post.author.id === currentUserId;
+
+  useEffect(() => {
+    if (!currentUserId || !post.author.id || isOwnPost) return;
+
+    const checkFollowStatus = async () => {
+      const { data } = await supabase
+        .from('follows')
+        .select('id')
+        .eq('follower_id', currentUserId)
+        .eq('following_id', post.author.id)
+        .maybeSingle();
+      
+      setIsFollowing(Boolean(data));
+    };
+
+    checkFollowStatus();
+  }, [currentUserId, post.author.id, isOwnPost]);
   const mediaUrls = post.media.map((m) => m.url);
 
   const handleFollow = async (e: React.MouseEvent) => {
@@ -87,12 +106,15 @@ export const CommunityPostCard: React.FC<CommunityPostCardProps> = ({
   };
 
   const handleAudioSeek = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (audioRef.current && audioDuration > 0 && audioProgressRef.current) {
+    if (audioRef.current && audioProgressRef.current && audioDuration > 0 && isFinite(audioDuration)) {
       const rect = audioProgressRef.current.getBoundingClientRect();
       const x = Math.max(0, Math.min(e.clientX - rect.left, rect.width));
       const percentage = (x / rect.width) * 100;
-      audioRef.current.currentTime = (percentage / 100) * audioDuration;
-      setAudioProgress(percentage);
+      const newTime = (percentage / 100) * audioDuration;
+      if (isFinite(newTime) && newTime >= 0) {
+        audioRef.current.currentTime = newTime;
+        setAudioProgress(percentage);
+      }
     }
   };
 
@@ -142,14 +164,14 @@ export const CommunityPostCard: React.FC<CommunityPostCardProps> = ({
         </button>
 
         <div className={styles.authorActions}>
-          {!isOwnPost && (
+          {!isOwnPost && !isFollowing && (
             <button
-              className={`${styles.followButton} ${isFollowing ? styles.followButtonActive : ''}`}
+              className={styles.followButton}
               onClick={handleFollow}
               disabled={followLoading}
             >
-              {isFollowing ? <Check size={12} /> : <UserPlus size={12} />}
-              <span>{isFollowing ? 'Following' : 'Follow'}</span>
+              <UserPlus size={12} />
+              <span>Follow</span>
             </button>
           )}
           <button className={styles.moreButton} onClick={() => setShowMenu(!showMenu)} aria-label="More options">
@@ -279,5 +301,9 @@ export const CommunityPostCard: React.FC<CommunityPostCardProps> = ({
     </article>
   );
 };
+
+
+
+
 
 
