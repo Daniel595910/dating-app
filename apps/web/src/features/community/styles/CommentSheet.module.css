@@ -1,57 +1,87 @@
-﻿.overlay {
+﻿/* =========================================================
+   Comment Sheet - Complete Styles
+   ========================================================= */
+
+:root {
+  --comment-text: #111827;
+  --comment-text-secondary: #6b7280;
+  --comment-text-tertiary: #9ca3af;
+  --comment-surface: #f9fafb;
+  --comment-surface-hover: #f3f4f6;
+  --comment-border: #e5e7eb;
+  --comment-thread-line: #d1d5db;
+  --comment-accent: #ef4444;
+  --comment-danger: #ef4444;
+  --comment-bg: #ffffff;
+}
+
+/* =========================================================
+   Overlay & Sheet
+   ========================================================= */
+
+.overlay {
   position: fixed;
   inset: 0;
-  background-color: rgba(0, 0, 0, 0.5);
-  z-index: 999;
+  background-color: rgba(0, 0, 0, 0.55);
+  z-index: 1000;
   display: flex;
   align-items: flex-end;
   justify-content: center;
-  animation: fadeIn 0.2s ease;
+  animation: overlayFade 0.2s ease;
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
 }
 
 .sheet {
-  background-color: #ffffff;
+  background: var(--comment-bg);
   width: 100%;
-  max-width: 480px;
+  max-width: 100%;
   height: 85dvh;
-  border-radius: 24px 24px 0 0;
+  max-height: 85dvh;
+  border-radius: 20px 20px 0 0;
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  box-sizing: border-box;
+  animation: sheetSlideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .dragHandle {
   width: 36px;
   height: 4px;
-  background-color: #e5e7eb;
+  background: var(--comment-thread-line);
   border-radius: 9999px;
   margin: 8px auto 4px;
   flex-shrink: 0;
 }
 
+/* =========================================================
+   Header
+   ========================================================= */
+
 .header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 12px 16px;
-  border-bottom: 1px solid #f3f4f6;
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--comment-border);
   flex-shrink: 0;
 }
 
 .title {
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 700;
   margin: 0;
   display: flex;
   align-items: center;
   gap: 8px;
+  color: var(--comment-text);
 }
 
 .commentCount {
-  background-color: #f3f4f6;
-  color: #6b7280;
-  font-size: 13px;
+  background: var(--comment-surface);
+  color: var(--comment-text-secondary);
+  font-size: 12px;
   font-weight: 600;
   padding: 2px 8px;
   border-radius: 9999px;
@@ -66,89 +96,72 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #6b7280;
+  color: var(--comment-text-secondary);
   transition: background-color 0.15s;
+  min-width: 40px;
+  min-height: 40px;
 }
 
 .closeButton:hover {
-  background-color: #f3f4f6;
+  background: var(--comment-surface-hover);
 }
 
+/* =========================================================
+   Comments List - Scrollable area
+   ========================================================= */
+
 .commentsList {
-  flex: 1;
+  flex: 1 1 auto;
+  min-height: 0;
   overflow-y: auto;
-  padding: 16px;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  padding: 14px 16px;
   display: flex;
   flex-direction: column;
   gap: 16px;
+  width: 100%;
+  box-sizing: border-box;
 }
 
-.loading {
+/* =========================================================
+   Thread & Comment
+   ========================================================= */
+
+.thread {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
-  padding: 40px;
-  color: #6b7280;
-}
-
-.spinner {
-  width: 24px;
-  height: 24px;
-  border: 3px solid #f3f4f6;
-  border-top-color: #ef4444;
-  border-radius: 50%;
-  animation: spin 0.6s linear infinite;
-}
-
-.empty {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  padding: 40px;
-  text-align: center;
-}
-
-.emptyIcon {
-  color: #d1d5db;
-  margin-bottom: 8px;
-}
-
-.emptyTitle {
-  font-size: 16px;
-  font-weight: 700;
-  color: #111827;
-  margin: 0;
-}
-
-.emptyText {
-  font-size: 14px;
-  color: #6b7280;
-  margin: 0;
+  gap: 2px;
+  min-width: 0;
+  max-width: 100%;
+  width: 100%;
 }
 
 .commentItem {
-  display: flex;
-  gap: 12px;
-  animation: fadeIn 0.3s ease;
+  display: grid;
+  grid-template-columns: 32px minmax(0, 1fr);
+  column-gap: 8px;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+  animation: commentIn 0.2s ease;
 }
 
 .commentAvatar {
-  width: 36px;
-  height: 36px;
+  width: 32px;
+  height: 32px;
   border-radius: 50%;
   overflow: hidden;
   flex-shrink: 0;
-  background-color: #f3f4f6;
+  background: var(--comment-surface);
   display: flex;
   align-items: center;
   justify-content: center;
   font-weight: 700;
-  color: #6b7280;
-  font-size: 14px;
+  color: var(--comment-text-secondary);
+  font-size: 13px;
 }
 
 .commentAvatar img {
@@ -158,145 +171,183 @@
 }
 
 .commentBody {
-  flex: 1;
   min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 .commentBubble {
-  background-color: #f9fafb;
-  border-radius: 16px;
-  padding: 10px 14px;
   display: inline-block;
   max-width: 100%;
+  padding: 8px 12px;
+  border-radius: 14px;
+  background: var(--comment-surface);
+  min-width: 0;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  box-sizing: border-box;
 }
 
 .commentHeaderRow {
   display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 2px;
+  align-items: baseline;
+  gap: 6px;
+  flex-wrap: wrap;
 }
 
 .commentName {
   font-size: 13px;
   font-weight: 700;
-  color: #111827;
+  color: var(--comment-text);
 }
 
 .commentTime {
-  font-size: 11px;
-  color: #9ca3af;
+  font-size: 10px;
+  color: var(--comment-text-tertiary);
 }
 
 .commentText {
   font-size: 14px;
-  color: #374151;
+  color: var(--comment-text);
   margin: 0;
-  line-height: 1.5;
-  word-break: break-word;
+  line-height: 1.4;
 }
 
-.commentActionsRow {
+/* =========================================================
+   Media
+   ========================================================= */
+
+.commentGif {
+  display: block;
+  max-width: 180px;
+  width: auto;
+  height: auto;
+  border-radius: 10px;
+}
+
+.commentSticker {
+  display: block;
+  max-width: 80px;
+  height: 80px;
+  object-fit: contain;
+}
+
+.commentEmoji {
+  font-size: 32px;
+  line-height: 1;
+}
+
+.commentGift {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 6px;
+}
+
+/* =========================================================
+   Actions
+   ========================================================= */
+
+.commentActions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
   margin-top: 4px;
   padding-left: 4px;
 }
 
-.likeButton,
-.replyButton,
-.viewRepliesButton,
-.deleteButton {
+.commentAction {
+  min-height: 30px;
+  padding: 4px 6px;
+  border: 0;
   background: none;
-  border: none;
+  color: var(--comment-text-secondary);
+  font-size: 12px;
+  font-weight: 600;
   cursor: pointer;
   display: flex;
   align-items: center;
   gap: 4px;
-  font-size: 12px;
-  color: #6b7280;
-  padding: 4px;
+  transition: color 0.15s;
   border-radius: 6px;
-  transition: all 0.15s;
 }
 
-.likeButton:hover,
-.replyButton:hover,
-.viewRepliesButton:hover {
-  color: #374151;
-  background-color: #f3f4f6;
+.commentAction:hover {
+  color: var(--comment-text);
+  background: var(--comment-surface-hover);
 }
 
-.likeButtonActive {
-  color: #ef4444;
+.commentActionLiked {
+  color: var(--comment-accent);
 }
 
-.deleteButton:hover {
-  color: #ef4444;
-  background-color: #fef2f2;
+.commentActionDelete:hover {
+  color: var(--comment-danger);
 }
 
-.repliesContainer {
-  margin-top: 8px;
-  padding-left: 20px;
-  border-left: 2px solid #e5e7eb;
+/* =========================================================
+   Reply Rail - Single stable rail
+   ========================================================= */
+
+.replyRail {
+  margin-left: 16px;
+  padding-left: 12px;
+  border-left: 2px solid var(--comment-thread-line);
   display: flex;
   flex-direction: column;
-  gap: 12px;
-}
-
-.replyItem {
-  display: flex;
   gap: 10px;
-}
-
-.replyAvatar {
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  overflow: hidden;
-  flex-shrink: 0;
-  background-color: #f3f4f6;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 700;
-  color: #6b7280;
-  font-size: 12px;
-}
-
-.replyAvatar img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.replyBody {
-  flex: 1;
   min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
 }
 
-.loadMore {
+.replyRail .commentItem {
+  margin-left: 0;
+  padding-left: 0;
+}
+
+.replyRail .replyRail {
+  margin-left: 0;
+  padding-left: 0;
+  border-left: none;
+}
+
+/* =========================================================
+   Pagination
+   ========================================================= */
+
+.loadMoreReplies {
   background: none;
   border: none;
   cursor: pointer;
-  color: #ef4444;
-  font-size: 13px;
+  color: var(--comment-text-secondary);
+  font-size: 12px;
   font-weight: 600;
-  padding: 8px;
-  margin: 0 auto;
+  padding: 6px 8px;
+  border-radius: 6px;
+  transition: all 0.15s;
+  align-self: flex-start;
+  min-height: 32px;
 }
+
+.loadMoreReplies:hover {
+  background: var(--comment-surface-hover);
+  color: var(--comment-text);
+}
+
+/* =========================================================
+   Reply Indicator
+   ========================================================= */
 
 .replyIndicator {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   padding: 8px 16px;
-  background-color: #fef2f2;
-  border-top: 1px solid #fecaca;
+  background: rgba(239, 68, 68, 0.05);
+  border-top: 1px solid rgba(239, 68, 68, 0.15);
   font-size: 13px;
-  color: #374151;
+  color: var(--comment-text);
   flex-shrink: 0;
 }
 
@@ -305,181 +356,68 @@
   border: none;
   cursor: pointer;
   padding: 4px;
-  color: #6b7280;
+  color: var(--comment-text-secondary);
   margin-left: auto;
+  min-width: 30px;
+  min-height: 30px;
+  border-radius: 50%;
 }
 
-.inputContainer {
-  padding: 12px 16px;
-  border-top: 1px solid #f3f4f6;
-  flex-shrink: 0;
-  background-color: #ffffff;
-}
+/* =========================================================
+   Toolbar
+   ========================================================= */
 
-.inputWrapper {
+.toolbar {
   display: flex;
-  align-items: flex-end;
-  gap: 8px;
-  background-color: #f9fafb;
-  border-radius: 24px;
+  align-items: center;
+  gap: 2px;
+  padding: 6px 12px;
+  border-top: 1px solid var(--comment-border);
+  flex-shrink: 0;
+}
+
+.toolbarButton {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 50%;
+  color: var(--comment-text-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+  min-width: 38px;
+  min-height: 38px;
+}
+
+.toolbarButton:hover {
+  background: var(--comment-surface-hover);
+  color: var(--comment-text);
+}
+
+.toolbarButtonActive {
+  background: rgba(239, 68, 68, 0.1);
+  color: var(--comment-accent);
+}
+
+/* =========================================================
+   Panels - Scrollable
+   ========================================================= */
+
+.panel {
   padding: 8px 12px;
-}
-
-.input {
-  flex: 1;
-  border: none;
-  background: none;
-  outline: none;
-  resize: none;
-  font-size: 14px;
-  color: #111827;
-  padding: 4px 0;
-  max-height: 100px;
-  font-family: inherit;
-  line-height: 1.4;
-}
-
-.input::placeholder {
-  color: #9ca3af;
-}
-
-.sendButton {
-  background: #ef4444;
-  border: none;
-  cursor: pointer;
-  color: #ffffff;
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  transition: all 0.15s;
-}
-
-.sendButton:hover {
-  background: #dc2626;
-  transform: scale(1.05);
-}
-
-.sendButton:disabled {
-  background: #f3f4f6;
-  color: #d1d5db;
-  cursor: not-allowed;
-  transform: none;
-}
-
-.deleteConfirmOverlay {
-  position: fixed;
-  inset: 0;
-  background-color: rgba(0, 0, 0, 0.5);
-  z-index: 1000;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 24px;
-}
-
-.deleteConfirmDialog {
-  background-color: #ffffff;
-  border-radius: 20px;
-  padding: 32px 24px;
-  max-width: 320px;
-  width: 100%;
-  text-align: center;
-}
-
-.deleteConfirmIcon {
-  color: #ef4444;
-  margin-bottom: 12px;
-}
-
-.deleteConfirmDialog h3 {
-  font-size: 18px;
-  font-weight: 700;
-  margin: 0 0 8px;
-  color: #111827;
-}
-
-.deleteConfirmDialog p {
-  font-size: 14px;
-  color: #6b7280;
-  margin: 0 0 24px;
-}
-
-.deleteConfirmActions {
-  display: flex;
-  gap: 12px;
-}
-
-.cancelDelete {
-  flex: 1;
-  padding: 12px;
-  background: none;
-  border: 1px solid #e5e7eb;
-  border-radius: 9999px;
-  cursor: pointer;
-  font-size: 14px;
-  font-weight: 500;
-  color: #6b7280;
-}
-
-.confirmDelete {
-  flex: 1;
-  padding: 12px;
-  background: #ef4444;
-  border: none;
-  border-radius: 9999px;
-  cursor: pointer;
-  font-size: 14px;
-  font-weight: 600;
-  color: #ffffff;
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-
-@keyframes slideUp {
-  from { transform: translateY(100%); }
-  to { transform: translateY(0); }
-}
-
-@keyframes spin {
-  to { transform: rotate(360deg); }
-}
-
-.emojiToggle {
-  background: none;
-  border: none;
-  cursor: pointer;
-  color: #9ca3af;
-  padding: 8px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.15s;
+  border-top: 1px solid var(--comment-border);
+  max-height: 160px;
+  overflow-y: auto;
+  overflow-x: hidden;
   flex-shrink: 0;
 }
 
-.emojiToggle:hover {
-  color: #ef4444;
-  background-color: #fef2f2;
-}
-
-.emojiPickerPanel {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
-  padding: 8px;
-  background-color: #ffffff;
-  border: 1px solid #f3f4f6;
-  border-radius: 12px;
-  margin-top: 8px;
-  animation: fadeIn 0.2s ease;
+.emojiGrid {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  gap: 2px;
 }
 
 .emojiOption {
@@ -490,151 +428,229 @@
   padding: 6px;
   border-radius: 8px;
   transition: all 0.15s;
-  width: 36px;
-  height: 36px;
   display: flex;
+  flex-direction: column;
   align-items: center;
-  justify-content: center;
+  gap: 2px;
+  min-height: 40px;
 }
 
 .emojiOption:hover {
-  background-color: #f3f4f6;
+  background: var(--comment-surface-hover);
   transform: scale(1.1);
 }
 
-.stickerText {
-  font-size: 48px;
-  margin: 0;
-  line-height: 1;
-  animation: stickerPop 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
-  display: inline-block;
+/* =========================================================
+   Composer
+   ========================================================= */
+
+.composer {
+  flex: 0 0 auto;
+  width: 100%;
+  padding: 8px 12px calc(8px + env(safe-area-inset-bottom));
+  background: var(--comment-bg);
+  border-top: 1px solid var(--comment-border);
+  box-sizing: border-box;
 }
 
-@keyframes stickerPop {
-  0% {
-    transform: scale(0);
-    opacity: 0;
-  }
-  50% {
-    transform: scale(1.3);
-    opacity: 1;
-  }
-  100% {
-    transform: scale(1);
-    opacity: 1;
-  }
-}
-
-@keyframes floatUp {
-  0% {
-    transform: translateY(20px);
-    opacity: 0;
-  }
-  100% {
-    transform: translateY(0);
-    opacity: 1;
-  }
-}
-
-.toolbar {
+.composerInner {
   display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 16px;
-  border-top: 1px solid #f3f4f6;
-  flex-shrink: 0;
+  align-items: flex-end;
+  gap: 6px;
+  background: var(--comment-surface);
+  border-radius: 22px;
+  padding: 6px 10px;
 }
 
-.toolbarButton {
+.composerInput {
+  flex: 1;
+  min-width: 0;
+  border: none;
   background: none;
+  outline: none;
+  resize: none;
+  font-size: 14px;
+  color: var(--comment-text);
+  padding: 4px 0;
+  max-height: 80px;
+  font-family: inherit;
+  line-height: 1.4;
+}
+
+.composerInput::placeholder {
+  color: var(--comment-text-tertiary);
+}
+
+.sendButton {
+  background: var(--comment-accent);
   border: none;
   cursor: pointer;
-  color: #6b7280;
-  padding: 8px;
+  color: #ffffff;
+  width: 32px;
+  height: 32px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.15s;
-  width: 40px;
-  height: 40px;
-}
-
-.toolbarButton:hover {
-  background-color: #f3f4f6;
-  color: #111827;
-}
-
-.toolbarButtonActive {
-  background-color: #fef2f2;
-  color: #ef4444;
-}
-
-.panel {
-  max-height: 200px;
-  overflow-y: auto;
-  padding: 12px 16px;
-  border-top: 1px solid #f3f4f6;
   flex-shrink: 0;
-  animation: fadeIn 0.2s ease;
-}
-
-.emojiGrid {
-  display: grid;
-  grid-template-columns: repeat(8, 1fr);
-  gap: 4px;
-}
-
-.emojiOption {
-  background: none;
-  border: none;
-  cursor: pointer;
-  font-size: 24px;
-  padding: 6px;
-  border-radius: 8px;
   transition: all 0.15s;
+}
+
+.sendButton:disabled {
+  background: var(--comment-surface-hover);
+  color: var(--comment-text-tertiary);
+  cursor: not-allowed;
+}
+
+/* =========================================================
+   States
+   ========================================================= */
+
+.loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 30px;
+  color: var(--comment-text-secondary);
+}
+
+.spinner {
+  width: 20px;
+  height: 20px;
+  border: 2px solid var(--comment-surface);
+  border-top-color: var(--comment-accent);
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+}
+
+.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 30px;
+  text-align: center;
+}
+
+.emptyIcon {
+  color: var(--comment-thread-line);
+  margin-bottom: 6px;
+}
+
+.emptyTitle {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--comment-text);
+  margin: 0;
+}
+
+.emptyText {
+  font-size: 13px;
+  color: var(--comment-text-secondary);
+  margin: 0;
+}
+
+/* =========================================================
+   Delete Dialog
+   ========================================================= */
+
+.deleteConfirmOverlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 1001;
   display: flex;
   align-items: center;
   justify-content: center;
+  padding: 20px;
 }
 
-.emojiOption:hover {
-  background-color: #f3f4f6;
-  transform: scale(1.15);
+.deleteConfirmDialog {
+  background: var(--comment-bg);
+  border-radius: 16px;
+  padding: 24px 20px;
+  max-width: 300px;
+  width: 100%;
+  text-align: center;
 }
 
-.stickerOption {
-  background: none;
-  border: none;
-  cursor: pointer;
-  padding: 6px;
-  border-radius: 8px;
-  transition: all 0.15s;
+.deleteConfirmIcon {
+  color: var(--comment-danger);
+  margin-bottom: 10px;
+}
+
+.deleteConfirmDialog h3 {
+  font-size: 16px;
+  font-weight: 700;
+  margin: 0 0 6px;
+  color: var(--comment-text);
+}
+
+.deleteConfirmDialog p {
+  font-size: 13px;
+  color: var(--comment-text-secondary);
+  margin: 0 0 18px;
+}
+
+.deleteConfirmActions {
   display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 2px;
+  gap: 10px;
 }
 
-.stickerOption:hover {
-  background-color: #f3f4f6;
-  transform: scale(1.05);
-}
-
-.giftOption {
+.cancelDelete {
+  flex: 1;
+  padding: 10px;
   background: none;
-  border: none;
+  border: 1px solid var(--comment-border);
+  border-radius: 9999px;
   cursor: pointer;
-  padding: 6px;
-  border-radius: 8px;
-  transition: all 0.15s;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 2px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--comment-text-secondary);
 }
 
-.giftOption:hover {
-  background-color: #fef2f2;
-  transform: scale(1.05);
+.confirmDelete {
+  flex: 1;
+  padding: 10px;
+  background: var(--comment-danger);
+  border: none;
+  border-radius: 9999px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  color: #ffffff;
+}
+
+/* =========================================================
+   Animations
+   ========================================================= */
+
+@keyframes overlayFade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes sheetSlideUp {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+
+@keyframes commentIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.replyingToLabel {
+  display: block;
+  font-size: 11px;
+  color: var(--comment-text-tertiary);
+  margin-bottom: 2px;
+  font-weight: 500;
 }

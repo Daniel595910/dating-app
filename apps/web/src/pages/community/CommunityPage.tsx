@@ -1,5 +1,5 @@
-﻿import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+﻿import React, { useState, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuthStore } from '@/store/auth.store';
 import { useCommunity } from '../../features/community/hooks/useCommunity';
 import { useCommunityFeed } from '../../features/community/hooks/useCommunityFeed';
@@ -32,6 +32,7 @@ import styles from '../../features/community/styles/CommunityPage.module.css';
 
 export const CommunityPage: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { user } = useAuthStore();
   const [filter, setFilter] = useState<FeedFilter>('all');
   const [createSheetOpen, setCreateSheetOpen] = useState(false);
@@ -43,6 +44,17 @@ export const CommunityPage: React.FC = () => {
   const [newPostCount, setNewPostCount] = useState(0);
   const [locationSheetOpen, setLocationSheetOpen] = useState(false);
   const [switcherOpen, setSwitcherOpen] = useState(false);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const postId = params.get('postId');
+    
+    if (postId) {
+      setCommentPostId(postId);
+      // Clear URL params after opening
+      window.history.replaceState({}, '', '/community');
+    }
+  }, []);
 
   const { community, loading: communityLoading, onlineCount } = useCommunity(user?.id || null);
 
@@ -276,4 +288,8 @@ export const CommunityPage: React.FC = () => {
     </div>
   );
 };
+
+
+
+
 

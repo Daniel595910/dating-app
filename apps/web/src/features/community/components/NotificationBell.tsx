@@ -1,4 +1,5 @@
 ﻿import React, { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/config/supabase.client';
 import { Bell } from 'lucide-react';
 
@@ -13,9 +14,12 @@ interface AppNotification {
   body: string;
   status: 'unread' | 'read';
   createdAt: string;
+  actionUrl: string | null;
+  data: any;
 }
 
 export const NotificationBell: React.FC<NotificationBellProps> = ({ userId }) => {
+  const navigate = useNavigate();
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [open, setOpen] = useState(false);
@@ -41,6 +45,8 @@ export const NotificationBell: React.FC<NotificationBellProps> = ({ userId }) =>
             body: n.body,
             status: n.status,
             createdAt: n.created_at,
+            actionUrl: n.action_url || null,
+            data: n.data || {},
           }))
         );
         setUnreadCount(data.filter((n: any) => n.status === 'unread').length);
@@ -49,7 +55,6 @@ export const NotificationBell: React.FC<NotificationBellProps> = ({ userId }) =>
 
     fetchNotifications();
 
-    // Realtime subscription
     const channel = supabase
       .channel(`notifications:${userId}`)
       .on(
@@ -65,6 +70,8 @@ export const NotificationBell: React.FC<NotificationBellProps> = ({ userId }) =>
               body: newNotification.body,
               status: newNotification.status,
               createdAt: newNotification.created_at,
+              actionUrl: newNotification.action_url || null,
+              data: newNotification.data || {},
             },
             ...prev,
           ]);
@@ -115,6 +122,27 @@ export const NotificationBell: React.FC<NotificationBellProps> = ({ userId }) =>
 
     setNotifications((prev) => prev.map((n) => ({ ...n, status: 'read' })));
     setUnreadCount(0);
+  };
+
+  const handleNotificationClick = async (notification: AppNotification) => {
+    // Mark as read
+    await markAsRead(notification.id);
+    setOpen(false);
+
+    // Navigate based on notification type
+    if (notification.actionUrl) {
+      // Use action_url if available
+      window.location.href = notification.actionUrl;
+    } else if (notification.data?.post_id) {
+      // Navigate to post with comment
+      navigate(`/community?postId=${notification.data.post_id}&commentId=${notification.data.comment_id || ''}`);
+    } else if (notification.type === 'match') {
+      // Navigate to chats
+      navigate('/chats');
+    } else if (notification.type === 'connection') {
+      // Navigate to community
+      navigate('/community');
+    }
   };
 
   const getTypeIcon = (type: string) => {
@@ -230,7 +258,7 @@ export const NotificationBell: React.FC<NotificationBellProps> = ({ userId }) =>
             notifications.map((notification) => (
               <button
                 key={notification.id}
-                onClick={() => markAsRead(notification.id)}
+                onClick={() => handleNotificationClick(notification)}
                 style={{
                   display: 'flex',
                   gap: '12px',

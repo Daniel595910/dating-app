@@ -94,10 +94,28 @@ export type FeedFilter = 'all' | 'new' | 'looking' | 'nearby' | 'following';
 
 export interface Comment {
   id: string;
-  postId: string;
-  author: CommunityPostAuthor;
+  post_id: string;
+  author_id: string;
+  parent_id: string | null;
+  root_id: string | null;
   content: string;
-  createdAt: string;
+  content_type: 'text' | 'emoji' | 'gif' | 'sticker' | 'gift';
+  media_url: string | null;
+  media_id: string | null;
+  metadata: Record<string, any>;
+  status: string;
+  created_at: string;
+  updated_at: string;
+  author?: CommunityPostAuthor;
+}
+
+export interface CommentNodeData extends Comment {
+  children: CommentNodeData[];
+  reactionCount: number;
+  userReacted: boolean;
+  isOwn: boolean;
+  replyCount: number;
+  depth: number;
 }
 
 export interface ConnectionRequest {
@@ -121,4 +139,3 @@ export interface ConnectionStage {
   completed: boolean;
   current: boolean;
 }
-
