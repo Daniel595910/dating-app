@@ -1,5 +1,5 @@
-﻿import React, { useState } from 'react';
-import { Heart, MessageCircle, MapPin, BadgeCheck, Share2, UserPlus, Check, Play, Pause, Mic } from 'lucide-react';
+﻿import React, { useState, useRef } from 'react';
+import { Heart, MessageCircle, MapPin, BadgeCheck, Share2, UserPlus, Check, Play, Pause, Mic, MoreHorizontal, Flag, Ban } from 'lucide-react';
 import { CommunityPost } from '../../types/community.types';
 import { supabase } from '@/config/supabase.client';
 import { ReportSheet } from './ReportSheet';
@@ -36,7 +36,12 @@ export const CommunityPostCard: React.FC<CommunityPostCardProps> = ({
   const [isFollowing, setIsFollowing] = useState(false);
   const [followLoading, setFollowLoading] = useState(false);
   const [isPlayingAudio, setIsPlayingAudio] = useState(false);
-  const audioRef = React.useRef<HTMLAudioElement>(null);
+  const [audioProgress, setAudioProgress] = useState(0);
+  const [audioDuration, setAudioDuration] = useState(0);
+  const [playbackRate, setPlaybackRate] = useState(1);
+  const audioProgressRef = useRef<HTMLDivElement>(null);
+  const [showMenu, setShowMenu] = useState(false);
+  const audioRef = useRef<HTMLAudioElement>(null);
 
   const isOwnPost = post.author.id === currentUserId;
   const mediaUrls = post.media.map((m) => m.url);
@@ -73,6 +78,34 @@ export const CommunityPostCard: React.FC<CommunityPostCardProps> = ({
     }
   };
 
+  const handleAudioTimeUpdate = () => {
+    if (audioRef.current && audioRef.current.duration > 0) {
+      const progress = (audioRef.current.currentTime / audioRef.current.duration) * 100;
+      setAudioProgress(progress);
+      setAudioDuration(audioRef.current.duration);
+    }
+  };
+
+  const handleAudioSeek = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (audioRef.current && audioDuration > 0 && audioProgressRef.current) {
+      const rect = audioProgressRef.current.getBoundingClientRect();
+      const x = Math.max(0, Math.min(e.clientX - rect.left, rect.width));
+      const percentage = (x / rect.width) * 100;
+      audioRef.current.currentTime = (percentage / 100) * audioDuration;
+      setAudioProgress(percentage);
+    }
+  };
+
+  const cyclePlaybackRate = () => {
+    if (!audioRef.current) return;
+    const rates = [1, 1.5, 2, 0.5];
+    const currentIndex = rates.indexOf(playbackRate);
+    const nextIndex = (currentIndex + 1) % rates.length;
+    const newRate = rates[nextIndex];
+    audioRef.current.playbackRate = newRate;
+    setPlaybackRate(newRate);
+  };
+
   const formatTime = (seconds: number): string => {
     const mins = Math.floor(seconds / 60);
     const secs = Math.floor(seconds % 60);
@@ -83,7 +116,7 @@ export const CommunityPostCard: React.FC<CommunityPostCardProps> = ({
     <article className={styles.card}>
       {/* Author Row */}
       <div className={styles.authorRow}>
-        <div className={styles.authorClickable} onClick={() => onProfileClick(post.author.id)}>
+        <button className={styles.authorClickable} onClick={() => onProfileClick(post.author.id)}>
           <div className={styles.avatar}>
             {post.author.avatarUrl ? (
               <img src={post.author.avatarUrl} alt={post.author.name} />
@@ -94,27 +127,47 @@ export const CommunityPostCard: React.FC<CommunityPostCardProps> = ({
           <div className={styles.authorInfo}>
             <div className={styles.nameRow}>
               <span className={styles.name}>{post.author.name}</span>
-              {post.author.verified && <BadgeCheck size={15} className={styles.verifiedIcon} />}
+              {post.author.verified && <BadgeCheck size={14} className={styles.verifiedIcon} />}
             </div>
-            {post.author.location && (
-              <div className={styles.locationRow}>
-                <MapPin size={10} />
-                <span>{post.author.location}</span>
-              </div>
-            )}
+            <div className={styles.metaRow}>
+              {post.author.location && (
+                <span className={styles.locationRow}>
+                  <MapPin size={10} />
+                  {post.author.location}
+                </span>
+              )}
+              <span className={styles.timeAgo}>{post.createdAt ? new Date(post.createdAt).toLocaleDateString() : ''}</span>
+            </div>
           </div>
+        </button>
+
+        <div className={styles.authorActions}>
+          {!isOwnPost && (
+            <button
+              className={`${styles.followButton} ${isFollowing ? styles.followButtonActive : ''}`}
+              onClick={handleFollow}
+              disabled={followLoading}
+            >
+              {isFollowing ? <Check size={12} /> : <UserPlus size={12} />}
+              <span>{isFollowing ? 'Following' : 'Follow'}</span>
+            </button>
+          )}
+          <button className={styles.moreButton} onClick={() => setShowMenu(!showMenu)} aria-label="More options">
+            <MoreHorizontal size={18} />
+          </button>
         </div>
 
-        {/* Follow Button */}
-        {!isOwnPost && (
-          <button
-            className={`${styles.followButton} ${isFollowing ? styles.followButtonActive : ''}`}
-            onClick={handleFollow}
-            disabled={followLoading}
-          >
-            {isFollowing ? <Check size={12} /> : <UserPlus size={12} />}
-            {isFollowing ? 'Following' : 'Follow'}
-          </button>
+        {showMenu && (
+          <div className={styles.dropdownMenu} onClick={(e) => e.stopPropagation()}>
+            <button className={styles.dropdownItem} onClick={() => { setReportSheetOpen(true); setShowMenu(false); }}>
+              <Flag size={14} /> Report
+            </button>
+            {!isOwnPost && (
+              <button className={styles.dropdownItemDanger} onClick={() => { setBlockSheetOpen(true); setShowMenu(false); }}>
+                <Ban size={14} /> Block
+              </button>
+            )}
+          </div>
         )}
       </div>
 
@@ -134,25 +187,40 @@ export const CommunityPostCard: React.FC<CommunityPostCardProps> = ({
             src={post.metadata.audioUrl}
             onEnded={() => setIsPlayingAudio(false)}
             onPause={() => setIsPlayingAudio(false)}
+            onTimeUpdate={handleAudioTimeUpdate}
           />
           <button className={styles.audioPlayButton} onClick={toggleAudio}>
-            {isPlayingAudio ? <Pause size={18} /> : <Play size={18} />}
+            {isPlayingAudio ? <Pause size={16} /> : <Play size={16} />}
           </button>
-          <div className={styles.audioProgress}>
+          <div 
+            className={styles.audioProgress} 
+            ref={audioProgressRef}
+            onClick={handleAudioSeek}
+            style={{ cursor: 'pointer' }}
+          >
             <div className={styles.audioProgressTrack}>
-              <div className={styles.audioProgressFill} style={{ width: isPlayingAudio ? '50%' : '0%' }} />
+              <div className={styles.audioProgressFill} style={{ width: audioProgress + '%' }} />
             </div>
+            <div 
+              className={styles.audioProgressThumb} 
+              style={{ left: audioProgress + '%' }}
+            />
           </div>
           <span className={styles.audioDuration}>
-            {post.metadata.durationMs ? formatTime(post.metadata.durationMs / 1000) : '0:00'}
+            {formatTime(audioRef.current?.currentTime || 0)} / {formatTime(audioDuration)}
           </span>
-          <Mic size={14} className={styles.audioIcon} />
+          <button className={styles.speedButton} onClick={cyclePlaybackRate}>
+            {playbackRate}x
+          </button>
+          <Mic size={12} className={styles.audioIcon} />
         </div>
       )}
 
       {/* Media */}
       {post.media.length > 0 && (
-        <PostMedia media={post.media} onImageClick={(index) => { setPreviewIndex(index); setImagePreviewOpen(true); }} />
+        <div className={styles.mediaWrapper}>
+          <PostMedia media={post.media} onImageClick={(index) => { setPreviewIndex(index); setImagePreviewOpen(true); }} />
+        </div>
       )}
 
       {/* Tags */}
@@ -165,6 +233,7 @@ export const CommunityPostCard: React.FC<CommunityPostCardProps> = ({
       )}
 
       {/* Actions */}
+      <div className={styles.actionsDivider} />
       <PostActions
         postId={post.id}
         stats={post.stats}
@@ -210,3 +279,5 @@ export const CommunityPostCard: React.FC<CommunityPostCardProps> = ({
     </article>
   );
 };
+
+

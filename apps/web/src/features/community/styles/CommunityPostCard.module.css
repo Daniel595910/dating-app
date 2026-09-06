@@ -1,52 +1,54 @@
 ﻿.card {
-  background: linear-gradient(180deg, #ffffff 0%, #fefefe 100%);
-  border-radius: 1.25rem;
-  margin-bottom: 0.875rem;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.06);
+  background: #ffffff;
+  border-radius: 16px;
+  margin-bottom: 12px;
   border: 1px solid #f3f4f6;
-  transition: box-shadow 0.2s ease;
+  transition: all 0.2s ease;
   position: relative;
   overflow: visible;
 }
 
 .card:hover {
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06), 0 2px 4px rgba(0, 0, 0, 0.04);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
 }
 
+/* Author Row */
 .authorRow {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  padding: 0.875rem 1rem 0.5rem;
+  gap: 8px;
+  padding: 12px 16px 8px;
+  position: relative;
 }
 
 .authorClickable {
   display: flex;
   align-items: center;
-  gap: 0.625rem;
+  gap: 10px;
   cursor: pointer;
   flex: 1;
   min-width: 0;
   background: none;
   border: none;
   padding: 0;
+  text-align: left;
 }
 
 .avatar {
-  width: 44px;
-  height: 44px;
+  width: 40px;
+  height: 40px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+  background: linear-gradient(135deg, #fef2f2 0%, #fecaca 100%);
   display: flex;
   align-items: center;
   justify-content: center;
   font-weight: 700;
-  color: #92400e;
-  font-size: 1.125rem;
+  color: #dc2626;
+  font-size: 16px;
   overflow: hidden;
   flex-shrink: 0;
   border: 2px solid #ffffff;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 .avatar img {
@@ -62,16 +64,17 @@
 .nameRow {
   display: flex;
   align-items: center;
-  gap: 0.25rem;
+  gap: 4px;
 }
 
 .name {
   font-weight: 700;
-  font-size: 0.9375rem;
+  font-size: 14px;
   color: #111827;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  max-width: 150px;
 }
 
 .verifiedIcon {
@@ -79,87 +82,158 @@
   flex-shrink: 0;
 }
 
+.metaRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 1px;
+}
+
 .locationRow {
   display: flex;
   align-items: center;
-  gap: 0.125rem;
-  font-size: 0.75rem;
+  gap: 2px;
+  font-size: 11px;
   color: #9ca3af;
-  margin-top: 0.125rem;
+}
+
+.timeAgo {
+  font-size: 11px;
+  color: #d1d5db;
+}
+
+.authorActions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
 }
 
 .followButton {
   display: flex;
   align-items: center;
-  gap: 0.25rem;
-  padding: 0.375rem 0.75rem;
-  background: none;
-  border: 1px solid #ef4444;
+  gap: 4px;
+  padding: 6px 12px;
+  background: #ef4444;
+  border: none;
   border-radius: 9999px;
   cursor: pointer;
-  font-size: 0.6875rem;
+  font-size: 12px;
   font-weight: 600;
-  color: #ef4444;
-  min-height: 32px;
+  color: #ffffff;
+  min-height: 30px;
   transition: all 0.15s ease;
-  flex-shrink: 0;
 }
 
 .followButton:hover {
-  background-color: #fef2f2;
+  background: #dc2626;
 }
 
 .followButtonActive {
-  background-color: #fef2f2;
-  border-color: #d1d5db;
+  background: #f3f4f6;
   color: #6b7280;
+}
+
+.followButtonActive:hover {
+  background: #e5e7eb;
 }
 
 .moreButton {
   background: none;
   border: none;
   cursor: pointer;
-  color: #d1d5db;
-  padding: 0.5rem;
-  border-radius: 9999px;
+  color: #9ca3af;
+  padding: 6px;
+  border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  min-width: 36px;
-  min-height: 36px;
-  flex-shrink: 0;
+  min-width: 32px;
+  min-height: 32px;
+  transition: all 0.15s;
 }
 
 .moreButton:hover {
   color: #6b7280;
-  background-color: #f3f4f6;
+  background: #f3f4f6;
 }
 
+/* Dropdown Menu */
+.dropdownMenu {
+  position: absolute;
+  top: 48px;
+  right: 16px;
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+  border: 1px solid #f3f4f6;
+  z-index: 50;
+  min-width: 140px;
+  overflow: hidden;
+  animation: dropdownIn 0.15s ease;
+}
+
+.dropdownItem,
+.dropdownItemDanger {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 10px 14px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  color: #374151;
+  transition: background 0.15s;
+  text-align: left;
+}
+
+.dropdownItem:hover {
+  background: #f9fafb;
+}
+
+.dropdownItemDanger {
+  color: #ef4444;
+}
+
+.dropdownItemDanger:hover {
+  background: #fef2f2;
+}
+
+/* Content */
 .content {
   margin: 0;
-  padding: 0 1rem 0.5rem;
-  font-size: 0.9375rem;
+  padding: 0 16px 8px;
+  font-size: 14px;
   line-height: 1.6;
   color: #374151;
   white-space: pre-wrap;
   word-break: break-word;
 }
 
+/* Media */
+.mediaWrapper {
+  padding: 0 16px 8px;
+}
+
+/* Audio */
 .audioContainer {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  margin: 0 1rem 0.75rem;
-  padding: 0.625rem 0.875rem;
-  background-color: #fef2f2;
+  gap: 8px;
+  margin: 0 16px 10px;
+  padding: 8px 12px;
+  background: #fef2f2;
   border-radius: 9999px;
 }
 
 .audioPlayButton {
-  width: 32px;
-  height: 32px;
+  width: 28px;
+  height: 28px;
   border-radius: 50%;
-  background-color: #ef4444;
+  background: #ef4444;
   color: #ffffff;
   border: none;
   cursor: pointer;
@@ -171,25 +245,54 @@
 
 .audioProgress {
   flex: 1;
-  min-width: 40px;
+  min-width: 30px;
+  position: relative;
+  padding: 8px 0;
 }
 
 .audioProgressTrack {
   height: 4px;
-  background-color: #fecaca;
+  background: #fecaca;
   border-radius: 9999px;
   overflow: hidden;
 }
 
 .audioProgressFill {
   height: 100%;
-  background-color: #ef4444;
+  background: #ef4444;
+  border-radius: 9999px;
+  transition: width 0.1s linear;
+}
+
+.audioProgressThumb {
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 12px;
+  height: 12px;
+  background: #ef4444;
+  border: 2px solid #ffffff;
+  border-radius: 50%;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  pointer-events: none;
+}
+
+.audioProgressTrack {
+  height: 3px;
+  background: #fecaca;
+  border-radius: 9999px;
+  overflow: hidden;
+}
+
+.audioProgressFill {
+  height: 100%;
+  background: #ef4444;
   border-radius: 9999px;
   transition: width 0.1s linear;
 }
 
 .audioDuration {
-  font-size: 0.75rem;
+  font-size: 11px;
   color: #ef4444;
   font-weight: 600;
   flex-shrink: 0;
@@ -200,15 +303,48 @@
   flex-shrink: 0;
 }
 
+/* Tags */
 .tagsRow {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.375rem;
-  padding: 0 1rem 0.5rem;
+  gap: 6px;
+  padding: 0 16px 8px;
 }
 
 .tag {
   color: #3b82f6;
-  font-size: 0.75rem;
+  font-size: 12px;
   font-weight: 500;
+  background: #eff6ff;
+  padding: 2px 8px;
+  border-radius: 9999px;
+}
+
+/* Actions Divider */
+.actionsDivider {
+  border-top: 1px solid #f9fafb;
+  margin: 0 16px;
+}
+
+@keyframes dropdownIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.speedButton {
+  background: none;
+  border: 1px solid #fecaca;
+  cursor: pointer;
+  color: #ef4444;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 3px 6px;
+  border-radius: 6px;
+  flex-shrink: 0;
+  transition: all 0.15s;
+  min-width: 28px;
+}
+
+.speedButton:hover {
+  background: #fef2f2;
 }
