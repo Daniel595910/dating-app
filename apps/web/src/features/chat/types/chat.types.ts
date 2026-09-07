@@ -16,7 +16,7 @@ export interface ChatMessage {
   senderId: string;
   senderName: string;
   senderAvatar: string | null;
-  type: 'text' | 'image' | 'voice' | 'gift' | 'system';
+  type: 'text' | 'image' | 'voice' | 'gift' | 'system' | 'audio';
   content: string;
   metadata?: {
     imageUrl?: string;
@@ -28,12 +28,22 @@ export interface ChatMessage {
     giftName?: string;
     giftIcon?: string;
     waveformData?: number[];
+    audioUrl?: string;
+    fileName?: string;
   };
   status: 'sending' | 'sent' | 'delivered' | 'read' | 'failed';
   createdAt: string;
+  edited_at?: string;
+  deleted_for_everyone?: boolean;
 }
 
 export interface MessageCursor {
   createdAt: string;
   id: string;
+}
+
+export interface MessageReactionSummary {
+  reaction: string;
+  count: number;
+  reactedByMe: boolean;
 }

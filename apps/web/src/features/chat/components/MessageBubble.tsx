@@ -1,5 +1,5 @@
-﻿import React, { useState, useRef } from 'react';
-import { Check, CheckCheck, AlertCircle, RotateCcw, Reply, Copy, Flag, ExternalLink, Play, Pause } from 'lucide-react';
+﻿import React, { useState, useRef, useCallback } from 'react';
+import { Check, CheckCheck, AlertCircle, RotateCcw, Reply, Copy, Flag, ExternalLink, Play, Pause, Heart, Pencil, Trash2, Pin, Forward, Smile, X } from 'lucide-react';
 import { ChatMessage } from '../../types/chat.types';
 import { ImagePreviewModal } from '../../community/components/ImagePreviewModal';
 import styles from '../styles/MessageBubble.module.css';
@@ -11,7 +11,17 @@ interface MessageBubbleProps {
   onRetry?: (messageId: string, content: string) => void;
   onReply?: (message: ChatMessage) => void;
   onReportMessage?: (message: ChatMessage) => void;
+  onEdit?: (message: ChatMessage) => void;
+  onDelete?: (message: ChatMessage) => void;
+  onForward?: (message: ChatMessage) => void;
+  onPin?: (message: ChatMessage) => void;
+  onReact?: (message: ChatMessage, reaction: string) => void;
+  reactions?: { reaction: string; count: number; reactedByMe: boolean }[];
+  isPinned?: boolean;
+  onOpenActionSheet?: (message: ChatMessage) => void;
 }
+
+const QUICK_REACTIONS = ['❤️', '😂', '😮', '😢', '👍'];
 
 export const MessageBubble: React.FC<MessageBubbleProps> = ({
   message,
@@ -20,55 +30,87 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
   onRetry,
   onReply,
   onReportMessage,
+  onEdit,
+  onDelete,
+  onForward,
+  onPin,
+  onReact,
+  reactions = [],
+  isPinned = false,
+  onOpenActionSheet,
 }) => {
   const [imagePreviewOpen, setImagePreviewOpen] = useState(false);
-  const [showActions, setShowActions] = useState(false);
   const [copied, setCopied] = useState(false);
   const [linkConfirmUrl, setLinkConfirmUrl] = useState<string | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
+  const [showQuickReactions, setShowQuickReactions] = useState(false);
   const audioRef = useRef<HTMLAudioElement>(null);
   const longPressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const touchStartRef = useRef<{ x: number; y: number } | null>(null);
+  const lastTapRef = useRef(0);
   const isFailed = message.status === 'failed';
+  const isDeleted = message.deleted_for_everyone;
 
   const getStatusIcon = () => {
     switch (message.status) {
-      case 'sending':
-        return <span className={styles.sendingDot} />;
-      case 'sent':
-        return <Check size={14} />;
-      case 'delivered':
-        return <CheckCheck size={14} />;
-      case 'read':
-        return <CheckCheck size={14} className={styles.readIcon} />;
-      case 'failed':
-        return <AlertCircle size={14} className={styles.failedIcon} />;
-      default:
-        return <Check size={14} />;
+      case 'sending': return <span className={styles.sendingDot} />;
+      case 'sent': return <Check size={14} />;
+      case 'delivered': return <CheckCheck size={14} />;
+      case 'read': return <CheckCheck size={14} className={styles.readIcon} />;
+      case 'failed': return <AlertCircle size={14} className={styles.failedIcon} />;
+      default: return <Check size={14} />;
     }
   };
 
-  const handleBubbleClick = () => {
-    if (message.type === 'text') {
-      setShowActions((prev) => !prev);
+  const handleDoubleTap = useCallback(() => {
+    const now = Date.now();
+    if (now - lastTapRef.current < 300) {
+      lastTapRef.current = 0;
+      if (message.type === 'text' && !isDeleted) {
+        onReact?.(message, '❤️');
+      }
+    } else {
+      lastTapRef.current = now;
     }
-  };
+  }, [message, onReact, isDeleted]);
 
-  const handleLongPressStart = () => {
+  const handleTouchStart = (e: React.TouchEvent) => {
+    const touch = e.touches[0];
+    touchStartRef.current = { x: touch.clientX, y: touch.clientY };
     longPressTimerRef.current = setTimeout(() => {
-      setShowActions(true);
+      if (onOpenActionSheet) {
+        onOpenActionSheet(message);
+      }
     }, 500);
   };
 
-  const handleLongPressEnd = () => {
-    if (longPressTimerRef.current) clearTimeout(longPressTimerRef.current);
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (!touchStartRef.current) return;
+    const touch = e.touches[0];
+    const deltaX = Math.abs(touch.clientX - touchStartRef.current.x);
+    const deltaY = Math.abs(touch.clientY - touchStartRef.current.y);
+    if (deltaX > 10 || deltaY > 10) {
+      if (longPressTimerRef.current) {
+        clearTimeout(longPressTimerRef.current);
+        longPressTimerRef.current = null;
+      }
+    }
+  };
+
+  const handleTouchEnd = () => {
+    touchStartRef.current = null;
+    if (longPressTimerRef.current) {
+      clearTimeout(longPressTimerRef.current);
+      longPressTimerRef.current = null;
+    }
   };
 
   const handleCopy = async () => {
     try {
       await navigator.clipboard.writeText(message.content);
       setCopied(true);
-      setTimeout(() => { setCopied(false); setShowActions(false); }, 1500);
+      setTimeout(() => setCopied(false), 1500);
     } catch {
       const textArea = document.createElement('textarea');
       textArea.value = message.content;
@@ -77,69 +119,19 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
       document.execCommand('copy');
       document.body.removeChild(textArea);
       setCopied(true);
-      setTimeout(() => { setCopied(false); setShowActions(false); }, 1500);
+      setTimeout(() => setCopied(false), 1500);
     }
-  };
-
-  const handleReply = () => {
-    setShowActions(false);
-    onReply?.(message);
-  };
-
-  const handleReport = () => {
-    setShowActions(false);
-    onReportMessage?.(message);
-  };
-
-  const togglePlay = () => {
-    if (audioRef.current) {
-      if (isPlaying) {
-        audioRef.current.pause();
-        setIsPlaying(false);
-      } else {
-        audioRef.current.play();
-        setIsPlaying(true);
-      }
-    }
-  };
-
-  const handleTimeUpdate = () => {
-    if (audioRef.current) {
-      setCurrentTime(audioRef.current.currentTime);
-    }
-  };
-
-  const handleAudioEnded = () => {
-    setIsPlaying(false);
-    setCurrentTime(0);
-  };
-
-  const formatTime = (seconds: number): string => {
-    const mins = Math.floor(seconds / 60);
-    const secs = Math.floor(seconds % 60);
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
-  };
-
-  const extractUrls = (content: string): string[] => {
-    const urlPattern = /(https?:\/\/[^\s]+)/g;
-    return content.match(urlPattern) || [];
-  };
-
-  const handleLinkClick = (url: string) => {
-    setLinkConfirmUrl(url);
   };
 
   const renderContent = () => {
+    if (isDeleted) {
+      return <p className={styles.deletedMessage}>This message was deleted</p>;
+    }
+
     if (message.type === 'image' && message.metadata?.imageUrl) {
       return (
         <div className={styles.imageMessageContainer}>
-          <img
-            src={message.metadata.thumbnailUrl || message.metadata.imageUrl}
-            alt=""
-            loading="lazy"
-            className={styles.imageMessage}
-            onClick={() => setImagePreviewOpen(true)}
-          />
+          <img src={message.metadata.thumbnailUrl || message.metadata.imageUrl} alt="" loading="lazy" className={styles.imageMessage} onClick={() => setImagePreviewOpen(true)} />
         </div>
       );
     }
@@ -151,43 +143,18 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
 
       return (
         <div className={styles.voiceMessageContainer}>
-          <audio
-            ref={audioRef}
-            src={audioUrl}
-            onTimeUpdate={handleTimeUpdate}
-            onEnded={handleAudioEnded}
-            onPause={() => setIsPlaying(false)}
-            onPlay={() => setIsPlaying(true)}
-            preload="metadata"
-            style={{ display: 'none' }}
-          />
-          <button
-            className={styles.voicePlayButton}
-            onClick={togglePlay}
-            aria-label={isPlaying ? 'Pause voice message' : 'Play voice message'}
-          >
+          <audio ref={audioRef} src={audioUrl} onTimeUpdate={() => setCurrentTime(audioRef.current?.currentTime || 0)} onEnded={() => { setIsPlaying(false); setCurrentTime(0); }} onPause={() => setIsPlaying(false)} onPlay={() => setIsPlaying(true)} style={{ display: 'none' }} />
+          <button className={styles.voicePlayButton} onClick={() => { if (audioRef.current) { if (isPlaying) { audioRef.current.pause(); } else { audioRef.current.play(); } } }}>
             {isPlaying ? <Pause size={20} /> : <Play size={20} />}
           </button>
-          <div className={styles.voiceProgressTrack}>
-            <div
-              className={styles.voiceProgressFill}
-              style={{ width: `${progress}%` }}
-            />
-          </div>
-          <span className={styles.voiceDuration}>
-            {isPlaying ? formatTime(currentTime) : formatTime(duration)}
-          </span>
+          <div className={styles.voiceProgressTrack}><div className={styles.voiceProgressFill} style={{ width: `${progress}%` }} /></div>
+          <span className={styles.voiceDuration}>{isPlaying ? formatTime(currentTime) : formatTime(duration)}</span>
         </div>
       );
     }
 
     if (message.type === 'gift' && message.metadata?.giftIcon) {
-      return (
-        <div className={styles.giftMessageContainer}>
-          <span className={styles.giftIcon}>{message.metadata.giftIcon}</span>
-          <span className={styles.giftName}>{message.metadata.giftName || 'Gift'}</span>
-        </div>
-      );
+      return <div className={styles.giftMessageContainer}><span className={styles.giftIcon}>{message.metadata.giftIcon}</span><span className={styles.giftName}>{message.metadata.giftName || 'Gift'}</span></div>;
     }
 
     const urls = extractUrls(message.content);
@@ -200,7 +167,7 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
           parts.push(<span key={`text-${index}`}>{partsOfUrl[0]}</span>);
         }
         parts.push(
-          <button key={`link-${index}`} className={styles.inlineLink} onClick={() => handleLinkClick(url)}>
+          <button key={`link-${index}`} className={styles.inlineLink} onClick={() => setLinkConfirmUrl(url)}>
             <ExternalLink size={12} />
             {url.length > 30 ? url.substring(0, 30) + '...' : url}
           </button>
@@ -214,25 +181,51 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
     return <p className={styles.content}>{message.content}</p>;
   };
 
+  const formatTime = (seconds: number): string => {
+    const mins = Math.floor(seconds / 60);
+    const secs = Math.floor(seconds % 60);
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  const extractUrls = (content: string): string[] => {
+    const urlPattern = /(https?:\/\/[^\s]+)/g;
+    return content.match(urlPattern) || [];
+  };
+
   return (
     <div className={`${styles.wrapper} ${isOwn ? styles.ownWrapper : styles.otherWrapper}`}>
+      {isPinned && (
+        <div className={styles.pinnedBadge}><Pin size={10} /> Pinned</div>
+      )}
+      
       <div
-        className={`${styles.bubble} ${isOwn ? styles.ownBubble : styles.otherBubble} ${isFailed ? styles.failedBubble : ''} ${showActions ? styles.bubbleActive : ''}`}
-        onClick={handleBubbleClick}
-        onTouchStart={handleLongPressStart}
-        onTouchEnd={handleLongPressEnd}
+        className={`${styles.bubble} ${isOwn ? styles.ownBubble : styles.otherBubble} ${isFailed ? styles.failedBubble : ''}`}
+        onDoubleClick={handleDoubleTap}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
       >
-        {!isOwn && showSenderName && (
-          <span className={styles.senderName}>{message.senderName}</span>
-        )}
+        {!isOwn && showSenderName && <span className={styles.senderName}>{message.senderName}</span>}
         {renderContent()}
+        
+        {reactions.length > 0 && (
+          <div className={styles.reactionBubbles}>
+            {reactions.map((r, i) => (
+              <button 
+                key={i} 
+                className={`${styles.reactionBubble} ${r.reactedByMe ? styles.reactionBubbleActive : ''}`}
+                onClick={() => onReact?.(message, r.reaction)}
+              >
+                {r.reaction} {r.count}
+              </button>
+            ))}
+          </div>
+        )}
+        
         <div className={styles.meta}>
-          <span className={styles.timestamp}>
-            {new Date(message.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-          </span>
-          {isOwn && (
-            <span className={styles.status}>{getStatusIcon()}</span>
-          )}
+          <span className={styles.timestamp}>{new Date(message.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+          {message.edited_at && <span className={styles.editedLabel}>edited</span>}
+          {isOwn && <span className={styles.status}>{getStatusIcon()}</span>}
         </div>
 
         {isFailed && onRetry && (
@@ -243,55 +236,22 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
         )}
       </div>
 
-      {showActions && message.type === 'text' && (
-        <div className={styles.messageActions}>
-          {onReply && (
-            <button className={styles.messageActionButton} onClick={handleReply}>
-              <Reply size={14} />
-              Reply
-            </button>
-          )}
-          <button className={styles.messageActionButton} onClick={handleCopy}>
-            <Copy size={14} />
-            {copied ? 'Copied!' : 'Copy'}
-          </button>
-          {onReportMessage && (
-            <button className={styles.messageActionButton} onClick={handleReport}>
-              <Flag size={14} />
-              Report
-            </button>
-          )}
-        </div>
-      )}
-
       {linkConfirmUrl && (
         <div className={styles.linkConfirmOverlay} onClick={() => setLinkConfirmUrl(null)}>
           <div className={styles.linkConfirmDialog} onClick={(e) => e.stopPropagation()}>
             <p className={styles.linkConfirmTitle}>You're leaving the app</p>
-            <p className={styles.linkConfirmText}>
-              This link may lead to an external website. Only continue if you trust the person who sent it.
-            </p>
+            <p className={styles.linkConfirmText}>This link may lead to an external website. Only continue if you trust the person who sent it.</p>
             <div className={styles.linkConfirmActions}>
               <button className={styles.linkCancelButton} onClick={() => setLinkConfirmUrl(null)}>Cancel</button>
-              <button className={styles.linkOpenButton} onClick={() => { window.open(linkConfirmUrl, '_blank', 'noopener,noreferrer'); setLinkConfirmUrl(null); }}>
-                Open
-              </button>
+              <button className={styles.linkOpenButton} onClick={() => { window.open(linkConfirmUrl, '_blank', 'noopener,noreferrer'); setLinkConfirmUrl(null); }}>Open</button>
             </div>
           </div>
         </div>
       )}
 
       {message.type === 'image' && message.metadata?.imageUrl && (
-        <ImagePreviewModal
-          open={imagePreviewOpen}
-          images={[message.metadata.imageUrl]}
-          currentIndex={0}
-          onClose={() => setImagePreviewOpen(false)}
-          onNext={() => {}}
-          onPrev={() => {}}
-        />
+        <ImagePreviewModal open={imagePreviewOpen} images={[message.metadata.imageUrl]} currentIndex={0} onClose={() => setImagePreviewOpen(false)} onNext={() => {}} onPrev={() => {}} />
       )}
     </div>
   );
 };
-

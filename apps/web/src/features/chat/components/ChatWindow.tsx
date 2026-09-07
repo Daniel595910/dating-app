@@ -3,13 +3,17 @@ import { useAuthStore } from '@/store/auth.store';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/config/supabase.client';
 import { chatService } from '../services/chat.service';
-import { ChatMessage, MessageCursor } from '../types/chat.types';
+import { messageService } from '../services/message.service';
+import { ChatMessage, MessageCursor, MessageReactionSummary } from '../types/chat.types';
 import { ChatHeader } from './ChatHeader';
 import { MessageBubble } from './MessageBubble';
 import { MessageComposer } from './MessageComposer';
 import { DateSeparator } from './DateSeparator';
 import { TypingIndicator } from './TypingIndicator';
 import { ChatActionMenu } from './ChatActionMenu';
+import { MessageActionSheet } from './MessageActionSheet';
+import { ForwardMessageSheet } from './ForwardMessageSheet';
+import { ChatSettingsSheet } from './ChatSettingsSheet';
 import { BlockConfirmSheet } from '../../community/components/BlockConfirmSheet';
 import { ReportSheet } from '../../community/components/ReportSheet';
 import { OfflineBanner } from '../../community/components/OfflineBanner';
@@ -56,11 +60,19 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
   const [safetyWarning, setSafetyWarning] = useState<{ message: string; riskLevel: string } | null>(null);
   const [rateLimitMessage, setRateLimitMessage] = useState<string | null>(null);
   const [searchOpen, setSearchOpen] = useState(false);
+  const [actionSheetMessage, setActionSheetMessage] = useState<ChatMessage | null>(null);
+  const [editingMessage, setEditingMessage] = useState<ChatMessage | null>(null);
+  const [reactionMap, setReactionMap] = useState<Map<string, MessageReactionSummary[]>>(new Map());
+  const [pinnedMessageIds, setPinnedMessageIds] = useState<Set<string>>(new Set());
+  const [chatWallpaper, setChatWallpaper] = useState<{ wallpaperUrl: string | null; wallpaperColor: string } | null>(null);
+  const [forwardMessage, setForwardMessage] = useState<ChatMessage | null>(null);
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [disappearingEnabled, setDisappearingEnabled] = useState(false);
+  const [disappearingDuration, setDisappearingDuration] = useState(24);
   const cursorRef = useRef<MessageCursor | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const previousScrollHeightRef = useRef<number>(0);
 
   const scrollToBottom = useCallback((smooth = true) => {
     setTimeout(() => {
@@ -68,51 +80,48 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
     }, 100);
   }, []);
 
+  const loadReactions = useCallback(async (msgs: ChatMessage[]) => {
+    if (!user) return;
+    const messageIds = msgs.map((m) => m.id);
+    const reactions = await messageService.getReactions(messageIds, user.id);
+    setReactionMap(reactions);
+  }, [user]);
+
+  const loadPinned = useCallback(async () => {
+    const pinned = await messageService.getPinnedMessages(conversationId);
+    setPinnedMessageIds(new Set(pinned));
+  }, [conversationId]);
+
+  const loadWallpaper = useCallback(async () => {
+    if (!user) return;
+    const prefs = await messageService.getChatPreferences(conversationId, user.id);
+    if (prefs) setChatWallpaper(prefs);
+  }, [conversationId, user]);
+
   const markConversationAsRead = useCallback(async () => {
     if (!user) return;
     try {
-      await supabase.rpc('mark_conversation_read', {
-        p_conversation_id: conversationId,
-      });
-    } catch {
-      // Ignore
-    }
+      await supabase.rpc('mark_conversation_read', { p_conversation_id: conversationId });
+    } catch {}
   }, [conversationId, user]);
 
   const loadMessages = useCallback(async (reset: boolean) => {
     if (!user) return;
-
-    if (reset) {
-      setLoading(true);
-      cursorRef.current = null;
-    } else {
-      setLoadingMore(true);
-      if (messagesContainerRef.current) {
-        previousScrollHeightRef.current = messagesContainerRef.current.scrollHeight;
-      }
-    }
+    if (reset) { setLoading(true); cursorRef.current = null; } else { setLoadingMore(true); }
 
     try {
       const result = await chatService.getMessages(conversationId, 50, reset ? null : cursorRef.current);
-
       if (reset) {
         setMessages(result.messages);
         scrollToBottom(false);
+        loadReactions(result.messages);
       } else {
         setMessages((prev) => {
           const existingIds = new Set(prev.map((m) => m.id));
           const newMessages = result.messages.filter((m) => !existingIds.has(m.id));
           return [...newMessages, ...prev];
         });
-
-        setTimeout(() => {
-          if (messagesContainerRef.current) {
-            const newScrollHeight = messagesContainerRef.current.scrollHeight;
-            messagesContainerRef.current.scrollTop = newScrollHeight - previousScrollHeightRef.current;
-          }
-        }, 50);
       }
-
       cursorRef.current = result.nextCursor;
       setHasMore(result.hasMore);
     } catch {
@@ -121,20 +130,19 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
       setLoading(false);
       setLoadingMore(false);
     }
-  }, [conversationId, user, scrollToBottom]);
+  }, [conversationId, user, scrollToBottom, loadReactions]);
 
   useEffect(() => {
     chatNotificationService.setActiveConversation(conversationId);
     loadMessages(true);
+    loadPinned();
+    loadWallpaper();
 
     const unsubscribe = chatService.subscribeToMessages(conversationId, (newMessage) => {
       if (newMessage.sender_id !== user?.id && newMessage.content) {
         const safetyResult = safetyService.analyzeMessage(newMessage.content);
         if (safetyResult.shouldShowWarning) {
-          setSafetyWarning({
-            message: safetyService.getSafetyWarning(safetyResult.riskLevel),
-            riskLevel: safetyResult.riskLevel,
-          });
+          setSafetyWarning({ message: safetyService.getSafetyWarning(safetyResult.riskLevel), riskLevel: safetyResult.riskLevel });
         }
       }
       setMessages((prev) => {
@@ -151,121 +159,80 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
       unsubscribe();
       chatNotificationService.setActiveConversation(null);
     };
-  }, [conversationId, user, loadMessages, scrollToBottom]);
+  }, [conversationId, user, loadMessages, scrollToBottom, loadPinned, loadWallpaper]);
 
-  useEffect(() => {
-    markConversationAsRead();
-  }, [markConversationAsRead]);
+  // Handle message actions
+  const handleReact = async (message: ChatMessage, reaction: string) => {
+    await messageService.addReaction(message.id, reaction);
+    if (user) {
+      const messageIds = [message.id];
+      const reactions = await messageService.getReactions(messageIds, user.id);
+      setReactionMap((prev) => new Map(prev).set(message.id, reactions.get(message.id) || []));
+    }
+  };
 
-  useEffect(() => {
-    if (!user) return;
-    chatService.updatePresence(true);
-    const interval = setInterval(() => {
-      chatService.updatePresence(true);
-    }, 30000);
-    return () => {
-      clearInterval(interval);
-      chatService.updatePresence(false);
-    };
-  }, [user]);
+  const handleEdit = async (message: ChatMessage) => {
+    setEditingMessage(message);
+  };
 
-  useEffect(() => {
-    if (!targetUserId) return;
+  const handleEditSubmit = async (messageId: string, content: string) => {
+    await messageService.editMessage(messageId, content);
+    setEditingMessage(null);
+    setMessages((prev) => prev.map((m) => (m.id === messageId ? { ...m, content, edited_at: new Date().toISOString() } : m)));
+  };
 
-    const checkTargetPresence = async () => {
-      const { data } = await supabase
-        .from('presence')
-        .select('is_online')
-        .eq('user_id', targetUserId)
-        .single();
-      if (data) setTargetOnline(data.is_online);
-    };
+  const handleDelete = async (message: ChatMessage) => {
+    // Show delete options - for now delete for everyone if own
+    await messageService.deleteForEveryone(message.id);
+    setMessages((prev) => prev.map((m) => (m.id === message.id ? { ...m, deleted_for_everyone: true, content: '' } : m)));
+  };
 
-    checkTargetPresence();
-    const interval = setInterval(checkTargetPresence, 10000);
-    const channel = supabase
-      .channel(`presence:${targetUserId}`)
-      .on('postgres_changes', {
-        event: 'UPDATE',
-        schema: 'public',
-        table: 'presence',
-        filter: `user_id=eq.${targetUserId}`,
-      }, (payload) => {
-        setTargetOnline(payload.new.is_online);
-      })
-      .subscribe();
+  const handleForward = (message: ChatMessage) => {
+    setActionSheetMessage(null);
+    setForwardMessage(message);
+  };
 
-    return () => {
-      clearInterval(interval);
-      channel.unsubscribe();
-    };
-  }, [targetUserId]);
+  const handleForwardToConversation = async (targetConversationId: string) => {
+    if (!user || !forwardMessage) return;
+    await messageService.forwardMessage(forwardMessage.id, targetConversationId, user.id);
+    setForwardMessage(null);
+  };
 
-  useEffect(() => {
-    const channel = supabase.channel(`typing:${conversationId}`);
-    channel
-      .on('broadcast', { event: 'typing' }, (payload) => {
-        if (payload.payload.userId !== user?.id) {
-          setIsTyping(true);
-          if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
-          typingTimeoutRef.current = setTimeout(() => setIsTyping(false), 3000);
-        }
-      })
-      .on('broadcast', { event: 'stop_typing' }, (payload) => {
-        if (payload.payload.userId !== user?.id) setIsTyping(false);
-      })
-      .subscribe();
+  const handleSetWallpaper = async (color: string) => {
+    await messageService.setWallpaper(conversationId, null, color);
+    setChatWallpaper({ wallpaperUrl: null, wallpaperColor: color });
+  };
 
-    return () => {
-      channel.unsubscribe();
-      if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
-    };
-  }, [conversationId, user]);
+  const handleClearWallpaper = async () => {
+    await messageService.setWallpaper(conversationId, null, '#f0f2f5');
+    setChatWallpaper(null);
+  };
 
-  useEffect(() => {
-    const handleOnline = () => { setIsOffline(false); chatService.updatePresence(true); };
-    const handleOffline = () => { setIsOffline(true); chatService.updatePresence(false); };
-    window.addEventListener('online', handleOnline);
-    window.addEventListener('offline', handleOffline);
-    return () => {
-      window.removeEventListener('online', handleOnline);
-      window.removeEventListener('offline', handleOffline);
-    };
-  }, []);
+  const handleSetDisappearing = async (enabled: boolean, durationHours: number) => {
+    await messageService.setDisappearingMessages(conversationId, enabled, durationHours);
+    setDisappearingEnabled(enabled);
+    setDisappearingDuration(durationHours);
+  };
+
+  const handlePin = async (message: ChatMessage) => {
+    if (pinnedMessageIds.has(message.id)) {
+      await messageService.unpinMessage(message.id, conversationId);
+      setPinnedMessageIds((prev) => { const next = new Set(prev); next.delete(message.id); return next; });
+    } else {
+      await messageService.pinMessage(message.id, conversationId);
+      setPinnedMessageIds((prev) => new Set(prev).add(message.id));
+    }
+  };
 
   const handleReply = (message: ChatMessage) => {
     setReplyingTo(message);
   };
 
-  const handleCancelReply = () => {
-    setReplyingTo(null);
-  };
-
-  const handleRetry = async (messageId: string, content: string) => {
-    if (!user || isOffline) return;
-    setMessages((prev) => prev.filter((m) => m.id !== messageId));
-    const newMessage = await chatService.sendMessage(conversationId, user.id, content.trim());
-    if (newMessage) {
-      setMessages((prev) => [...prev, newMessage]);
-      scrollToBottom();
-    }
-  };
-
   const handleSend = async (content: string) => {
     if (!user || !content.trim() || isOffline) return;
-
-    const safetyResult = safetyService.analyzeMessage(content);
-    if (safetyResult.shouldShowWarning) {
-      setSafetyWarning({
-        message: safetyService.getSafetyWarning(safetyResult.riskLevel),
-        riskLevel: safetyResult.riskLevel,
-      });
-      if (safetyResult.shouldBlockTemporarily) return;
-    }
-
     const trimmedContent = content.trim();
-    const tempId = 'temp-' + Date.now() + '-' + Math.random().toString(36).substring(2, 8);
-
+    const tempId = 'temp-' + Date.now();
+    
     const optimisticMessage: ChatMessage = {
       id: tempId,
       conversationId,
@@ -277,256 +244,92 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
       status: 'sending',
       createdAt: new Date().toISOString(),
     };
-
+    
     setMessages((prev) => [...prev, optimisticMessage]);
     scrollToBottom();
-
+    
     try {
       const newMessage = await chatService.sendMessage(conversationId, user.id, trimmedContent);
       if (newMessage) {
         setMessages((prev) => prev.map((m) => (m.id === tempId ? newMessage : m)));
         scrollToBottom();
-      } else {
-        setMessages((prev) => prev.map((m) => (m.id === tempId ? { ...m, status: 'failed' as const } : m)));
       }
     } catch (err: any) {
-      if (err.message && err.message.includes('too quickly')) {
-        setRateLimitMessage(err.message);
-        setTimeout(() => setRateLimitMessage(null), 3000);
-      }
+      setMessages((prev) => prev.map((m) => (m.id === tempId ? { ...m, status: 'failed' as const } : m)));
+    }
+  };
+
+  const handleSendImage = async (file: File) => {
+    if (!user || isOffline) return;
+    const tempId = 'temp-' + Date.now();
+    try {
+      const tempMessage: ChatMessage = {
+        id: tempId, conversationId, senderId: user.id, senderName: 'You', senderAvatar: null,
+        type: 'image', content: '', metadata: { imageUrl: URL.createObjectURL(file), thumbnailUrl: URL.createObjectURL(file) },
+        status: 'sending', createdAt: new Date().toISOString(),
+      };
+      setMessages((prev) => [...prev, tempMessage]);
+      scrollToBottom();
+
+      const timestamp = Date.now();
+      const fileExtension = file.name.split('.').pop() || 'jpg';
+      const filePath = 'chat/' + conversationId + '/' + timestamp + '.' + fileExtension;
+      const { error: uploadError } = await supabase.storage.from('media').upload(filePath, file);
+      if (uploadError) throw uploadError;
+      const { data: publicUrlData } = supabase.storage.from('media').getPublicUrl(filePath);
+      const clientMessageId = generateUUID();
+      await supabase.rpc('send_chat_message', {
+        p_conversation_id: conversationId, p_client_message_id: clientMessageId,
+        p_content: '', p_type: 'image', p_metadata: { imageUrl: publicUrlData.publicUrl, thumbnailUrl: publicUrlData.publicUrl },
+      });
+      setMessages((prev) => prev.filter((m) => m.id !== tempId));
+    } catch {
+      setMessages((prev) => prev.map((m) => (m.id === tempId ? { ...m, status: 'failed' as const } : m)));
+    }
+  };
+
+  const handleSendVoice = async (audioBlob: Blob, duration: number) => {
+    if (!user || isOffline) return;
+    const tempId = 'temp-' + Date.now();
+    try {
+      const tempMessage: ChatMessage = {
+        id: tempId, conversationId, senderId: user.id, senderName: 'You', senderAvatar: null,
+        type: 'voice', content: '', metadata: { durationMs: duration * 1000 },
+        status: 'sending', createdAt: new Date().toISOString(),
+      };
+      setMessages((prev) => [...prev, tempMessage]);
+      scrollToBottom();
+      const timestamp = Date.now();
+      const filePath = 'voice/' + conversationId + '/' + timestamp + '.webm';
+      await supabase.storage.from('media').upload(filePath, audioBlob, { contentType: 'audio/webm' });
+      const { data: publicUrlData } = supabase.storage.from('media').getPublicUrl(filePath);
+      const clientMessageId = generateUUID();
+      await supabase.rpc('send_chat_message', {
+        p_conversation_id: conversationId, p_client_message_id: clientMessageId,
+        p_content: '', p_type: 'voice', p_metadata: { audioUrl: publicUrlData.publicUrl, durationMs: duration * 1000 },
+      });
+      setMessages((prev) => prev.filter((m) => m.id !== tempId));
+    } catch {
       setMessages((prev) => prev.map((m) => (m.id === tempId ? { ...m, status: 'failed' as const } : m)));
     }
   };
 
   const handleSendGift = async (gift: { id: string; name: string; icon: string }) => {
     if (!user || isOffline) return;
-    try {
-      const clientMessageId = generateUUID();
-      await supabase.rpc('send_chat_message', {
-        p_conversation_id: conversationId,
-        p_client_message_id: clientMessageId,
-        p_content: gift.name,
-        p_type: 'gift',
-        p_metadata: { giftId: gift.id, giftName: gift.name, giftIcon: gift.icon },
-      });
-    } catch (err) {
-      console.error('Gift send failed:', err);
-    }
+    const clientMessageId = generateUUID();
+    await supabase.rpc('send_chat_message', {
+      p_conversation_id: conversationId, p_client_message_id: clientMessageId,
+      p_content: gift.name, p_type: 'gift', p_metadata: { giftId: gift.id, giftName: gift.name, giftIcon: gift.icon },
+    });
   };
-
-  const handleSendVoice = async (audioBlob: Blob, duration: number) => {
-    if (!user || isOffline) return;
-    const tempId = 'temp-' + Date.now() + '-' + Math.random().toString(36).substring(2, 8);
-
-    try {
-      const tempMessage: ChatMessage = {
-        id: tempId,
-        conversationId,
-        senderId: user.id,
-        senderName: 'You',
-        senderAvatar: null,
-        type: 'voice',
-        content: '',
-        metadata: { durationMs: duration * 1000 },
-        status: 'sending',
-        createdAt: new Date().toISOString(),
-      };
-
-      setMessages((prev) => [...prev, tempMessage]);
-      scrollToBottom();
-
-      const timestamp = Date.now();
-      const randomSuffix = Math.random().toString(36).substring(2, 8);
-      const filePath = 'voice/' + conversationId + '/' + timestamp + '-' + randomSuffix + '.webm';
-
-      const { error: uploadError } = await supabase.storage
-        .from('media')
-        .upload(filePath, audioBlob, { cacheControl: '3600', contentType: 'audio/webm' });
-
-      if (uploadError) throw uploadError;
-
-      const { data: publicUrlData } = supabase.storage
-        .from('media')
-        .getPublicUrl(filePath);
-
-      const clientMessageId = generateUUID();
-      const { error: msgError } = await supabase.rpc('send_chat_message', {
-        p_conversation_id: conversationId,
-        p_client_message_id: clientMessageId,
-        p_content: '',
-        p_type: 'voice',
-        p_metadata: { audioUrl: publicUrlData.publicUrl, durationMs: duration * 1000 },
-      });
-
-      if (msgError) throw msgError;
-
-      setMessages((prev) => prev.filter((m) => m.id !== tempId));
-    } catch (err) {
-      console.error('Voice send failed:', err);
-      setMessages((prev) =>
-        prev.map((m) => (m.id === tempId ? { ...m, status: 'failed' as const } : m))
-      );
-    }
-  };
-
-  const handleSendImage = async (file: File) => {
-    if (!user || isOffline) return;
-    const tempId = 'temp-' + Date.now() + '-' + Math.random().toString(36).substring(2, 8);
-
-    try {
-      const tempMessage: ChatMessage = {
-        id: tempId,
-        conversationId,
-        senderId: user.id,
-        senderName: 'You',
-        senderAvatar: null,
-        type: 'image',
-        content: '',
-        metadata: {
-          imageUrl: URL.createObjectURL(file),
-          thumbnailUrl: URL.createObjectURL(file),
-        },
-        status: 'sending',
-        createdAt: new Date().toISOString(),
-      };
-
-      setMessages((prev) => [...prev, tempMessage]);
-      scrollToBottom();
-
-      const timestamp = Date.now();
-      const fileExtension = file.name.split('.').pop() || 'jpg';
-      const randomSuffix = Math.random().toString(36).substring(2, 8);
-      const filePath = 'chat/' + conversationId + '/' + timestamp + '-' + randomSuffix + '.' + fileExtension;
-
-      const { error: uploadError } = await supabase.storage
-        .from('media')
-        .upload(filePath, file, { cacheControl: '3600' });
-
-      if (uploadError) throw uploadError;
-
-      const { data: publicUrlData } = supabase.storage
-        .from('media')
-        .getPublicUrl(filePath);
-
-      const clientMessageId = generateUUID();
-      const { error: msgError } = await supabase.rpc('send_chat_message', {
-        p_conversation_id: conversationId,
-        p_client_message_id: clientMessageId,
-        p_content: '',
-        p_type: 'image',
-        p_metadata: { imageUrl: publicUrlData.publicUrl, thumbnailUrl: publicUrlData.publicUrl },
-      });
-
-      if (msgError) throw msgError;
-
-      setMessages((prev) => prev.filter((m) => m.id !== tempId));
-    } catch (err) {
-      console.error('Image send failed:', err);
-      setMessages((prev) =>
-        prev.map((m) => (m.id === tempId ? { ...m, status: 'failed' as const } : m))
-      );
-    }
-  };
-
-  const handleSendAudio = async (file: File) => {
-    if (!user || isOffline) return;
-    const tempId = 'temp-' + Date.now() + '-' + Math.random().toString(36).substring(2, 8);
-
-    try {
-      const tempMessage: ChatMessage = {
-        id: tempId,
-        conversationId,
-        senderId: user.id,
-        senderName: 'You',
-        senderAvatar: null,
-        type: 'audio',
-        content: '',
-        metadata: {
-          audioUrl: URL.createObjectURL(file),
-          durationMs: 0,
-          fileName: file.name,
-        },
-        status: 'sending',
-        createdAt: new Date().toISOString(),
-      };
-
-      setMessages((prev) => [...prev, tempMessage]);
-      scrollToBottom();
-
-      const timestamp = Date.now();
-      const fileExtension = file.name.split('.').pop() || 'mp3';
-      const randomSuffix = Math.random().toString(36).substring(2, 8);
-      const filePath = 'audio/' + conversationId + '/' + timestamp + '-' + randomSuffix + '.' + fileExtension;
-
-      const { error: uploadError } = await supabase.storage
-        .from('media')
-        .upload(filePath, file, { cacheControl: '3600', contentType: file.type || 'audio/mpeg' });
-
-      if (uploadError) throw uploadError;
-
-      const { data: publicUrlData } = supabase.storage
-        .from('media')
-        .getPublicUrl(filePath);
-
-      const clientMessageId = generateUUID();
-      const { error: msgError } = await supabase.rpc('send_chat_message', {
-        p_conversation_id: conversationId,
-        p_client_message_id: clientMessageId,
-        p_content: '',
-        p_type: 'audio',
-        p_metadata: { audioUrl: publicUrlData.publicUrl, durationMs: 0, fileName: file.name },
-      });
-
-      if (msgError) throw msgError;
-
-      setMessages((prev) => prev.filter((m) => m.id !== tempId));
-    } catch (err) {
-      console.error('Audio send failed:', err);
-      setMessages((prev) =>
-        prev.map((m) => (m.id === tempId ? { ...m, status: 'failed' as const } : m))
-      );
-    }
-  };
-
-  const groupedMessages = messages.reduce<{
-    date: string;
-    senderId: string | null;
-    showSenderName: boolean;
-    messages: ChatMessage[];
-  }[]>((acc, message) => {
-    const date = new Date(message.createdAt).toDateString();
-    const lastGroup = acc[acc.length - 1];
-
-    if (!lastGroup || lastGroup.date !== date || lastGroup.senderId !== message.senderId) {
-      acc.push({
-        date,
-        senderId: message.senderId,
-        showSenderName: message.senderId !== user?.id,
-        messages: [message],
-      });
-    } else {
-      lastGroup.messages.push(message);
-    }
-    return acc;
-  }, []);
 
   if (loading) {
     return <div className={styles.loading}>Loading messages...</div>;
   }
 
-  if (error && messages.length === 0) {
-    return (
-      <div className={styles.error}>
-        <p>{error}</p>
-        <button onClick={() => loadMessages(true)}>Retry</button>
-      </div>
-    );
-  }
-
   return (
-    <div className={styles.chatWindow}>
+    <div className={styles.chatWindow} style={chatWallpaper?.wallpaperColor ? { backgroundColor: chatWallpaper.wallpaperColor } : undefined}>
       <OfflineBanner isOffline={isOffline} hasCachedFeed={messages.length > 0} />
-
       <ChatHeader
         userName={targetUserName}
         userAvatar={targetUserAvatar}
@@ -534,35 +337,10 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
         isOnline={targetOnline}
         onBack={() => navigate('/chats')}
         onProfileClick={() => navigate(`/profile/${targetUserId}`)}
-        onMoreClick={() => setActionMenuOpen(true)}
+        onMoreClick={() => setSettingsOpen(true)}
       />
 
       <div className={styles.messagesContainer} ref={messagesContainerRef}>
-        {rateLimitMessage && (
-          <div style={{
-            backgroundColor: '#fef3c7',
-            color: '#92400e',
-            padding: '0.5rem 1rem',
-            fontSize: '0.8125rem',
-            fontWeight: 500,
-            textAlign: 'center',
-            borderRadius: '0.5rem',
-            marginBottom: '0.5rem',
-          }}>
-            {rateLimitMessage}
-          </div>
-        )}
-        {safetyWarning && (
-          <ScamWarning
-            riskLevel={safetyWarning.riskLevel as any}
-            message={safetyWarning.message}
-            onDismiss={() => setSafetyWarning(null)}
-            onReport={() => {
-              setSafetyWarning(null);
-              setReportSheetOpen(true);
-            }}
-          />
-        )}
         {hasMore && (
           <button className={styles.loadMore} onClick={() => loadMessages(false)} disabled={loadingMore}>
             {loadingMore ? 'Loading...' : 'Load older messages'}
@@ -575,23 +353,22 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
             <p className={styles.emptyText}>Start the conversation and get to know each other.</p>
           </div>
         ) : (
-          groupedMessages.map((group, groupIndex) => (
-            <React.Fragment key={group.date + '-' + groupIndex}>
-              {groupIndex === 0 || groupedMessages[groupIndex - 1]!.date !== group.date ? (
-                <DateSeparator date={group.date} />
-              ) : null}
-              {group.messages.map((message) => (
-                <MessageBubble
-                  key={message.id}
-                  message={message}
-                  isOwn={message.senderId === user?.id}
-                  showSenderName={group.showSenderName && groupIndex === 0}
-                  onRetry={handleRetry}
-                  onReply={handleReply}
-                  onReportMessage={() => setReportSheetOpen(true)}
-                />
-              ))}
-            </React.Fragment>
+          messages.map((message) => (
+            <MessageBubble
+              key={message.id}
+              message={message}
+              isOwn={message.senderId === user?.id}
+              showSenderName={message.senderId !== user?.id}
+              onReply={handleReply}
+              onReact={handleReact}
+              onEdit={handleEdit}
+              onDelete={handleDelete}
+              onForward={handleForward}
+              onPin={handlePin}
+              reactions={reactionMap.get(message.id) || []}
+              isPinned={pinnedMessageIds.has(message.id)}
+              onOpenActionSheet={setActionSheetMessage}
+            />
           ))
         )}
 
@@ -599,38 +376,56 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
         <div ref={bottomRef} />
       </div>
 
-      <MessageComposer
-        conversationId={conversationId}
-        userId={user?.id || ''}
-        onSend={handleSend}
-        onSendImage={handleSendImage}
-        onSendAudio={handleSendAudio}
-        onTypingChange={() => {}}
-        replyingTo={replyingTo}
-        onCancelReply={handleCancelReply}
-        onOpenVoice={() => setVoiceRecorderOpen(true)}
-        onOpenGift={() => setGiftPickerOpen(true)}
+      {/* Edit message inline */}
+      {editingMessage && (
+        <div className={styles.editMessageBar}>
+          <span>Editing message</span>
+          <input
+            autoFocus
+            defaultValue={editingMessage.content}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                handleEditSubmit(editingMessage.id, e.currentTarget.value);
+              }
+              if (e.key === 'Escape') setEditingMessage(null);
+            }}
+          />
+          <button onClick={() => setEditingMessage(null)}>Cancel</button>
+        </div>
+      )}
+
+      {!editingMessage && (
+        <MessageComposer
+          conversationId={conversationId}
+          userId={user?.id || ''}
+          onSend={handleSend}
+          onSendImage={handleSendImage}
+          onSendAudio={(file) => {}}
+          onTypingChange={() => {}}
+          replyingTo={replyingTo}
+          onCancelReply={() => setReplyingTo(null)}
+          onOpenVoice={() => setVoiceRecorderOpen(true)}
+          onOpenGift={() => setGiftPickerOpen(true)}
+        />
+      )}
+
+      <MessageActionSheet
+        open={Boolean(actionSheetMessage)}
+        onClose={() => setActionSheetMessage(null)}
+        message={actionSheetMessage}
+        isOwn={actionSheetMessage?.senderId === user?.id}
+        onReply={handleReply}
+        onForward={handleForward}
+        onEdit={handleEdit}
+        onDelete={handleDelete}
+        onPin={handlePin}
+        onReact={handleReact}
+        onReport={() => setReportSheetOpen(true)}
       />
 
-      <GiftPicker
-        open={giftPickerOpen}
-        onClose={() => setGiftPickerOpen(false)}
-        onSelectGift={handleSendGift}
-      />
-
-      <VoiceRecorder
-        open={voiceRecorderOpen}
-        onClose={() => setVoiceRecorderOpen(false)}
-        onSend={handleSendVoice}
-      />
-
-      <SearchInConversation
-        open={searchOpen}
-        onClose={() => setSearchOpen(false)}
-        messages={messages}
-        onJumpToMessage={() => {}}
-      />
-
+      <GiftPicker open={giftPickerOpen} onClose={() => setGiftPickerOpen(false)} onSelectGift={handleSendGift} />
+      <VoiceRecorder open={voiceRecorderOpen} onClose={() => setVoiceRecorderOpen(false)} onSend={handleSendVoice} />
+      <SearchInConversation open={searchOpen} onClose={() => setSearchOpen(false)} messages={messages} onJumpToMessage={() => {}} />
       <ChatActionMenu
         open={actionMenuOpen}
         onClose={() => setActionMenuOpen(false)}
@@ -640,7 +435,6 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
         onBlock={() => setBlockSheetOpen(true)}
         onReport={() => setReportSheetOpen(true)}
       />
-
       <BlockConfirmSheet
         open={blockSheetOpen}
         onClose={() => setBlockSheetOpen(false)}
@@ -648,6 +442,24 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
         targetUserId={targetUserId}
         targetUserName={targetUserName}
         onBlocked={() => navigate('/chats')}
+      />
+      <ForwardMessageSheet
+        open={Boolean(forwardMessage)}
+        onClose={() => setForwardMessage(null)}
+        message={forwardMessage}
+        currentUserId={user?.id || ''}
+        onForward={handleForwardToConversation}
+      />
+
+      <ChatSettingsSheet
+        open={settingsOpen}
+        onClose={() => setSettingsOpen(false)}
+        onSetWallpaper={handleSetWallpaper}
+        onClearWallpaper={handleClearWallpaper}
+        onSetDisappearing={handleSetDisappearing}
+        currentWallpaper={chatWallpaper?.wallpaperColor || null}
+        disappearingEnabled={disappearingEnabled}
+        disappearingDuration={disappearingDuration}
       />
 
       <ReportSheet
@@ -661,4 +473,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
     </div>
   );
 };
+
+
+
 

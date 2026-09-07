@@ -160,6 +160,7 @@ export const DiscoverPage: React.FC = () => {
 
 
   const skipToNextPerson = useCallback((currentUserId: string) => {
+    // Simple next - let users see multiple videos from same person
     setCurrentIndex((prev) => Math.min(prev + 1, candidates.length));
     setIsPlaying(false);
     setVideoProgress(0);
@@ -581,6 +582,7 @@ export const DiscoverPage: React.FC = () => {
     </div>
   );
 };
+
 
 
 

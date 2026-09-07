@@ -1,0 +1,123 @@
+﻿.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 1000;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  animation: fadeIn 0.2s ease;
+}
+
+.sheet {
+  background: #ffffff;
+  width: 100%;
+  max-width: 480px;
+  border-radius: 20px 20px 0 0;
+  padding: 8px 16px calc(16px + env(safe-area-inset-bottom));
+  animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.dragHandle {
+  width: 36px;
+  height: 4px;
+  background: #e5e7eb;
+  border-radius: 9999px;
+  margin: 8px auto 12px;
+}
+
+.quickReactions {
+  display: flex;
+  justify-content: space-around;
+  padding: 8px 0;
+}
+
+.reactionButton {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 28px;
+  padding: 8px;
+  border-radius: 50%;
+  transition: all 0.15s;
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.reactionButton:hover {
+  background: #f3f4f6;
+  transform: scale(1.2);
+}
+
+.divider {
+  height: 1px;
+  background: #f3f4f6;
+  margin: 8px 0;
+}
+
+.actions {
+  display: flex;
+  flex-direction: column;
+}
+
+.actionButton {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 12px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  color: #374151;
+  border-radius: 10px;
+  transition: all 0.15s;
+  width: 100%;
+  text-align: left;
+}
+
+.actionButton:hover {
+  background: #f9fafb;
+}
+
+.deleteButton {
+  color: #ef4444;
+}
+
+.deleteButton:hover {
+  background: #fef2f2;
+}
+
+.reportButton {
+  color: #ef4444;
+}
+
+.cancelButton {
+  width: 100%;
+  padding: 14px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  color: #6b7280;
+  border-radius: 10px;
+}
+
+.cancelButton:hover {
+  background: #f3f4f6;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}

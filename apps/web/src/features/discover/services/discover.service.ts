@@ -2,10 +2,11 @@
 import { DiscoverCandidate, SwipeAction, SwipeResult } from '../types/discover.types';
 
 class DiscoverService {
-  async getCandidates(limit: number = 10, category: string = 'new'): Promise<DiscoverCandidate[]> {
+  async getCandidates(limit: number = 10, category: string = 'new', offset: number = 0): Promise<DiscoverCandidate[]> {
     const { data, error } = await supabase.rpc('get_discover_feed', {
       p_category: category,
       p_limit: limit,
+      p_offset: offset,
     });
 
     if (error) {
@@ -14,7 +15,7 @@ class DiscoverService {
     }
 
     return (data || []).map((c: any) => ({
-      userId: c.profile_user_id || c.user_id,
+      userId: c.user_id,
       videoId: c.video_id,
       displayName: c.display_name,
       avatarUrl: c.avatar_url,
@@ -43,21 +44,9 @@ class DiscoverService {
       return null;
     }
 
-    // Record swipe for daily limit
-    await supabase.rpc('record_swipe');
+    await supabase.rpc('record_swipe').then(() => {}).catch(() => {});
 
     return data as SwipeResult;
-  }
-
-  async checkDailyLimit(): Promise<{ allowed: boolean; remaining: number }> {
-    const { data } = await supabase.rpc('check_daily_swipe_limit');
-    if (data) {
-      return {
-        allowed: data.allowed,
-        remaining: data.remaining,
-      };
-    }
-    return { allowed: true, remaining: 50 };
   }
 
   async submitVideo(videoUrl: string, caption?: string, thumbnailUrl?: string): Promise<boolean> {
@@ -88,7 +77,3 @@ class DiscoverService {
 }
 
 export const discoverService = new DiscoverService();
-
-
-
-
