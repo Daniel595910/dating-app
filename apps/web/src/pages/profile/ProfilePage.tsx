@@ -9,7 +9,7 @@ import { PhotoManagement } from '../../features/profile/components/PhotoManageme
 import { CommunityCreationSheet } from '../../features/community/components/CommunityCreationSheet';
 import { ReportSheet } from '../../features/community/components/ReportSheet';
 import { BlockConfirmSheet } from '../../features/community/components/BlockConfirmSheet';
-import { ArrowLeft, Settings, BadgeCheck, MapPin, Heart, Grid, Menu, UserPlus, Check, Camera, MoreVertical, X, Star, MessageCircle, Crown, Users, Ban, Flag, Share2 } from 'lucide-react';
+import { ArrowLeft, Settings, BadgeCheck, MapPin, Heart, Grid, Menu, UserPlus, Check, Camera, MoreVertical, X, Star, MessageCircle, Crown, Users, Ban, Flag, Share2, Video } from 'lucide-react';
 import styles from './ProfilePage.module.css';
 
 export const ProfilePage: React.FC = () => {
@@ -23,7 +23,7 @@ export const ProfilePage: React.FC = () => {
   const [isFollowing, setIsFollowing] = useState(false);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'posts' | 'about'>('posts');
+  const [activeTab, setActiveTab] = useState<'posts' | 'videos' | 'about'>('posts');
   const [photoViewerIndex, setPhotoViewerIndex] = useState<number | null>(null);
   const [photoManagementOpen, setPhotoManagementOpen] = useState(false);
   const [communityCreationOpen, setCommunityCreationOpen] = useState(false);
@@ -45,6 +45,8 @@ export const ProfilePage: React.FC = () => {
   const [hasShared, setHasShared] = useState(false);
   const [showUnshareConfirm, setShowUnshareConfirm] = useState(false);
   const [shareSuccess, setShareSuccess] = useState(false);
+  const [discoverVideos, setDiscoverVideos] = useState<any[]>([]);
+  const [videoMenuOpen, setVideoMenuOpen] = useState<string | null>(null);
 
   const handleShareProfile = async () => {
     if (!user || !profile) return;
@@ -150,6 +152,35 @@ export const ProfilePage: React.FC = () => {
 
     loadProfile();
   }, [targetUserId, user, isOwnProfile]);
+
+  const loadDiscoverVideos = async () => {
+    if (!targetUserId || targetUserId === 'undefined') return;
+    const { data, error } = await supabase
+      .from('discover_videos')
+      .select('*')
+      .eq('user_id', targetUserId)
+      .order('created_at', { ascending: false });
+    
+    if (error) {
+      console.error('Failed to load videos:', error);
+      return;
+    }
+    
+    setDiscoverVideos(data || []);
+  };
+
+  const handleDeleteVideo = async (videoId: string) => {
+    await supabase.from('discover_videos').delete().eq('id', videoId).eq('user_id', targetUserId);
+    await loadDiscoverVideos();
+    setVideoMenuOpen(null);
+  };
+
+  const handleToggleVideoVisibility = async (videoId: string, currentStatus: string) => {
+    const newStatus = currentStatus === 'removed' ? 'pending' : 'removed';
+    await supabase.from('discover_videos').update({ status: newStatus }).eq('id', videoId).eq('user_id', targetUserId);
+    await loadDiscoverVideos();
+    setVideoMenuOpen(null);
+  };
 
   const loadStatsLists = async (type: 'followers' | 'following' | 'connections') => {
     if (!targetUserId || targetUserId === 'undefined') return;
@@ -602,6 +633,13 @@ export const ProfilePage: React.FC = () => {
           Posts
         </button>
         <button
+          className={`${styles.tab} ${activeTab === 'videos' ? styles.tabActive : ''}`}
+          onClick={() => { setActiveTab('videos'); loadDiscoverVideos(); }}
+        >
+          <Video size={18} />
+          Videos
+        </button>
+        <button
           className={`${styles.tab} ${activeTab === 'about' ? styles.tabActive : ''}`}
           onClick={() => setActiveTab('about')}
         >
@@ -630,6 +668,44 @@ export const ProfilePage: React.FC = () => {
               <Camera size={32} />
               <p>No photos yet</p>
               <p className={styles.emptySubtext}>Photos from community posts will appear here</p>
+            </div>
+          )}
+        </div>
+      ) : activeTab === 'videos' ? (
+        <div className={styles.videosSection}>
+          {discoverVideos.length === 0 ? (
+            <div className={styles.emptyPosts}>
+              <Video size={32} />
+              <p>No videos yet</p>
+              <p className={styles.emptySubtext}>Upload videos from the Discover page</p>
+            </div>
+          ) : (
+            <div className={styles.videosGrid}>
+              {discoverVideos.map((video) => (
+                <div key={video.id} className={styles.videoCard}>
+                  <video src={video.video_url} muted playsInline className={styles.videoThumbnail} />
+                  <div className={styles.videoStatus}>
+                    {video.status === 'approved' && <span className={styles.statusApproved}>Approved</span>}
+                    {video.status === 'pending' && <span className={styles.statusPending}>Pending</span>}
+                    {video.status === 'removed' && <span className={styles.statusRemoved}>Hidden</span>}
+                  </div>
+                  {isOwnProfile && (
+                    <button className={styles.videoMenuButton} onClick={() => setVideoMenuOpen(videoMenuOpen === video.id ? null : video.id)}>
+                      <MoreVertical size={16} />
+                    </button>
+                  )}
+                  {videoMenuOpen === video.id && (
+                    <div className={styles.videoDropdownMenu}>
+                      <button onClick={() => handleToggleVideoVisibility(video.id, video.status)}>
+                        {video.status === 'removed' ? 'Show in Discover' : 'Hide from Discover'}
+                      </button>
+                      <button className={styles.deleteVideoButton} onClick={() => handleDeleteVideo(video.id)}>
+                        Delete Video
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ))}
             </div>
           )}
         </div>
@@ -734,6 +810,12 @@ export const ProfilePage: React.FC = () => {
     </div>
   );
 };
+
+
+
+
+
+
 
 
 
