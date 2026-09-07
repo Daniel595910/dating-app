@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '@/store/auth.store';
 import { supabase } from '@/config/supabase.client';
@@ -9,7 +9,7 @@ import { PhotoManagement } from '../../features/profile/components/PhotoManageme
 import { CommunityCreationSheet } from '../../features/community/components/CommunityCreationSheet';
 import { ReportSheet } from '../../features/community/components/ReportSheet';
 import { BlockConfirmSheet } from '../../features/community/components/BlockConfirmSheet';
-import { ArrowLeft, Settings, BadgeCheck, MapPin, Heart, Grid, Menu, UserPlus, Check, Camera, MoreVertical, X, Star, MessageCircle, Crown, Users, Ban, Flag, Share2, Video } from 'lucide-react';
+import { ArrowLeft, Settings, BadgeCheck, MapPin, Heart, Grid, Menu, UserPlus, Check, Camera, MoreVertical, X, Star, MessageCircle, Crown, Users, Ban, Flag, Share2, Video, Eye, Play, Volume2, VolumeX } from 'lucide-react';
 import styles from './ProfilePage.module.css';
 
 export const ProfilePage: React.FC = () => {
@@ -47,6 +47,10 @@ export const ProfilePage: React.FC = () => {
   const [shareSuccess, setShareSuccess] = useState(false);
   const [discoverVideos, setDiscoverVideos] = useState<any[]>([]);
   const [videoMenuOpen, setVideoMenuOpen] = useState<string | null>(null);
+  const [previewDiscoverVideo, setPreviewDiscoverVideo] = useState<any>(null);
+  const [videoPrivacy, setVideoPrivacy] = useState<'public' | 'friends' | 'private'>('public');
+  const [previewMuted, setPreviewMuted] = useState(true);
+  const previewVideoElementRef = useRef<HTMLVideoElement>(null);
 
   const handleShareProfile = async () => {
     if (!user || !profile) return;
@@ -173,6 +177,15 @@ export const ProfilePage: React.FC = () => {
     await supabase.from('discover_videos').delete().eq('id', videoId).eq('user_id', targetUserId);
     await loadDiscoverVideos();
     setVideoMenuOpen(null);
+  };
+
+  const handleUpdateVideoPrivacy = async (videoId: string, privacy: string) => {
+    await supabase
+      .from('discover_videos')
+      .update({ privacy: privacy })
+      .eq('id', videoId)
+      .eq('user_id', targetUserId);
+    await loadDiscoverVideos();
   };
 
   const handleToggleVideoVisibility = async (videoId: string, currentStatus: string) => {
@@ -682,24 +695,34 @@ export const ProfilePage: React.FC = () => {
           ) : (
             <div className={styles.videosGrid}>
               {discoverVideos.map((video) => (
-                <div key={video.id} className={styles.videoCard}>
+                <div key={video.id} className={styles.videoCard} onClick={() => setPreviewDiscoverVideo(video)}>
                   <video src={video.video_url} muted playsInline className={styles.videoThumbnail} />
+                  <div className={styles.videoStats}>
+                    <span><Heart size={10} /> {video.like_count || 0}</span>
+                    <span><Eye size={10} /> {video.view_count || 0}</span>
+                  </div>
                   <div className={styles.videoStatus}>
                     {video.status === 'approved' && <span className={styles.statusApproved}>Approved</span>}
                     {video.status === 'pending' && <span className={styles.statusPending}>Pending</span>}
                     {video.status === 'removed' && <span className={styles.statusRemoved}>Hidden</span>}
                   </div>
                   {isOwnProfile && (
-                    <button className={styles.videoMenuButton} onClick={() => setVideoMenuOpen(videoMenuOpen === video.id ? null : video.id)}>
+                    <button 
+                      className={styles.videoMenuButton} 
+                      onClick={(e) => { 
+                        e.stopPropagation(); 
+                        setVideoMenuOpen(videoMenuOpen === video.id ? null : video.id); 
+                      }}
+                    >
                       <MoreVertical size={16} />
                     </button>
                   )}
                   {videoMenuOpen === video.id && (
-                    <div className={styles.videoDropdownMenu}>
-                      <button onClick={() => handleToggleVideoVisibility(video.id, video.status)}>
+                    <div className={styles.videoDropdownMenu} onClick={(e) => e.stopPropagation()}>
+                      <button onClick={(e) => { e.stopPropagation(); handleToggleVideoVisibility(video.id, video.status); }}>
                         {video.status === 'removed' ? 'Show in Discover' : 'Hide from Discover'}
                       </button>
-                      <button className={styles.deleteVideoButton} onClick={() => handleDeleteVideo(video.id)}>
+                      <button className={styles.deleteVideoButton} onClick={(e) => { e.stopPropagation(); handleDeleteVideo(video.id); }}>
                         Delete Video
                       </button>
                     </div>
@@ -807,9 +830,98 @@ export const ProfilePage: React.FC = () => {
           </div>
         </div>
       )}
+    {previewDiscoverVideo && (
+        <div className={styles.videoPreviewOverlay} onClick={() => setPreviewDiscoverVideo(null)}>
+          <div className={styles.videoPreviewModal} onClick={(e) => e.stopPropagation()}>
+            {/* Close button */}
+            <button className={styles.videoPreviewClose} onClick={() => setPreviewDiscoverVideo(null)}>
+              <X size={20} />
+            </button>
+
+            {/* Video */}
+            <video 
+              ref={previewVideoElementRef}
+              src={previewDiscoverVideo.video_url} 
+              autoPlay 
+              loop
+              muted={previewMuted}
+              playsInline 
+              className={styles.videoPreviewPlayer}
+              onClick={(e) => {
+                const video = e.currentTarget;
+                if (video.paused) video.play();
+                else video.pause();
+              }}
+            />
+
+            {/* Volume toggle */}
+            <button 
+              className={styles.videoPreviewVolumeButton}
+              onClick={(e) => {
+                e.stopPropagation();
+                if (previewVideoElementRef.current) {
+                  previewVideoElementRef.current.muted = !previewVideoElementRef.current.muted;
+                  setPreviewMuted(previewVideoElementRef.current.muted);
+                  
+                  // If unmuting, try to play with sound
+                  if (!previewVideoElementRef.current.muted) {
+                    previewVideoElementRef.current.play().catch(() => {
+                      // If autoplay with sound fails, keep muted
+                      previewVideoElementRef.current!.muted = true;
+                      setPreviewMuted(true);
+                    });
+                  }
+                }
+              }}
+            >
+              {previewMuted ? <VolumeX size={20} /> : <Volume2 size={20} />}
+            </button>
+
+            {/* Play/Pause overlay */}
+            <button className={styles.videoPreviewPlayButton}>
+              <Play size={28} />
+            </button>
+
+            {/* Bottom panel */}
+            <div className={styles.videoPreviewBottom}>
+              <div className={styles.videoPreviewStats}>
+                <span className={styles.videoPreviewStat}>
+                  <Heart size={14} fill="#ef4444" />
+                  {previewDiscoverVideo.like_count || 0}
+                </span>
+                <span className={styles.videoPreviewStat}>
+                  <Eye size={14} />
+                  {previewDiscoverVideo.view_count || 0}
+                </span>
+              </div>
+
+              <div className={styles.videoPreviewPrivacy}>
+                <label className={styles.privacyLabel}>Visibility</label>
+                <select 
+                  value={previewDiscoverVideo.privacy || 'public'}
+                  onChange={(e) => handleUpdateVideoPrivacy(previewDiscoverVideo.id, e.target.value)}
+                  className={styles.privacySelect}
+                >
+                  <option value="public">Public</option>
+                  <option value="friends">Friends Only</option>
+                  <option value="private">Only Me</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
+
+
+
+
+
+
+
+
 
 
 
