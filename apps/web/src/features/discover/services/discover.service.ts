@@ -15,6 +15,7 @@ class DiscoverService {
 
     return (data || []).map((c: any) => ({
       userId: c.profile_user_id || c.user_id,
+      videoId: c.video_id,
       displayName: c.display_name,
       avatarUrl: c.avatar_url,
       videoUrl: c.video_url,
@@ -87,5 +88,7 @@ class DiscoverService {
 }
 
 export const discoverService = new DiscoverService();
+
+
 
 

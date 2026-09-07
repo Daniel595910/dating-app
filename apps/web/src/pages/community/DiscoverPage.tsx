@@ -81,6 +81,13 @@ export const DiscoverPage: React.FC = () => {
   useEffect(() => {
     if (videoRef.current && currentIndex < candidates.length) {
       videoRef.current.muted = false;
+      
+      // Track view
+      const currentVideo = candidates[currentIndex];
+      if (currentVideo) {
+        supabase.rpc('track_video_view', { p_video_id: currentVideo.videoId }).then(() => {}).catch(() => {});
+      }
+      
       videoRef.current.play().catch(() => {
         videoRef.current.muted = true;
         setIsMuted(true);
@@ -574,6 +581,9 @@ export const DiscoverPage: React.FC = () => {
     </div>
   );
 };
+
+
+
 
 
 
