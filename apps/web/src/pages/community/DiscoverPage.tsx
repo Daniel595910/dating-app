@@ -8,7 +8,7 @@ import { DiscoverCandidate } from '../../features/discover/types/discover.types'
 import { 
   BadgeCheck, MapPin, Heart, X, Play, Pause, Video, Upload, 
   Loader, ArrowLeft, Grid3x3, Plus, Clock, CheckCircle2, XCircle,
-  Trash2, Eye, EyeOff, Volume2, VolumeX, RotateCcw
+  Trash2, Eye, EyeOff, Volume2, VolumeX, RotateCcw, UserPlus, Check
 } from 'lucide-react';
 import styles from './DiscoverPage.module.css';
 
@@ -52,6 +52,13 @@ export const DiscoverPage: React.FC = () => {
   const [videoProgress, setVideoProgress] = useState(0);
   const [videoDuration, setVideoDuration] = useState(0);
   const [isSeeking, setIsSeeking] = useState(false);
+  const [activeCategory, setActiveCategory] = useState<'new' | 'popular' | 'nearby'>('new');
+  const [swipeCount, setSwipeCount] = useState(0);
+  const [dailyLimit] = useState(50);
+  const [showLikeAnimation, setShowLikeAnimation] = useState(false);
+  const [isFollowing, setIsFollowing] = useState(false);
+  const [followLoading, setFollowLoading] = useState(false);
+  const [lastTapTime, setLastTapTime] = useState(0);
   
   const videoRef = useRef<HTMLVideoElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -67,7 +74,9 @@ export const DiscoverPage: React.FC = () => {
   useEffect(() => {
     loadCandidates();
     loadMyVideos();
-  }, []);
+    const savedCount = localStorage.getItem('discoverSwipeCount');
+    if (savedCount) setSwipeCount(parseInt(savedCount));
+  }, [activeCategory]);
 
   useEffect(() => {
     if (videoRef.current && currentIndex < candidates.length) {
@@ -82,11 +91,24 @@ export const DiscoverPage: React.FC = () => {
     }
   }, [currentIndex, candidates]);
 
+
+
+  const checkFollowStatus = async (targetUserId: string) => {
+    if (!user) return;
+    const { data } = await supabase
+      .from('follows')
+      .select('id')
+      .eq('follower_id', user.id)
+      .eq('following_id', targetUserId)
+      .maybeSingle();
+    setIsFollowing(Boolean(data));
+  };
+
   const loadCandidates = async () => {
     if (!user) return;
     setLoading(true);
     setError(null);
-    const result = await discoverService.getCandidates();
+    const result = await discoverService.getCandidates(10, activeCategory);
     setCandidates(result);
     setLoading(false);
     if (result.length === 0) {
@@ -102,20 +124,77 @@ export const DiscoverPage: React.FC = () => {
 
   const handleSwipeAction = async (action: string) => {
     if (!user || currentIndex >= candidates.length) return;
+    
+    // Check daily limit
+    if (swipeCount >= dailyLimit && action !== 'pass') {
+      setError(`You've reached your daily limit of ${dailyLimit} swipes. Upgrade to VIP for unlimited swipes!`);
+      return;
+    }
+
     const candidate = candidates[currentIndex];
     const currentUserId = candidate.userId;
     await discoverService.swipe(candidate.userId, action as any);
+    
+    // Update swipe count
+    const newCount = swipeCount + 1;
+    setSwipeCount(newCount);
+    localStorage.setItem('discoverSwipeCount', newCount.toString());
+    
     skipToNextPerson(currentUserId);
   };
 
-  const skipToNextPerson = useCallback((currentUserId: string) => {
-    setCurrentIndex((prev) => {
-      let next = prev + 1;
-      while (next < candidates.length && candidates[next].userId === currentUserId) {
-        next++;
+  const handleDoubleTapLike = () => {
+    const now = Date.now();
+    if (now - lastTapTime < 300) {
+      // Double tap detected
+      setShowLikeAnimation(true);
+      setTimeout(() => setShowLikeAnimation(false), 800);
+      handleSwipeAction('like');
+      setLastTapTime(0);
+    } else {
+      setLastTapTime(now);
+    }
+  };
+
+  const handleFollow = async () => {
+    if (!user || !current) return;
+    if (followLoading) return;
+    setFollowLoading(true);
+    try {
+      if (isFollowing) {
+        const { error: deleteError } = await supabase
+          .from('follows')
+          .delete()
+          .eq('follower_id', user.id)
+          .eq('following_id', current.userId);
+        if (!deleteError) setIsFollowing(false);
+      } else {
+        // Check if already following first
+        const { data: existing } = await supabase
+          .from('follows')
+          .select('id')
+          .eq('follower_id', user.id)
+          .eq('following_id', current.userId)
+          .maybeSingle();
+        
+        if (!existing) {
+          const { error: insertError } = await supabase
+            .from('follows')
+            .insert({ follower_id: user.id, following_id: current.userId });
+          if (!insertError) setIsFollowing(true);
+        } else {
+          setIsFollowing(true);
+        }
       }
-      return Math.min(next, candidates.length);
-    });
+    } catch (err) {
+      console.error('Follow error:', err);
+    } finally {
+      setFollowLoading(false);
+    }
+  };
+
+  const skipToNextPerson = useCallback((currentUserId: string) => {
+    setCurrentIndex((prev) => Math.min(prev + 1, candidates.length));
     setIsPlaying(false);
     setVideoProgress(0);
     setSwipe({ isDragging: false, startX: 0, startY: 0, currentX: 0, currentY: 0, deltaX: 0, deltaY: 0 });
@@ -126,7 +205,7 @@ export const DiscoverPage: React.FC = () => {
     const touch = e.touches[0];
     if (!touch) return;
     setSwipe({ isDragging: true, startX: touch.clientX, startY: touch.clientY, currentX: touch.clientX, currentY: touch.clientY, deltaX: 0, deltaY: 0 });
-  }, []);
+  }, [activeCategory]);
 
   const handleTouchMove = useCallback((e: React.TouchEvent) => {
     const state = swipeStateRef.current;
@@ -143,7 +222,7 @@ export const DiscoverPage: React.FC = () => {
         setSwipeDirection(deltaY > 0 ? 'down' : 'up');
       }
     }
-  }, []);
+  }, [activeCategory]);
 
   const handleTouchEnd = useCallback(() => {
     const state = swipeStateRef.current;
@@ -240,8 +319,10 @@ export const DiscoverPage: React.FC = () => {
       }
       const x = Math.max(0, Math.min(clientX - rect.left, rect.width));
       const percentage = (x / rect.width) * 100;
-      videoRef.current.currentTime = (percentage / 100) * videoDuration;
-      setVideoProgress(percentage);
+      if (videoRef.current && isFinite(videoDuration) && videoDuration > 0) {
+        videoRef.current.currentTime = (percentage / 100) * videoDuration;
+        setVideoProgress(percentage);
+      }
     }
   };
 
@@ -315,6 +396,7 @@ export const DiscoverPage: React.FC = () => {
   }
 
   const current = currentIndex < candidates.length ? candidates[currentIndex] : null;
+  const swipesRemaining = dailyLimit - swipeCount;
 
   return (
     <div ref={containerRef} className={styles.discoverPage} onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} onTouchEnd={handleTouchEnd} style={{ touchAction: 'none', userSelect: 'none', WebkitUserSelect: 'none', overscrollBehavior: 'none' }}>
@@ -332,6 +414,26 @@ export const DiscoverPage: React.FC = () => {
           </button>
         </div>
       </header>
+
+      {/* Swipe Counter */}
+      <div className={styles.swipeCounter}>
+        <span>{swipeCount}/{dailyLimit} swipes</span>
+        <span className={styles.swipeRemaining}>{swipesRemaining} remaining</span>
+      </div>
+
+      {/* Category Tabs */}
+      <div className={styles.categoryTabs}>
+        <button className={`${styles.categoryTab} ${activeCategory === 'new' ? styles.categoryTabActive : ''}`} onClick={() => setActiveCategory('new')}>New</button>
+        <button className={`${styles.categoryTab} ${activeCategory === 'popular' ? styles.categoryTabActive : ''}`} onClick={() => setActiveCategory('popular')}>Popular</button>
+        <button className={`${styles.categoryTab} ${activeCategory === 'nearby' ? styles.categoryTabActive : ''}`} onClick={() => setActiveCategory('nearby')}>Nearby</button>
+      </div>
+
+      {/* Double-tap Like Animation */}
+      {showLikeAnimation && (
+        <div className={styles.likeAnimation}>
+          <Heart size={80} fill="#ef4444" />
+        </div>
+      )}
 
       {showMyVideos && (
         <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.85)', zIndex: 999, display: 'flex' }} onClick={() => setShowMyVideos(false)}>
@@ -425,9 +527,12 @@ export const DiscoverPage: React.FC = () => {
       )}
 
       {current && (
-        <div className={styles.videoCard} style={{ transform: 'translateX(' + swipe.deltaX + 'px) translateY(' + swipe.deltaY + 'px)', transition: swipe.isDragging ? 'none' : 'transform 0.3s ease' }}>
+        <div className={styles.videoCard} style={{ transform: 'translateX(' + swipe.deltaX + 'px) translateY(' + swipe.deltaY + 'px)', transition: swipe.isDragging ? 'none' : 'transform 0.3s ease' }} onClick={handleDoubleTapLike}>
           <video ref={videoRef} src={current.videoUrl} loop playsInline autoPlay preload="auto" onPlay={() => setIsPlaying(true)} onPause={() => setIsPlaying(false)} onTimeUpdate={handleTimeUpdate} className={styles.video} onClick={togglePlay} />
           {!isPlaying && <button className={styles.playOverlay} onClick={togglePlay}><Play size={48} /></button>}
+          
+
+
           <button onClick={toggleMute} style={{ position: 'absolute', top: 80, right: 16, background: 'rgba(0,0,0,0.5)', border: 'none', borderRadius: '50%', width: 40, height: 40, cursor: 'pointer', color: '#fff', zIndex: 15 }}>
             {isMuted ? <VolumeX size={18} /> : <Volume2 size={18} />}
           </button>
@@ -435,6 +540,14 @@ export const DiscoverPage: React.FC = () => {
             <RotateCcw size={18} />
           </button>
           <div className={styles.profileOverlay}>
+            <button 
+              className={`${styles.followButton} ${isFollowing ? styles.followButtonActive : ''}`}
+              onClick={handleFollow}
+              disabled={followLoading}
+            >
+              {isFollowing ? <Check size={14} /> : <UserPlus size={14} />}
+              {isFollowing ? 'Following' : 'Follow'}
+            </button>
             <div className={styles.profileNameRow}>
               <span className={styles.profileName}>{current.displayName}{current.age ? ', ' + current.age : ''}</span>
               {current.isVerified && <BadgeCheck size={18} />}
@@ -505,6 +618,13 @@ export const DiscoverPage: React.FC = () => {
     </div>
   );
 };
+
+
+
+
+
+
+
 
 
 
