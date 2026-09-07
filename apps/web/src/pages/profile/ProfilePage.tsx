@@ -9,7 +9,7 @@ import { PhotoManagement } from '../../features/profile/components/PhotoManageme
 import { CommunityCreationSheet } from '../../features/community/components/CommunityCreationSheet';
 import { ReportSheet } from '../../features/community/components/ReportSheet';
 import { BlockConfirmSheet } from '../../features/community/components/BlockConfirmSheet';
-import { ArrowLeft, Settings, BadgeCheck, MapPin, Heart, Grid, Menu, UserPlus, Check, Camera, MoreVertical, X, Star, MessageCircle, Crown, Users, Ban, Flag, Share2, Video, Eye, Play, Volume2, VolumeX } from 'lucide-react';
+import { ArrowLeft, Settings, BadgeCheck, MapPin, Heart, Grid, Menu, UserPlus, Check, Camera, MoreVertical, X, Star, MessageCircle, Crown, Users, Ban, Flag, Share2, Video, Eye, Play, Volume2, VolumeX, Trash2 } from 'lucide-react';
 import styles from './ProfilePage.module.css';
 
 export const ProfilePage: React.FC = () => {
@@ -47,6 +47,7 @@ export const ProfilePage: React.FC = () => {
   const [shareSuccess, setShareSuccess] = useState(false);
   const [discoverVideos, setDiscoverVideos] = useState<any[]>([]);
   const [videoMenuOpen, setVideoMenuOpen] = useState<string | null>(null);
+  const [postMenuOpen, setPostMenuOpen] = useState<string | null>(null);
   const [previewDiscoverVideo, setPreviewDiscoverVideo] = useState<any>(null);
   const [videoPrivacy, setVideoPrivacy] = useState<'public' | 'friends' | 'private'>('public');
   const [previewMuted, setPreviewMuted] = useState(true);
@@ -186,6 +187,13 @@ export const ProfilePage: React.FC = () => {
       .eq('id', videoId)
       .eq('user_id', targetUserId);
     await loadDiscoverVideos();
+  };
+
+  const handleDeletePost = async (postId: string) => {
+    await supabase.from('posts').delete().eq('id', postId).eq('author_id', targetUserId);
+    const updatedPosts = await profileService.getUserPosts(targetUserId);
+    setUserPosts(updatedPosts);
+    setPostMenuOpen(null);
   };
 
   const handleToggleVideoVisibility = async (videoId: string, currentStatus: string) => {
@@ -663,18 +671,48 @@ export const ProfilePage: React.FC = () => {
 
       {activeTab === 'posts' ? (
         <div className={styles.galleryGrid}>
-          {postImages.length > 0 ? (
-            postImages.map((image, index) => (
-              <div
-                key={index}
-                className={styles.galleryItem}
-                onClick={() => setPhotoViewerIndex(index)}
-              >
-                <img src={image} alt="" loading="lazy" className={styles.galleryImage} />
-                <div className={styles.galleryOverlay}>
-                  <Heart size={14} />
-                </div>
-              </div>
+          {userPosts.length > 0 ? (
+            userPosts.map((post, postIndex) => (
+              post.images.map((image, imageIndex) => {
+                const globalIndex = postIndex * 10 + imageIndex;
+                return (
+                  <div
+                    key={`${post.id}-${imageIndex}`}
+                    className={styles.galleryItem}
+                    onClick={() => setPhotoViewerIndex(globalIndex)}
+                  >
+                    <img src={image} alt="" loading="lazy" className={styles.galleryImage} />
+                    <div className={styles.galleryOverlay}>
+                      <Heart size={14} />
+                    </div>
+                    
+                    {isOwnProfile && (
+                      <>
+                        <button 
+                          className={styles.galleryMenuButton}
+                          onClick={(e) => { 
+                            e.stopPropagation(); 
+                            setPostMenuOpen(postMenuOpen === post.id ? null : post.id); 
+                          }}
+                        >
+                          <MoreVertical size={14} />
+                        </button>
+                        
+                        {postMenuOpen === post.id && (
+                          <div className={styles.galleryDropdownMenu} onClick={(e) => e.stopPropagation()}>
+                            <button 
+                              className={styles.deletePostButton}
+                              onClick={() => handleDeletePost(post.id)}
+                            >
+                              <Trash2 size={14} /> Delete Post
+                            </button>
+                          </div>
+                        )}
+                      </>
+                    )}
+                  </div>
+                );
+              })
             ))
           ) : (
             <div className={styles.emptyPosts}>
@@ -914,6 +952,10 @@ export const ProfilePage: React.FC = () => {
     </div>
   );
 };
+
+
+
+
 
 
 

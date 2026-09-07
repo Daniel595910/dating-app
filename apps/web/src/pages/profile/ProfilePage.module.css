@@ -206,8 +206,11 @@
 }
 
 .galleryItem {
-  aspect-ratio: 1;
+  position: relative;
+  border-radius: 8px;
   overflow: hidden;
+  aspect-ratio: 1;
+  cursor: pointer;
 }
 
 .galleryImage {
@@ -942,3 +945,52 @@
   background: rgba(255, 255, 255, 0.25);
   transform: scale(1.05);
 }
+
+.galleryMenuButton {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: rgba(0, 0, 0, 0.6);
+  border: none;
+  border-radius: 50%;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: #fff;
+  z-index: 5;
+}
+
+.galleryDropdownMenu {
+  position: absolute;
+  top: 40px;
+  right: 8px;
+  background: #fff;
+  border-radius: 10px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+  min-width: 140px;
+  padding: 4px;
+  z-index: 10;
+}
+
+.deletePostButton {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 8px 12px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 500;
+  color: #ef4444;
+  border-radius: 6px;
+}
+
+.deletePostButton:hover {
+  background: #fef2f2;
+}
+
