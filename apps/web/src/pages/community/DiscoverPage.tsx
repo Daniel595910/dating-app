@@ -8,7 +8,7 @@ import { DiscoverCandidate } from '../../features/discover/types/discover.types'
 import { 
   BadgeCheck, MapPin, Heart, X, Play, Pause, Video, Upload, 
   Loader, ArrowLeft, Grid3x3, Plus, Clock, CheckCircle2, XCircle,
-  Trash2, Eye, EyeOff, Volume2, VolumeX, RotateCcw, UserPlus, Check
+  Trash2, Eye, EyeOff, Volume2, VolumeX, RotateCcw, Check
 } from 'lucide-react';
 import styles from './DiscoverPage.module.css';
 
@@ -56,9 +56,7 @@ export const DiscoverPage: React.FC = () => {
   const [swipeCount, setSwipeCount] = useState(0);
   const [dailyLimit] = useState(50);
   const [showLikeAnimation, setShowLikeAnimation] = useState(false);
-  const [isFollowing, setIsFollowing] = useState(false);
-  const [followLoading, setFollowLoading] = useState(false);
-  const [lastTapTime, setLastTapTime] = useState(0);
+      const [lastTapTime, setLastTapTime] = useState(0);
   
   const videoRef = useRef<HTMLVideoElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -70,6 +68,8 @@ export const DiscoverPage: React.FC = () => {
   useEffect(() => {
     swipeStateRef.current = swipe;
   }, [swipe]);
+
+
 
   useEffect(() => {
     loadCandidates();
@@ -93,16 +93,7 @@ export const DiscoverPage: React.FC = () => {
 
 
 
-  const checkFollowStatus = async (targetUserId: string) => {
-    if (!user) return;
-    const { data } = await supabase
-      .from('follows')
-      .select('id')
-      .eq('follower_id', user.id)
-      .eq('following_id', targetUserId)
-      .maybeSingle();
-    setIsFollowing(Boolean(data));
-  };
+
 
   const loadCandidates = async () => {
     if (!user) return;
@@ -143,10 +134,13 @@ export const DiscoverPage: React.FC = () => {
     skipToNextPerson(currentUserId);
   };
 
-  const handleDoubleTapLike = () => {
+  const handleDoubleTapLike = (e: React.MouseEvent) => {
+    // Ignore if clicking on buttons
+    const target = e.target as HTMLElement;
+    if (target.closest('button')) return;
+    
     const now = Date.now();
     if (now - lastTapTime < 300) {
-      // Double tap detected
       setShowLikeAnimation(true);
       setTimeout(() => setShowLikeAnimation(false), 800);
       handleSwipeAction('like');
@@ -156,42 +150,7 @@ export const DiscoverPage: React.FC = () => {
     }
   };
 
-  const handleFollow = async () => {
-    if (!user || !current) return;
-    if (followLoading) return;
-    setFollowLoading(true);
-    try {
-      if (isFollowing) {
-        const { error: deleteError } = await supabase
-          .from('follows')
-          .delete()
-          .eq('follower_id', user.id)
-          .eq('following_id', current.userId);
-        if (!deleteError) setIsFollowing(false);
-      } else {
-        // Check if already following first
-        const { data: existing } = await supabase
-          .from('follows')
-          .select('id')
-          .eq('follower_id', user.id)
-          .eq('following_id', current.userId)
-          .maybeSingle();
-        
-        if (!existing) {
-          const { error: insertError } = await supabase
-            .from('follows')
-            .insert({ follower_id: user.id, following_id: current.userId });
-          if (!insertError) setIsFollowing(true);
-        } else {
-          setIsFollowing(true);
-        }
-      }
-    } catch (err) {
-      console.error('Follow error:', err);
-    } finally {
-      setFollowLoading(false);
-    }
-  };
+
 
   const skipToNextPerson = useCallback((currentUserId: string) => {
     setCurrentIndex((prev) => Math.min(prev + 1, candidates.length));
@@ -386,6 +345,8 @@ export const DiscoverPage: React.FC = () => {
     if (!error) await loadMyVideos();
   };
 
+
+
   if (loading) {
     return (
       <div className={styles.loadingContainer}>
@@ -397,6 +358,8 @@ export const DiscoverPage: React.FC = () => {
 
   const current = currentIndex < candidates.length ? candidates[currentIndex] : null;
   const swipesRemaining = dailyLimit - swipeCount;
+
+
 
   return (
     <div ref={containerRef} className={styles.discoverPage} onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} onTouchEnd={handleTouchEnd} style={{ touchAction: 'none', userSelect: 'none', WebkitUserSelect: 'none', overscrollBehavior: 'none' }}>
@@ -540,14 +503,7 @@ export const DiscoverPage: React.FC = () => {
             <RotateCcw size={18} />
           </button>
           <div className={styles.profileOverlay}>
-            <button 
-              className={`${styles.followButton} ${isFollowing ? styles.followButtonActive : ''}`}
-              onClick={handleFollow}
-              disabled={followLoading}
-            >
-              {isFollowing ? <Check size={14} /> : <UserPlus size={14} />}
-              {isFollowing ? 'Following' : 'Follow'}
-            </button>
+
             <div className={styles.profileNameRow}>
               <span className={styles.profileName}>{current.displayName}{current.age ? ', ' + current.age : ''}</span>
               {current.isVerified && <BadgeCheck size={18} />}
@@ -618,6 +574,18 @@ export const DiscoverPage: React.FC = () => {
     </div>
   );
 };
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

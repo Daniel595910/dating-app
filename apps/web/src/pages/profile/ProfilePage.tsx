@@ -22,6 +22,7 @@ export const ProfilePage: React.FC = () => {
   const [profilePhotos, setProfilePhotos] = useState<Array<{ id: string; url: string; order: number; isPrimary: boolean }>>([]);
   const [isFollowing, setIsFollowing] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'posts' | 'about'>('posts');
   const [photoViewerIndex, setPhotoViewerIndex] = useState<number | null>(null);
   const [photoManagementOpen, setPhotoManagementOpen] = useState(false);
@@ -90,19 +91,19 @@ export const ProfilePage: React.FC = () => {
     }
   };
 
-  const isOwnProfile = !userId || userId === user?.id;
+  const isOwnProfile = !userId || userId === 'undefined' || userId === user?.id;
   const targetUserId = userId || user?.id || '';
 
   useEffect(() => {
     const loadProfile = async () => {
-      if (!targetUserId) return;
+      if (!targetUserId || targetUserId === 'undefined') return;
       setLoading(true);
 
       try {
-        const profileData = await profileService.getProfileByUserId(targetUserId);
-        const profileStats = await profileService.getProfileStats(targetUserId);
-        const posts = await profileService.getUserPosts(targetUserId);
-        const photos = await profileService.getProfilePhotos(targetUserId);
+        const profileData = await profileService.getProfileByUserId(targetUserId || '');
+        const profileStats = await profileService.getProfileStats(targetUserId || '');
+        const posts = await profileService.getUserPosts(targetUserId || '');
+        const photos = await profileService.getProfilePhotos(targetUserId || '');
 
         setProfile(profileData);
         setStats(profileStats);
@@ -151,7 +152,7 @@ export const ProfilePage: React.FC = () => {
   }, [targetUserId, user, isOwnProfile]);
 
   const loadStatsLists = async (type: 'followers' | 'following' | 'connections') => {
-    if (!targetUserId) return;
+    if (!targetUserId || targetUserId === 'undefined') return;
 
     try {
       if (type === 'followers') {
@@ -733,6 +734,10 @@ export const ProfilePage: React.FC = () => {
     </div>
   );
 };
+
+
+
+
 
 
 
