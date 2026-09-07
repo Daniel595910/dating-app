@@ -277,3 +277,230 @@
   from { transform: scale(0); opacity: 0; }
   to { transform: scale(1); opacity: 1; }
 }
+
+.deckContainer {
+  position: relative;
+  width: 100%;
+  max-width: 480px;
+  margin: 0 auto;
+}
+
+.filterButton {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 16px;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 9999px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  color: #374151;
+  margin: 0 auto 12px;
+  transition: all 0.15s;
+}
+
+.filterButton:hover {
+  background: #f9fafb;
+  border-color: #d1d5db;
+}
+
+.chevronRotated {
+  transform: rotate(180deg);
+}
+
+.filterPanel {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 16px;
+  padding: 16px;
+  margin-bottom: 12px;
+  animation: slideDown 0.2s ease;
+}
+
+.filterRow {
+  margin-bottom: 12px;
+}
+
+.filterRow:last-child {
+  margin-bottom: 0;
+}
+
+.filterLabel {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 6px;
+}
+
+.ageRange {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.ageSeparator {
+  font-size: 12px;
+  color: #9ca3af;
+}
+
+.filterSelect {
+  padding: 8px 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  font-size: 13px;
+  color: #111827;
+  background: #ffffff;
+  cursor: pointer;
+  min-width: 70px;
+}
+
+.filterCheckbox {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: #374151;
+  cursor: pointer;
+}
+
+.distance {
+  font-size: 11px;
+  color: #10b981;
+  font-weight: 600;
+}
+
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.viewToggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.viewButton {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 9999px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  color: #374151;
+  transition: all 0.15s;
+}
+
+.viewButtonActive {
+  background: #ef4444;
+  color: #ffffff;
+  border-color: #ef4444;
+}
+
+.rangeSlider {
+  width: 100%;
+  margin: 4px 0;
+  accent-color: #ef4444;
+}
+
+.mapView {
+  min-height: 400px;
+  border-radius: 16px;
+  overflow: hidden;
+  position: relative;
+}
+
+.mapContainer {
+  width: 100%;
+  height: 400px;
+  border-radius: 16px;
+}
+
+.mapPlaceholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  color: #9ca3af;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.mapHint {
+  font-size: 12px;
+  color: #6b7280;
+}
+
+
+.closeMapButton {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 1000;
+  background: rgba(255, 255, 255, 0.9);
+  border: none;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: #374151;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  transition: all 0.15s;
+}
+
+.closeMapButton:hover {
+  background: #ffffff;
+  transform: scale(1.05);
+}
+
+.photoContainer {
+  background: transparent;
+}
+
+.photo {
+  mix-blend-mode: multiply;
+}
+
+.photoContainer {
+  background: transparent;
+}
+
+.photo {
+  mix-blend-mode: multiply;
+  object-fit: cover;
+}
+
+.closeMapButton {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 1000;
+  background: rgba(255, 255, 255, 0.9);
+  border: none;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: #374151;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  transition: all 0.15s;
+}
+
+.closeMapButton:hover {
+  background: #ffffff;
+  transform: scale(1.05);
+}

@@ -42,42 +42,49 @@ export const ProfilePage: React.FC = () => {
   const [shareProfileOpen, setShareProfileOpen] = useState(false);
   const [shareLoading, setShareLoading] = useState(false);
   const [hasShared, setHasShared] = useState(false);
+  const [showUnshareConfirm, setShowUnshareConfirm] = useState(false);
   const [shareSuccess, setShareSuccess] = useState(false);
 
   const handleShareProfile = async () => {
     if (!user || !profile) return;
+    if (hasShared) {
+      setShowUnshareConfirm(true);
+      return;
+    }
     setShareLoading(true);
     try {
-      const { data: membership } = await supabase
-        .from('community_members')
-        .select('community_id')
-        .eq('user_id', user.id)
-        .maybeSingle();
+        // Share profile
+        const { data: membership } = await supabase
+          .from('community_members')
+          .select('community_id')
+          .eq('user_id', user.id)
+          .maybeSingle();
 
-      if (!membership) return;
+        if (!membership) return;
 
-      const { error: insertError } = await supabase.from('posts').insert({
-        community_id: membership.community_id,
-        author_id: user.id,
-        type: 'profile_share',
-        content: profile.bio || 'Check out my profile!',
-        status: 'published',
-        images: profile.avatarUrl ? [profile.avatarUrl] : [],
-        metadata: {
-          profileShare: true,
-          displayName: profile.displayName,
-          age: profile.age || null,
-          location: profile.location ? [profile.location.city, profile.location.state].filter(Boolean).join(', ') : null,
-          interests: profile.interests || [],
-          relationshipIntent: profile.relationship_intent || null,
-        },
-      });
+        const { error: insertError } = await supabase.from('posts').insert({
+          community_id: membership.community_id,
+          author_id: user.id,
+          type: 'profile_share',
+          content: profile.bio || 'Check out my profile!',
+          status: 'published',
+          images: profile.avatarUrl ? [profile.avatarUrl] : [],
+          metadata: {
+            profileShare: true,
+            displayName: profile.displayName,
+            age: profile.age || null,
+            location: profile.location ? [profile.location.city, profile.location.state].filter(Boolean).join(', ') : null,
+            interests: profile.interests || [],
+            relationshipIntent: profile.relationship_intent || null,
+          },
+        });
 
-      if (insertError) throw insertError;
-      setShareSuccess(true);
-      setTimeout(() => setShareSuccess(false), 4000);
+        if (insertError) throw insertError;
+        setHasShared(true);
+        setShareSuccess(true);
+        setTimeout(() => setShareSuccess(false), 4000);
     } catch (err) {
-      console.error('Share profile failed:', err);
+      console.error('Share/Unshare failed:', err);
     } finally {
       setShareLoading(false);
     }
@@ -534,13 +541,14 @@ export const ProfilePage: React.FC = () => {
         {isOwnProfile ? (
           <div className={styles.actionRow}>
             <button className={styles.primaryAction} onClick={handleShareProfile}
-              disabled={shareLoading || hasShared}
+              disabled={shareLoading}
               style={{
-                opacity: hasShared ? 0.7 : 1,
-                cursor: hasShared ? 'not-allowed' : 'pointer',
+                cursor: shareLoading ? 'wait' : 'pointer',
+                background: hasShared ? '#d1fae5' : '#fef2f2',
+                color: hasShared ? '#10b981' : '#ef4444',
               }}>
               <Share2 size={18} />
-              {shareLoading ? 'Sharing...' : hasShared ? 'Profile Shared' : 'Share Profile'}
+              {shareLoading ? '...' : hasShared ? '' : ''}
             </button>
             <button className={styles.primaryAction} onClick={() => navigate('/profile/edit')}>
               Edit Profile
@@ -663,25 +671,81 @@ export const ProfilePage: React.FC = () => {
         </div>
       )}
     {shareSuccess && (
-        <div style={{ position: 'fixed', bottom: '80px', left: '50%', transform: 'translateX(-50%)', zIndex: 9999, backgroundColor: '#10b981', color: '#ffffff', padding: '16px 24px', borderRadius: '16px', boxShadow: '0 10px 30px rgba(16, 185, 129, 0.3)', display: 'flex', alignItems: 'center', gap: '12px', animation: 'slideUp 0.3s ease', maxWidth: '90%' }}>
-          <Check size={24} />
-          <div>
-            <p style={{ fontSize: '15px', fontWeight: 700, margin: 0 }}>Profile Shared!</p>
-            <p style={{ fontSize: '13px', margin: '4px 0 0', opacity: 0.9 }}>
-              Your profile has been posted to your community.
-            </p>
+        <div className={styles.shareSuccessToast}>
+          <div className={styles.shareSuccessIcon}>
+            <Check size={20} />
+          </div>
+          <div className={styles.shareSuccessContent}>
+            <p className={styles.shareSuccessTitle}>Profile Shared!</p>
+            <p className={styles.shareSuccessText}>Your profile is now in the community Profiles tab.</p>
           </div>
           <button 
-            onClick={() => navigate('/community')}
-            style={{ background: 'none', border: '1px solid rgba(255,255,255,0.5)', color: '#ffffff', padding: '8px 14px', borderRadius: 9999, cursor: 'pointer', fontSize: '13px', fontWeight: 600, whiteSpace: 'nowrap' }}
+            onClick={() => navigate('/community?filter=profiles')}
+            className={styles.shareSuccessButton}
           >
-            View Post
+            View
           </button>
+        </div>
+      )}
+    {showUnshareConfirm && (
+        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.6)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }} onClick={() => setShowUnshareConfirm(false)}>
+          <div style={{ backgroundColor: '#fff', borderRadius: 20, padding: '28px 24px', maxWidth: 360, width: '100%', textAlign: 'center' }} onClick={(e) => e.stopPropagation()}>
+            <div style={{ width: 56, height: 56, borderRadius: '50%', backgroundColor: '#fef2f2', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 12px' }}>
+              <Share2 size={24} style={{ color: '#ef4444' }} />
+            </div>
+            <h3 style={{ fontSize: 17, fontWeight: 700, margin: '0 0 8px', color: '#111827' }}>Remove Profile Share?</h3>
+            <p style={{ fontSize: 13, color: '#6b7280', margin: '0 0 20px', lineHeight: 1.5 }}>
+              Your profile will be removed from the Profiles tab in your community. You can share it again anytime.
+            </p>
+            <div style={{ display: 'flex', gap: 10 }}>
+              <button 
+                onClick={async () => {
+                  setShowUnshareConfirm(false);
+                  setShareLoading(true);
+                  try {
+                    const { error: deleteError } = await supabase
+                      .from('posts')
+                      .delete()
+                      .eq('author_id', user?.id)
+                      .eq('type', 'profile_share');
+                    if (deleteError) throw deleteError;
+                    setHasShared(false);
+                  } catch (err) {
+                    console.error('Unshare failed:', err);
+                  } finally {
+                    setShareLoading(false);
+                  }
+                }}
+                style={{ flex: 1, padding: 12, backgroundColor: '#ef4444', color: '#fff', border: 'none', borderRadius: 9999, cursor: 'pointer', fontSize: 14, fontWeight: 600 }}
+              >
+                Remove
+              </button>
+              <button 
+                onClick={() => setShowUnshareConfirm(false)}
+                style={{ flex: 1, padding: 12, background: 'none', color: '#6b7280', border: '1px solid #e5e7eb', borderRadius: 9999, cursor: 'pointer', fontSize: 14, fontWeight: 500 }}
+              >
+                Keep
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>
   );
 };
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
