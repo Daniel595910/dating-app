@@ -24,6 +24,7 @@ import { safetyService } from '../services/safety.service';
 import { ScamWarning } from './ScamWarning';
 import { SearchInConversation } from './SearchInConversation';
 import { chatNotificationService } from '../services/chat-notification.service';
+import { useCall } from '../../calls/CallProvider';
 import styles from '../styles/ChatWindow.module.css';
 
 interface ChatWindowProps {
@@ -42,6 +43,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
   verified,
 }) => {
   const { user } = useAuthStore();
+  const { startCall } = useCall();
   const navigate = useNavigate();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [loading, setLoading] = useState(true);
@@ -337,7 +339,17 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
         isOnline={targetOnline}
         onBack={() => navigate('/chats')}
         onProfileClick={() => navigate(`/profile/${targetUserId}`)}
-        onMoreClick={() => setSettingsOpen(true)}
+        onMoreClick={() => setActionMenuOpen(true)}
+        onCallClick={async () => {
+          if (targetUserId) {
+            try {
+              await startCall(targetUserId);
+            } catch (err: any) {
+              console.error('Call failed:', err);
+              alert(err.message || 'Failed to start call');
+            }
+          }
+        }}
       />
 
       <div className={styles.messagesContainer} ref={messagesContainerRef}>
@@ -432,6 +444,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
         onViewProfile={() => navigate(`/profile/${targetUserId}`)}
         onMute={() => {}}
         onSearch={() => setSearchOpen(true)}
+        onSettings={() => setSettingsOpen(true)}
         onBlock={() => setBlockSheetOpen(true)}
         onReport={() => setReportSheetOpen(true)}
       />
@@ -473,6 +486,10 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
     </div>
   );
 };
+
+
+
+
 
 
 

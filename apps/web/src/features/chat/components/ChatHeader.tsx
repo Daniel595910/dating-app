@@ -1,5 +1,6 @@
 ﻿import React from 'react';
-import { ArrowLeft, MoreVertical, BadgeCheck } from 'lucide-react';
+import { ArrowLeft, MoreVertical, BadgeCheck, Phone, Search } from 'lucide-react';
+import styles from '../styles/ChatHeader.module.css';
 
 interface ChatHeaderProps {
   userName: string;
@@ -9,6 +10,8 @@ interface ChatHeaderProps {
   onBack: () => void;
   onProfileClick: () => void;
   onMoreClick: () => void;
+  onCallClick: () => void;
+  onSearchClick?: () => void;
 }
 
 export const ChatHeader: React.FC<ChatHeaderProps> = ({
@@ -19,124 +22,53 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({
   onBack,
   onProfileClick,
   onMoreClick,
+  onCallClick,
+  onSearchClick,
 }) => {
   return (
-    <header
-      style={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: '0.5rem',
-        padding: '0.625rem 0.75rem',
-        paddingTop: 'calc(0.625rem + env(safe-area-inset-top))',
-        borderBottom: '1px solid #f3f4f6',
-        backgroundColor: '#ffffff',
-        flexShrink: 0,
-      }}
-    >
-      <button
-        onClick={onBack}
-        aria-label="Back"
-        style={{
-          background: 'none',
-          border: 'none',
-          cursor: 'pointer',
-          color: '#111827',
-          padding: '0.5rem',
-          borderRadius: '9999px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          minWidth: 44,
-          minHeight: 44,
-        }}
-      >
+    <header className={styles.header}>
+      <button className={styles.backButton} onClick={onBack} aria-label="Back">
         <ArrowLeft size={22} />
       </button>
 
-      <button
-        onClick={onProfileClick}
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '0.625rem',
-          cursor: 'pointer',
-          flex: 1,
-          minWidth: 0,
-          background: 'none',
-          border: 'none',
-          padding: 0,
-        }}
-      >
-        <div style={{ position: 'relative', flexShrink: 0 }}>
-          <div
-            style={{
-              width: 40,
-              height: 40,
-              borderRadius: '50%',
-              background: 'linear-gradient(135deg, #fef3c7, #fde68a)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontWeight: 700,
-              color: '#92400e',
-              fontSize: '1rem',
-              overflow: 'hidden',
-            }}
-          >
+      <button className={styles.profileSection} onClick={onProfileClick}>
+        <div className={styles.avatarWrapper}>
+          <div className={styles.avatar}>
             {userAvatar ? (
-              <img src={userAvatar} alt={userName} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              <img src={userAvatar} alt={userName} className={styles.avatarImage} />
             ) : (
-              userName.charAt(0).toUpperCase()
+              <span className={styles.avatarFallback}>{userName.charAt(0).toUpperCase()}</span>
             )}
           </div>
-          {isOnline && (
-            <span
-              style={{
-                position: 'absolute',
-                bottom: 0,
-                right: 0,
-                width: 10,
-                height: 10,
-                borderRadius: '50%',
-                backgroundColor: '#22c55e',
-                border: '2px solid #ffffff',
-              }}
-            />
-          )}
+          {isOnline && <span className={styles.onlineDot} />}
         </div>
 
-        <div style={{ minWidth: 0 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-            <span style={{ fontWeight: 700, fontSize: '0.9375rem', color: '#111827', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-              {userName}
-            </span>
-            {verified && <BadgeCheck size={15} style={{ color: '#3b82f6', flexShrink: 0 }} />}
+        <div className={styles.userInfo}>
+          <div className={styles.nameRow}>
+            <span className={styles.name}>{userName}</span>
+            {verified && <BadgeCheck size={15} className={styles.verifiedIcon} />}
           </div>
-          <p style={{ fontSize: '0.6875rem', color: '#9ca3af', margin: 0 }}>
+          <span className={`${styles.status} ${isOnline ? styles.online : styles.offline}`}>
             {isOnline ? 'Online' : 'Offline'}
-          </p>
+          </span>
         </div>
       </button>
 
-      <button
-        onClick={onMoreClick}
-        aria-label="More options"
-        style={{
-          background: 'none',
-          border: 'none',
-          cursor: 'pointer',
-          color: '#6b7280',
-          padding: '0.5rem',
-          borderRadius: '9999px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          minWidth: 44,
-          minHeight: 44,
-        }}
-      >
-        <MoreVertical size={20} />
-      </button>
+      <div className={styles.actions}>
+        {onCallClick && (
+          <button className={styles.actionButton} onClick={onCallClick} aria-label="Voice call" title="Voice Call">
+            <Phone size={18} />
+          </button>
+        )}
+        {onSearchClick && (
+          <button className={styles.actionButton} onClick={onSearchClick} aria-label="Search in conversation">
+            <Search size={18} />
+          </button>
+        )}
+        <button className={styles.actionButton} onClick={onMoreClick} aria-label="More options">
+          <MoreVertical size={20} />
+        </button>
+      </div>
     </header>
   );
 };
