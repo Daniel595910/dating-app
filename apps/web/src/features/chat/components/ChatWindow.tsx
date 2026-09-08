@@ -17,6 +17,7 @@ import { ReportSheet } from '../../community/components/ReportSheet';
 import { GiftPicker } from './GiftPicker';
 import { VoiceRecorder } from './VoiceRecorder';
 import { useCall } from '../../calls/CallProvider';
+import { Pin, X } from 'lucide-react';
 import styles from '../styles/ChatWindow.module.css';
 
 interface ChatWindowProps {
@@ -64,6 +65,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
   // Data
   const [reactionMap, setReactionMap] = useState<Map<string, MessageReactionSummary[]>>(new Map());
   const [pinnedMessageIds, setPinnedMessageIds] = useState<Set<string>>(new Set());
+  const [pinnedMessages, setPinnedMessages] = useState<ChatMessage[]>([]);
   const [chatWallpaper, setChatWallpaper] = useState<{ wallpaperUrl: string | null; wallpaperColor: string } | null>(null);
   
   // Disappearing messages state
@@ -355,6 +357,17 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
     }
   };
 
+  const scrollToPinnedMessage = (messageId: string) => {
+    const element = document.getElementById(`message-${messageId}`);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      element.classList.add(styles.highlightMessage);
+      setTimeout(() => {
+        element.classList.remove(styles.highlightMessage);
+      }, 2000);
+    }
+  };
+
   const handleReply = (message: ChatMessage) => {
     setReplyingTo(message);
   };
@@ -415,6 +428,46 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
         }}
       />
 
+      {pinnedMessageIds.size > 0 && messages.some(m => pinnedMessageIds.has(m.id)) && (
+        <div className={styles.pinnedBanner}>
+          <div className={styles.pinnedBannerContent}>
+            <Pin size={14} className={styles.pinnedBannerIcon} />
+            <div className={styles.pinnedBannerText}>
+              <span className={styles.pinnedBannerLabel}>Pinned Message</span>
+              <span className={styles.pinnedBannerPreview}>
+                {(() => {
+                  const lastPinned = [...messages].reverse().find(m => pinnedMessageIds.has(m.id));
+                  return lastPinned?.content?.substring(0, 50) || 'Message';
+                })()}
+              </span>
+            </div>
+          </div>
+          <div className={styles.pinnedBannerActions}>
+            {pinnedMessageIds.size > 1 && (
+              <span className={styles.pinnedCount}>{pinnedMessageIds.size}</span>
+            )}
+            <button 
+              className={styles.pinnedBannerButton}
+              onClick={() => {
+                const lastPinned = [...messages].reverse().find(m => pinnedMessageIds.has(m.id));
+                if (lastPinned) scrollToPinnedMessage(lastPinned.id);
+              }}
+            >
+              View
+            </button>
+            <button 
+              className={styles.pinnedBannerClose}
+              onClick={() => {
+                const lastPinned = [...messages].reverse().find(m => pinnedMessageIds.has(m.id));
+                if (lastPinned) handlePin(lastPinned);
+              }}
+            >
+              <X size={14} />
+            </button>
+          </div>
+        </div>
+      )}
+
       <div className={styles.messagesContainer} ref={containerRef}>
         {hasMore && (
           <button className={styles.loadMore} onClick={() => loadMessages(false)} disabled={loadingMore}>
@@ -431,6 +484,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
             <MessageBubble
               key={message.id}
               message={message}
+              id={`message-${message.id}`}
               isOwn={message.senderId === user?.id}
               showSenderName={message.senderId !== user?.id}
               onReply={handleReply}
@@ -547,6 +601,10 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
     </div>
   );
 };
+
+
+
+
 
 
 

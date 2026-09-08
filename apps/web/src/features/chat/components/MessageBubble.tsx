@@ -7,6 +7,7 @@ import styles from '../styles/MessageBubble.module.css';
 interface MessageBubbleProps {
   message: ChatMessage;
   isOwn: boolean;
+  id?: string;
   showSenderName?: boolean;
   onRetry?: (messageId: string, content: string) => void;
   onReply?: (message: ChatMessage) => void;
@@ -26,6 +27,7 @@ const QUICK_REACTIONS = ['❤️', '😂', '😮', '😢', '👍'];
 export const MessageBubble: React.FC<MessageBubbleProps> = ({
   message,
   isOwn,
+  id,
   showSenderName = false,
   onRetry,
   onReply,
@@ -204,6 +206,7 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
 
   return (
     <div 
+      id={id}
       className={`${styles.wrapper} ${isOwn ? styles.ownWrapper : styles.otherWrapper}`}
       onMouseEnter={() => setShowQuickReactions(true)}
       onMouseLeave={() => setShowQuickReactions(false)}
@@ -311,6 +314,7 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
     </div>
   );
 };
+
 
 
 

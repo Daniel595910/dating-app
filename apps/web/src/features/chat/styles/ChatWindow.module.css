@@ -175,3 +175,150 @@
     border-color: #ef4444 !important;
   }
 }
+
+/* Pinned message banner */
+.pinnedBanner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 16px;
+  background: #fef2f2;
+  border-bottom: 1px solid #fecaca;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: all 0.15s;
+  min-height: 48px;
+}
+
+.pinnedBanner:hover {
+  background: #fee2e2;
+}
+
+.pinnedBannerContent {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  flex: 1;
+}
+
+.pinnedBannerIcon {
+  color: #ef4444;
+  flex-shrink: 0;
+}
+
+.pinnedBannerText {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.pinnedBannerLabel {
+  font-size: 11px;
+  font-weight: 700;
+  color: #ef4444;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.pinnedBannerPreview {
+  font-size: 12px;
+  color: #6b7280;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pinnedBannerActions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.pinnedCount {
+  background: #ef4444;
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 9999px;
+  min-width: 20px;
+  text-align: center;
+}
+
+.pinnedBannerButton {
+  padding: 4px 10px;
+  background: #ef4444;
+  border: none;
+  border-radius: 9999px;
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 600;
+  color: #ffffff;
+  transition: all 0.15s;
+  min-height: 28px;
+}
+
+.pinnedBannerButton:hover {
+  background: #dc2626;
+}
+
+.pinnedBannerClose {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 50%;
+  color: #6b7280;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+  min-width: 28px;
+  min-height: 28px;
+}
+
+.pinnedBannerClose:hover {
+  background: #fee2e2;
+  color: #ef4444;
+}
+
+/* Highlight animation for scrolled message */
+.highlightMessage {
+  animation: highlightPulse 2s ease;
+}
+
+@keyframes highlightPulse {
+  0%, 100% { background-color: transparent; }
+  25% { background-color: #fef2f2; }
+  50% { background-color: #fee2e2; }
+  75% { background-color: #fef2f2; }
+}
+
+/* Dark mode */
+@media (prefers-color-scheme: dark) {
+  .pinnedBanner {
+    background: #7f1d1d;
+    border-bottom-color: #991b1b;
+  }
+
+  .pinnedBanner:hover {
+    background: #991b1b;
+  }
+
+  .pinnedBannerPreview {
+    color: #9ca3af;
+  }
+
+  .pinnedBannerClose {
+    color: #9ca3af;
+  }
+
+  .pinnedBannerClose:hover {
+    background: #991b1b;
+    color: #fca5a5;
+  }
+}
