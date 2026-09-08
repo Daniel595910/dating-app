@@ -16,15 +16,27 @@ export const messageService = {
     }
 
     const reactionMap = new Map<string, MessageReactionSummary[]>();
+    
     (data || []).forEach((r: any) => {
       if (!reactionMap.has(r.message_id)) {
         reactionMap.set(r.message_id, []);
       }
-      reactionMap.get(r.message_id)!.push({
-        reaction: r.reaction_type,
-        count: 1,
-        reactedByMe: r.user_id === userId
-      });
+      
+      const existingReactions = reactionMap.get(r.message_id)!;
+      const existingIndex = existingReactions.findIndex((er) => er.reaction === r.reaction);
+      
+      if (existingIndex >= 0) {
+        existingReactions[existingIndex].count += 1;
+        if (r.user_id === userId) {
+          existingReactions[existingIndex].reactedByMe = true;
+        }
+      } else {
+        existingReactions.push({
+          reaction: r.reaction,
+          count: 1,
+          reactedByMe: r.user_id === userId
+        });
+      }
     });
 
     return reactionMap;
@@ -102,7 +114,6 @@ export const messageService = {
   },
 
   async forwardMessage(messageId: string, targetConversationId: string, senderId: string) {
-    // Use send_chat_message RPC for forwarding
     const { data: originalMessage, error: fetchError } = await supabase
       .from('messages')
       .select('content, type, metadata')
@@ -165,12 +176,11 @@ export const messageService = {
       return false;
     }
 
-    // Check if the function returned success
     if (data && typeof data === 'object' && 'success' in data) {
       return data.success === true;
     }
 
-    // If no error, assume success
     return true;
   }
 };
+

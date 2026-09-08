@@ -289,6 +289,14 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
     const trimmed = content.trim();
     const tempId = `temp-${Date.now()}`;
 
+    // Build metadata with reply info if replying
+    const metadata = replyingTo ? {
+      replyToId: replyingTo.id,
+      replyToSenderName: replyingTo.senderName,
+      replyToContent: replyingTo.content.substring(0, 100),
+      replyToType: replyingTo.type,
+    } : undefined;
+
     setMessages((prev) => [...prev, {
       id: tempId,
       conversationId,
@@ -297,15 +305,19 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
       senderAvatar: null,
       type: 'text',
       content: trimmed,
+      metadata,
       status: 'sending',
       createdAt: new Date().toISOString(),
     }]);
     scrollToBottom();
 
+    // Clear reply state
+    setReplyingTo(null);
+
     try {
-      const newMessage = await chatService.sendMessage(conversationId, user.id, trimmed);
+      const newMessage = await chatService.sendMessage(conversationId, user.id, trimmed, 'text', metadata);
       if (newMessage) {
-        setMessages((prev) => prev.map((m) => (m.id === tempId ? newMessage : m)));
+        setMessages((prev) => prev.map((m) => (m.id === tempId ? { ...newMessage, metadata } : m)));
       }
     } catch {
       setMessages((prev) => prev.map((m) => (m.id === tempId ? { ...m, status: 'failed' as const } : m)));
@@ -440,15 +452,27 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
 
       {editingMessage && (
         <div className={styles.editBar}>
+          <span className={styles.editBarLabel}>✏️</span>
           <input
             autoFocus
             defaultValue={editingMessage.content}
             onKeyDown={(e) => {
-              if (e.key === 'Enter') handleEditSubmit(editingMessage.id, e.currentTarget.value);
+              if (e.key === 'Enter') {
+                e.preventDefault();
+                handleEditSubmit(editingMessage.id, e.currentTarget.value);
+              }
               if (e.key === 'Escape') setEditingMessage(null);
             }}
+            placeholder="Edit message..."
+            maxLength={10000}
           />
           <button onClick={() => setEditingMessage(null)}>Cancel</button>
+          <button 
+            className={styles.editBarSave}
+            onClick={() => handleEditSubmit(editingMessage.id, (document.querySelector('.' + styles.editBar + ' input') as HTMLInputElement)?.value || editingMessage.content)}
+          >
+            Save
+          </button>
         </div>
       )}
 
@@ -523,3 +547,6 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
     </div>
   );
 };
+
+
+

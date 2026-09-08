@@ -406,3 +406,314 @@
   min-width: 32px;
   text-align: right;
 }
+/* Quick reactions on hover */
+.quickReactionsOverlay {
+  position: absolute;
+  top: -20px;
+  display: flex;
+  gap: 2px;
+  padding: 4px;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 9999px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: 10;
+  animation: popIn 0.15s ease;
+}
+
+.quickReactionsLeft {
+  left: 0;
+}
+
+.quickReactionsRight {
+  right: 0;
+}
+
+.quickReactionButton {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 20px;
+  padding: 4px;
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+.quickReactionButton:hover {
+  background: #f3f4f6;
+  transform: scale(1.2);
+}
+
+.quickReactionButton:active {
+  transform: scale(0.9);
+}
+
+/* Reaction bubbles on message */
+.reactionBubbles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 4px;
+}
+
+.reactionBubble {
+  background: rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 9999px;
+  padding: 2px 8px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.15s;
+  color: inherit;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+.reactionBubble:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.reactionBubble:active {
+  transform: scale(0.95);
+}
+
+.reactionBubbleActive {
+  background: rgba(255, 255, 255, 0.4);
+  border-color: rgba(255, 255, 255, 0.5);
+}
+
+/* Dark mode for reactions */
+@media (prefers-color-scheme: dark) {
+  .quickReactionsOverlay {
+    background: #1f2937;
+    border-color: #374151;
+  }
+
+  .quickReactionButton:hover {
+    background: #374151;
+  }
+
+  .reactionBubble {
+    background: rgba(0, 0, 0, 0.3);
+    border-color: rgba(255, 255, 255, 0.2);
+  }
+}
+
+/* Touch-friendly for mobile */
+@media (hover: none) and (pointer: coarse) {
+  .quickReactionButton {
+    width: 36px;
+    height: 36px;
+    font-size: 22px;
+  }
+
+  .reactionBubble {
+    padding: 4px 10px;
+    font-size: 13px;
+  }
+}
+
+/* Pop animation for quick reactions */
+@keyframes popIn {
+  from {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Reaction badges attached to message */
+.reactionBadges {
+  position: relative;
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 2px;
+  margin-top: 2px;
+  max-width: 100%;
+  z-index: 2;
+}
+
+.reactionBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 1px 6px;
+  border-radius: 9999px;
+  font-size: 11px;
+  cursor: pointer;
+  transition: all 0.15s;
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  white-space: nowrap;
+}
+
+.reactionBadge:hover {
+  background: #ffffff;
+  border-color: rgba(0, 0, 0, 0.2);
+  transform: translateY(-1px);
+}
+
+.reactionBadge:active {
+  transform: scale(0.95);
+}
+
+.reactionBadgeActive {
+  background: #ef4444;
+  border-color: #ef4444;
+  color: #ffffff;
+}
+
+.reactionEmoji {
+  font-size: 13px;
+  line-height: 1;
+}
+
+.reactionCount {
+  font-size: 10px;
+  font-weight: 600;
+  color: inherit;
+}
+
+@media (prefers-color-scheme: dark) {
+  .reactionBadge {
+    background: rgba(0, 0, 0, 0.5);
+    border-color: rgba(255, 255, 255, 0.2);
+  }
+
+  .reactionBadge:hover {
+    background: rgba(0, 0, 0, 0.7);
+    border-color: rgba(255, 255, 255, 0.3);
+  }
+
+  .reactionBadgeActive {
+    background: #ef4444;
+    border-color: #ef4444;
+  }
+}
+
+/* Reaction badges attached to message */
+.reactionBadges {
+  position: relative;
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 2px;
+  margin-top: 2px;
+  max-width: 100%;
+  z-index: 2;
+}
+
+.reactionBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 1px 6px;
+  border-radius: 9999px;
+  font-size: 11px;
+  cursor: pointer;
+  transition: all 0.15s;
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  white-space: nowrap;
+}
+
+.reactionBadge:hover {
+  background: #ffffff;
+  border-color: rgba(0, 0, 0, 0.2);
+  transform: translateY(-1px);
+}
+
+.reactionBadge:active {
+  transform: scale(0.95);
+}
+
+.reactionBadgeActive {
+  background: #ef4444;
+  border-color: #ef4444;
+  color: #ffffff;
+}
+
+.reactionEmoji {
+  font-size: 13px;
+  line-height: 1;
+}
+
+.reactionCount {
+  font-size: 10px;
+  font-weight: 600;
+  color: inherit;
+}
+
+@media (prefers-color-scheme: dark) {
+  .reactionBadge {
+    background: rgba(0, 0, 0, 0.5);
+    border-color: rgba(255, 255, 255, 0.2);
+  }
+
+  .reactionBadge:hover {
+    background: rgba(0, 0, 0, 0.7);
+    border-color: rgba(255, 255, 255, 0.3);
+  }
+
+  .reactionBadgeActive {
+    background: #ef4444;
+    border-color: #ef4444;
+  }
+}
+
+/* Reply preview inside message bubble */
+.replyPreview {
+  background: rgba(255, 255, 255, 0.15);
+  border-left: 3px solid rgba(255, 255, 255, 0.4);
+  border-radius: 6px;
+  padding: 4px 8px;
+  margin-bottom: 4px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.replyPreview:hover {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+.replyPreviewHeader {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  font-weight: 600;
+  opacity: 0.8;
+  margin-bottom: 2px;
+}
+
+.replyPreviewContent {
+  font-size: 11px;
+  opacity: 0.7;
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 180px;
+}
+
+@media (prefers-color-scheme: dark) {
+  .replyPreview {
+    background: rgba(0, 0, 0, 0.3);
+    border-left-color: rgba(255, 255, 255, 0.3);
+  }
+}

@@ -88,13 +88,23 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
   const handleTouchMove = (e: React.TouchEvent) => {
     if (!touchStartRef.current) return;
     const touch = e.touches[0];
-    const deltaX = Math.abs(touch.clientX - touchStartRef.current.x);
+    const deltaX = touch.clientX - touchStartRef.current.x;
     const deltaY = Math.abs(touch.clientY - touchStartRef.current.y);
-    if (deltaX > 10 || deltaY > 10) {
+    
+    // If horizontal swipe detected (left or right)
+    if (Math.abs(deltaX) > 50 && deltaY < 30) {
       if (longPressTimerRef.current) {
         clearTimeout(longPressTimerRef.current);
         longPressTimerRef.current = null;
       }
+      
+      // Trigger reply on swipe
+      if (!isDeleted && onReply) {
+        onReply(message);
+      }
+      
+      // Reset touch start to prevent multiple triggers
+      touchStartRef.current = null;
     }
   };
 
@@ -193,7 +203,11 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
   };
 
   return (
-    <div className={`${styles.wrapper} ${isOwn ? styles.ownWrapper : styles.otherWrapper}`}>
+    <div 
+      className={`${styles.wrapper} ${isOwn ? styles.ownWrapper : styles.otherWrapper}`}
+      onMouseEnter={() => setShowQuickReactions(true)}
+      onMouseLeave={() => setShowQuickReactions(false)}
+    >
       {isPinned && (
         <div className={styles.pinnedBadge}><Pin size={10} /> Pinned</div>
       )}
@@ -206,17 +220,32 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
         onTouchEnd={handleTouchEnd}
       >
         {!isOwn && showSenderName && <span className={styles.senderName}>{message.senderName}</span>}
+        
+        {message.metadata?.replyToId && (
+          <div className={styles.replyPreview}>
+            <div className={styles.replyPreviewHeader}>
+              <Reply size={10} />
+              <span>{message.metadata.replyToSenderName}</span>
+            </div>
+            <p className={styles.replyPreviewContent}>
+              {message.metadata.replyToContent || 'Message'}
+            </p>
+          </div>
+        )}
+        
         {renderContent()}
         
         {reactions.length > 0 && (
-          <div className={styles.reactionBubbles}>
+          <div className={styles.reactionBadges}>
             {reactions.map((r, i) => (
               <button 
-                key={i} 
-                className={`${styles.reactionBubble} ${r.reactedByMe ? styles.reactionBubbleActive : ''}`}
+                key={`${r.reaction}-${i}`} 
+                className={`${styles.reactionBadge} ${r.reactedByMe ? styles.reactionBadgeActive : ''}`}
                 onClick={() => onReact?.(message, r.reaction)}
+                title={`${r.reaction} ${r.count}`}
               >
-                {r.reaction} {r.count}
+                <span className={styles.reactionEmoji}>{r.reaction}</span>
+                {r.count > 1 && <span className={styles.reactionCount}>{r.count}</span>}
               </button>
             ))}
           </div>
@@ -235,6 +264,33 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
           </button>
         )}
       </div>
+
+      {/* Quick reactions on hover */}
+      {showQuickReactions && !isDeleted && (
+        <div className={`${styles.quickReactionsOverlay} ${isOwn ? styles.quickReactionsLeft : styles.quickReactionsRight}`}>
+          {QUICK_REACTIONS.map((emoji) => (
+            <button
+              key={emoji}
+              className={styles.quickReactionButton}
+              onClick={() => {
+                onReact?.(message, emoji);
+                setShowQuickReactions(false);
+              }}
+            >
+              {emoji}
+            </button>
+          ))}
+          <button
+            className={styles.quickReactionButton}
+            onClick={() => {
+              onOpenActionSheet?.(message);
+              setShowQuickReactions(false);
+            }}
+          >
+            <Smile size={16} />
+          </button>
+        </div>
+      )}
 
       {linkConfirmUrl && (
         <div className={styles.linkConfirmOverlay} onClick={() => setLinkConfirmUrl(null)}>
@@ -255,3 +311,6 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
     </div>
   );
 };
+
+
+

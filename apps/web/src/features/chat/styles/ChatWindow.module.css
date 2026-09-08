@@ -45,3 +45,133 @@
   font-style: italic;
   padding: 0.25rem 0.5rem;
 }
+
+/* Edit message bar - overlays above composer without pushing content */
+.editBar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background: #fef2f2;
+  border-top: 1px solid #fecaca;
+  flex-shrink: 0;
+  animation: slideDown 0.2s ease;
+  position: relative;
+  z-index: 5;
+  min-height: 48px;
+}
+
+.editBar input {
+  flex: 1;
+  min-width: 0;
+  padding: 8px 12px;
+  border: 1px solid #fecaca;
+  border-radius: 20px;
+  background: #ffffff;
+  font-size: 14px;
+  color: #111827;
+  outline: none;
+  transition: all 0.15s;
+}
+
+.editBar input:focus {
+  border-color: #ef4444;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+}
+
+.editBar button {
+  padding: 8px 16px;
+  background: none;
+  border: 1px solid #fecaca;
+  border-radius: 20px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  color: #ef4444;
+  transition: all 0.15s;
+  white-space: nowrap;
+  flex-shrink: 0;
+  min-height: 36px;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.editBar button:hover {
+  background: #fee2e2;
+}
+
+.editBar button:active {
+  transform: scale(0.95);
+}
+
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Dark mode for edit bar */
+@media (prefers-color-scheme: dark) {
+  .editBar {
+    background: #7f1d1d;
+    border-top-color: #991b1b;
+  }
+
+  .editBar input {
+    background: #1f2937;
+    border-color: #991b1b;
+    color: #f9fafb;
+  }
+
+  .editBar input:focus {
+    border-color: #ef4444;
+    box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.2);
+  }
+
+  .editBar button {
+    border-color: #991b1b;
+    color: #fca5a5;
+  }
+
+  .editBar button:hover {
+    background: #991b1b;
+  }
+}
+
+/* Touch-friendly for mobile */
+@media (hover: none) and (pointer: coarse) {
+  .editBar {
+    padding: 8px 12px;
+  }
+
+  .editBar input {
+    font-size: 16px;
+    min-height: 40px;
+  }
+
+  .editBar button {
+    min-height: 40px;
+    padding: 8px 14px;
+  }
+}
+
+.editBarLabel {
+  font-size: 16px;
+  flex-shrink: 0;
+}
+
+.editBarSave {
+  background: #ef4444 !important;
+  border-color: #ef4444 !important;
+  color: #ffffff !important;
+}
+
+.editBarSave:hover {
+  background: #dc2626 !important;
+  border-color: #dc2626 !important;
+}
+
+@media (prefers-color-scheme: dark) {
+  .editBarSave {
+    background: #ef4444 !important;
+    border-color: #ef4444 !important;
+  }
+}

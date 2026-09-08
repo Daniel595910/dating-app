@@ -110,7 +110,8 @@ class ChatService {
     conversationId: string,
     senderId: string,
     content: string,
-    type: string = 'text'
+    type: string = 'text',
+    metadata?: Record<string, any> | null
   ): Promise<ChatMessage | null> {
     const clientMessageId = generateUUID();
 
@@ -119,7 +120,7 @@ class ChatService {
       p_client_message_id: clientMessageId,
       p_content: content,
       p_type: type,
-      p_metadata: null,
+      p_metadata: metadata || null,
     });
 
     if (error) {
@@ -191,4 +192,6 @@ class ChatService {
 }
 
 export const chatService = new ChatService();
+
+
 

@@ -1,12 +1,14 @@
 ﻿.overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.5);
+  background: rgba(0, 0, 0, 0.6);
   z-index: 1000;
   display: flex;
   align-items: flex-end;
   justify-content: center;
   animation: fadeIn 0.2s ease;
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
 }
 
 .sheet {
@@ -16,6 +18,7 @@
   border-radius: 20px 20px 0 0;
   padding: 8px 16px calc(16px + env(safe-area-inset-bottom));
   animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.1);
 }
 
 .dragHandle {
@@ -24,12 +27,14 @@
   background: #e5e7eb;
   border-radius: 9999px;
   margin: 8px auto 12px;
+  cursor: grab;
 }
 
 .quickReactions {
   display: flex;
   justify-content: space-around;
   padding: 8px 0;
+  gap: 4px;
 }
 
 .reactionButton {
@@ -45,11 +50,16 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .reactionButton:hover {
   background: #f3f4f6;
   transform: scale(1.2);
+}
+
+.reactionButton:active {
+  transform: scale(0.9);
 }
 
 .divider {
@@ -78,10 +88,17 @@
   transition: all 0.15s;
   width: 100%;
   text-align: left;
+  -webkit-tap-highlight-color: transparent;
+  min-height: 48px;
 }
 
 .actionButton:hover {
   background: #f9fafb;
+}
+
+.actionButton:active {
+  background: #f3f4f6;
+  transform: scale(0.98);
 }
 
 .deleteButton {
@@ -96,6 +113,10 @@
   color: #ef4444;
 }
 
+.reportButton:hover {
+  background: #fef2f2;
+}
+
 .cancelButton {
   width: 100%;
   padding: 14px;
@@ -106,10 +127,16 @@
   font-weight: 600;
   color: #6b7280;
   border-radius: 10px;
+  -webkit-tap-highlight-color: transparent;
+  min-height: 48px;
 }
 
 .cancelButton:hover {
   background: #f3f4f6;
+}
+
+.cancelButton:active {
+  transform: scale(0.98);
 }
 
 @keyframes fadeIn {
@@ -120,4 +147,68 @@
 @keyframes slideUp {
   from { transform: translateY(100%); }
   to { transform: translateY(0); }
+}
+
+/* Dark mode */
+@media (prefers-color-scheme: dark) {
+  .sheet {
+    background: #1f2937;
+  }
+
+  .dragHandle {
+    background: #4b5563;
+  }
+
+  .actionButton {
+    color: #e5e7eb;
+  }
+
+  .actionButton:hover {
+    background: #374151;
+  }
+
+  .deleteButton,
+  .reportButton {
+    color: #f87171;
+  }
+
+  .deleteButton:hover,
+  .reportButton:hover {
+    background: #7f1d1d;
+  }
+
+  .divider {
+    background: #374151;
+  }
+
+  .cancelButton {
+    color: #9ca3af;
+  }
+
+  .cancelButton:hover {
+    background: #374151;
+  }
+
+  .reactionButton:hover {
+    background: #374151;
+  }
+}
+
+/* Touch-friendly for mobile */
+@media (hover: none) and (pointer: coarse) {
+  .reactionButton {
+    width: 44px;
+    height: 44px;
+    font-size: 24px;
+  }
+
+  .actionButton {
+    min-height: 52px;
+    font-size: 15px;
+  }
+
+  .cancelButton {
+    min-height: 52px;
+    font-size: 15px;
+  }
 }

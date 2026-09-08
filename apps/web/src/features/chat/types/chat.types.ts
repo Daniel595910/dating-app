@@ -30,6 +30,10 @@ export interface ChatMessage {
     waveformData?: number[];
     audioUrl?: string;
     fileName?: string;
+    replyToId?: string;
+    replyToSenderName?: string;
+    replyToContent?: string;
+    replyToType?: string;
   };
   status: 'sending' | 'sent' | 'delivered' | 'read' | 'failed';
   createdAt: string;
@@ -47,3 +51,4 @@ export interface MessageReactionSummary {
   count: number;
   reactedByMe: boolean;
 }
+
