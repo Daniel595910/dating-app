@@ -17,7 +17,7 @@ import { ReportSheet } from '../../community/components/ReportSheet';
 import { GiftPicker } from './GiftPicker';
 import { VoiceRecorder } from './VoiceRecorder';
 import { useCall } from '../../calls/CallProvider';
-import { Pin, X } from 'lucide-react';
+import { Pin, X, ChevronDown } from 'lucide-react';
 import styles from '../styles/ChatWindow.module.css';
 
 interface ChatWindowProps {
@@ -80,11 +80,24 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
   const isInitialLoadRef = useRef(true);
   const typingChannelRef = useRef<any>(null);
 
+  // Scroll state
+  const [showScrollDown, setShowScrollDown] = useState(false);
+
   // Scroll to bottom
   const scrollToBottom = useCallback((smooth = true) => {
     requestAnimationFrame(() => {
       bottomRef.current?.scrollIntoView({ behavior: smooth ? 'smooth' : 'auto' });
+      setShowScrollDown(false);
     });
+  }, []);
+
+  // Handle scroll events to show/hide scroll down button
+  const handleScroll = useCallback(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    const isNearBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 100;
+    setShowScrollDown(!isNearBottom);
   }, []);
 
   // Load reactions
@@ -211,6 +224,17 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
     // Mark as read
     supabase.rpc('mark_conversation_read', { p_conversation_id: conversationId }).then(() => {}).catch(() => {});
   }, [conversationId, loadMessages, loadPinned, loadWallpaper, loadDisappearingSettings]);
+
+  // Scroll to bottom when messages are first loaded
+  useEffect(() => {
+    if (!loading && messages.length > 0) {
+      // Use setTimeout to ensure DOM is rendered
+      const timer = setTimeout(() => {
+        scrollToBottom(false);
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [loading, messages.length, scrollToBottom]);
 
   // Subscribe to typing events
   useEffect(() => {
@@ -468,7 +492,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
         </div>
       )}
 
-      <div className={styles.messagesContainer} ref={containerRef}>
+      <div className={styles.messagesContainer} ref={containerRef} onScroll={handleScroll}>
         {hasMore && (
           <button className={styles.loadMore} onClick={() => loadMessages(false)} disabled={loadingMore}>
             {loadingMore ? 'Loading...' : 'Load older'}
@@ -503,6 +527,16 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
         {isTyping && <TypingIndicator userName={targetUserName} />}
         <div ref={bottomRef} />
       </div>
+
+      {showScrollDown && (
+        <button 
+          className={styles.scrollDownButton}
+          onClick={() => scrollToBottom(true)}
+          aria-label="Scroll to bottom"
+        >
+          <ChevronDown size={20} />
+        </button>
+      )}
 
       {editingMessage && (
         <div className={styles.editBar}>
@@ -573,6 +607,18 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
         onSetWallpaper={handleSetWallpaper}
         onClearWallpaper={handleClearWallpaper}
         onSetDisappearing={handleSetDisappearing}
+        onBlockUser={() => {
+          setSettingsOpen(false);
+          setBlockSheetOpen(true);
+        }}
+        onReportUser={() => {
+          setSettingsOpen(false);
+          setReportSheetOpen(true);
+        }}
+        onViewProfile={() => {
+          setSettingsOpen(false);
+          navigate(`/profile/${targetUserId}`);
+        }}
         currentWallpaper={chatWallpaper?.wallpaperColor || null}
         disappearingEnabled={disappearingEnabled}
         disappearingDuration={disappearingDuration}
@@ -601,6 +647,10 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
     </div>
   );
 };
+
+
+
+
 
 
 

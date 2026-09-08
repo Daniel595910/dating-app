@@ -1,5 +1,5 @@
 ﻿import React, { useState } from 'react';
-import { X, Image, Timer, Trash2 } from 'lucide-react';
+import { X, Image, Timer, Trash2, UserX, Flag, Bell, User } from 'lucide-react';
 import styles from '../styles/ChatSettingsSheet.module.css';
 
 interface ChatSettingsSheetProps {
@@ -8,6 +8,9 @@ interface ChatSettingsSheetProps {
   onSetWallpaper: (color: string) => void;
   onClearWallpaper: () => void;
   onSetDisappearing: (enabled: boolean, durationHours: number) => void;
+  onBlockUser?: () => void;
+  onReportUser?: () => void;
+  onViewProfile?: () => void;
   currentWallpaper: string | null;
   disappearingEnabled: boolean;
   disappearingDuration: number;
@@ -30,11 +33,14 @@ export const ChatSettingsSheet: React.FC<ChatSettingsSheetProps> = ({
   onSetWallpaper,
   onClearWallpaper,
   onSetDisappearing,
+  onBlockUser,
+  onReportUser,
+  onViewProfile,
   currentWallpaper,
   disappearingEnabled,
   disappearingDuration,
 }) => {
-  const [showColorPicker, setShowColorPicker] = useState(false);
+  const [muted, setMuted] = useState(false);
 
   if (!open) return null;
 
@@ -50,6 +56,30 @@ export const ChatSettingsSheet: React.FC<ChatSettingsSheetProps> = ({
         </div>
 
         <div className={styles.content}>
+          {/* Quick Actions */}
+          {onViewProfile && (
+            <button className={styles.quickAction} onClick={onViewProfile}>
+              <User size={18} />
+              <span>View Profile</span>
+            </button>
+          )}
+
+          {/* Mute Notifications */}
+          <div className={styles.section}>
+            <h3 className={styles.sectionTitle}>
+              <Bell size={16} /> Notifications
+            </h3>
+            <div className={styles.toggleRow}>
+              <span className={styles.toggleLabel}>Mute notifications</span>
+              <button
+                className={`${styles.toggle} ${muted ? styles.toggleActive : ''}`}
+                onClick={() => setMuted(!muted)}
+              >
+                <span className={styles.toggleThumb} />
+              </button>
+            </div>
+          </div>
+
           {/* Wallpaper */}
           <div className={styles.section}>
             <h3 className={styles.sectionTitle}>
@@ -100,6 +130,25 @@ export const ChatSettingsSheet: React.FC<ChatSettingsSheetProps> = ({
               </div>
             )}
           </div>
+
+          {/* Safety */}
+          {(onBlockUser || onReportUser) && (
+            <div className={styles.section}>
+              <h3 className={styles.sectionTitle}>
+                <Flag size={16} /> Safety
+              </h3>
+              {onBlockUser && (
+                <button className={styles.dangerButton} onClick={onBlockUser}>
+                  <UserX size={16} /> Block User
+                </button>
+              )}
+              {onReportUser && (
+                <button className={styles.reportButton} onClick={onReportUser}>
+                  <Flag size={16} /> Report User
+                </button>
+              )}
+            </div>
+          )}
         </div>
       </div>
     </div>
