@@ -75,12 +75,12 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
     if (now - lastTapRef.current < 300) {
       lastTapRef.current = 0;
       if (message.type === 'text' && !isDeleted) {
-        onReact?.(message, '❤️');
+        setShowQuickReactions(!showQuickReactions);
       }
     } else {
       lastTapRef.current = now;
     }
-  }, [message, onReact, isDeleted]);
+  }, [message, isDeleted, showQuickReactions]);
 
   const handleTouchStart = (e: React.TouchEvent) => {
     const touch = e.touches[0];
@@ -207,8 +207,6 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
     <div 
       id={id}
       className={`${styles.wrapper} ${isOwn ? styles.ownWrapper : styles.otherWrapper}`}
-      onMouseEnter={() => setShowQuickReactions(true)}
-      onMouseLeave={() => setShowQuickReactions(false)}
     >
       {isPinned && (
         <div className={styles.pinnedBadge}><Pin size={10} /> Pinned</div>
@@ -380,6 +378,7 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
     </div>
   );
 };
+
 
 
 

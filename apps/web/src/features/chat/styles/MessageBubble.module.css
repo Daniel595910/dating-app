@@ -414,7 +414,7 @@
 /* Quick reactions on hover - fixed positioning */
 .quickReactionsOverlay {
   position: absolute;
-  top: -24px;
+  top: -32px;
   display: inline-flex;
   gap: 2px;
   padding: 4px;
@@ -1352,3 +1352,4 @@
     min-height: 28px;
   }
 }
+

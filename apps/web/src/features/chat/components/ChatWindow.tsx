@@ -507,6 +507,47 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
     }
   };
 
+  const handleSendGift = async (gift: { id: string; name: string; icon: string }) => {
+    if (!user) return;
+    
+    const tempId = `temp-${Date.now()}`;
+
+    setMessages((prev) => [...prev, {
+      id: tempId,
+      conversationId,
+      senderId: user.id,
+      senderName: 'You',
+      senderAvatar: null,
+      type: 'gift',
+      content: gift.name,
+      metadata: {
+        giftId: gift.id,
+        giftName: gift.name,
+        giftIcon: gift.icon,
+      },
+      status: 'sending',
+      createdAt: new Date().toISOString(),
+    }]);
+    scrollToBottom();
+
+    try {
+      const newMessage = await chatService.sendMessage(
+        conversationId, 
+        user.id, 
+        gift.name, 
+        'gift', 
+        { giftId: gift.id, giftName: gift.name, giftIcon: gift.icon }
+      );
+
+      if (newMessage) {
+        setMessages((prev) => prev.map((m) => (m.id === tempId ? { ...newMessage, metadata: { giftId: gift.id, giftName: gift.name, giftIcon: gift.icon } } : m)));
+      }
+    } catch (err) {
+      console.error('Failed to send gift:', err);
+      setMessages((prev) => prev.map((m) => (m.id === tempId ? { ...m, status: 'failed' as const } : m)));
+    }
+  };
+
   const handleReact = async (message: ChatMessage, reaction: string) => {
     await messageService.addReaction(message.id, reaction);
     if (user) {
@@ -780,7 +821,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
         disappearingDuration={disappearingDuration}
       />
 
-      <GiftPicker open={giftPickerOpen} onClose={() => setGiftPickerOpen(false)} onSelectGift={() => {}} />
+      <GiftPicker open={giftPickerOpen} onClose={() => setGiftPickerOpen(false)} onSelectGift={handleSendGift} />
 
 
       <BlockConfirmSheet
@@ -803,6 +844,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
     </div>
   );
 };
+
 
 
 
