@@ -118,3 +118,30 @@
   from { opacity: 0; }
   to { opacity: 1; }
 }
+
+.callingDots {
+  display: flex;
+  gap: 8px;
+  margin: 12px 0;
+}
+
+.dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #ffffff;
+  animation: bounce 1.4s ease infinite;
+}
+
+.dot:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.dot:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+@keyframes bounce {
+  0%, 80%, 100% { transform: scale(0); opacity: 0.3; }
+  40% { transform: scale(1); opacity: 1; }
+}

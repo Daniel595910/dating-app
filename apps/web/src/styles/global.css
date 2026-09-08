@@ -62,3 +62,34 @@ img {
 .safe-area-bottom {
   padding-bottom: env(safe-area-inset-bottom);
 }
+
+/* Remove browser focus outline on all inputs */
+input:focus,
+input:focus-visible,
+textarea:focus,
+textarea:focus-visible,
+select:focus,
+select:focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
+  border-color: transparent !important;
+}
+
+/* Remove default appearance */
+input,
+textarea,
+select {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  outline: none;
+}
+
+/* Remove focus ring from all elements */
+*:focus {
+  outline: none !important;
+}
+
+*:focus-visible {
+  outline: none !important;
+}

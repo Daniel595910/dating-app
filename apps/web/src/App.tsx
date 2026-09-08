@@ -7,11 +7,13 @@ import { ToastContainer } from './components/common/ToastContainer';
 import { CallProvider, useCall } from './features/calls/CallProvider';
 import { IncomingCallScreen } from './features/calls/components/IncomingCallScreen';
 import { ActiveCallScreen } from './features/calls/components/ActiveCallScreen';
+import { MicrophonePermissionModal } from './features/calls/components/MicrophonePermissionModal';
 
 const CallScreens: React.FC = () => {
   const { incomingCall, activeCall, callState, acceptCall, declineCall, endCall, isMuted, toggleMute } = useCall();
   const { user } = useAuthStore();
 
+  // Incoming call
   if (incomingCall && user) {
     return (
       <IncomingCallScreen
@@ -24,14 +26,16 @@ const CallScreens: React.FC = () => {
     );
   }
 
-  if (activeCall && callState === 'connected') {
+  // Active call (calling, connecting, connected)
+  if (activeCall) {
     return (
       <ActiveCallScreen
-        userName="Call"
+        userName="Voice Call"
         userAvatar={null}
         isMuted={isMuted}
         onToggleMute={toggleMute}
         onEndCall={endCall}
+        callState={callState}
       />
     );
   }
@@ -60,3 +64,4 @@ const App: React.FC = () => {
 };
 
 export default App;
+

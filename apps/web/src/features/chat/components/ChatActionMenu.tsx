@@ -1,5 +1,5 @@
 ﻿import React, { useEffect, useRef } from 'react';
-import { User, VolumeX, Ban, Flag, Search, X, Bell, BellOff, ExternalLink } from 'lucide-react';
+import { User, VolumeX, Ban, Flag, Search, X, Bell, BellOff, ExternalLink, Settings, Image, Timer, ChevronRight } from 'lucide-react';
 import styles from '../styles/ChatActionMenu.module.css';
 
 interface ChatActionMenuProps {
@@ -10,6 +10,7 @@ interface ChatActionMenuProps {
   onBlock: () => void;
   onReport: () => void;
   onSearch?: () => void;
+  onSettings?: () => void;
   isMuted?: boolean;
 }
 
@@ -21,6 +22,7 @@ export const ChatActionMenu: React.FC<ChatActionMenuProps> = ({
   onBlock,
   onReport,
   onSearch,
+  onSettings,
   isMuted = false,
 }) => {
   const menuRef = useRef<HTMLDivElement>(null);
@@ -80,6 +82,15 @@ export const ChatActionMenu: React.FC<ChatActionMenuProps> = ({
             </span>
           </button>
 
+          {/* Chat Settings - Nested */}
+          {onSettings && (
+            <button className={styles.menuItem} onClick={() => { onSettings(); onClose(); }}>
+              <span className={styles.menuIcon}><Settings size={18} /></span>
+              <span className={styles.menuLabel}>Chat Settings</span>
+              <ChevronRight size={14} className={styles.menuArrow} />
+            </button>
+          )}
+
           <div className={styles.divider} />
 
           <button className={`${styles.menuItem} ${styles.dangerItem}`} onClick={() => { onBlock(); onClose(); }}>
@@ -100,4 +111,3 @@ export const ChatActionMenu: React.FC<ChatActionMenuProps> = ({
     </div>
   );
 };
-

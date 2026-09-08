@@ -1,5 +1,6 @@
 ﻿import React, { createContext, useContext, useState, useCallback, useRef, useEffect } from 'react';
 import { useAuthStore } from '@/store/auth.store';
+import { supabase } from '@/config/supabase.client';
 import { callService } from './services/call.service';
 import { CallSession, CallStatus, CallSignal } from './types/call.types';
 import { useWebRTCVoice } from './hooks/useWebRTCVoice';
@@ -24,24 +25,48 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [incomingCall, setIncomingCall] = useState<CallSession | null>(null);
   const [callState, setCallState] = useState<CallStatus>('idle');
   const [isMuted, setIsMuted] = useState(false);
+  const [showMicPrompt, setShowMicPrompt] = useState(false);
   const unsubscribeRef = useRef<(() => void) | null>(null);
   const ringTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const webRTC = useWebRTCVoice(activeCall?.id || '', user?.id || '');
 
-  // Subscribe to incoming calls
   useEffect(() => {
     if (!user) return;
+
+    const checkIncomingCalls = async () => {
+      const { data: incomingCalls } = await supabase
+        .from('call_sessions')
+        .select('*')
+        .eq('callee_id', user.id)
+        .eq('status', 'calling')
+        .gt('created_at', new Date(Date.now() - 30000).toISOString())
+        .order('created_at', { ascending: false })
+        .limit(1);
+
+      if (incomingCalls && incomingCalls.length > 0) {
+        const call = incomingCalls[0];
+        setIncomingCall(call as CallSession);
+        setCallState('ringing');
+        if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
+        
+        if (ringTimeoutRef.current) clearTimeout(ringTimeoutRef.current);
+        ringTimeoutRef.current = setTimeout(() => {
+          setIncomingCall(null);
+          setCallState('idle');
+          callService.updateCallStatus(call.id, 'missed');
+        }, 30000);
+      }
+    };
+
+    checkIncomingCalls();
+    const pollInterval = setInterval(checkIncomingCalls, 2000);
 
     unsubscribeRef.current = callService.subscribeToIncomingCalls(user.id, (call) => {
       setIncomingCall(call);
       setCallState('ringing');
+      if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
       
-      // Vibration
-      if (navigator.vibrate) {
-        navigator.vibrate([200, 100, 200]);
-      }
-
-      // Auto-dismiss after 30 seconds
+      if (ringTimeoutRef.current) clearTimeout(ringTimeoutRef.current);
       ringTimeoutRef.current = setTimeout(() => {
         setIncomingCall(null);
         setCallState('idle');
@@ -52,10 +77,10 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return () => {
       unsubscribeRef.current?.();
       if (ringTimeoutRef.current) clearTimeout(ringTimeoutRef.current);
+      clearInterval(pollInterval);
     };
   }, [user]);
 
-  // Subscribe to call signals when active call exists
   useEffect(() => {
     if (!activeCall?.id || !user) return;
 
@@ -94,13 +119,11 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return () => unsubscribe();
   }, [activeCall?.id, user, webRTC]);
 
-  // Monitor connection state
   useEffect(() => {
     if (webRTC.connectionState === 'connected') {
       setCallState('connected');
     } else if (webRTC.connectionState === 'failed') {
       setCallState('failed');
-      endCall();
     }
   }, [webRTC.connectionState]);
 
@@ -109,13 +132,14 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const call = await callService.startCall(targetUserId);
       setActiveCall(call);
       setCallState('calling');
-
-      // Setup WebRTC
       await webRTC.getMicrophone();
       webRTC.createPeerConnection();
       await webRTC.createOffer();
     } catch (err: any) {
       setCallState('failed');
+      if (err.message?.includes('icrophone') || err.message?.includes('Microphone') || err.message?.includes('not supported')) {
+        setShowMicPrompt(true);
+      }
       throw err;
     }
   }, [webRTC]);
@@ -130,9 +154,11 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setIncomingCall(null);
       setCallState('connecting');
       await callService.updateCallStatus(incomingCall.id, 'connecting');
-    } catch (err) {
+    } catch (err: any) {
+      console.error('Accept call error:', err);
       setCallState('failed');
       await callService.updateCallStatus(incomingCall.id, 'failed');
+      alert(err.message || 'Failed to accept call. Please check microphone permissions.');
     }
   }, [incomingCall, webRTC]);
 
@@ -145,11 +171,20 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const endCall = useCallback(async () => {
     if (!activeCall) return;
+    
+    if (callState === 'calling') {
+      callService.sendCallSignal(activeCall.id, {
+        type: 'call_cancelled',
+        callId: activeCall.id,
+        senderId: user?.id || '',
+      });
+    }
+    
     await callService.endCall(activeCall.id, 'caller_ended');
     webRTC.cleanup();
     setActiveCall(null);
     setCallState('ended');
-  }, [activeCall, webRTC]);
+  }, [activeCall, webRTC, callState, user]);
 
   const toggleMute = useCallback(() => {
     webRTC.toggleMute();
@@ -182,4 +217,5 @@ export const useCall = () => {
   }
   return context;
 };
+
 

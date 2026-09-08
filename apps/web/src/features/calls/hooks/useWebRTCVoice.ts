@@ -11,14 +11,37 @@ const ICE_CONFIG = {
 export function useWebRTCVoice(callId: string, userId: string) {
   const [connectionState, setConnectionState] = useState<string>('new');
   const [isMuted, setIsMuted] = useState(false);
+  const [micPermission, setMicPermission] = useState<'unknown' | 'granted' | 'denied'>('unknown');
   const peerConnectionRef = useRef<RTCPeerConnection | null>(null);
   const localStreamRef = useRef<MediaStream | null>(null);
   const pendingIceCandidatesRef = useRef<RTCIceCandidate[]>([]);
 
   const getMicrophone = useCallback(async () => {
-    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    localStreamRef.current = stream;
-    return stream;
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      setMicPermission('denied');
+      throw new Error(
+        'Microphone access requires HTTPS or localhost.\n\n' +
+        'Please use one of these URLs:\n' +
+        'http://localhost:3000\n' +
+        'http://127.0.0.1:3000'
+      );
+    }
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      localStreamRef.current = stream;
+      setMicPermission('granted');
+      return stream;
+    } catch (err: any) {
+      setMicPermission('denied');
+      if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+        throw new Error('Microphone access was denied. Please allow microphone access in your browser settings.');
+      } else if (err.name === 'NotFoundError') {
+        throw new Error('No microphone found. Please connect a microphone and try again.');
+      } else {
+        throw new Error('Failed to access microphone. Please check your browser settings.');
+      }
+    }
   }, []);
 
   const createPeerConnection = useCallback(() => {
@@ -40,7 +63,6 @@ export function useWebRTCVoice(callId: string, userId: string) {
       }
     };
 
-    // Add local tracks
     if (localStreamRef.current) {
       localStreamRef.current.getTracks().forEach((track) => {
         pc.addTrack(track, localStreamRef.current!);
@@ -53,10 +75,8 @@ export function useWebRTCVoice(callId: string, userId: string) {
   const createOffer = useCallback(async () => {
     const pc = peerConnectionRef.current;
     if (!pc) return;
-
     const offer = await pc.createOffer();
     await pc.setLocalDescription(offer);
-
     callService.sendCallSignal(callId, {
       type: 'call_offer',
       callId,
@@ -68,17 +88,13 @@ export function useWebRTCVoice(callId: string, userId: string) {
   const handleOffer = useCallback(async (offer: RTCSessionDescriptionInit) => {
     const pc = peerConnectionRef.current;
     if (!pc) return;
-
     await pc.setRemoteDescription(new RTCSessionDescription(offer));
     const answer = await pc.createAnswer();
     await pc.setLocalDescription(answer);
-
-    // Flush pending ICE candidates
     pendingIceCandidatesRef.current.forEach((candidate) => {
       pc.addIceCandidate(candidate);
     });
     pendingIceCandidatesRef.current = [];
-
     callService.sendCallSignal(callId, {
       type: 'call_answer',
       callId,
@@ -96,7 +112,6 @@ export function useWebRTCVoice(callId: string, userId: string) {
   const handleIceCandidate = useCallback(async (candidate: RTCIceCandidateInit) => {
     const pc = peerConnectionRef.current;
     if (!pc) return;
-
     if (pc.remoteDescription) {
       await pc.addIceCandidate(new RTCIceCandidate(candidate));
     } else {
@@ -130,6 +145,7 @@ export function useWebRTCVoice(callId: string, userId: string) {
   return {
     connectionState,
     isMuted,
+    micPermission,
     getMicrophone,
     createPeerConnection,
     createOffer,
@@ -140,4 +156,3 @@ export function useWebRTCVoice(callId: string, userId: string) {
     cleanup,
   };
 }
-
