@@ -1,3 +1,4 @@
+﻿/**
  * Upload Service
  * Handles file uploads through secure flow
  */
@@ -43,7 +44,7 @@ class UploadService {
       const fileExtension = file.name.split('.').pop();
       const filePath = `${purpose}/${userId}/${timestamp}-${randomSuffix}.${fileExtension}`;
 
-      // Upload to Supabase Storage (or use secure edge function for B2)
+      // Upload to Supabase Storage
       const { error: uploadError } = await supabase.storage
         .from('media')
         .upload(filePath, file);

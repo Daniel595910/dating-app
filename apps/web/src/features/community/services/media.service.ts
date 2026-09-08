@@ -100,39 +100,10 @@ class MediaService {
     }
   }
 
-  async uploadAudio(
-    file: Blob,
-    userId: string,
-    purpose: string = 'post_audio'
-  ): Promise<UploadResult> {
-    try {
-      const timestamp = Date.now();
-      const randomSuffix = Math.random().toString(36).substring(2, 8);
-      const filePath = `${purpose}/${userId}/${timestamp}-${randomSuffix}.webm`;
 
-      const { error: uploadError } = await supabase.storage
-        .from('media')
-        .upload(filePath, file, { cacheControl: '3600', upsert: false, contentType: 'audio/webm' });
-
-      if (uploadError) {
-        return { success: false, error: 'Failed to upload audio' };
-      }
-
-      const { data: publicUrlData } = supabase.storage.from('media').getPublicUrl(filePath);
-
-      return {
-        success: true,
-        media: {
-          id: `${timestamp}-${randomSuffix}`,
-          type: 'image',
-          url: publicUrlData.publicUrl,
-          sortOrder: 0,
-        },
-      };
-    } catch (err: any) {
-      return { success: false, error: err.message || 'Audio upload failed' };
-    }
-  }
 }
 
 export const mediaService = new MediaService();
+
+
+

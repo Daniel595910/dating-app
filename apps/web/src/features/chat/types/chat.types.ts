@@ -16,20 +16,17 @@ export interface ChatMessage {
   senderId: string;
   senderName: string;
   senderAvatar: string | null;
-  type: 'text' | 'image' | 'voice' | 'gift' | 'system' | 'audio';
+  type: 'text' | 'image' | 'video' | 'gift' | 'system';
   content: string;
   metadata?: {
     imageUrl?: string;
     thumbnailUrl?: string;
+    videoUrl?: string;
     width?: number;
     height?: number;
-    durationMs?: number;
     giftId?: string;
     giftName?: string;
     giftIcon?: string;
-    waveformData?: number[];
-    audioUrl?: string;
-    fileName?: string;
     replyToId?: string;
     replyToSenderName?: string;
     replyToContent?: string;
@@ -51,4 +48,6 @@ export interface MessageReactionSummary {
   count: number;
   reactedByMe: boolean;
 }
+
+
 

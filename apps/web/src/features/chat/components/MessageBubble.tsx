@@ -47,7 +47,12 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [showQuickReactions, setShowQuickReactions] = useState(false);
+  const [isVideoPlaying, setIsVideoPlaying] = useState(false);
+  const [videoDuration, setVideoDuration] = useState('');
+  const [videoModalOpen, setVideoModalOpen] = useState(false);
+  
   const audioRef = useRef<HTMLAudioElement>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
   const longPressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const touchStartRef = useRef<{ x: number; y: number } | null>(null);
   const lastTapRef = useRef(0);
@@ -93,19 +98,16 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
     const deltaX = touch.clientX - touchStartRef.current.x;
     const deltaY = Math.abs(touch.clientY - touchStartRef.current.y);
     
-    // If horizontal swipe detected (left or right)
     if (Math.abs(deltaX) > 50 && deltaY < 30) {
       if (longPressTimerRef.current) {
         clearTimeout(longPressTimerRef.current);
         longPressTimerRef.current = null;
       }
       
-      // Trigger reply on swipe
       if (!isDeleted && onReply) {
         onReply(message);
       }
       
-      // Reset touch start to prevent multiple triggers
       touchStartRef.current = null;
     }
   };
@@ -118,21 +120,19 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
     }
   };
 
-  const handleCopy = async () => {
-    try {
-      await navigator.clipboard.writeText(message.content);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 1500);
-    } catch {
-      const textArea = document.createElement('textarea');
-      textArea.value = message.content;
-      document.body.appendChild(textArea);
-      textArea.select();
-      document.execCommand('copy');
-      document.body.removeChild(textArea);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 1500);
-    }
+  const formatTime = (seconds: number): string => {
+    const mins = Math.floor(seconds / 60);
+    const secs = Math.floor(seconds % 60);
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  const extractUrls = (content: string): string[] => {
+    const urlPattern = /(https?:\/\/[^\s]+)/g;
+    return content.match(urlPattern) || [];
+  };
+
+  const handleVideoClick = () => {
+    setVideoModalOpen(true);
   };
 
   const renderContent = () => {
@@ -148,19 +148,29 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
       );
     }
 
-    if ((message.type === 'voice' || message.type === 'audio') && message.metadata) {
-      const audioUrl = message.metadata.audioUrl || message.content;
-      const duration = message.metadata.durationMs ? message.metadata.durationMs / 1000 : 0;
-      const progress = duration > 0 ? (currentTime / duration) * 100 : 0;
-
+    if (message.type === 'video' && message.metadata?.videoUrl) {
       return (
-        <div className={styles.voiceMessageContainer}>
-          <audio ref={audioRef} src={audioUrl} onTimeUpdate={() => setCurrentTime(audioRef.current?.currentTime || 0)} onEnded={() => { setIsPlaying(false); setCurrentTime(0); }} onPause={() => setIsPlaying(false)} onPlay={() => setIsPlaying(true)} style={{ display: 'none' }} />
-          <button className={styles.voicePlayButton} onClick={() => { if (audioRef.current) { if (isPlaying) { audioRef.current.pause(); } else { audioRef.current.play(); } } }}>
-            {isPlaying ? <Pause size={20} /> : <Play size={20} />}
-          </button>
-          <div className={styles.voiceProgressTrack}><div className={styles.voiceProgressFill} style={{ width: `${progress}%` }} /></div>
-          <span className={styles.voiceDuration}>{isPlaying ? formatTime(currentTime) : formatTime(duration)}</span>
+        <div className={styles.videoMessageContainer} onClick={handleVideoClick}>
+          <video 
+            ref={videoRef}
+            src={message.metadata.videoUrl} 
+            className={styles.videoMessage}
+            preload="metadata"
+            playsInline
+            muted
+            onLoadedMetadata={(e) => {
+              const duration = e.currentTarget.duration;
+              if (duration && duration !== Infinity) {
+                setVideoDuration(formatTime(duration));
+              }
+            }}
+          />
+          <div className={styles.videoPlayButton}>
+            <Play size={20} color="#fff" fill="#fff" />
+          </div>
+          {videoDuration && (
+            <span className={styles.videoDurationBadge}>{videoDuration}</span>
+          )}
         </div>
       );
     }
@@ -191,17 +201,6 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
     }
 
     return <p className={styles.content}>{message.content}</p>;
-  };
-
-  const formatTime = (seconds: number): string => {
-    const mins = Math.floor(seconds / 60);
-    const secs = Math.floor(seconds % 60);
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
-  };
-
-  const extractUrls = (content: string): string[] => {
-    const urlPattern = /(https?:\/\/[^\s]+)/g;
-    return content.match(urlPattern) || [];
   };
 
   return (
@@ -268,7 +267,6 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
         )}
       </div>
 
-      {/* Quick reactions on hover */}
       {showQuickReactions && !isDeleted && (
         <div className={`${styles.quickReactionsOverlay} ${isOwn ? styles.quickReactionsLeft : styles.quickReactionsRight}`}>
           {QUICK_REACTIONS.map((emoji) => (
@@ -310,6 +308,68 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
 
       {message.type === 'image' && message.metadata?.imageUrl && (
         <ImagePreviewModal open={imagePreviewOpen} images={[message.metadata.imageUrl]} currentIndex={0} onClose={() => setImagePreviewOpen(false)} onNext={() => {}} onPrev={() => {}} />
+      )}
+
+      {message.type === 'video' && message.metadata?.videoUrl && videoModalOpen && (
+        <div className={styles.videoModalOverlay} onClick={() => setVideoModalOpen(false)}>
+          <div className={styles.videoModalContent} onClick={(e) => e.stopPropagation()}>
+            <button className={styles.videoModalClose} onClick={() => setVideoModalOpen(false)}>
+              <X size={24} />
+            </button>
+            <video 
+              src={message.metadata.videoUrl} 
+              autoPlay
+              className={styles.videoModalPlayer}
+              playsInline
+              onClick={(e) => {
+                const video = e.currentTarget;
+                if (video.paused) {
+                  video.play();
+                } else {
+                  video.pause();
+                }
+              }}
+            />
+            <div className={styles.videoModalControls}>
+              <button className={styles.videoModalControlButton} onClick={(e) => {
+                const video = document.querySelector('.' + styles.videoModalPlayer) as HTMLVideoElement;
+                if (video) {
+                  if (video.paused) {
+                    video.play();
+                  } else {
+                    video.pause();
+                  }
+                }
+              }}>
+                <Play size={16} />
+              </button>
+              <input 
+                type="range" 
+                className={styles.videoModalSeekbar}
+                min="0"
+                max="100"
+                defaultValue="0"
+                onChange={(e) => {
+                  const video = document.querySelector('.' + styles.videoModalPlayer) as HTMLVideoElement;
+                  if (video && video.duration) {
+                    video.currentTime = (parseInt(e.target.value) / 100) * video.duration;
+                  }
+                }}
+              />
+              <span className={styles.videoModalTime}>0:00</span>
+              <button className={styles.videoModalControlButton} onClick={(e) => {
+                const video = document.querySelector('.' + styles.videoModalPlayer) as HTMLVideoElement;
+                if (video) {
+                  if (video.requestFullscreen) {
+                    video.requestFullscreen();
+                  }
+                }
+              }}>
+                <span className={styles.videoModalFullscreenIcon}>⛶</span>
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

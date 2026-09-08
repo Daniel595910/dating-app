@@ -84,15 +84,29 @@ class ChatService {
 
     const chatMessages: ChatMessage[] = feedMessages.reverse().map((m: any) => {
       const profile = profileMap.get(m.sender_id);
+      
+      // Parse metadata
+      let parsedMetadata = m.metadata;
+      if (typeof m.metadata === 'string') {
+        try {
+          parsedMetadata = JSON.parse(m.metadata);
+        } catch {
+          parsedMetadata = undefined;
+        }
+      }
+      
+      // Determine actual type from metadata
+      const actualType = parsedMetadata?.actualType || m.type;
+      
       return {
         id: m.id,
         conversationId: m.conversation_id,
         senderId: m.sender_id,
         senderName: profile?.display_name || 'User',
         senderAvatar: profile?.avatar_url || null,
-        type: m.type,
+        type: actualType,
         content: m.content,
-        metadata: m.metadata || undefined,
+        metadata: parsedMetadata || undefined,
         status: m.status,
         createdAt: m.created_at,
       };
@@ -142,15 +156,28 @@ class ChatService {
 
     if (!message) return null;
 
+    // Parse metadata
+    let parsedMsgMetadata = message.metadata;
+    if (typeof message.metadata === 'string') {
+      try {
+        parsedMsgMetadata = JSON.parse(message.metadata);
+      } catch {
+        parsedMsgMetadata = undefined;
+      }
+    }
+    
+    // Determine actual type from metadata
+    const actualType = parsedMsgMetadata?.actualType || message.type;
+
     return {
       id: message.id,
       conversationId: message.conversation_id,
       senderId: message.sender_id,
       senderName: 'You',
       senderAvatar: null,
-      type: message.type,
+      type: actualType,
       content: message.content,
-      metadata: message.metadata || undefined,
+      metadata: parsedMsgMetadata || undefined,
       status: 'sent' as const,
       createdAt: message.created_at,
     };
@@ -192,6 +219,9 @@ class ChatService {
 }
 
 export const chatService = new ChatService();
+
+
+
 
 
 

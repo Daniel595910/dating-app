@@ -1,5 +1,5 @@
 ﻿import React, { useState, useRef, useEffect } from 'react';
-import { Send, Plus, X, Mic, Gift, Music } from 'lucide-react';
+import { Send, Plus, X, Gift, Video } from 'lucide-react';
 import { supabase } from '@/config/supabase.client';
 import { ChatMessage } from '../../types/chat.types';
 import styles from '../styles/MessageComposer.module.css';
@@ -9,11 +9,10 @@ interface MessageComposerProps {
   userId: string;
   onSend: (content: string) => void;
   onSendImage: (file: File) => void;
-  onSendAudio: (file: File) => void;
+  onSendVideo: (file: File) => void;
   onTypingChange: (isTyping: boolean) => void;
   replyingTo?: ChatMessage | null;
   onCancelReply?: () => void;
-  onOpenVoice?: () => void;
   onOpenGift?: () => void;
 }
 
@@ -22,11 +21,10 @@ export const MessageComposer: React.FC<MessageComposerProps> = ({
   userId,
   onSend,
   onSendImage,
-  onSendAudio,
+  onSendVideo,
   onTypingChange,
   replyingTo,
   onCancelReply,
-  onOpenVoice,
   onOpenGift,
 }) => {
   const [content, setContent] = useState('');
@@ -34,7 +32,8 @@ export const MessageComposer: React.FC<MessageComposerProps> = ({
   const [attachmentMenuOpen, setAttachmentMenuOpen] = useState(false);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const imageFileInputRef = useRef<HTMLInputElement>(null);
-  const audioFileInputRef = useRef<HTMLInputElement>(null);
+  const videoFileInputRef = useRef<HTMLInputElement>(null);
+
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastTypingBroadcastRef = useRef<number>(0);
 
@@ -103,22 +102,16 @@ export const MessageComposer: React.FC<MessageComposerProps> = ({
     setAttachmentMenuOpen(false);
   };
 
-  const handleAudioSelect = (files: FileList | null) => {
+  const handleVideoSelect = (files: FileList | null) => {
     if (!files || files.length === 0) return;
     const file = files[0];
-    const allowedAudioTypes = [
-      'audio/mpeg', 'audio/mp3', 'audio/wav', 'audio/webm', 'audio/ogg',
-      'audio/mp4', 'audio/aac', 'audio/flac', 'audio/x-m4a', 'audio/m4a',
-    ];
-
-    const isAudio = allowedAudioTypes.includes(file.type) || file.type.startsWith('audio/');
-
-    if (isAudio) {
-      onSendAudio(file);
+    if (file && file.type.startsWith('video/')) {
+      onSendVideo(file);
     }
-    if (audioFileInputRef.current) audioFileInputRef.current.value = '';
+    if (videoFileInputRef.current) videoFileInputRef.current.value = '';
     setAttachmentMenuOpen(false);
   };
+
 
   return (
     <div className={styles.composerWrapper}>
@@ -141,9 +134,10 @@ export const MessageComposer: React.FC<MessageComposerProps> = ({
             <Plus size={18} />
             <span>Photo</span>
           </button>
-          <button className={styles.attachmentOption} onClick={() => audioFileInputRef.current?.click()}>
-            <Music size={18} />
-            <span>Audio / Music</span>
+
+          <button className={styles.attachmentOption} onClick={() => videoFileInputRef.current?.click()}>
+            <Video size={18} />
+            <span>Video</span>
           </button>
           <button className={styles.attachmentOption} onClick={onOpenGift}>
             <Gift size={18} />
@@ -161,12 +155,13 @@ export const MessageComposer: React.FC<MessageComposerProps> = ({
           style={{ display: 'none' }}
         />
         <input
-          ref={audioFileInputRef}
+          ref={videoFileInputRef}
           type="file"
-          accept="audio/*,.mp3,.wav,.m4a,.aac,.ogg,.flac,.webm"
-          onChange={(e) => handleAudioSelect(e.target.files)}
+          accept="video/mp4,video/webm,video/quicktime"
+          onChange={(e) => handleVideoSelect(e.target.files)}
           style={{ display: 'none' }}
         />
+
 
         <button
           className={styles.attachButton}
@@ -188,9 +183,7 @@ export const MessageComposer: React.FC<MessageComposerProps> = ({
           disabled={sending}
         />
 
-        <button className={styles.voiceButton} onClick={onOpenVoice} aria-label="Record voice message">
-          <Mic size={18} />
-        </button>
+
 
         <button className={styles.sendButton} onClick={handleSend} disabled={!content.trim() || sending} aria-label="Send message">
           <Send size={18} />
@@ -199,3 +192,5 @@ export const MessageComposer: React.FC<MessageComposerProps> = ({
     </div>
   );
 };
+
+

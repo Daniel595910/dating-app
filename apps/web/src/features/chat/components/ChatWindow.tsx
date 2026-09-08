@@ -15,8 +15,11 @@ import { ChatSettingsSheet } from './ChatSettingsSheet';
 import { BlockConfirmSheet } from '../../community/components/BlockConfirmSheet';
 import { ReportSheet } from '../../community/components/ReportSheet';
 import { GiftPicker } from './GiftPicker';
-import { VoiceRecorder } from './VoiceRecorder';
+
 import { useCall } from '../../calls/CallProvider';
+import { uploadService } from '@/services/upload.service';
+
+
 import { Pin, X, ChevronDown } from 'lucide-react';
 import styles from '../styles/ChatWindow.module.css';
 
@@ -58,7 +61,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
   const [forwardMessage, setForwardMessage] = useState<ChatMessage | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [giftPickerOpen, setGiftPickerOpen] = useState(false);
-  const [voiceRecorderOpen, setVoiceRecorderOpen] = useState(false);
+
   const [blockSheetOpen, setBlockSheetOpen] = useState(false);
   const [reportSheetOpen, setReportSheetOpen] = useState(false);
   
@@ -315,7 +318,6 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
     const trimmed = content.trim();
     const tempId = `temp-${Date.now()}`;
 
-    // Build metadata with reply info if replying
     const metadata = replyingTo ? {
       replyToId: replyingTo.id,
       replyToSenderName: replyingTo.senderName,
@@ -336,8 +338,6 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
       createdAt: new Date().toISOString(),
     }]);
     scrollToBottom();
-
-    // Clear reply state
     setReplyingTo(null);
 
     try {
@@ -346,6 +346,153 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
         setMessages((prev) => prev.map((m) => (m.id === tempId ? { ...newMessage, metadata } : m)));
       }
     } catch {
+      setMessages((prev) => prev.map((m) => (m.id === tempId ? { ...m, status: 'failed' as const } : m)));
+    }
+  };
+
+  const handleSendVoiceMessage = async (audioBlob: Blob, duration: number) => {
+    if (!user) {
+      console.error('No user found');
+      return;
+    }
+    
+    console.log('Starting voice message send:', { blobSize: audioBlob.size, duration, userId: user.id });
+    
+    const tempId = `temp-${Date.now()}`;
+    const metadata = {
+      durationMs: duration * 1000,
+      audioUrl: '',
+    };
+
+    setMessages((prev) => [...prev, {
+      id: tempId,
+      conversationId,
+      senderId: user.id,
+      senderName: 'You',
+      senderAvatar: null,
+      type: 'audio',
+      content: 'Voice message',
+      metadata,
+      status: 'sending',
+      createdAt: new Date().toISOString(),
+    }]);
+    scrollToBottom();
+    setVoiceRecorderOpen(false);
+
+    try {
+      // Upload audio to storage
+      console.log('Uploading audio to storage...');
+      const uploadResult = await mediaService.uploadAudio(audioBlob, user.id, 'chat_audio');
+      console.log('Upload result:', uploadResult);
+      
+      if (!uploadResult.success || !uploadResult.media) {
+        throw new Error(uploadResult.error || 'Failed to upload audio');
+      }
+
+      const audioUrl = uploadResult.media.url;
+      console.log('Audio uploaded successfully:', audioUrl);
+      
+      // Send message with audio URL
+      console.log('Sending message with audio...');
+      const newMessage = await chatService.sendMessage(
+        conversationId, 
+        user.id, 
+        'Voice message', 
+        'audio', 
+        { durationMs: duration * 1000, audioUrl }
+      );
+      console.log('Message sent:', newMessage);
+
+      if (newMessage) {
+        setMessages((prev) => prev.map((m) => (m.id === tempId ? { ...newMessage, metadata: { durationMs: duration * 1000, audioUrl } } : m)));
+      } else {
+        throw new Error('No message returned from sendMessage');
+      }
+    } catch (err) {
+      console.error('Failed to send voice message:', err);
+      setMessages((prev) => prev.map((m) => (m.id === tempId ? { ...m, status: 'failed' as const } : m)));
+    }
+  };
+
+
+
+
+  const handleSendImage = async (file: File) => {
+    if (!user) return;
+    
+    const tempId = `temp-${Date.now()}`;
+
+    setMessages((prev) => [...prev, {
+      id: tempId,
+      conversationId,
+      senderId: user.id,
+      senderName: 'You',
+      senderAvatar: null,
+      type: 'image',
+      content: 'Photo',
+      metadata: { imageUrl: '' },
+      status: 'sending',
+      createdAt: new Date().toISOString(),
+    }]);
+    scrollToBottom();
+
+    try {
+      const uploadResult = await uploadService.uploadFile(file, 'message_media', user.id);
+      
+      if (!uploadResult.success || !uploadResult.url) {
+        throw new Error(uploadResult.error || 'Failed to upload image');
+      }
+
+      const imageUrl = uploadResult.url;
+      const newMessage = await chatService.sendMessage(
+        conversationId, user.id, 'Photo', 'text', { imageUrl, actualType: 'image' }
+      );
+
+      if (newMessage) {
+        setMessages((prev) => prev.map((m) => (m.id === tempId ? { ...newMessage, metadata: { imageUrl } } : m)));
+      }
+    } catch (err) {
+      console.error('Failed to send image:', err);
+      setMessages((prev) => prev.map((m) => (m.id === tempId ? { ...m, status: 'failed' as const } : m)));
+    }
+  };
+
+  const handleSendVideo = async (file: File) => {
+    if (!user) return;
+    
+    const tempId = `temp-${Date.now()}`;
+
+    setMessages((prev) => [...prev, {
+      id: tempId,
+      conversationId,
+      senderId: user.id,
+      senderName: 'You',
+      senderAvatar: null,
+      type: 'video',
+      content: 'Video',
+      metadata: { videoUrl: '' },
+      status: 'sending',
+      createdAt: new Date().toISOString(),
+    }]);
+    scrollToBottom();
+
+    try {
+      const uploadResult = await uploadService.uploadFile(file, 'message_media', user.id);
+      
+      if (!uploadResult.success || !uploadResult.url) {
+        throw new Error(uploadResult.error || 'Failed to upload video');
+      }
+
+      const videoUrl = uploadResult.url;
+      const newMessage = await chatService.sendMessage(
+        conversationId, user.id, 'Video', 'text', { videoUrl, actualType: 'video' }
+      );
+
+      if (newMessage) {
+        setMessages((prev) => prev.map((m) => (m.id === tempId ? { ...newMessage, metadata: { videoUrl } } : m)));
+      }
+    } catch (err) {
+      console.error('Failed to send video:', err);
       setMessages((prev) => prev.map((m) => (m.id === tempId ? { ...m, status: 'failed' as const } : m)));
     }
   };
@@ -569,12 +716,11 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
           conversationId={conversationId}
           userId={user?.id || ''}
           onSend={handleSend}
-          onSendImage={(file) => {}}
-          onSendAudio={(file) => {}}
+          onSendImage={handleSendImage}
+          onSendVideo={handleSendVideo}
           onTypingChange={() => {}}
           replyingTo={replyingTo}
           onCancelReply={() => setReplyingTo(null)}
-          onOpenVoice={() => setVoiceRecorderOpen(true)}
           onOpenGift={() => setGiftPickerOpen(true)}
         />
       )}
@@ -625,7 +771,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
       />
 
       <GiftPicker open={giftPickerOpen} onClose={() => setGiftPickerOpen(false)} onSelectGift={() => {}} />
-      <VoiceRecorder open={voiceRecorderOpen} onClose={() => setVoiceRecorderOpen(false)} onSend={() => {}} />
+
 
       <BlockConfirmSheet
         open={blockSheetOpen}
@@ -647,6 +793,14 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
     </div>
   );
 };
+
+
+
+
+
+
+
+
 
 
 
