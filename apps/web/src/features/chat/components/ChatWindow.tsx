@@ -66,6 +66,10 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
   const [pinnedMessageIds, setPinnedMessageIds] = useState<Set<string>>(new Set());
   const [chatWallpaper, setChatWallpaper] = useState<{ wallpaperUrl: string | null; wallpaperColor: string } | null>(null);
   
+  // Disappearing messages state
+  const [disappearingEnabled, setDisappearingEnabled] = useState(false);
+  const [disappearingDuration, setDisappearingDuration] = useState(24);
+  
   // Refs
   const cursorRef = useRef<MessageCursor | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -101,6 +105,59 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
     if (prefs) setChatWallpaper(prefs);
   }, [conversationId, user]);
 
+  // Load disappearing messages settings
+  const loadDisappearingSettings = useCallback(async () => {
+    try {
+      const { data, error } = await supabase
+        .from('conversations')
+        .select('disappearing_enabled, disappearing_duration_hours')
+        .eq('id', conversationId)
+        .single();
+
+      if (error) {
+        console.error('Failed to load disappearing settings:', error);
+        return;
+      }
+
+      if (data) {
+        setDisappearingEnabled(data.disappearing_enabled || false);
+        setDisappearingDuration(data.disappearing_duration_hours || 24);
+      }
+    } catch (err) {
+      console.error('Failed to load disappearing settings:', err);
+    }
+  }, [conversationId]);
+
+  // Mark messages as read
+  const markMessagesAsRead = useCallback(async (msgs: ChatMessage[]) => {
+    if (!user) return;
+    
+    // Get messages from other users that are not already read
+    const unreadMessages = msgs.filter(
+      (m) => m.senderId !== user.id && m.status !== 'read'
+    );
+
+    if (unreadMessages.length === 0) return;
+
+    // Update each unread message to 'read'
+    for (const msg of unreadMessages) {
+      try {
+        await chatService.updateMessageStatus(msg.id, 'read');
+      } catch (err) {
+        console.error('Failed to mark message as read:', err);
+      }
+    }
+
+    // Update local state
+    setMessages((prev) =>
+      prev.map((m) =>
+        unreadMessages.some((unread) => unread.id === m.id)
+          ? { ...m, status: 'read' as const }
+          : m
+      )
+    );
+  }, [user]);
+
   // Load messages
   const loadMessages = useCallback(async (reset: boolean, showLoading: boolean = true) => {
     if (!user) return;
@@ -121,6 +178,9 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
           scrollToBottom(false);
         }
         await loadReactions(result.messages);
+        
+        // Mark messages as read
+        await markMessagesAsRead(result.messages);
       } else {
         setMessages((prev) => {
           const existingIds = new Set(prev.map((m) => m.id));
@@ -136,17 +196,18 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
       setLoading(false);
       setLoadingMore(false);
     }
-  }, [conversationId, user, scrollToBottom, loadReactions]);
+  }, [conversationId, user, scrollToBottom, loadReactions, markMessagesAsRead]);
 
   // Initial load only - no polling
   useEffect(() => {
     loadMessages(true, true);
     loadPinned();
     loadWallpaper();
+    loadDisappearingSettings();
     
     // Mark as read
     supabase.rpc('mark_conversation_read', { p_conversation_id: conversationId }).then(() => {}).catch(() => {});
-  }, [conversationId, loadMessages, loadPinned, loadWallpaper]);
+  }, [conversationId, loadMessages, loadPinned, loadWallpaper, loadDisappearingSettings]);
 
   // Presence check
   useEffect(() => {
@@ -263,7 +324,11 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
   };
 
   const handleSetDisappearing = async (enabled: boolean, durationHours: number) => {
-    await messageService.setDisappearingMessages(conversationId, enabled, durationHours);
+    const success = await messageService.setDisappearingMessages(conversationId, enabled, durationHours);
+    if (success) {
+      setDisappearingEnabled(enabled);
+      setDisappearingDuration(durationHours);
+    }
   };
 
   if (loading) {
@@ -386,8 +451,8 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
         onClearWallpaper={handleClearWallpaper}
         onSetDisappearing={handleSetDisappearing}
         currentWallpaper={chatWallpaper?.wallpaperColor || null}
-        disappearingEnabled={false}
-        disappearingDuration={24}
+        disappearingEnabled={disappearingEnabled}
+        disappearingDuration={disappearingDuration}
       />
 
       <GiftPicker open={giftPickerOpen} onClose={() => setGiftPickerOpen(false)} onSelectGift={() => {}} />
