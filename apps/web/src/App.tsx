@@ -3,6 +3,7 @@ import { BrowserRouter } from 'react-router-dom';
 import { AppRouter } from './app.router';
 import { AppShell } from './components/layout/AppShell';
 import { useAuthStore } from './store/auth.store';
+import { supabase } from './config/supabase.client';
 import { ToastContainer } from './components/common/ToastContainer';
 import { CallProvider, useCall } from './features/calls/CallProvider';
 import { IncomingCallScreen } from './features/calls/components/IncomingCallScreen';
@@ -49,6 +50,24 @@ const App: React.FC = () => {
   useEffect(() => {
     refreshUser();
   }, [refreshUser]);
+  
+  const { user } = useAuthStore();
+
+  useEffect(() => {
+    if (!user) return;
+    
+    const setOnline = () => {
+      supabase.rpc('update_presence', { p_is_online: true }).then(() => {}).catch(() => {});
+    };
+    
+    setOnline();
+    const interval = setInterval(setOnline, 30000);
+
+    return () => {
+      clearInterval(interval);
+      supabase.rpc('update_presence', { p_is_online: false }).then(() => {}).catch(() => {});
+    };
+  }, [user]);
 
   return (
     <BrowserRouter>
@@ -64,4 +83,6 @@ const App: React.FC = () => {
 };
 
 export default App;
+
+
 

@@ -10,6 +10,7 @@ export const ConversationPage: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuthStore();
   const [otherUser, setOtherUser] = useState<{ id: string; name: string; avatar: string | null; verified: boolean } | null>(null);
+  const [isOnline, setIsOnline] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -44,6 +45,17 @@ export const ConversationPage: React.FC = () => {
               verified: profile.is_verified || false,
             });
           }
+
+          // Check presence
+          const { data: presenceData } = await supabase
+            .from('presence')
+            .select('is_online')
+            .eq('user_id', otherUserId)
+            .maybeSingle();
+
+          if (presenceData) {
+            setIsOnline(presenceData.is_online);
+          }
         }
       }
 
@@ -52,6 +64,25 @@ export const ConversationPage: React.FC = () => {
 
     loadConversationInfo();
   }, [conversationId, user, navigate]);
+
+  // Realtime presence updates
+  useEffect(() => {
+    if (!otherUser?.id) return;
+
+    const channel = supabase
+      .channel(`presence:${otherUser.id}`)
+      .on('postgres_changes', {
+        event: 'UPDATE',
+        schema: 'public',
+        table: 'presence',
+        filter: `user_id=eq.${otherUser.id}`,
+      }, (payload) => {
+        setIsOnline(payload.new.is_online);
+      })
+      .subscribe();
+
+    return () => channel.unsubscribe();
+  }, [otherUser?.id]);
 
   if (loading) {
     return <div style={{ textAlign: 'center', padding: '2rem', color: '#9ca3af' }}>Loading...</div>;
@@ -69,6 +100,7 @@ export const ConversationPage: React.FC = () => {
         targetUserAvatar={otherUser.avatar}
         targetUserId={otherUser.id}
         verified={otherUser.verified}
+        initialOnline={isOnline}
       />
     </div>
   );
