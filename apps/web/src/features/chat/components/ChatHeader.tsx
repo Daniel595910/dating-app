@@ -7,6 +7,8 @@ interface ChatHeaderProps {
   userAvatar: string | null;
   verified: boolean;
   isOnline: boolean;
+  lastSeen?: string | null;
+  isTyping?: boolean;
   onBack: () => void;
   onProfileClick: () => void;
   onMoreClick: () => void;
@@ -20,6 +22,8 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({
   userAvatar,
   verified,
   isOnline,
+  lastSeen,
+  isTyping,
   onBack,
   onProfileClick,
   onMoreClick,
@@ -59,7 +63,7 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({
             )}
           </div>
           <span className={`${styles.status} ${isOnline ? styles.statusOnline : styles.statusOffline}`}>
-            {isOnline ? 'Active now' : 'Offline'}
+            {isTyping ? 'Typing...' : isOnline ? 'Active now' : lastSeen ? `Last seen ${lastSeen}` : 'Offline'}
           </span>
         </div>
       </button>
@@ -88,3 +92,4 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({
     </header>
   );
 };
+

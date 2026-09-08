@@ -26,10 +26,11 @@ class ChatService {
 
     const { data: presenceData } = await supabase
       .from('presence')
-      .select('user_id, is_online')
+      .select('user_id, is_online, last_seen_at')
       .in('user_id', otherUserIds);
 
     const presenceMap = new Map((presenceData || []).map((p: any) => [p.user_id, p.is_online]));
+    const lastSeenMap = new Map((presenceData || []).map((p: any) => [p.user_id, p.last_seen_at]));
 
     return conversations.map((conv: any) => {
       const otherUserId = conv.participant_ids.find((id: string) => id !== userId);
@@ -45,6 +46,7 @@ class ChatService {
         lastMessageAt: conv.last_message_at || null,
         unreadCount: conv.unread_counts?.[userId] || 0,
         isOnline: presenceMap.get(otherUserId) || false,
+        lastSeen: lastSeenMap.get(otherUserId) || null,
       };
     });
   }
@@ -219,6 +221,7 @@ class ChatService {
 }
 
 export const chatService = new ChatService();
+
 
 
 

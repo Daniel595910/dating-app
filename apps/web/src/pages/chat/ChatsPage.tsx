@@ -3,23 +3,18 @@ import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '@/store/auth.store';
 import { supabase } from '@/config/supabase.client';
 import { chatService } from '../../features/chat/services/chat.service';
+import { usePresence } from '../../features/chat/hooks/usePresence';
 import { Conversation } from '../../features/chat/types/chat.types';
 import { MessageCircle, ArrowRight, ArrowLeft, Search, X } from 'lucide-react';
 import styles from './ChatsPage.module.css';
-
-interface OnlineUser {
-  userId: string;
-  name: string;
-  avatarUrl: string | null;
-}
 
 export const ChatsPage: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuthStore();
   const [conversations, setConversations] = useState<Conversation[]>([]);
-  const [onlineUsers, setOnlineUsers] = useState<OnlineUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+  const { isUserOnline, onlineUsers } = usePresence(user?.id || null);
 
   useEffect(() => {
     const loadConversations = async () => {
@@ -30,45 +25,11 @@ export const ChatsPage: React.FC = () => {
       setLoading(false);
     };
 
-    const loadOnlineUsers = async () => {
-      if (!user) return;
-      const { data: presenceData } = await supabase
-        .from('presence')
-        .select('user_id, is_online')
-        .eq('is_online', true)
-        .neq('user_id', user.id)
-        .limit(10);
-
-      if (presenceData && presenceData.length > 0) {
-        const onlineIds = presenceData.map((p: any) => p.user_id);
-        const { data: profiles } = await supabase
-          .from('profiles')
-          .select('user_id, display_name, avatar_url')
-          .in('user_id', onlineIds);
-
-        const profileMap = new Map((profiles || []).map((p: any) => [p.user_id, p]));
-        setOnlineUsers(
-          presenceData.map((p: any) => {
-            const profile = profileMap.get(p.user_id);
-            return {
-              userId: p.user_id,
-              name: profile?.display_name || 'User',
-              avatarUrl: profile?.avatar_url || null,
-            };
-          })
-        );
-      } else {
-        setOnlineUsers([]);
-      }
-    };
-
     loadConversations();
-    loadOnlineUsers();
 
     const channel = supabase
       .channel('chats_page_updates')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'conversations' }, () => loadConversations())
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'presence' }, () => loadOnlineUsers())
       .subscribe();
 
     return () => channel.unsubscribe();
@@ -138,35 +99,6 @@ export const ChatsPage: React.FC = () => {
         </div>
       </div>
 
-      {onlineUsers.length > 0 && (
-        <div className={styles.onlineSection}>
-          <div className={styles.onlineScroll}>
-            {onlineUsers.map((onlineUser) => (
-              <button
-                key={onlineUser.userId}
-                className={styles.onlineUserItem}
-                onClick={() => handleSelectOnlineUser(onlineUser.userId)}
-                title={onlineUser.name}
-              >
-                <div className={styles.onlineAvatarWrapper}>
-                  <div className={styles.onlineAvatar}>
-                    {onlineUser.avatarUrl ? (
-                      <img src={onlineUser.avatarUrl} alt={onlineUser.name} />
-                    ) : (
-                      onlineUser.name.charAt(0).toUpperCase()
-                    )}
-                  </div>
-                  <span className={styles.onlineDot} />
-                </div>
-                <span className={styles.onlineName}>
-                  {onlineUser.name.split(' ')[0]}
-                </span>
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
-
       <div className={styles.conversationList}>
         {filteredConversations.length === 0 ? (
           <div className={styles.emptyState}>
@@ -191,6 +123,7 @@ export const ChatsPage: React.FC = () => {
             const otherUserId = conv.participantIds.find((id) => id !== user?.id);
             const otherUserName = otherUserId ? conv.participantNames[otherUserId] : 'User';
             const otherUserAvatar = otherUserId ? conv.participantAvatars[otherUserId] : null;
+            const isOnline = otherUserId ? isUserOnline(otherUserId) : false;
 
             return (
               <button
@@ -206,7 +139,7 @@ export const ChatsPage: React.FC = () => {
                       otherUserName?.charAt(0).toUpperCase() || '?'
                     )}
                   </div>
-                  {conv.isOnline && <span className={styles.onlineDot} />}
+                  {isOnline && <span className={styles.onlineDot} />}
                 </div>
                 <div className={styles.conversationInfo}>
                   <div className={styles.conversationHeader}>

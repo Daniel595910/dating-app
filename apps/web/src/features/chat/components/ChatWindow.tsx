@@ -17,6 +17,7 @@ import { ReportSheet } from '../../community/components/ReportSheet';
 import { GiftPicker } from './GiftPicker';
 
 import { useCall } from '../../calls/CallProvider';
+import { usePresence } from '../hooks/usePresence';
 import { uploadService } from '@/services/upload.service';
 
 
@@ -51,8 +52,10 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
   const [loadingMore, setLoadingMore] = useState(false);
   
   // Presence
-  const [targetOnline, setTargetOnline] = useState(initialOnline);
   const [isTyping, setIsTyping] = useState(false);
+  const { isUserOnline, getLastSeen } = usePresence(user?.id || null);
+  const targetOnline = isUserOnline(targetUserId);
+  const targetLastSeen = getLastSeen(targetUserId);
   
   // UI state
   const [replyingTo, setReplyingTo] = useState<ChatMessage | null>(null);
@@ -226,6 +229,9 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
     
     // Mark as read
     supabase.rpc('mark_conversation_read', { p_conversation_id: conversationId }).then(() => {}).catch(() => {});
+    
+    // Set user online
+    chatService.updatePresence(true).catch(() => {});
   }, [conversationId, loadMessages, loadPinned, loadWallpaper, loadDisappearingSettings]);
 
   // Scroll to bottom when messages are first loaded
@@ -638,6 +644,8 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
         userAvatar={targetUserAvatar}
         verified={verified}
         isOnline={targetOnline}
+        lastSeen={targetLastSeen}
+        isTyping={isTyping}
         onBack={() => navigate('/chats')}
         onProfileClick={() => navigate(`/profile/${targetUserId}`)}
         onMoreClick={() => setSettingsOpen(true)}
@@ -844,6 +852,8 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
     </div>
   );
 };
+
+
 
 
 

@@ -8,6 +8,7 @@
   lastMessageAt: string | null;
   unreadCount: number;
   isOnline: boolean;
+  lastSeen?: string | null;
 }
 
 export interface ChatMessage {
@@ -48,6 +49,7 @@ export interface MessageReactionSummary {
   count: number;
   reactedByMe: boolean;
 }
+
 
 
 
