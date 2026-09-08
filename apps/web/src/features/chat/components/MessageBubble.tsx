@@ -321,10 +321,16 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
               autoPlay
               className={styles.videoModalPlayer}
               playsInline
-              onClick={(e) => {
+              onClick={async (e) => {
                 const video = e.currentTarget;
                 if (video.paused) {
-                  video.play();
+                  try {
+                    await video.play();
+                  } catch (err: any) {
+                    if (err.name !== 'AbortError') {
+                      console.error('Video play failed:', err);
+                    }
+                  }
                 } else {
                   video.pause();
                 }
@@ -374,6 +380,7 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
     </div>
   );
 };
+
 
 
 

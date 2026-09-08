@@ -295,17 +295,27 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
     if (!targetUserId) return;
 
     const checkPresence = async () => {
-      const { data } = await supabase
-        .from('presence')
-        .select('is_online')
-        .eq('user_id', targetUserId)
-        .maybeSingle();
-      
-      if (data) setTargetOnline(data.is_online);
+      try {
+        const { data, error } = await supabase
+          .from('presence')
+          .select('is_online')
+          .eq('user_id', targetUserId)
+          .maybeSingle();
+        
+        if (error) {
+          // Silently ignore network errors
+          return;
+        }
+        
+        if (data) setTargetOnline(data.is_online);
+      } catch (err) {
+        // Silently ignore network errors
+        console.debug('Presence check failed:', err);
+      }
     };
 
     checkPresence();
-    const interval = setInterval(checkPresence, 3000);
+    const interval = setInterval(checkPresence, 10000);
 
     return () => {
       clearInterval(interval);
@@ -793,6 +803,8 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
     </div>
   );
 };
+
+
 
 
 

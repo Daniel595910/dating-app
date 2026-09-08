@@ -34,32 +34,40 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (!user) return;
 
     const checkIncomingCalls = async () => {
-      const { data: incomingCalls } = await supabase
-        .from('call_sessions')
-        .select('*')
-        .eq('callee_id', user.id)
-        .eq('status', 'calling')
-        .gt('created_at', new Date(Date.now() - 30000).toISOString())
-        .order('created_at', { ascending: false })
-        .limit(1);
+      try {
+        const { data: incomingCalls, error } = await supabase
+          .from('call_sessions')
+          .select('*')
+          .eq('callee_id', user.id)
+          .eq('status', 'calling')
+          .gt('created_at', new Date(Date.now() - 30000).toISOString())
+          .order('created_at', { ascending: false })
+          .limit(1);
 
-      if (incomingCalls && incomingCalls.length > 0) {
-        const call = incomingCalls[0];
-        setIncomingCall(call as CallSession);
-        setCallState('ringing');
-        if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
-        
-        if (ringTimeoutRef.current) clearTimeout(ringTimeoutRef.current);
-        ringTimeoutRef.current = setTimeout(() => {
-          setIncomingCall(null);
-          setCallState('idle');
-          callService.updateCallStatus(call.id, 'missed');
-        }, 30000);
+        if (error) {
+          return;
+        }
+
+        if (incomingCalls && incomingCalls.length > 0) {
+          const call = incomingCalls[0];
+          setIncomingCall(call as CallSession);
+          setCallState('ringing');
+          if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
+          
+          if (ringTimeoutRef.current) clearTimeout(ringTimeoutRef.current);
+          ringTimeoutRef.current = setTimeout(() => {
+            setIncomingCall(null);
+            setCallState('idle');
+            callService.updateCallStatus(call.id, 'missed');
+          }, 30000);
+        }
+      } catch (err) {
+        console.debug('Incoming call check failed:', err);
       }
     };
 
     checkIncomingCalls();
-    const pollInterval = setInterval(checkIncomingCalls, 2000);
+    const pollInterval = setInterval(checkIncomingCalls, 10000);
 
     unsubscribeRef.current = callService.subscribeToIncomingCalls(user.id, (call) => {
       setIncomingCall(call);
@@ -217,5 +225,3 @@ export const useCall = () => {
   }
   return context;
 };
-
-
