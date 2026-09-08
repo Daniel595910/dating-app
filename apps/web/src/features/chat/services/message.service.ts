@@ -122,13 +122,30 @@ export const messageService = {
 
     if (fetchError) throw fetchError;
 
+    // Parse metadata
+    let parsedMetadata = originalMessage.metadata;
+    if (typeof originalMessage.metadata === 'string') {
+      try {
+        parsedMetadata = JSON.parse(originalMessage.metadata);
+      } catch {
+        parsedMetadata = {};
+      }
+    }
+
+    // Add forwarded flag
+    const forwardMetadata = {
+      ...(parsedMetadata || {}),
+      forwarded: true,
+      forwarded_from: messageId,
+    };
+
     const { data, error } = await supabase
       .rpc('send_chat_message', {
         p_conversation_id: targetConversationId,
         p_client_message_id: crypto.randomUUID(),
         p_content: originalMessage.content,
-        p_type: originalMessage.type || 'text',
-        p_metadata: { forwarded_from: messageId }
+        p_type: 'text',
+        p_metadata: forwardMetadata
       });
 
     if (error) throw error;
@@ -183,4 +200,5 @@ export const messageService = {
     return true;
   }
 };
+
 
