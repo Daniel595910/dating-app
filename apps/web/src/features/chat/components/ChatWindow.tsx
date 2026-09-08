@@ -76,6 +76,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
   const containerRef = useRef<HTMLDivElement>(null);
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isInitialLoadRef = useRef(true);
+  const typingChannelRef = useRef<any>(null);
 
   // Scroll to bottom
   const scrollToBottom = useCallback((smooth = true) => {
@@ -209,6 +210,57 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
     supabase.rpc('mark_conversation_read', { p_conversation_id: conversationId }).then(() => {}).catch(() => {});
   }, [conversationId, loadMessages, loadPinned, loadWallpaper, loadDisappearingSettings]);
 
+  // Subscribe to typing events
+  useEffect(() => {
+    if (!user || !targetUserId) return;
+
+    // Clean up previous channel
+    if (typingChannelRef.current) {
+      supabase.removeChannel(typingChannelRef.current);
+      typingChannelRef.current = null;
+    }
+
+    // Create typing channel
+    const typingChannel = supabase.channel(`typing:${conversationId}`);
+    
+    typingChannel
+      .on('broadcast', { event: 'typing' }, (payload) => {
+        // Only show typing indicator if the other user is typing
+        if (payload.payload?.userId !== user.id) {
+          setIsTyping(true);
+          
+          // Auto-hide after 3 seconds if no stop_typing event received
+          if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+          typingTimeoutRef.current = setTimeout(() => {
+            setIsTyping(false);
+          }, 3000);
+        }
+      })
+      .on('broadcast', { event: 'stop_typing' }, (payload) => {
+        if (payload.payload?.userId !== user.id) {
+          setIsTyping(false);
+          if (typingTimeoutRef.current) {
+            clearTimeout(typingTimeoutRef.current);
+            typingTimeoutRef.current = null;
+          }
+        }
+      })
+      .subscribe();
+
+    typingChannelRef.current = typingChannel;
+
+    return () => {
+      if (typingChannelRef.current) {
+        supabase.removeChannel(typingChannelRef.current);
+        typingChannelRef.current = null;
+      }
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current);
+        typingTimeoutRef.current = null;
+      }
+    };
+  }, [conversationId, user, targetUserId]);
+
   // Presence check
   useEffect(() => {
     if (!targetUserId) return;
@@ -230,13 +282,6 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
       clearInterval(interval);
     };
   }, [targetUserId]);
-
-  // Typing indicator
-  useEffect(() => {
-    return () => {
-      if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
-    };
-  }, [conversationId, user]);
 
   // Message actions
   const handleSend = async (content: string) => {
