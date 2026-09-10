@@ -1,51 +1,55 @@
-import React, { useState, useEffect } from 'react';
+﻿import React from 'react';
 import { Navigate } from 'react-router-dom';
-import { supabase } from '@/config/supabase.client';
-import { User } from '@supabase/supabase-js';
+import { useAdminAuth } from '@/hooks/useAdminAuth';
+import styles from './AdminGuard.module.css';
 
 interface AdminGuardProps {
   children: React.ReactNode;
+  requiredPermissions?: string[];
 }
 
-export const AdminGuard: React.FC < AdminGuardProps > = ({ children }) => {
-  const [user, setUser] = useState < User | null > (null);
-  const [loading, setLoading] = useState(true);
-  const [isAdmin, setIsAdmin] = useState(false);
-  
-  useEffect(() => {
-    const checkAuth = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      setUser(user);
-      
-      if (user) {
-        // Check if user has admin role
-        const { data: userRecord } = await supabase
-          .from('users')
-          .select('role')
-          .eq('id', user.id)
-          .single();
-        
-        const adminRoles = ['admin', 'super_admin', 'moderator'];
-        setIsAdmin(adminRoles.includes(userRecord?.role || ''));
-      }
-      
-      setLoading(false);
-    };
-    
-    checkAuth();
-  }, []);
-  
+export const AdminGuard: React.FC<AdminGuardProps> = ({ children, requiredPermissions }) => {
+  const { user, isAdmin, loading, hasAnyPermission } = useAdminAuth();
+
   if (loading) {
-    return <div style={{ textAlign: 'center', padding: '2rem' }}>Checking access...</div>;
+    return (
+      <div className={styles.loading}>
+        <div className={styles.spinner} />
+        <p className={styles.loadingText}>Verifying access...</p>
+      </div>
+    );
   }
-  
+
   if (!user) {
     return <Navigate to="/login" replace />;
   }
-  
+
   if (!isAdmin) {
-    return <div style={{ textAlign: 'center', padding: '2rem', color: '#ef4444' }}>Access denied. Admin privileges required.</div>;
+    return (
+      <div className={styles.denied}>
+        <div className={styles.deniedIcon}>🔒</div>
+        <h2 className={styles.deniedTitle}>Access Denied</h2>
+        <p className={styles.deniedText}>
+          You don't have permission to access the admin panel.
+        </p>
+        <p className={styles.deniedHint}>
+          Required role: Administrator or higher
+        </p>
+      </div>
+    );
   }
-  
+
+  if (requiredPermissions && requiredPermissions.length > 0 && !hasAnyPermission(requiredPermissions)) {
+    return (
+      <div className={styles.denied}>
+        <div className={styles.deniedIcon}>🔒</div>
+        <h2 className={styles.deniedTitle}>Insufficient Permissions</h2>
+        <p className={styles.deniedText}>
+          You don't have permission to view this page.
+        </p>
+      </div>
+    );
+  }
+
   return <>{children}</>;
 };

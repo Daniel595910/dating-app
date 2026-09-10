@@ -1,0 +1,41 @@
+﻿.chartWrapper {
+  position: relative;
+  width: 100%;
+}
+
+.svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+  overflow: visible;
+}
+
+.point {
+  cursor: pointer;
+  transition: r 0.15s ease;
+}
+
+.point:hover {
+  r: 5;
+}
+
+.axisLabel {
+  font-size: 10px;
+  fill: var(--color-text-tertiary);
+  font-weight: 500;
+  font-family: inherit;
+}
+
+.empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-text-tertiary);
+  font-size: 13px;
+  background: var(--color-bg-sunken);
+  border-radius: var(--radius-md);
+}
+
+.empty p {
+  margin: 0;
+}

@@ -1,23 +1,49 @@
-.adminShell {
+﻿.adminShell {
   display: flex;
   min-height: 100vh;
+  background: var(--color-bg, #f9fafb);
 }
 
 .mainArea {
   flex: 1;
   display: flex;
   flex-direction: column;
-  margin-left: 250px;
+  margin-left: 260px;
+  min-width: 0;
 }
 
 .content {
   flex: 1;
-  padding: 2rem;
+  padding: 24px;
   overflow-y: auto;
+}
+
+.overlay {
+  display: none;
 }
 
 @media (max-width: 768px) {
   .mainArea {
     margin-left: 0;
+  }
+
+  .content {
+    padding: 16px;
+  }
+
+  .overlay {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 99;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease;
+  }
+
+  .overlayVisible {
+    opacity: 1;
+    pointer-events: auto;
   }
 }
