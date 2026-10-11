@@ -13,6 +13,11 @@ import {
   ScrollText,
   LogOut,
   ShieldCheck,
+  Bell,
+  UserX,
+  MessageSquare,
+  Video,
+  UserPlus,
 } from 'lucide-react';
 import { useAdminAuth } from '@/hooks/useAdminAuth';
 import { APP_NAME, APP_VERSION } from '@/config/constants';
@@ -35,11 +40,16 @@ const NAV_ITEMS: NavItem[] = [
   { path: '/users', label: 'Users', icon: <Users size={18} />, permission: 'USER_VIEW' },
   { path: '/communities', label: 'Communities', icon: <UsersRound size={18} />, permission: 'COMMUNITY_VIEW' },
   { path: '/moderation', label: 'Moderation', icon: <Shield size={18} />, permission: 'CONTENT_VIEW' },
+  { path: '/comments', label: 'Comments', icon: <MessageSquare size={18} />, permission: 'CONTENT_VIEW' },
+  { path: '/discover-videos', label: 'Discover Videos', icon: <Video size={18} />, permission: 'CONTENT_VIEW' },
   { path: '/reports', label: 'Reports', icon: <Flag size={18} />, permission: 'CONTENT_VIEW' },
+  { path: '/safety', label: 'Safety', icon: <UserX size={18} />, permission: 'USER_VIEW' },
+  { path: '/connections', label: 'Connections', icon: <UserPlus size={18} />, permission: 'USER_VIEW' },
   { path: '/matches', label: 'Matches', icon: <Heart size={18} /> },
   { path: '/vip', label: 'VIP', icon: <Crown size={18} />, permission: 'VIP_VIEW' },
   { path: '/analytics', label: 'Analytics', icon: <BarChart3 size={18} />, permission: 'ANALYTICS_VIEW' },
   { path: '/audit-log', label: 'Audit Log', icon: <ScrollText size={18} />, permission: 'AUDIT_VIEW' },
+  { path: '/notifications', label: 'Notifications', icon: <Bell size={18} />, permission: 'SETTINGS_VIEW' },
   { path: '/admin-users', label: 'Admin Users', icon: <ShieldCheck size={18} />, permission: 'ADMIN_MANAGE' },
   { path: '/settings', label: 'Settings', icon: <Settings size={18} />, permission: 'SETTINGS_VIEW' },
 ];
@@ -108,4 +118,3 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen = false, onClose }) => 
     </aside>
   );
 };
-

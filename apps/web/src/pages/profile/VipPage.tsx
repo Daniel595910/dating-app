@@ -1,163 +1,159 @@
-﻿import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '@/store/auth.store';
-import { supabase } from '@/config/supabase.client';
-import { ArrowLeft, Star, Check, CreditCard, Crown, Clock, Sparkles, TrendingUp } from 'lucide-react';
+import { paystackService, VipPlan, Subscription, CreditPack } from '@/services/paystack.service';
+import {
+  ArrowLeft,
+  Crown,
+  Coins,
+  Check,
+  Clock,
+  Sparkles,
+  AlertCircle,
+  Loader,
+  Star,
+  Zap,
+  Shield,
+  ShoppingBag,
+  Globe,
+  CheckCircle,
+  Info,
+} from 'lucide-react';
 import styles from './VipPage.module.css';
+
+function formatAmount(smallestUnit: number, currency: 'NGN' | 'USD'): string {
+  const value = smallestUnit / 100;
+  if (currency === 'NGN') {
+    return `₦${value.toLocaleString('en-NG', { minimumFractionDigits: 0 })}`;
+  }
+  return `$${value.toFixed(2)}`;
+}
+
+function formatCredits(credits: number): string {
+  return credits.toLocaleString('en-US');
+}
 
 export const VipPage: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuthStore();
-  const [currentLevel, setCurrentLevel] = useState('free');
-  const [credits, setCredits] = useState(0);
-  const [points, setPoints] = useState(0);
-  const [planExpiresAt, setPlanExpiresAt] = useState<string | null>(null);
-  const [totalSpent, setTotalSpent] = useState(0);
-  const [loading, setLoading] = useState(true);
-  const [processing, setProcessing] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
 
-  const plans = [
-    {
-      id: 'basic-plan',
-      name: 'Basic',
-      level: 'basic',
-      description: 'Get started with enhanced features',
-      price: 9.99,
-      durationDays: 30,
-      pointsIncluded: 100,
-      creditsIncluded: 20,
-      features: ['Unlimited matches', 'See who liked you', 'Basic filters', '20 community credits'],
-    },
-    {
-      id: 'premium-plan',
-      name: 'Premium',
-      level: 'premium',
-      description: 'Our most popular plan',
-      price: 19.99,
-      durationDays: 30,
-      pointsIncluded: 500,
-      creditsIncluded: 100,
-      features: ['Everything in Basic', 'Priority profile visibility', 'Advanced filters', '100 community credits', 'Create community'],
-    },
-    {
-      id: 'vip-plan',
-      name: 'VIP',
-      level: 'vip',
-      description: 'Maximum features and visibility',
-      price: 29.99,
-      durationDays: 30,
-      pointsIncluded: 1000,
-      creditsIncluded: 500,
-      features: ['Everything in Premium', 'VIP badge', 'Dedicated support', '500 community credits', 'Sponsor communities'],
-    },
-  ];
+  const [plans, setPlans] = useState<VipPlan[]>([]);
+  const [creditPacks, setCreditPacks] = useState<CreditPack[]>([]);
+  const [subscription, setSubscription] = useState<Subscription | null>(null);
+  const [currentCredits, setCurrentCredits] = useState(0);
+  const [selectedCurrency, setSelectedCurrency] = useState<'NGN' | 'USD' | null>(null);
+  const [suggestedCurrency, setSuggestedCurrency] = useState<'NGN' | 'USD'>('NGN');
+  const [loading, setLoading] = useState(true);
+  const [processingKey, setProcessingKey] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   useEffect(() => {
-    loadVipData();
+    if (!user) return;
+    const load = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const [plansData, packsData, subData, currencyData, accountData] = await Promise.all([
+          paystackService.getPlans(),
+          paystackService.getCreditPacks(),
+          paystackService.getMySubscription(),
+          paystackService.getBillingCurrency(),
+          paystackService.getVipAccount(),
+        ]);
+        setPlans(plansData);
+        setCreditPacks(packsData);
+        setSubscription(subData);
+        setSelectedCurrency(currencyData.currency);
+        setSuggestedCurrency(currencyData.suggested);
+        setCurrentCredits(accountData?.community_credits ?? 0);
+      } catch (err: any) {
+        setError(err.message || 'Failed to load VIP data');
+      } finally {
+        setLoading(false);
+      }
+    };
+    load();
   }, [user]);
 
-  const loadVipData = async () => {
-    if (!user) return;
-
-    const { data } = await supabase
-      .from('vip_accounts')
-      .select('*')
-      .eq('user_id', user.id)
-      .single();
-
-    if (data) {
-      setCurrentLevel(data.level);
-      setCredits(data.community_credits || 0);
-      setPoints(data.points_balance || 0);
-      setPlanExpiresAt(data.plan_expires_at);
-      setTotalSpent(data.total_points_spent || 0);
+  const handleChooseCurrency = async (currency: 'NGN' | 'USD') => {
+    setSelectedCurrency(currency);
+    try {
+      await paystackService.setBillingCurrency(currency);
+    } catch (err) {
+      console.error('Failed to save currency preference', err);
     }
-
-    setLoading(false);
   };
 
-  const handleUpgrade = async (plan: any) => {
-    if (!user) return;
-    setProcessing(plan.id);
+  const filteredPlans = useMemo(() => {
+    if (!selectedCurrency) return [];
+    return plans.filter((p) => p.currency === selectedCurrency);
+  }, [plans, selectedCurrency]);
+
+  const filteredPacks = useMemo(() => {
+    if (!selectedCurrency) return [];
+    return creditPacks.filter((p) => p.currency === selectedCurrency);
+  }, [creditPacks, selectedCurrency]);
+
+  const handleUpgrade = async (plan: VipPlan) => {
+    if (processingKey) return;
+    if (!selectedCurrency) {
+      setError('Please choose your billing currency first');
+      return;
+    }
+
+    setProcessingKey(`plan-${plan.plan_code}`);
     setError(null);
-    setSuccess(null);
+    setSuccessMessage(null);
 
     try {
-      // Simulate payment processing
-      await new Promise((resolve) => setTimeout(resolve, 1500));
-
-      const { error: updateError } = await supabase
-        .from('vip_accounts')
-        .update({
-          level: plan.level,
-          plan_id: plan.id,
-          plan_expires_at: new Date(Date.now() + plan.durationDays * 24 * 60 * 60 * 1000).toISOString(),
-          points_balance: points + plan.pointsIncluded,
-          total_points_earned: points + plan.pointsIncluded,
-          community_credits: credits + plan.creditsIncluded,
-        })
-        .eq('user_id', user.id);
-
-      if (updateError) throw updateError;
-
-      setCurrentLevel(plan.level);
-      setCredits((prev) => prev + plan.creditsIncluded);
-      setPoints((prev) => prev + plan.pointsIncluded);
-      setPlanExpiresAt(new Date(Date.now() + plan.durationDays * 24 * 60 * 60 * 1000).toISOString());
-      setSuccess('Successfully upgraded to ' + plan.name + '!');
-      setTimeout(() => setSuccess(null), 3000);
+      const { authorization_url } = await paystackService.initializeVipPayment(
+        plan.plan_code,
+        selectedCurrency
+      );
+      window.location.href = authorization_url;
     } catch (err: any) {
-      setError(err.message || 'Failed to upgrade');
-    } finally {
-      setProcessing(null);
+      setError(err.message || 'Failed to start payment');
+      setProcessingKey(null);
     }
   };
 
-  const handleBuyCredits = async (amount: number, price: number) => {
-    if (!user) return;
-    setProcessing('credits-' + amount);
+  const handleBuyCredits = async (pack: CreditPack) => {
+    if (processingKey) return;
+    if (!selectedCurrency) {
+      setError('Please choose your billing currency first');
+      return;
+    }
+
+    setProcessingKey(`pack-${pack.pack_code}`);
     setError(null);
-    setSuccess(null);
+    setSuccessMessage(null);
 
     try {
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-
-      const { error: updateError } = await supabase
-        .from('vip_accounts')
-        .update({
-          community_credits: credits + amount,
-        })
-        .eq('user_id', user.id);
-
-      if (updateError) throw updateError;
-
-      setCredits((prev) => prev + amount);
-      setSuccess('Successfully purchased ' + amount + ' credits!');
-      setTimeout(() => setSuccess(null), 3000);
+      const { authorization_url } = await paystackService.initializeCreditPurchase(
+        pack.pack_code,
+        selectedCurrency
+      );
+      window.location.href = authorization_url;
     } catch (err: any) {
-      setError(err.message || 'Failed to purchase credits');
-    } finally {
-      setProcessing(null);
+      setError(err.message || 'Failed to start purchase');
+      setProcessingKey(null);
     }
   };
-
-  const daysRemaining = planExpiresAt
-    ? Math.ceil((new Date(planExpiresAt).getTime() - Date.now()) / (24 * 60 * 60 * 1000))
-    : 0;
-
-  const subscriptionProgress = planExpiresAt
-    ? Math.min(100, Math.max(0, ((30 - daysRemaining) / 30) * 100))
-    : 0;
 
   if (loading) {
     return (
       <div className={styles.loadingContainer}>
-        <p>Loading VIP info...</p>
+        <Loader size={36} className={styles.spin} />
+        <p>Loading your VIP status...</p>
       </div>
     );
   }
+
+  const activeSubscription = subscription && subscription.status === 'active';
+  const daysRemaining = activeSubscription && subscription?.current_period_end
+    ? Math.max(0, Math.ceil((new Date(subscription.current_period_end).getTime() - Date.now()) / 86400000))
+    : 0;
 
   return (
     <div className={styles.vipPage}>
@@ -169,122 +165,303 @@ export const VipPage: React.FC = () => {
       </header>
 
       <div className={styles.content}>
-        {/* Current Status Card */}
-        <div className={styles.statusCard}>
-          <Crown size={28} className={styles.statusIcon} />
-          <div style={{ flex: 1 }}>
-            <p className={styles.statusLabel}>Current Plan</p>
-            <p className={styles.statusLevel}>{currentLevel.toUpperCase()}</p>
+        {/* ==================================================
+            ACCOUNT STATUS CARD
+           ================================================== */}
+        {activeSubscription ? (
+          <div className={styles.statusCard}>
+            <div className={styles.statusIconWrapper}>
+              <Crown size={24} className={styles.statusIcon} />
+            </div>
+            <div className={styles.statusInfo}>
+              <p className={styles.statusLabel}>Active Membership</p>
+              <p className={styles.statusLevel}>{subscription.plan_code.replace('_monthly', '').toUpperCase()}</p>
+              <p className={styles.statusMeta}>
+                Renews {subscription.current_period_end ? new Date(subscription.current_period_end).toLocaleDateString('en-NG', { day: 'numeric', month: 'short', year: 'numeric' }) : 'soon'}
+              </p>
+            </div>
+            <div className={styles.statusStats}>
+              <div className={styles.statusStat}>
+                <span className={styles.statusStatValue}>
+                  {formatAmount(subscription.amount, subscription.currency)}
+                </span>
+                <span className={styles.statusStatLabel}>per month</span>
+              </div>
+            </div>
           </div>
-          <div className={styles.statusStats}>
-            <div className={styles.statusStat}>
-              <span className={styles.statusStatValue}>{credits}</span>
-              <span className={styles.statusStatLabel}>Credits</span>
+        ) : (
+          <div className={styles.statusCardFree}>
+            <div className={styles.statusIconWrapperFree}>
+              <Star size={22} className={styles.statusIconFree} />
             </div>
-            <div className={styles.statusStat}>
-              <span className={styles.statusStatValue}>{points}</span>
-              <span className={styles.statusStatLabel}>Points</span>
+            <div className={styles.statusInfo}>
+              <p className={styles.statusLabelFree}>Free Account</p>
+              <p className={styles.statusLevelFree}>Upgrade to unlock</p>
+              <p className={styles.statusMetaFree}>Unlimited matches, priority visibility, and more</p>
             </div>
+          </div>
+        )}
+
+        {/* ==================================================
+            CREDITS BALANCE CHIP
+           ================================================== */}
+        <div className={styles.creditsBalanceChip}>
+          <Coins size={18} className={styles.creditsBalanceIcon} />
+          <div className={styles.creditsBalanceInfo}>
+            <span className={styles.creditsBalanceLabel}>Credit Balance</span>
+            <span className={styles.creditsBalanceValue}>{formatCredits(currentCredits)}</span>
           </div>
         </div>
 
-        {/* Subscription Progress */}
-        {planExpiresAt && (
+        {/* ==================================================
+            SUBSCRIPTION PROGRESS
+           ================================================== */}
+        {activeSubscription && subscription?.current_period_end && (
           <div className={styles.subscriptionCard}>
             <div className={styles.subscriptionHeader}>
               <Clock size={16} className={styles.subscriptionIcon} />
-              <span className={styles.subscriptionTitle}>Subscription Progress</span>
-              <span className={styles.daysRemaining}>
-                {daysRemaining > 0 ? `${daysRemaining} days left` : 'Expired'}
-              </span>
+              <span className={styles.subscriptionTitle}>Billing Period</span>
+              <span className={styles.daysRemaining}>{daysRemaining} days left</span>
             </div>
             <div className={styles.progressTrack}>
               <div
                 className={styles.progressFill}
-                style={{ width: `${subscriptionProgress}%` }}
+                style={{ width: `${Math.min(100, ((30 - daysRemaining) / 30) * 100)}%` }}
               />
             </div>
             <p className={styles.subscriptionMeta}>
-              Started: {new Date(new Date(planExpiresAt).getTime() - 30 * 24 * 60 * 60 * 1000).toLocaleDateString()}
+              {subscription.current_period_start ? new Date(subscription.current_period_start).toLocaleDateString() : '—'}
               {' → '}
-              Expires: {new Date(planExpiresAt).toLocaleDateString()}
+              {new Date(subscription.current_period_end).toLocaleDateString()}
             </p>
           </div>
         )}
 
-        {success && <div className={styles.successBanner}>{success}</div>}
-        {error && <div className={styles.errorBanner}>{error}</div>}
+        {/* ==================================================
+            BANNERS
+           ================================================== */}
+        {error && (
+          <div className={styles.errorBanner}>
+            <AlertCircle size={16} />
+            <span>{error}</span>
+          </div>
+        )}
 
-        {/* Plans */}
-        <h3 className={styles.sectionTitle}>Upgrade Plan</h3>
-        <div className={styles.plansGrid}>
-          {plans.map((plan) => (
-            <div
-              key={plan.id}
-              className={`${styles.planCard} ${currentLevel === plan.level ? styles.planCardActive : ''}`}
-            >
-              <div className={styles.planHeader}>
-                <h4 className={styles.planName}>{plan.name}</h4>
-                {currentLevel === plan.level && (
-                  <span className={styles.currentBadge}>Current</span>
-                )}
-              </div>
-              <p className={styles.planPrice}>${plan.price}/month</p>
-              <ul className={styles.planFeatures}>
-                {plan.features.map((feature) => (
-                  <li key={feature} className={styles.planFeature}>
-                    <Check size={14} className={styles.featureCheck} />
-                    {feature}
-                  </li>
-                ))}
-              </ul>
+        {successMessage && (
+          <div className={styles.successBanner}>
+            <CheckCircle size={16} />
+            <span>{successMessage}</span>
+          </div>
+        )}
+
+        {/* ==================================================
+            CURRENCY CHOOSER (first-time only)
+           ================================================== */}
+        {!selectedCurrency && (
+          <div className={styles.currencyChooser}>
+            <div className={styles.currencyChooserHeader}>
+              <Globe size={20} className={styles.currencyChooserIcon} />
+              <h3 className={styles.currencyChooserTitle}>Choose your billing currency</h3>
+            </div>
+            <p className={styles.currencyHint}>
+              We suggested <strong>{suggestedCurrency}</strong> based on your profile.
+              This choice is saved and won't change if you travel or change networks.
+            </p>
+            <div className={styles.currencyOptions}>
               <button
-                className={styles.upgradeButton}
-                onClick={() => handleUpgrade(plan)}
-                disabled={currentLevel === plan.level || processing === plan.id}
+                className={`${styles.currencyButton} ${suggestedCurrency === 'NGN' ? styles.currencySuggested : ''}`}
+                onClick={() => handleChooseCurrency('NGN')}
               >
-                {processing === plan.id ? 'Processing...' : currentLevel === plan.level ? 'Current Plan' : `Upgrade`}
+                <Coins size={20} />
+                <span>Nigerian Naira</span>
+                <span className={styles.currencyCode}>(₦ NGN)</span>
+                {suggestedCurrency === 'NGN' && <span className={styles.suggestedTag}>Suggested</span>}
+              </button>
+              <button
+                className={`${styles.currencyButton} ${suggestedCurrency === 'USD' ? styles.currencySuggested : ''}`}
+                onClick={() => handleChooseCurrency('USD')}
+              >
+                <Globe size={20} />
+                <span>US Dollar</span>
+                <span className={styles.currencyCode}>($ USD)</span>
+                {suggestedCurrency === 'USD' && <span className={styles.suggestedTag}>Suggested</span>}
               </button>
             </div>
-          ))}
-        </div>
+          </div>
+        )}
 
-        {/* Buy Credits */}
-        <h3 className={styles.sectionTitle}>Buy Community Credits</h3>
-        <div className={styles.creditsSection}>
-          <div className={styles.creditsPackages}>
-            {[
-              { amount: 50, price: 5 },
-              { amount: 100, price: 9 },
-              { amount: 500, price: 40 },
-              { amount: 1000, price: 75 },
-            ].map((pkg) => (
+        {/* ==================================================
+            MAIN SECTIONS (once currency chosen)
+           ================================================== */}
+        {selectedCurrency && (
+          <>
+            {/* ============================================
+                VIP PLANS
+               ============================================ */}
+            <div className={styles.sectionHeader}>
+              <div className={styles.sectionHeaderLeft}>
+                <Crown size={20} className={styles.sectionHeaderIcon} />
+                <h3 className={styles.sectionTitle}>VIP Membership</h3>
+              </div>
               <button
-                key={pkg.amount}
-                className={styles.creditPackage}
-                onClick={() => handleBuyCredits(pkg.amount, pkg.price)}
-                disabled={processing === 'credits-' + pkg.amount}
+                className={styles.changeCurrencyBtn}
+                onClick={() => setSelectedCurrency(null)}
+                disabled={activeSubscription}
+                title={activeSubscription ? 'Cancel your subscription first' : 'Change currency'}
               >
-                <CreditCard size={20} />
-                <span>{pkg.amount} Credits</span>
-                <span className={styles.creditPrice}>${pkg.price}</span>
+                {selectedCurrency} <span className={styles.changeDot}>•</span> Change
               </button>
-            ))}
-          </div>
-        </div>
+            </div>
 
-        {/* What can you do with credits */}
-        <div className={styles.creditsInfo}>
-          <Sparkles size={16} className={styles.creditsInfoIcon} />
-          <div>
-            <p className={styles.creditsInfoTitle}>What can you do with credits?</p>
-            <ul className={styles.creditsInfoList}>
-              <li>Create a community: 100 credits</li>
-              <li>Sponsor your community: 50 credits/month</li>
-              <li>Feature your community: 200 credits</li>
-            </ul>
-          </div>
-        </div>
+            <div className={styles.plansGrid}>
+              {filteredPlans.map((plan) => {
+                const isCurrent = subscription?.plan_code === plan.plan_code && subscription?.currency === plan.currency;
+                const isProcessing = processingKey === `plan-${plan.plan_code}`;
+
+                return (
+                  <div
+                    key={plan.id}
+                    className={`${styles.planCard} ${isCurrent ? styles.planCardActive : ''}`}
+                  >
+                    {plan.level === 'premium' && (
+                      <div className={styles.popularBadge}>
+                        <Zap size={12} />
+                        Popular
+                      </div>
+                    )}
+
+                    {isCurrent && (
+                      <div className={styles.currentBadge}>
+                        <CheckCircle size={12} />
+                        Current
+                      </div>
+                    )}
+
+                    <div className={styles.planHeader}>
+                      <div className={styles.planTitleGroup}>
+                        {plan.level === 'basic' && <Star size={22} className={styles.planTierIconBasic} />}
+                        {plan.level === 'premium' && <Zap size={22} className={styles.planTierIconPremium} />}
+                        {plan.level === 'vip' && <Crown size={22} className={styles.planTierIconVip} />}
+                        <h4 className={styles.planName}>{plan.name}</h4>
+                      </div>
+                    </div>
+
+                    <p className={styles.planDescription}>{plan.description}</p>
+
+                    <div className={styles.planPrice}>
+                      <span className={styles.planPriceValue}>
+                        {formatAmount(plan.amount, plan.currency)}
+                      </span>
+                      <span className={styles.planPricePeriod}>/month</span>
+                    </div>
+
+                    <ul className={styles.planFeatures}>
+                      {plan.features.map((feature) => (
+                        <li key={feature} className={styles.planFeature}>
+                          <span className={styles.featureCheckWrapper}>
+                            <Check size={12} />
+                          </span>
+                          {feature}
+                        </li>
+                      ))}
+                    </ul>
+
+                    <button
+                      className={`${styles.upgradeButton} ${isCurrent ? styles.upgradeButtonCurrent : ''}`}
+                      onClick={() => handleUpgrade(plan)}
+                      disabled={processingKey !== null || isCurrent}
+                    >
+                      {isProcessing ? (
+                        <>
+                          <Loader size={16} className={styles.spin} />
+                          Redirecting...
+                        </>
+                      ) : isCurrent ? (
+                        <>
+                          <Check size={16} />
+                          Active Plan
+                        </>
+                      ) : (
+                        <>
+                          <Crown size={16} />
+                          Upgrade Now
+                        </>
+                      )}
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* ============================================
+                CREDIT PACKS
+               ============================================ */}
+            <div className={styles.sectionHeader}>
+              <div className={styles.sectionHeaderLeft}>
+                <Coins size={20} className={styles.sectionHeaderIcon} />
+                <h3 className={styles.sectionTitle}>Buy Credits</h3>
+              </div>
+            </div>
+
+            <p className={styles.sectionSubtitle}>
+              Use credits to create communities, sponsor them, or feature them.
+            </p>
+
+            <div className={styles.packsGrid}>
+              {filteredPacks.map((pack) => {
+                const isProcessing = processingKey === `pack-${pack.pack_code}`;
+
+                return (
+                  <button
+                    key={`${pack.pack_code}-${pack.currency}`}
+                    className={styles.packCard}
+                    onClick={() => handleBuyCredits(pack)}
+                    disabled={processingKey !== null}
+                  >
+                    <div className={styles.packIcon}>
+                      <Coins size={22} />
+                    </div>
+                    <div className={styles.packInfo}>
+                      <span className={styles.packCredits}>{formatCredits(pack.credits)}</span>
+                      <span className={styles.packLabel}>credits</span>
+                    </div>
+                    <div className={styles.packPrice}>
+                      {isProcessing ? (
+                        <Loader size={16} className={styles.spin} />
+                      ) : (
+                        formatAmount(pack.amount, pack.currency)
+                      )}
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* ============================================
+                CREDITS INFO
+               ============================================ */}
+            <div className={styles.creditsInfo}>
+              <div className={styles.creditsInfoHeader}>
+                <Info size={16} className={styles.creditsInfoIcon} />
+                <p className={styles.creditsInfoTitle}>What can you do with credits?</p>
+              </div>
+              <ul className={styles.creditsInfoList}>
+                <li>
+                  <ShoppingBag size={12} />
+                  Create a community: 100 credits
+                </li>
+                <li>
+                  <Sparkles size={12} />
+                  Sponsor your community: 50 credits
+                </li>
+                <li>
+                  <Shield size={12} />
+                  Feature your community: 200 credits
+                </li>
+              </ul>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );

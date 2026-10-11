@@ -1,24 +1,132 @@
-import React from 'react';
-import { supabase } from '@/config/supabase.client';
-import { useNavigate } from 'react-router-dom';
+﻿import React, { useState } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
+import {
+  Menu,
+  Search,
+  Bell,
+  ChevronRight,
+  Sun,
+  Moon,
+  Command,
+} from 'lucide-react';
+import { useAdminAuth } from '@/hooks/useAdminAuth';
 import styles from './TopNav.module.css';
 
-export const TopNav: React.FC = () => {
+interface TopNavProps {
+  onMenuClick?: () => void;
+}
+
+const ROUTE_LABELS: Record<string, string> = {
+  '/': 'Dashboard',
+  '/users': 'Users',
+  '/communities': 'Communities',
+  '/moderation': 'Moderation',
+  '/comments': 'Comments',
+  '/discover-videos': 'Discover Videos',
+  '/reports': 'Reports',
+  '/safety': 'Safety & Blocks',
+  '/connections': 'Connections',
+  '/matches': 'Matches',
+  '/vip': 'VIP Management',
+  '/analytics': 'Analytics',
+  '/audit-log': 'Audit Log',
+  '/notifications': 'Notifications',
+  '/admin-users': 'Admin Users',
+  '/settings': 'Settings',
+};
+
+export const TopNav: React.FC<TopNavProps> = ({ onMenuClick }) => {
   const navigate = useNavigate();
-  
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-    navigate('/login');
+  const location = useLocation();
+  const { adminUser, isSuperAdmin } = useAdminAuth();
+  const [searchQuery, setSearchQuery] = useState('');
+  const [showNotifications, setShowNotifications] = useState(false);
+
+  const currentLabel = ROUTE_LABELS[location.pathname] || 'Admin';
+  const isRoot = location.pathname === '/';
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      // Navigate to users page with search query
+      navigate(`/users?q=${encodeURIComponent(searchQuery.trim())}`);
+      setSearchQuery('');
+    }
   };
-  
+
   return (
     <header className={styles.topNav}>
+      {/* Left section: menu button + breadcrumb */}
       <div className={styles.left}>
-        <h2 className={styles.title}>Admin Dashboard</h2>
+        <button
+          className={styles.menuButton}
+          onClick={onMenuClick}
+          aria-label="Toggle menu"
+        >
+          <Menu size={20} />
+        </button>
+
+        <div className={styles.breadcrumb}>
+          <button
+            className={styles.breadcrumbRoot}
+            onClick={() => navigate('/')}
+          >
+            Admin
+          </button>
+          {!isRoot && (
+            <>
+              <ChevronRight size={14} className={styles.breadcrumbSeparator} />
+              <span className={styles.breadcrumbCurrent}>{currentLabel}</span>
+            </>
+          )}
+        </div>
       </div>
+
+      {/* Center: search */}
+      <form className={styles.search} onSubmit={handleSearch}>
+        <Search size={16} className={styles.searchIcon} />
+        <input
+          type="text"
+          className={styles.searchInput}
+          placeholder="Search users, reports, communities..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+        />
+        <kbd className={styles.searchShortcut}>⌘ K</kbd>
+      </form>
+
+      {/* Right: notifications + user */}
       <div className={styles.right}>
-        <button className={styles.logoutButton} onClick={handleLogout}>
-          Logout
+        <button
+          className={styles.iconButton}
+          aria-label="Notifications"
+          onClick={() => setShowNotifications((s) => !s)}
+        >
+          <Bell size={18} />
+          <span className={styles.notificationDot} />
+        </button>
+
+        <div className={styles.divider} />
+
+        <button
+          className={styles.userButton}
+          onClick={() => navigate('/settings')}
+        >
+          <div className={styles.userAvatar}>
+            {adminUser?.avatarUrl ? (
+              <img src={adminUser.avatarUrl} alt={adminUser.displayName} />
+            ) : (
+              adminUser?.displayName?.charAt(0).toUpperCase() || 'A'
+            )}
+          </div>
+          <div className={styles.userText}>
+            <span className={styles.userName}>
+              {adminUser?.displayName?.split(' ')[0] || 'Admin'}
+            </span>
+            <span className={styles.userRole}>
+              {isSuperAdmin ? 'Super Admin' : adminUser?.role?.replace('_', ' ') || 'Admin'}
+            </span>
+          </div>
         </button>
       </div>
     </header>
