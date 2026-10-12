@@ -33,9 +33,9 @@ export const ProfilePage: React.FC = () => {
     planExpiresAt: null,
   });
   const [statsModal, setStatsModal] = useState<'posts' | 'followers' | 'following' | 'connections' | null>(null);
-  const [followersList, setFollowersList] = useState<Array<{ userId: string; name: string; avatarUrl: string | null }>>([]);
-  const [followingList, setFollowingList] = useState<Array<{ userId: string; name: string; avatarUrl: string | null }>>([]);
-  const [connectionsList, setConnectionsList] = useState<Array<{ userId: string; name: string; avatarUrl: string | null }>>([]);
+  const [followersList, setFollowersList] = useState<Array<{ userId: string; name: string; avatarUrl: string | null; isFollowing?: boolean; followsMe?: boolean }>>([]);
+  const [followingList, setFollowingList] = useState<Array<{ userId: string; name: string; avatarUrl: string | null; isFollowing?: boolean; followsMe?: boolean }>>([]);
+  const [connectionsList, setConnectionsList] = useState<Array<{ userId: string; name: string; avatarUrl: string | null; isFollowing?: boolean; followsMe?: boolean }>>([]);
   const [showMoreMenu, setShowMoreMenu] = useState(false);
   const [reportSheetOpen, setReportSheetOpen] = useState(false);
   const [blockSheetOpen, setBlockSheetOpen] = useState(false);
@@ -200,10 +200,35 @@ export const ProfilePage: React.FC = () => {
     setVideoMenuOpen(null);
   };
 
+  // Load all users the current viewer follows (single query, used across all lists)
+  const loadViewerFollowingSet = async (): Promise<Set<string>> => {
+    if (!user?.id) return new Set();
+    const { data } = await supabase
+      .from('follows')
+      .select('following_id')
+      .eq('follower_id', user.id);
+    return new Set((data || []).map((r: any) => r.following_id));
+  };
+
+  // Load all users who follow the viewer (used to detect "Follow Back")
+  const loadViewerFollowersSet = async (): Promise<Set<string>> => {
+    if (!user?.id) return new Set();
+    const { data } = await supabase
+      .from('follows')
+      .select('follower_id')
+      .eq('following_id', user.id);
+    return new Set((data || []).map((r: any) => r.follower_id));
+  };
+
   const loadStatsLists = async (type: 'followers' | 'following' | 'connections') => {
     if (!targetUserId || targetUserId === 'undefined') return;
 
     try {
+      const [followingSet, followersSet] = await Promise.all([
+        loadViewerFollowingSet(),
+        loadViewerFollowersSet(),
+      ]);
+
       if (type === 'followers') {
         const { data: followers } = await supabase
           .from('follows')
@@ -221,6 +246,8 @@ export const ProfilePage: React.FC = () => {
             userId: p.user_id,
             name: p.display_name || 'User',
             avatarUrl: p.avatar_url,
+            isFollowing: followingSet.has(p.user_id),
+            followsMe: followersSet.has(p.user_id),
           })));
         } else {
           setFollowersList([]);
@@ -244,6 +271,8 @@ export const ProfilePage: React.FC = () => {
             userId: p.user_id,
             name: p.display_name || 'User',
             avatarUrl: p.avatar_url,
+            isFollowing: followingSet.has(p.user_id),
+            followsMe: followersSet.has(p.user_id),
           })));
         } else {
           setFollowingList([]);
@@ -270,6 +299,8 @@ export const ProfilePage: React.FC = () => {
             userId: p.user_id,
             name: p.display_name || 'User',
             avatarUrl: p.avatar_url,
+            isFollowing: followingSet.has(p.user_id),
+            followsMe: followersSet.has(p.user_id),
           })));
         } else {
           setConnectionsList([]);
@@ -277,6 +308,49 @@ export const ProfilePage: React.FC = () => {
       }
     } catch (err) {
       console.error('Failed to load stats:', err);
+    }
+  };
+
+  // Follow/unfollow from inside a stats modal
+  const handleModalFollow = async (targetId: string) => {
+    if (!user?.id || targetId === user.id) return;
+
+    const updateList = (list: any[], setList: (v: any) => void) => {
+      setList(list.map((item) => {
+        if (item.userId !== targetId) return item;
+        const nowFollowing = !item.isFollowing;
+        return { ...item, isFollowing: nowFollowing };
+      }));
+    };
+
+    const target = [...followersList, ...followingList, ...connectionsList]
+      .find((u) => u.userId === targetId);
+    if (!target) return;
+
+    const wasFollowing = Boolean(target.isFollowing);
+
+    // Optimistic update across all three lists
+    updateList(followersList, setFollowersList);
+    updateList(followingList, setFollowingList);
+    updateList(connectionsList, setConnectionsList);
+
+    try {
+      if (wasFollowing) {
+        await profileService.unfollowUser(user.id, targetId);
+      } else {
+        await profileService.followUser(user.id, targetId);
+      }
+      // Update the header-level follower/following counts
+      setStats((prev) => ({
+        ...prev,
+        following: wasFollowing ? Math.max(0, prev.following - 1) : prev.following + 1,
+      }));
+    } catch (err) {
+      console.error('Follow toggle failed:', err);
+      // Roll back on error
+      updateList(followersList, setFollowersList);
+      updateList(followingList, setFollowingList);
+      updateList(connectionsList, setConnectionsList);
     }
   };
 
@@ -454,12 +528,36 @@ export const ProfilePage: React.FC = () => {
               ) : statsModal === 'followers' ? (
                 followersList.length > 0 ? (
                   followersList.map((follower) => (
-                    <button key={follower.userId} className={styles.statsModalUser} onClick={() => { setStatsModal(null); navigate('/profile/' + follower.userId); }}>
-                      <div className={styles.statsModalAvatar}>
-                        {follower.avatarUrl ? <img src={follower.avatarUrl} alt={follower.name} /> : follower.name.charAt(0).toUpperCase()}
-                      </div>
-                      <span className={styles.statsModalName}>{follower.name}</span>
-                    </button>
+                    <div key={follower.userId} className={styles.statsModalUser} style={{ cursor: 'default' }}>
+                      <button
+                        onClick={() => { setStatsModal(null); navigate('/profile/' + follower.userId); }}
+                        style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flex: 1, minWidth: 0, background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left', padding: 0 }}
+                      >
+                        <div className={styles.statsModalAvatar}>
+                          {follower.avatarUrl ? <img src={follower.avatarUrl} alt={follower.name} /> : follower.name.charAt(0).toUpperCase()}
+                        </div>
+                        <span className={styles.statsModalName} style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{follower.name}</span>
+                      </button>
+                      {user?.id !== follower.userId && (
+                        <button
+                          onClick={(e) => { e.stopPropagation(); handleModalFollow(follower.userId); }}
+                          style={{
+                            padding: '0.375rem 0.875rem',
+                            background: follower.isFollowing ? 'none' : '#ef4444',
+                            color: follower.isFollowing ? '#111827' : '#ffffff',
+                            border: follower.isFollowing ? '1px solid #e5e7eb' : 'none',
+                            borderRadius: '9999px',
+                            fontSize: '0.75rem',
+                            fontWeight: 600,
+                            cursor: 'pointer',
+                            flexShrink: 0,
+                            minHeight: 32,
+                          }}
+                        >
+                          {follower.isFollowing ? 'Following' : follower.followsMe ? 'Follow Back' : 'Follow'}
+                        </button>
+                      )}
+                    </div>
                   ))
                 ) : (
                   <p className={styles.statsModalEmpty}>No followers yet</p>
@@ -467,12 +565,36 @@ export const ProfilePage: React.FC = () => {
               ) : statsModal === 'following' ? (
                 followingList.length > 0 ? (
                   followingList.map((following) => (
-                    <button key={following.userId} className={styles.statsModalUser} onClick={() => { setStatsModal(null); navigate('/profile/' + following.userId); }}>
-                      <div className={styles.statsModalAvatar}>
-                        {following.avatarUrl ? <img src={following.avatarUrl} alt={following.name} /> : following.name.charAt(0).toUpperCase()}
-                      </div>
-                      <span className={styles.statsModalName}>{following.name}</span>
-                    </button>
+                    <div key={following.userId} className={styles.statsModalUser} style={{ cursor: 'default' }}>
+                      <button
+                        onClick={() => { setStatsModal(null); navigate('/profile/' + following.userId); }}
+                        style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flex: 1, minWidth: 0, background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left', padding: 0 }}
+                      >
+                        <div className={styles.statsModalAvatar}>
+                          {following.avatarUrl ? <img src={following.avatarUrl} alt={following.name} /> : following.name.charAt(0).toUpperCase()}
+                        </div>
+                        <span className={styles.statsModalName} style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{following.name}</span>
+                      </button>
+                      {user?.id !== following.userId && (
+                        <button
+                          onClick={(e) => { e.stopPropagation(); handleModalFollow(following.userId); }}
+                          style={{
+                            padding: '0.375rem 0.875rem',
+                            background: following.isFollowing ? 'none' : '#ef4444',
+                            color: following.isFollowing ? '#111827' : '#ffffff',
+                            border: following.isFollowing ? '1px solid #e5e7eb' : 'none',
+                            borderRadius: '9999px',
+                            fontSize: '0.75rem',
+                            fontWeight: 600,
+                            cursor: 'pointer',
+                            flexShrink: 0,
+                            minHeight: 32,
+                          }}
+                        >
+                          {following.isFollowing ? 'Following' : following.followsMe ? 'Follow Back' : 'Follow'}
+                        </button>
+                      )}
+                    </div>
                   ))
                 ) : (
                   <p className={styles.statsModalEmpty}>Not following anyone yet</p>
@@ -480,12 +602,36 @@ export const ProfilePage: React.FC = () => {
               ) : (
                 connectionsList.length > 0 ? (
                   connectionsList.map((connection) => (
-                    <button key={connection.userId} className={styles.statsModalUser} onClick={() => { setStatsModal(null); navigate('/profile/' + connection.userId); }}>
-                      <div className={styles.statsModalAvatar}>
-                        {connection.avatarUrl ? <img src={connection.avatarUrl} alt={connection.name} /> : connection.name.charAt(0).toUpperCase()}
-                      </div>
-                      <span className={styles.statsModalName}>{connection.name}</span>
-                    </button>
+                    <div key={connection.userId} className={styles.statsModalUser} style={{ cursor: 'default' }}>
+                      <button
+                        onClick={() => { setStatsModal(null); navigate('/profile/' + connection.userId); }}
+                        style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flex: 1, minWidth: 0, background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left', padding: 0 }}
+                      >
+                        <div className={styles.statsModalAvatar}>
+                          {connection.avatarUrl ? <img src={connection.avatarUrl} alt={connection.name} /> : connection.name.charAt(0).toUpperCase()}
+                        </div>
+                        <span className={styles.statsModalName} style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{connection.name}</span>
+                      </button>
+                      {user?.id !== connection.userId && (
+                        <button
+                          onClick={(e) => { e.stopPropagation(); handleModalFollow(connection.userId); }}
+                          style={{
+                            padding: '0.375rem 0.875rem',
+                            background: connection.isFollowing ? 'none' : '#ef4444',
+                            color: connection.isFollowing ? '#111827' : '#ffffff',
+                            border: connection.isFollowing ? '1px solid #e5e7eb' : 'none',
+                            borderRadius: '9999px',
+                            fontSize: '0.75rem',
+                            fontWeight: 600,
+                            cursor: 'pointer',
+                            flexShrink: 0,
+                            minHeight: 32,
+                          }}
+                        >
+                          {connection.isFollowing ? 'Following' : connection.followsMe ? 'Follow Back' : 'Follow'}
+                        </button>
+                      )}
+                    </div>
                   ))
                 ) : (
                   <p className={styles.statsModalEmpty}>No connections yet</p>
