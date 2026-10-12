@@ -407,6 +407,16 @@ export const ProfilePage: React.FC = () => {
         .from('conversations')
         .update({ closed_at: new Date().toISOString() })
         .eq('match_id', matchId);
+
+      // Also cancel the match_request so they can rematch later
+      await supabase
+        .from('match_requests')
+        .update({ status: 'cancelled', updated_at: new Date().toISOString() })
+        .or(
+          `and(requester_id.eq.${otherUserId},target_id.eq.${user?.id}),` +
+          `and(requester_id.eq.${user?.id},target_id.eq.${otherUserId})`
+        )
+        .in('status', ['pending', 'accepted']);
     }
 
     setUnmatchLoading(false);

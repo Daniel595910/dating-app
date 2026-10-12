@@ -88,3 +88,7 @@ logins*
 env.txt
 .env
 .env.*
+
+.env
+.env.local
+.env.*.local

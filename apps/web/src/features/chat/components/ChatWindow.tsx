@@ -333,6 +333,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
   // Message actions
   const handleSend = async (content: string) => {
     if (!user || !content.trim()) return;
+    if (readOnly) return;
     const trimmed = content.trim();
     const tempId = `temp-${Date.now()}`;
 
@@ -369,7 +370,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
   };
 
   const handleSendVoiceMessage = async (audioBlob: Blob, duration: number) => {
-    if (!user) {
+    if (!user || readOnly) {
       console.error('No user found');
       return;
     }
@@ -436,7 +437,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
 
 
   const handleSendImage = async (file: File) => {
-    if (!user) return;
+    if (!user || readOnly) return;
     
     const tempId = `temp-${Date.now()}`;
 
@@ -476,7 +477,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
   };
 
   const handleSendVideo = async (file: File) => {
-    if (!user) return;
+    if (!user || readOnly) return;
     
     const tempId = `temp-${Date.now()}`;
 
@@ -516,7 +517,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
   };
 
   const handleSendGift = async (gift: { id: string; name: string; icon: string }) => {
-    if (!user) return;
+    if (!user || readOnly) return;
     
     const tempId = `temp-${Date.now()}`;
 
