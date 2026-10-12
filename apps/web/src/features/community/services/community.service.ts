@@ -392,6 +392,85 @@ class CommunityService {
     if (error) return { success: false, error: error.message };
     return { success: true };
   }
+  async updateMemberRole(
+    communityId: string,
+    userId: string,
+    role: 'member' | 'moderator' | 'admin'
+  ): Promise<{ success: boolean; error?: string }> {
+    const { error } = await supabase
+      .from('community_members')
+      .update({ role })
+      .eq('community_id', communityId)
+      .eq('user_id', userId);
+    if (error) return { success: false, error: error.message };
+    return { success: true };
+  }
+
+  async removeMember(
+    communityId: string,
+    userId: string,
+    removedBy: string
+  ): Promise<{ success: boolean; error?: string }> {
+    const { error } = await supabase
+      .from('community_members')
+      .update({ status: 'removed', removed_at: new Date().toISOString(), removed_by: removedBy })
+      .eq('community_id', communityId)
+      .eq('user_id', userId);
+    if (error) return { success: false, error: error.message };
+    return { success: true };
+  }
+
+  async approveMember(
+    communityId: string,
+    userId: string
+  ): Promise<{ success: boolean; error?: string }> {
+    const { error } = await supabase
+      .from('community_members')
+      .update({ status: 'active' })
+      .eq('community_id', communityId)
+      .eq('user_id', userId);
+    if (error) return { success: false, error: error.message };
+    return { success: true };
+  }
+
+  async rejectMember(
+    communityId: string,
+    userId: string,
+    removedBy: string
+  ): Promise<{ success: boolean; error?: string }> {
+    const { error } = await supabase
+      .from('community_members')
+      .update({ status: 'removed', removed_at: new Date().toISOString(), removed_by: removedBy })
+      .eq('community_id', communityId)
+      .eq('user_id', userId);
+    if (error) return { success: false, error: error.message };
+    return { success: true };
+  }
+
+  async listCommunityMembers(communityId: string): Promise<Array<{
+    id: string;
+    userId: string;
+    role: string;
+    status: string;
+    isBanned: boolean;
+    joinedAt: string;
+  }>> {
+    const { data, error } = await supabase
+      .from('community_members')
+      .select('id, user_id, role, status, is_banned, joined_at')
+      .eq('community_id', communityId)
+      .order('joined_at', { ascending: false });
+
+    if (error || !data) return [];
+    return data.map((m: any) => ({
+      id: m.id,
+      userId: m.user_id,
+      role: m.role || 'member',
+      status: m.status || 'active',
+      isBanned: m.is_banned || false,
+      joinedAt: m.joined_at,
+    }));
+  }
   subscribeToPresence(
     communityId: string,
     userId: string,

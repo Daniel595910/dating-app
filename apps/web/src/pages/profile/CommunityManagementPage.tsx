@@ -25,6 +25,7 @@ interface ManagedCommunity {
   postCount: number;
   isPrivate: boolean;
   isSponsored: boolean;
+  status: string;
 }
 
 interface PendingMember {
@@ -33,6 +34,9 @@ interface PendingMember {
   userName: string;
   avatarUrl: string | null;
   joinedAt: string;
+  role: string;
+  status: string;
+  isBanned: boolean;
 }
 
 interface CommunityComment {
@@ -86,6 +90,9 @@ export const CommunityManagementPage: React.FC = () => {
   }>>([]);
   const [inviteLoading, setInviteLoading] = useState(false);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  // --- Phase 4 state: member search + filter ---
+  const [memberSearch, setMemberSearch] = useState('');
+  const [memberFilter, setMemberFilter] = useState<'all' | 'active' | 'pending' | 'banned'>('all');
   const [deleteConfirmText, setDeleteConfirmText] = useState('');
   const [dangerLoading, setDangerLoading] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -123,6 +130,7 @@ export const CommunityManagementPage: React.FC = () => {
           postCount: c.post_count || 0,
           isPrivate: c.is_private || false,
           isSponsored: false,
+          status: c.status || 'active',
         }))
       );
       if (communities && communities.length > 0) {
@@ -192,14 +200,9 @@ export const CommunityManagementPage: React.FC = () => {
   }, [selectedCommunity]);
 
   const loadCommunityData = async (communityId: string) => {
-    const { data: members } = await supabase
-      .from('community_members')
-      .select('*')
-      .eq('community_id', communityId)
-      .eq('is_banned', false);
-
-    if (members) {
-      const userIds = members.map((m: any) => m.user_id);
+    const allMembers = await communityService.listCommunityMembers(communityId);
+    if (allMembers.length > 0) {
+      const userIds = allMembers.map((m) => m.userId);
       const { data: profiles } = await supabase
         .from('profiles')
         .select('user_id, display_name, avatar_url')
@@ -208,14 +211,19 @@ export const CommunityManagementPage: React.FC = () => {
       const profileMap = new Map((profiles || []).map((p: any) => [p.user_id, p]));
 
       setPendingMembers(
-        members.map((m: any) => ({
+        allMembers.map((m) => ({
           id: m.id,
-          userId: m.user_id,
-          userName: profileMap.get(m.user_id)?.display_name || 'User',
-          avatarUrl: profileMap.get(m.user_id)?.avatar_url || null,
-          joinedAt: m.joined_at,
+          userId: m.userId,
+          userName: profileMap.get(m.userId)?.display_name || 'User',
+          avatarUrl: profileMap.get(m.userId)?.avatar_url || null,
+          joinedAt: m.joinedAt,
+          role: m.role,
+          status: m.status,
+          isBanned: m.isBanned,
         }))
       );
+    } else {
+      setPendingMembers([]);
     }
 
     const { data: comments } = await supabase
@@ -369,6 +377,37 @@ export const CommunityManagementPage: React.FC = () => {
     } finally {
       setSettingsSaving(false);
     }
+  };
+  const handleRoleChange = async (userId: string, role: 'member' | 'moderator' | 'admin') => {
+    if (!selectedCommunity) return;
+    const result = await communityService.updateMemberRole(selectedCommunity, userId, role);
+    if (!result.success) { showToast(result.error || 'Role update failed', 'error'); return; }
+    setPendingMembers((prev) => prev.map((m) => (m.userId === userId ? { ...m, role } : m)));
+    showToast(`Role updated to ${role}`, 'success');
+  };
+
+  const handleRemoveMember = async (userId: string) => {
+    if (!selectedCommunity || !user) return;
+    const result = await communityService.removeMember(selectedCommunity, userId, user.id);
+    if (!result.success) { showToast(result.error || 'Remove failed', 'error'); return; }
+    setPendingMembers((prev) => prev.map((m) => (m.userId === userId ? { ...m, status: 'removed' } : m)));
+    showToast('Member removed', 'success');
+  };
+
+  const handleApproveMember = async (userId: string) => {
+    if (!selectedCommunity) return;
+    const result = await communityService.approveMember(selectedCommunity, userId);
+    if (!result.success) { showToast(result.error || 'Approve failed', 'error'); return; }
+    setPendingMembers((prev) => prev.map((m) => (m.userId === userId ? { ...m, status: 'active' } : m)));
+    showToast('Member approved', 'success');
+  };
+
+  const handleRejectMember = async (userId: string) => {
+    if (!selectedCommunity || !user) return;
+    const result = await communityService.rejectMember(selectedCommunity, userId, user.id);
+    if (!result.success) { showToast(result.error || 'Reject failed', 'error'); return; }
+    setPendingMembers((prev) => prev.map((m) => (m.userId === userId ? { ...m, status: 'removed' } : m)));
+    showToast('Member rejected', 'success');
   };
   const handleBanMember = async (userId: string) => {
     const { error } = await supabase
@@ -748,10 +787,53 @@ export const CommunityManagementPage: React.FC = () => {
 
             {activeTab === 'members' && (
               <div>
-                {pendingMembers.length === 0 ? (
-                  <p style={{ textAlign: 'center', padding: '2rem', color: '#9ca3af' }}>No members</p>
-                ) : (
-                  pendingMembers.map((member) => (
+                {/* Search + filters */}
+                <input
+                  type="text"
+                  placeholder="Search members..."
+                  value={memberSearch}
+                  onChange={(e) => setMemberSearch(e.target.value)}
+                  style={{ width: '100%', padding: '0.625rem 0.875rem', border: '1px solid #e5e7eb', borderRadius: '0.75rem', fontSize: '0.875rem', marginBottom: '0.625rem', boxSizing: 'border-box' }}
+                />
+                <div style={{ display: 'flex', gap: '0.375rem', marginBottom: '0.875rem', overflowX: 'auto' }}>
+                  {(['all', 'active', 'pending', 'banned'] as const).map((f) => (
+                    <button
+                      key={f}
+                      onClick={() => setMemberFilter(f)}
+                      style={{
+                        padding: '0.375rem 0.75rem',
+                        background: memberFilter === f ? '#ef4444' : '#ffffff',
+                        color: memberFilter === f ? '#ffffff' : '#374151',
+                        border: memberFilter === f ? 'none' : '1px solid #e5e7eb',
+                        borderRadius: '9999px',
+                        fontSize: '0.75rem',
+                        fontWeight: 600,
+                        cursor: 'pointer',
+                        textTransform: 'capitalize',
+                        whiteSpace: 'nowrap',
+                      }}
+                    >
+                      {f}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Member list */}
+                {(() => {
+                  const q = memberSearch.trim().toLowerCase();
+                  const visible = pendingMembers.filter((m) => {
+                    if (memberFilter === 'active'  && m.status !== 'active') return false;
+                    if (memberFilter === 'pending' && m.status !== 'pending') return false;
+                    if (memberFilter === 'banned'  && !m.isBanned && m.status !== 'removed') return false;
+                    if (q && !m.userName.toLowerCase().includes(q)) return false;
+                    return true;
+                  });
+
+                  if (visible.length === 0) {
+                    return <p style={{ textAlign: 'center', padding: '2rem', color: '#9ca3af' }}>No members match.</p>;
+                  }
+
+                  return visible.map((member) => (
                     <div
                       key={member.id}
                       style={{
@@ -766,48 +848,82 @@ export const CommunityManagementPage: React.FC = () => {
                     >
                       <div
                         style={{
-                          width: 40,
-                          height: 40,
-                          borderRadius: '50%',
-                          backgroundColor: '#f3f4f6',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          fontWeight: 700,
-                          color: '#6b7280',
-                          overflow: 'hidden',
-                          flexShrink: 0,
+                          width: 40, height: 40, borderRadius: '50%',
+                          backgroundColor: '#f3f4f6', display: 'flex',
+                          alignItems: 'center', justifyContent: 'center',
+                          fontWeight: 700, color: '#6b7280',
+                          overflow: 'hidden', flexShrink: 0,
                         }}
                       >
-                        {member.avatarUrl ? (
-                          <img
-                            src={member.avatarUrl}
-                            alt=""
-                            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                          />
-                        ) : (
-                          member.userName.charAt(0).toUpperCase()
-                        )}
+                        {member.avatarUrl
+                          ? <img src={member.avatarUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                          : member.userName.charAt(0).toUpperCase()}
                       </div>
-                      <span style={{ flex: 1, fontSize: '0.875rem', fontWeight: 500, color: '#111827' }}>
-                        {member.userName}
-                      </span>
-                      <button
-                        onClick={() => handleBanMember(member.userId)}
-                        style={{
-                          background: 'none',
-                          border: 'none',
-                          cursor: 'pointer',
-                          color: '#ef4444',
-                          padding: '0.5rem',
-                          borderRadius: '9999px',
-                        }}
-                      >
-                        <Ban size={16} />
-                      </button>
+
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: '0.875rem', fontWeight: 600, color: '#111827', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {member.userName}
+                        </div>
+                        <div style={{ fontSize: '0.6875rem', color: '#6b7280', display: 'flex', gap: '0.5rem' }}>
+                          <span>{member.role}</span>
+                          {member.status === 'pending' && <span style={{ color: '#f59e0b', fontWeight: 600 }}>pending</span>}
+                          {member.status === 'removed' && <span style={{ color: '#ef4444', fontWeight: 600 }}>removed</span>}
+                          {member.isBanned && <span style={{ color: '#ef4444', fontWeight: 600 }}>banned</span>}
+                        </div>
+                      </div>
+
+                      {/* Pending: approve / reject */}
+                      {member.status === 'pending' ? (
+                        <>
+                          <button
+                            onClick={() => handleApproveMember(member.userId)}
+                            style={{ background: '#dcfce7', border: 'none', cursor: 'pointer', color: '#16a34a', padding: '0.5rem', borderRadius: '9999px' }}
+                            title="Approve"
+                          >
+                            <CheckCircle2 size={16} />
+                          </button>
+                          <button
+                            onClick={() => handleRejectMember(member.userId)}
+                            style={{ background: '#fee2e2', border: 'none', cursor: 'pointer', color: '#ef4444', padding: '0.5rem', borderRadius: '9999px' }}
+                            title="Reject"
+                          >
+                            <XCircle size={16} />
+                          </button>
+                        </>
+                      ) : (
+                        <>
+                          <select
+                            value={member.role}
+                            onChange={(e) => handleRoleChange(member.userId, e.target.value as any)}
+                            style={{ padding: '0.375rem 0.5rem', border: '1px solid #e5e7eb', borderRadius: '0.5rem', fontSize: '0.75rem', color: '#374151', background: '#ffffff', cursor: 'pointer' }}
+                          >
+                            <option value="member">Member</option>
+                            <option value="moderator">Moderator</option>
+                            <option value="admin">Admin</option>
+                          </select>
+                          {member.status !== 'removed' && !member.isBanned && (
+                            <button
+                              onClick={() => handleRemoveMember(member.userId)}
+                              style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#6b7280', padding: '0.5rem', borderRadius: '9999px' }}
+                              title="Remove"
+                            >
+                              <XCircle size={16} />
+                            </button>
+                          )}
+                          {!member.isBanned && (
+                            <button
+                              onClick={() => handleBanMember(member.userId)}
+                              style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ef4444', padding: '0.5rem', borderRadius: '9999px' }}
+                              title="Ban"
+                            >
+                              <Ban size={16} />
+                            </button>
+                          )}
+                        </>
+                      )}
                     </div>
-                  ))
-                )}
+                  ));
+                })()}
               </div>
             )}
 
