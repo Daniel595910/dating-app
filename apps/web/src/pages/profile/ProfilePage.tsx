@@ -35,8 +35,10 @@ export const ProfilePage: React.FC = () => {
   const [statsModal, setStatsModal] = useState<'posts' | 'followers' | 'following' | 'connections' | null>(null);
   const [followersList, setFollowersList] = useState<Array<{ userId: string; name: string; avatarUrl: string | null; isFollowing?: boolean; followsMe?: boolean }>>([]);
   const [followingList, setFollowingList] = useState<Array<{ userId: string; name: string; avatarUrl: string | null; isFollowing?: boolean; followsMe?: boolean }>>([]);
-  const [connectionsList, setConnectionsList] = useState<Array<{ userId: string; name: string; avatarUrl: string | null; isFollowing?: boolean; followsMe?: boolean }>>([]);
+  const [connectionsList, setConnectionsList] = useState<Array<{ userId: string; name: string; avatarUrl: string | null; isFollowing?: boolean; followsMe?: boolean; matchId?: string; stage?: string; isMatched?: boolean }>>([]);
   const [showMoreMenu, setShowMoreMenu] = useState(false);
+  const [unmatchTarget, setUnmatchTarget] = useState<{ matchId: string; userId: string; name: string } | null>(null);
+  const [unmatchLoading, setUnmatchLoading] = useState(false);
   const [reportSheetOpen, setReportSheetOpen] = useState(false);
   const [blockSheetOpen, setBlockSheetOpen] = useState(false);
   const [shareLoading, setShareLoading] = useState(false);
@@ -282,9 +284,10 @@ export const ProfilePage: React.FC = () => {
       if (type === 'connections') {
         const { data: matches } = await supabase
           .from('matches')
-          .select('user1_id, user2_id')
+          .select('id, user1_id, user2_id, stage, status, rejected_at')
           .or('user1_id.eq.' + targetUserId + ',user2_id.eq.' + targetUserId)
           .in('status', ['active', 'completed'])
+          .is('rejected_at', null)
           .limit(20);
 
         if (matches && matches.length > 0) {
@@ -295,13 +298,23 @@ export const ProfilePage: React.FC = () => {
             .from('profiles')
             .select('user_id, display_name, avatar_url')
             .in('user_id', otherUserIds);
-          setConnectionsList((profiles || []).map((p: any) => ({
-            userId: p.user_id,
-            name: p.display_name || 'User',
-            avatarUrl: p.avatar_url,
-            isFollowing: followingSet.has(p.user_id),
-            followsMe: followersSet.has(p.user_id),
-          })));
+
+          const profileMap = new Map((profiles || []).map((p: any) => [p.user_id, p]));
+
+          setConnectionsList(matches.map((m: any) => {
+            const otherId = m.user1_id === targetUserId ? m.user2_id : m.user1_id;
+            const prof: any = profileMap.get(otherId);
+            return {
+              userId: otherId,
+              name: prof?.display_name || 'User',
+              avatarUrl: prof?.avatar_url || null,
+              isFollowing: followingSet.has(otherId),
+              followsMe: followersSet.has(otherId),
+              matchId: m.id,
+              stage: m.stage,
+              isMatched: m.stage === 'matched',
+            };
+          }));
         } else {
           setConnectionsList([]);
         }
@@ -351,6 +364,49 @@ export const ProfilePage: React.FC = () => {
       updateList(followersList, setFollowersList);
       updateList(followingList, setFollowingList);
       updateList(connectionsList, setConnectionsList);
+    }
+  };
+
+  const handleUnmatch = (matchId: string, otherUserId: string) => {
+    if (!matchId) return;
+    const target = connectionsList.find((c) => c.userId === otherUserId);
+    setUnmatchTarget({
+      matchId,
+      userId: otherUserId,
+      name: target?.name || 'this person',
+    });
+  };
+
+  const confirmUnmatch = async () => {
+    if (!unmatchTarget) return;
+    const { matchId, userId: otherUserId } = unmatchTarget;
+
+    setUnmatchLoading(true);
+    const backup = connectionsList;
+
+    // Optimistic remove from list
+    setConnectionsList((prev) => prev.filter((c) => c.userId !== otherUserId));
+    setStats((prev) => ({
+      ...prev,
+      connections: Math.max(0, prev.connections - 1),
+    }));
+    setUnmatchTarget(null);
+
+    const { error } = await supabase
+      .from('matches')
+      .update({
+        stage: 'rejected',
+        status: 'cancelled',
+        rejected_at: new Date().toISOString(),
+      })
+      .eq('id', matchId);
+
+    setUnmatchLoading(false);
+
+    if (error) {
+      setConnectionsList(backup);
+      setStats((prev) => ({ ...prev, connections: prev.connections + 1 }));
+      console.error('Unmatch failed:', error);
     }
   };
 
@@ -610,26 +666,66 @@ export const ProfilePage: React.FC = () => {
                         <div className={styles.statsModalAvatar}>
                           {connection.avatarUrl ? <img src={connection.avatarUrl} alt={connection.name} /> : connection.name.charAt(0).toUpperCase()}
                         </div>
-                        <span className={styles.statsModalName} style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{connection.name}</span>
+                        <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0, flex: 1 }}>
+                          <span className={styles.statsModalName} style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{connection.name}</span>
+                          {connection.isMatched && (
+                            <span
+                              style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '0.25rem',
+                                marginTop: '0.125rem',
+                                fontSize: '0.6875rem',
+                                fontWeight: 700,
+                                color: '#dc2626',
+                                textTransform: 'uppercase',
+                                letterSpacing: '0.02em',
+                                lineHeight: 1,
+                              }}
+                            >
+                              💕 Matched
+                            </span>
+                          )}
+                        </div>
                       </button>
                       {user?.id !== connection.userId && (
-                        <button
-                          onClick={(e) => { e.stopPropagation(); handleModalFollow(connection.userId); }}
-                          style={{
-                            padding: '0.375rem 0.875rem',
-                            background: connection.isFollowing ? 'none' : '#ef4444',
-                            color: connection.isFollowing ? '#111827' : '#ffffff',
-                            border: connection.isFollowing ? '1px solid #e5e7eb' : 'none',
-                            borderRadius: '9999px',
-                            fontSize: '0.75rem',
-                            fontWeight: 600,
-                            cursor: 'pointer',
-                            flexShrink: 0,
-                            minHeight: 32,
-                          }}
-                        >
-                          {connection.isFollowing ? 'Following' : connection.followsMe ? 'Follow Back' : 'Follow'}
-                        </button>
+                        connection.isMatched ? (
+                          <button
+                            onClick={(e) => { e.stopPropagation(); handleUnmatch(connection.matchId || '', connection.userId); }}
+                            style={{
+                              padding: '0.375rem 0.875rem',
+                              background: 'none',
+                              color: '#dc2626',
+                              border: '1px solid #fca5a5',
+                              borderRadius: '9999px',
+                              fontSize: '0.75rem',
+                              fontWeight: 600,
+                              cursor: 'pointer',
+                              flexShrink: 0,
+                              minHeight: 32,
+                            }}
+                          >
+                            Unmatch
+                          </button>
+                        ) : (
+                          <button
+                            onClick={(e) => { e.stopPropagation(); handleModalFollow(connection.userId); }}
+                            style={{
+                              padding: '0.375rem 0.875rem',
+                              background: connection.isFollowing ? 'none' : '#ef4444',
+                              color: connection.isFollowing ? '#111827' : '#ffffff',
+                              border: connection.isFollowing ? '1px solid #e5e7eb' : 'none',
+                              borderRadius: '9999px',
+                              fontSize: '0.75rem',
+                              fontWeight: 600,
+                              cursor: 'pointer',
+                              flexShrink: 0,
+                              minHeight: 32,
+                            }}
+                          >
+                            {connection.isFollowing ? 'Following' : connection.followsMe ? 'Follow Back' : 'Follow'}
+                          </button>
+                        )
                       )}
                     </div>
                   ))
@@ -1038,6 +1134,123 @@ export const ProfilePage: React.FC = () => {
           </div>
         </div>
       )}
+    {unmatchTarget && (
+      <div
+        style={{
+          position: 'fixed',
+          inset: 0,
+          background: 'rgba(0,0,0,0.6)',
+          zIndex: 99999,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: 24,
+          animation: 'fadeIn 0.15s ease',
+        }}
+        onClick={() => !unmatchLoading && setUnmatchTarget(null)}
+      >
+        <div
+          style={{
+            background: '#ffffff',
+            borderRadius: 20,
+            padding: '28px 24px 24px',
+            maxWidth: 380,
+            width: '100%',
+            textAlign: 'center',
+            boxShadow: '0 20px 60px rgba(0,0,0,0.25)',
+            animation: 'slideUpModal 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
+          }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          {/* Icon */}
+          <div
+            style={{
+              width: 64,
+              height: 64,
+              borderRadius: '50%',
+              background: 'linear-gradient(135deg, #fee2e2, #fecaca)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              margin: '0 auto 16px',
+            }}
+          >
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#dc2626" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M18 6 6 18" />
+              <path d="m6 6 12 12" />
+            </svg>
+          </div>
+
+          {/* Title */}
+          <h3
+            style={{
+              fontSize: 20,
+              fontWeight: 700,
+              color: '#111827',
+              margin: '0 0 8px',
+              letterSpacing: '-0.01em',
+            }}
+          >
+            Unmatch?
+          </h3>
+
+          {/* Body */}
+          <p
+            style={{
+              fontSize: 14,
+              color: '#6b7280',
+              margin: '0 0 24px',
+              lineHeight: 1.5,
+            }}
+          >
+            You are about to unmatch <strong style={{ color: '#111827' }}>{unmatchTarget.name}</strong>.
+            This cannot be undone. You will no longer appear in each other&apos;s connections.
+          </p>
+
+          {/* Actions */}
+          <div style={{ display: 'flex', gap: 10 }}>
+            <button
+              onClick={() => setUnmatchTarget(null)}
+              disabled={unmatchLoading}
+              style={{
+                flex: 1,
+                padding: '14px 16px',
+                background: 'none',
+                border: '1px solid #e5e7eb',
+                color: '#374151',
+                borderRadius: 9999,
+                cursor: unmatchLoading ? 'not-allowed' : 'pointer',
+                fontSize: 14,
+                fontWeight: 600,
+                transition: 'background-color 0.15s',
+              }}
+            >
+              Cancel
+            </button>
+            <button
+              onClick={confirmUnmatch}
+              disabled={unmatchLoading}
+              style={{
+                flex: 1,
+                padding: '14px 16px',
+                background: unmatchLoading ? '#fca5a5' : '#dc2626',
+                color: '#ffffff',
+                border: 'none',
+                borderRadius: 9999,
+                cursor: unmatchLoading ? 'wait' : 'pointer',
+                fontSize: 14,
+                fontWeight: 700,
+                boxShadow: '0 4px 12px rgba(220, 38, 38, 0.25)',
+                transition: 'background-color 0.15s, transform 0.1s',
+              }}
+            >
+              {unmatchLoading ? 'Unmatching…' : 'Unmatch'}
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
+
     {previewDiscoverVideo && (
         <div className={styles.videoPreviewOverlay} onClick={() => setPreviewDiscoverVideo(null)}>
           <div className={styles.videoPreviewModal} onClick={(e) => e.stopPropagation()}>

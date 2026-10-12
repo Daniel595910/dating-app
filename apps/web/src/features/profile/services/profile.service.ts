@@ -1,4 +1,4 @@
-﻿import { supabase } from '@/config/supabase.client';
+import { supabase } from '@/config/supabase.client';
 import { ProfileData, ProfilePhoto, ProfileStats, UserPost } from '../types/profile.types';
 
 class ProfileService {
@@ -27,6 +27,7 @@ class ProfileService {
       languages: data.languages || [],
       isVerified: data.is_verified,
       verificationBadge: data.verification_badge,
+      vipLevel: data.vip_level || 'free',
       createdAt: data.created_at,
       updatedAt: data.updated_at,
     };
