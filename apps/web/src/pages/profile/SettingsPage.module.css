@@ -1,55 +1,415 @@
-﻿.container {
-  padding: 1rem;
-  max-width: 600px;
+/* ============================================================
+   SettingsPage — modern mobile settings layout
+   ============================================================ */
+
+.page {
+  min-height: 100dvh;
+  background-color: var(--color-bg);
+  max-width: 480px;
   margin: 0 auto;
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.625rem 0.75rem;
+  padding-top: calc(0.625rem + env(safe-area-inset-top));
+  background-color: var(--color-surface);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--color-border);
+  position: sticky;
+  top: 0;
+  z-index: 20;
+}
+
+.headerButton {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--color-text);
+  padding: 0.5rem;
+  border-radius: 9999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 44px;
+  min-height: 44px;
+  transition: background-color 0.15s ease;
+}
+
+.headerButton:hover {
+  background-color: var(--color-border);
+}
+
+.headerTitle {
+  font-size: 1.0625rem;
+  font-weight: 700;
+  color: var(--color-text);
+  margin: 0;
+  letter-spacing: -0.01em;
+}
+
+.content {
+  padding: 1rem 0 2rem;
+}
+
+/* ==================== SECTIONS ==================== */
+.section {
+  margin-bottom: 1.25rem;
+}
+
+.sectionTitle {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin: 0 1rem 0.5rem;
+}
+
+.group {
+  background-color: var(--color-surface);
+  border-radius: 1rem;
+  overflow: hidden;
+  margin: 0 0.75rem;
+  box-shadow: var(--shadow-sm);
+}
+
+/* ==================== ROW ==================== */
+.row {
+  display: flex;
+  align-items: center;
+  gap: 0.875rem;
+  width: 100%;
+  padding: 0.9375rem 1rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  font-size: 0.9375rem;
+  color: var(--color-text);
+  min-height: 52px;
+  transition: background-color 0.12s ease;
+  font-family: inherit;
+}
+
+.row:not(:last-child) {
+  border-bottom: 1px solid var(--color-border);
+}
+
+.row:hover {
+  background-color: var(--color-surface-alt);
+}
+
+.row:active {
+  background-color: var(--color-border);
+}
+
+.rowIcon {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  color: var(--color-text-secondary);
+}
+
+.rowLabel {
+  flex: 1;
+  min-width: 0;
+  font-weight: 500;
+}
+
+.rowValue {
+  font-size: 0.8125rem;
+  color: var(--color-text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 40%;
+  margin-right: 0.25rem;
+}
+
+.rowChevron {
+  flex-shrink: 0;
+  color: var(--color-text-disabled);
+}
+
+/* ==================== DESTRUCTIVE ==================== */
+.destructiveRow {
+  color: var(--color-danger);
+}
+
+.destructiveRow .rowIcon {
+  color: var(--color-danger);
+}
+
+/* ==================== MODAL ==================== */
+.modalOverlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  animation: fadeIn 0.15s ease;
+}
+
+.modalOverlayBottom {
+  align-items: flex-end;
+  padding: 0;
+}
+
+.modal {
+  background-color: var(--color-surface);
+  border-radius: 1.25rem;
+  padding: 1.5rem;
+  max-width: 360px;
+  width: 100%;
+  box-shadow: var(--shadow-lg);
+  animation: slideUpModal 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.modalBottom {
+  border-radius: 1.5rem 1.5rem 0 0;
+  max-width: 480px;
+  padding-bottom: calc(1.5rem + env(safe-area-inset-bottom));
+  animation: slideUpSheet 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.modalIconWrap {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 1rem;
+}
+
+.modalIconDanger {
+  background: linear-gradient(135deg, #fee2e2, #fecaca);
+  color: #dc2626;
+}
+
+.modalIconNeutral {
+  background: linear-gradient(135deg, #f3f4f6, #e5e7eb);
+  color: var(--color-text-secondary);
+}
+
+.modalTitle {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: var(--color-text);
+  margin: 0 0 0.5rem;
+  text-align: center;
+  letter-spacing: -0.01em;
+}
+
+.modalText {
+  font-size: 0.875rem;
+  color: var(--color-text-secondary);
+  margin: 0 0 1.25rem;
+  line-height: 1.5;
+  text-align: center;
+}
+
+.modalActions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.modalButton {
+  flex: 1;
+  padding: 0.75rem 1rem;
+  border-radius: 9999px;
+  cursor: pointer;
+  font-size: 0.875rem;
+  font-weight: 700;
+  min-height: 44px;
+  border: none;
+  font-family: inherit;
+  transition: opacity 0.15s ease, background-color 0.15s ease;
+}
+
+.modalButtonSecondary {
+  background: none;
+  border: 1px solid var(--color-border-strong);
+  color: var(--color-text-secondary);
+}
+
+.modalButtonSecondary:hover {
+  background-color: var(--color-surface-alt);
+}
+
+.modalButtonDanger {
+  background-color: var(--color-primary);
+  color: #ffffff;
+}
+
+.modalButtonDanger:hover:not(:disabled) {
+  background-color: var(--color-primary-hover);
+}
+
+.modalButtonDanger:disabled {
+  background-color: #fca5a5;
+  cursor: not-allowed;
+}
+
+.modalInput {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: 1.5px solid var(--color-border-strong);
+  border-radius: 0.75rem;
+  font-size: 0.9375rem;
+  color: var(--color-text);
+  font-family: inherit;
+  outline: none;
+  margin-bottom: 1rem;
+  box-sizing: border-box;
+  transition: border-color 0.15s ease;
+}
+
+.modalInput:focus {
+  border-color: var(--color-danger);
+}
+
+.modalInputHint {
+  font-size: 0.75rem;
+  color: var(--color-text-secondary);
+  margin: 0 0 0.5rem;
+  text-align: center;
+}
+
+.modalInputHint strong {
+  color: var(--color-text);
+  font-weight: 700;
+  letter-spacing: 0.05em;
+}
+
+/* ==================== SHEET (bottom modals) ==================== */
+.sheet {
+  background-color: var(--color-surface);
+  border-radius: 1.5rem 1.5rem 0 0;
+  width: 100%;
+  max-width: 480px;
+  margin: 0 auto;
+  max-height: 85dvh;
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
+  animation: slideUpSheet 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.title {
-  font-size: 1.25rem;
-  font-weight: 600;
-  color: #111827;
-  margin: 0;
-}
-
-.settingsGroup {
-  background-color: #ffffff;
-  border: 1px solid #e5e7eb;
-  border-radius: 0.75rem;
-  padding: 1.25rem;
-}
-
-.groupTitle {
-  font-size: 1rem;
-  font-weight: 600;
-  color: #111827;
-  margin: 0 0 0.75rem;
-}
-
-.settingItem {
+.sheetHeader {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  padding: 0.5rem 0;
-  cursor: pointer;
+  justify-content: space-between;
+  padding: 1rem 1.25rem 0.75rem;
+  border-bottom: 1px solid var(--color-border);
+  flex-shrink: 0;
 }
 
-.settingLabel {
-  font-size: 0.9375rem;
-  color: #374151;
-}
-
-.checkbox {
-  width: 18px;
-  height: 18px;
-  cursor: pointer;
-  accent-color: #3b82f6;
-}
-
-.error {
-  color: #ef4444;
-  font-size: 0.875rem;
+.sheetTitle {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: var(--color-text);
   margin: 0;
+  letter-spacing: -0.01em;
+}
+
+.sheetClose {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--color-text-secondary);
+  padding: 0.5rem;
+  border-radius: 9999px;
+  min-width: 44px;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sheetBody {
+  padding: 1rem 1.25rem calc(1.5rem + env(safe-area-inset-bottom));
+  overflow-y: auto;
+  color: var(--color-text-secondary);
+  font-size: 0.9375rem;
+  line-height: 1.6;
+}
+
+.sheetBody p {
+  margin: 0 0 1rem;
+}
+
+.sheetBody strong {
+  color: var(--color-text);
+  font-weight: 600;
+}
+
+.sheetBody a {
+  color: var(--color-danger);
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.sheetBody a:hover {
+  text-decoration: underline;
+}
+
+/* ==================== TOGGLE ==================== */
+.toggle {
+  position: relative;
+  width: 48px;
+  height: 28px;
+  border-radius: 9999px;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  background: #d1d5db;
+  transition: background 0.2s ease;
+  flex-shrink: 0;
+}
+
+.toggleOn {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.25);
+}
+
+.toggleThumb {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: #ffffff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2), 0 1px 2px rgba(0, 0, 0, 0.1);
+  transition: left 0.2s ease;
+}
+
+.toggleThumbOn {
+  left: 22px;
+}
+
+/* ==================== ANIMATIONS ==================== */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUpModal {
+  from { opacity: 0; transform: translateY(12px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes slideUpSheet {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
 }
