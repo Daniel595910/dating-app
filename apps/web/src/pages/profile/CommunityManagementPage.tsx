@@ -1,13 +1,15 @@
-﻿import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '@/store/auth.store';
 import { useUIStore } from '@/store/ui.store';
 import { supabase } from '@/config/supabase.client';
 import {
   ArrowLeft, Trash2, Ban, Lock, Globe, Star, Plus,
-  Clock, CheckCircle2, XCircle, Coins,
+  Clock, CheckCircle2, XCircle, Coins, Upload, Save,
 } from 'lucide-react';
 import { CommunityCreationSheet } from '@/features/community/components/CommunityCreationSheet';
+import { communityService } from '@/features/community/services/community.service';
+import { mediaService } from '@/features/community/services/media.service';
 
 interface ManagedCommunity {
   id: string;
@@ -66,6 +68,16 @@ export const CommunityManagementPage: React.FC = () => {
     level: 'free',
     credits: 0,
   });
+  // --- Settings form state ---
+  const [settingsName, setSettingsName] = useState('');
+  const [settingsDescription, setSettingsDescription] = useState('');
+  const [settingsRules, setSettingsRules] = useState('');
+  const [settingsCoverUrl, setSettingsCoverUrl] = useState<string | null>(null);
+  const [settingsCountry, setSettingsCountry] = useState('');
+  const [settingsState, setSettingsState] = useState('');
+  const [settingsCity, setSettingsCity] = useState('');
+  const [settingsSaving, setSettingsSaving] = useState(false);
+  const [coverUploading, setCoverUploading] = useState(false);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'overview' | 'members' | 'comments' | 'settings'>('overview');
   const [createOpen, setCreateOpen] = useState(false);
@@ -150,7 +162,19 @@ export const CommunityManagementPage: React.FC = () => {
 
   useEffect(() => {
     if (selectedCommunity) {
-      loadCommunityData(selectedCommunity);
+      // Prefill settings form whenever selected community changes
+    (async () => {
+      const full = await communityService.getCommunityById(selectedCommunity);
+      if (full) {
+        setSettingsName(full.name || '');
+        setSettingsDescription(full.description || '');
+        setSettingsRules((full.rules || []).join('\n'));
+        setSettingsCoverUrl(full.cover_image_url || null);
+        setSettingsCountry(full.country || '');
+        setSettingsState(full.state || '');
+        setSettingsCity(full.city || '');
+      }
+    })();        loadCommunityData(selectedCommunity);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedCommunity]);
@@ -211,6 +235,58 @@ export const CommunityManagementPage: React.FC = () => {
     }
   };
 
+  const handleCoverUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !user) return;
+
+    setCoverUploading(true);
+    try {
+      const result = await mediaService.uploadImage(file, user.id, 'cover_photo');
+      if (!result.success || !result.media) {
+        showToast(result.error || 'Cover upload failed', 'error');
+        return;
+      }
+      setSettingsCoverUrl(result.media.url);
+      showToast('Cover uploaded — press Save to apply', 'success');
+    } finally {
+      setCoverUploading(false);
+    }
+  };
+
+  const handleSaveSettings = async () => {
+    if (!selectedCommunity) return;
+    setSettingsSaving(true);
+    try {
+      const rulesArray = settingsRules
+        .split('\n')
+        .map((r) => r.trim())
+        .filter(Boolean);
+
+      const result = await communityService.updateCommunity(selectedCommunity, {
+        name: settingsName.trim(),
+        description: settingsDescription.trim() || null,
+        rules: rulesArray,
+        coverImageUrl: settingsCoverUrl,
+        country: settingsCountry.trim(),
+        state: settingsState.trim() || null,
+        city: settingsCity.trim() || null,
+      });
+
+      if (!result.success) {
+        showToast(result.error || 'Save failed', 'error');
+        return;
+      }
+
+      setManagedCommunities((prev) =>
+        prev.map((c) =>
+          c.id === selectedCommunity ? { ...c, name: settingsName.trim() } : c
+        )
+      );
+      showToast('Community updated', 'success');
+    } finally {
+      setSettingsSaving(false);
+    }
+  };
   const handleBanMember = async (userId: string) => {
     const { error } = await supabase
       .from('community_members')
@@ -705,15 +781,126 @@ export const CommunityManagementPage: React.FC = () => {
 
             {activeTab === 'settings' && (
               <div style={{ backgroundColor: '#ffffff', borderRadius: '1rem', padding: '1rem' }}>
-                <h3 style={{ fontSize: '0.9375rem', fontWeight: 700, color: '#111827', margin: '0 0 0.75rem' }}>
+                <h3 style={{ fontSize: '0.9375rem', fontWeight: 700, color: '#111827', margin: '0 0 1rem' }}>
                   Community Settings
                 </h3>
-                <ul style={{ fontSize: '0.8125rem', color: '#374151', paddingLeft: '1.25rem' }}>
-                  <li>Toggle private/public</li>
-                  <li>Sponsor community</li>
-                  <li>Ban members</li>
-                  <li>Delete comments</li>
-                </ul>
+
+                {/* Cover image */}
+                <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: '#6b7280', marginBottom: '0.375rem', textTransform: 'uppercase', letterSpacing: '0.03em' }}>
+                  Cover Image
+                </label>
+                <div style={{ marginBottom: '1rem' }}>
+                  {settingsCoverUrl ? (
+                    <img
+                      src={settingsCoverUrl}
+                      alt="Cover"
+                      style={{ width: '100%', height: 140, objectFit: 'cover', borderRadius: '0.75rem', marginBottom: '0.5rem' }}
+                    />
+                  ) : (
+                    <div style={{ width: '100%', height: 140, borderRadius: '0.75rem', backgroundColor: '#f3f4f6', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#9ca3af', fontSize: '0.8125rem', marginBottom: '0.5rem' }}>
+                      No cover set
+                    </div>
+                  )}
+                  <label style={{ display: 'inline-flex', alignItems: 'center', gap: '0.375rem', padding: '0.5rem 0.875rem', background: '#f3f4f6', border: 'none', borderRadius: '9999px', cursor: coverUploading ? 'wait' : 'pointer', fontSize: '0.8125rem', fontWeight: 600, color: '#111827' }}>
+                    <Upload size={14} />
+                    {coverUploading ? 'Uploading...' : 'Change Cover'}
+                    <input type="file" accept="image/*" onChange={handleCoverUpload} disabled={coverUploading} style={{ display: 'none' }} />
+                  </label>
+                </div>
+
+                {/* Name */}
+                <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: '#6b7280', marginBottom: '0.375rem', textTransform: 'uppercase', letterSpacing: '0.03em' }}>
+                  Name
+                </label>
+                <input
+                  type="text"
+                  value={settingsName}
+                  onChange={(e) => setSettingsName(e.target.value)}
+                  style={{ width: '100%', padding: '0.625rem 0.75rem', border: '1px solid #e5e7eb', borderRadius: '0.625rem', fontSize: '0.875rem', color: '#111827', marginBottom: '1rem', boxSizing: 'border-box' }}
+                />
+
+                {/* Description */}
+                <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: '#6b7280', marginBottom: '0.375rem', textTransform: 'uppercase', letterSpacing: '0.03em' }}>
+                  Description
+                </label>
+                <textarea
+                  value={settingsDescription}
+                  onChange={(e) => setSettingsDescription(e.target.value)}
+                  rows={3}
+                  style={{ width: '100%', padding: '0.625rem 0.75rem', border: '1px solid #e5e7eb', borderRadius: '0.625rem', fontSize: '0.875rem', color: '#111827', marginBottom: '1rem', boxSizing: 'border-box', resize: 'vertical', fontFamily: 'inherit' }}
+                />
+
+                {/* Rules */}
+                <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: '#6b7280', marginBottom: '0.375rem', textTransform: 'uppercase', letterSpacing: '0.03em' }}>
+                  Rules (one per line)
+                </label>
+                <textarea
+                  value={settingsRules}
+                  onChange={(e) => setSettingsRules(e.target.value)}
+                  rows={4}
+                  placeholder={'Be respectful\nNo spam\nStay on topic'}
+                  style={{ width: '100%', padding: '0.625rem 0.75rem', border: '1px solid #e5e7eb', borderRadius: '0.625rem', fontSize: '0.875rem', color: '#111827', marginBottom: '1rem', boxSizing: 'border-box', resize: 'vertical', fontFamily: 'inherit' }}
+                />
+
+                {/* Location */}
+                <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: '#6b7280', marginBottom: '0.375rem', textTransform: 'uppercase', letterSpacing: '0.03em' }}>
+                  Country
+                </label>
+                <input
+                  type="text"
+                  value={settingsCountry}
+                  onChange={(e) => setSettingsCountry(e.target.value)}
+                  style={{ width: '100%', padding: '0.625rem 0.75rem', border: '1px solid #e5e7eb', borderRadius: '0.625rem', fontSize: '0.875rem', color: '#111827', marginBottom: '1rem', boxSizing: 'border-box' }}
+                />
+
+                <div style={{ display: 'flex', gap: '0.75rem', marginBottom: '1rem' }}>
+                  <div style={{ flex: 1 }}>
+                    <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: '#6b7280', marginBottom: '0.375rem', textTransform: 'uppercase', letterSpacing: '0.03em' }}>
+                      State
+                    </label>
+                    <input
+                      type="text"
+                      value={settingsState}
+                      onChange={(e) => setSettingsState(e.target.value)}
+                      style={{ width: '100%', padding: '0.625rem 0.75rem', border: '1px solid #e5e7eb', borderRadius: '0.625rem', fontSize: '0.875rem', color: '#111827', boxSizing: 'border-box' }}
+                    />
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: '#6b7280', marginBottom: '0.375rem', textTransform: 'uppercase', letterSpacing: '0.03em' }}>
+                      City
+                    </label>
+                    <input
+                      type="text"
+                      value={settingsCity}
+                      onChange={(e) => setSettingsCity(e.target.value)}
+                      style={{ width: '100%', padding: '0.625rem 0.75rem', border: '1px solid #e5e7eb', borderRadius: '0.625rem', fontSize: '0.875rem', color: '#111827', boxSizing: 'border-box' }}
+                    />
+                  </div>
+                </div>
+
+                {/* Save */}
+                <button
+                  onClick={handleSaveSettings}
+                  disabled={settingsSaving || !settingsName.trim()}
+                  style={{
+                    width: '100%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '0.5rem',
+                    padding: '0.875rem',
+                    background: settingsSaving || !settingsName.trim() ? '#f3f4f6' : '#ef4444',
+                    color: settingsSaving || !settingsName.trim() ? '#9ca3af' : '#ffffff',
+                    border: 'none',
+                    borderRadius: '1rem',
+                    cursor: settingsSaving || !settingsName.trim() ? 'not-allowed' : 'pointer',
+                    fontSize: '0.875rem',
+                    fontWeight: 600,
+                  }}
+                >
+                  <Save size={16} />
+                  {settingsSaving ? 'Saving...' : 'Save Changes'}
+                </button>
               </div>
             )}
           </>

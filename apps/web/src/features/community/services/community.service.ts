@@ -262,6 +262,49 @@ class CommunityService {
     };
   }
 
+  async getCommunityById(communityId: string): Promise<any | null> {
+    const { data, error } = await supabase
+      .from('communities')
+      .select('*')
+      .eq('id', communityId)
+      .maybeSingle();
+
+    if (error || !data) return null;
+    return data;
+  }
+
+  async updateCommunity(
+    communityId: string,
+    updates: {
+      name?: string;
+      description?: string | null;
+      rules?: string[];
+      coverImageUrl?: string | null;
+      country?: string;
+      countryCode?: string;
+      state?: string | null;
+      city?: string | null;
+    }
+  ): Promise<{ success: boolean; error?: string }> {
+    const patch: Record<string, any> = { updated_at: new Date().toISOString() };
+
+    if (updates.name !== undefined) patch.name = updates.name;
+    if (updates.description !== undefined) patch.description = updates.description;
+    if (updates.rules !== undefined) patch.rules = updates.rules;
+    if (updates.coverImageUrl !== undefined) patch.cover_image_url = updates.coverImageUrl;
+    if (updates.country !== undefined) patch.country = updates.country;
+    if (updates.countryCode !== undefined) patch.country_code = updates.countryCode;
+    if (updates.state !== undefined) patch.state = updates.state;
+    if (updates.city !== undefined) patch.city = updates.city;
+
+    const { error } = await supabase
+      .from('communities')
+      .update(patch)
+      .eq('id', communityId);
+
+    if (error) return { success: false, error: error.message };
+    return { success: true };
+  }
   subscribeToPresence(
     communityId: string,
     userId: string,
