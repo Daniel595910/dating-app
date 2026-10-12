@@ -69,6 +69,7 @@ export interface CommunityInfo {
   state?: string;
   city?: string;
   flag: string;
+  coverImageUrl?: string | null;
 }
 
 export interface CommunityMember {

@@ -44,8 +44,14 @@ export const CommunityHeader: React.FC<CommunityHeaderProps> = ({
     };
   }, [moreMenuOpen]);
 
+  const hasCover = Boolean(community.coverImageUrl);
+
   return (
-    <header className={styles.header}>
+    <header
+      className={styles.header}
+      data-has-cover={hasCover ? 'true' : 'false'}
+      style={hasCover ? { backgroundImage: `url(${community.coverImageUrl})` } : undefined}
+    >
       <div className={styles.headerContent}>
         <div
           className={styles.headerLeft}
@@ -56,7 +62,7 @@ export const CommunityHeader: React.FC<CommunityHeaderProps> = ({
             <h1 className={styles.title}>
               {community.flag} {community.name}
             </h1>
-            {onSwitchCommunity && <ChevronDown size={16} style={{ color: '#9ca3af', flexShrink: 0 }} />}
+            {onSwitchCommunity && <ChevronDown size={16} style={{ color: hasCover ? "#ffffff" : "#9ca3af", flexShrink: 0 }} />}
           </div>
           <div className={styles.subtitleRow}>
             <Users size={12} />

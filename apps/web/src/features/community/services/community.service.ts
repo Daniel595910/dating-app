@@ -32,6 +32,7 @@ class CommunityService {
       state: data.state,
       city: data.city,
       flag: this.getFlagEmoji(data.country_code),
+      coverImageUrl: data.cover_image_url || null,
     };
   }
 
