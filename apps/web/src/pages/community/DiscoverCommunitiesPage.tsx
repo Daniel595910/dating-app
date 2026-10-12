@@ -40,6 +40,7 @@ export const DiscoverCommunitiesPage: React.FC = () => {
   const [joiningId, setJoiningId] = useState<string | null>(null);
   const [showFilters, setShowFilters] = useState(false);
   const [userLocation, setUserLocation] = useState<string>('');
+  const [includeWorldwide, setIncludeWorldwide] = useState(false);
 
   const loadCommunities = useCallback(async () => {
     if (!user) return;
@@ -61,11 +62,16 @@ export const DiscoverCommunitiesPage: React.FC = () => {
       setUserLocation([userCity, userState, userCountry].filter(Boolean).join(', '));
 
       // Get all communities in user's country
-      const { data: communityData, error: communityError } = await supabase
+      let communityQuery = supabase
         .from('communities')
         .select('*')
-        .eq('country', userCountry)
-        .eq('status', 'active')
+        .eq('status', 'active');
+
+      if (!includeWorldwide) {
+        communityQuery = communityQuery.eq('country', userCountry);
+      }
+
+      const { data: communityData, error: communityError } = await communityQuery
         .order('member_count', { ascending: false });
 
       if (communityError) throw communityError;
@@ -113,7 +119,7 @@ export const DiscoverCommunitiesPage: React.FC = () => {
     }
 
     setLoading(false);
-  }, [user]);
+  }, [user, includeWorldwide]);
 
   useEffect(() => {
     loadCommunities();

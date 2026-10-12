@@ -1,4 +1,4 @@
-﻿/**
+/**
  * App Router
  * Complete application routing with all pages
  */
@@ -41,6 +41,7 @@ import { NotificationSettingsPage } from './pages/profile/NotificationSettingsPa
 
 // Auth Guard Component
 import { ProtectedRoute } from './components/common/ProtectedRoute';
+import { JoinCommunityPage } from './pages/community/JoinCommunityPage';
 
 export const AppRouter: React.FC = () => {
   return (
@@ -205,6 +206,7 @@ export const AppRouter: React.FC = () => {
 
       {/* Default Routes */}
       <Route path={ROUTES.HOME} element={<Navigate to={ROUTES.COMMUNITY} replace />} />
+      <Route path="/join/:token" element={<JoinCommunityPage />} />
       <Route path="*" element={<Navigate to={ROUTES.COMMUNITY} replace />} />
     </Routes>
   );

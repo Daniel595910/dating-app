@@ -471,6 +471,93 @@ class CommunityService {
       joinedAt: m.joined_at,
     }));
   }
+  async joinViaInvite(token: string, userId: string): Promise<{
+    success: boolean;
+    communityId?: string;
+    communitySlug?: string;
+    requiresApproval?: boolean;
+    error?: string;
+  }> {
+    // Look up the invite
+    const { data: invite, error: inviteErr } = await supabase
+      .from('community_invites')
+      .select('id, community_id, expires_at, max_uses, use_count, is_revoked')
+      .eq('token', token)
+      .maybeSingle();
+
+    if (inviteErr || !invite) return { success: false, error: 'Invite not found' };
+    if (invite.is_revoked) return { success: false, error: 'Invite has been revoked' };
+    if (invite.expires_at && new Date(invite.expires_at) < new Date()) {
+      return { success: false, error: 'Invite has expired' };
+    }
+    if (invite.max_uses && invite.use_count >= invite.max_uses) {
+      return { success: false, error: 'Invite has reached its use limit' };
+    }
+
+    // Read community to decide active vs pending
+    const { data: community } = await supabase
+      .from('communities')
+      .select('id, slug, is_private, status')
+      .eq('id', invite.community_id)
+      .maybeSingle();
+
+    if (!community) return { success: false, error: 'Community not found' };
+    if (community.status !== 'active') return { success: false, error: 'Community is not active' };
+
+    // Check if already a member
+    const { data: existing } = await supabase
+      .from('community_members')
+      .select('id, status, is_banned')
+      .eq('community_id', invite.community_id)
+      .eq('user_id', userId)
+      .maybeSingle();
+
+    if (existing) {
+      if (existing.is_banned) return { success: false, error: 'You are banned from this community' };
+      if (existing.status === 'active') {
+        return { success: true, communityId: community.id, communitySlug: community.slug };
+      }
+      // Pending or removed — upgrade to the correct status
+      const newStatus = 'pending';
+      await supabase
+        .from('community_members')
+        .update({ status: newStatus })
+        .eq('id', existing.id);
+      return {
+        success: true,
+        communityId: community.id,
+        communitySlug: community.slug,
+        requiresApproval: true, // all joins are pending now
+      };
+    }
+
+    // New member
+    const initialStatus = 'pending'; // every join requires admin approval
+    const { error: insertErr } = await supabase
+      .from('community_members')
+      .insert({
+        community_id: invite.community_id,
+        user_id: userId,
+        role: 'member',
+        status: initialStatus,
+      });
+
+    if (insertErr) return { success: false, error: insertErr.message };
+
+    // Increment use_count (fire-and-forget; not blocking)
+    supabase
+      .from('community_invites')
+      .update({ use_count: (invite.use_count || 0) + 1 })
+      .eq('id', invite.id)
+      .then(() => {});
+
+    return {
+      success: true,
+      communityId: community.id,
+      communitySlug: community.slug,
+      requiresApproval: community.is_private,
+    };
+  }
   subscribeToPresence(
     communityId: string,
     userId: string,
