@@ -122,7 +122,6 @@ export const CommunityManagementPage: React.FC = () => {
           name: c.name,
           slug: c.slug,
           type: c.type,
-          status: c.status,
           country: c.country,
           state: c.state,
           city: c.city,
