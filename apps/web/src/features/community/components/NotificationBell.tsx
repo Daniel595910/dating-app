@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/config/supabase.client';
 import { Bell, Heart, MessageCircle, UserPlus, BadgeCheck, Crown, X, CheckCheck, Trash2 } from 'lucide-react';
@@ -6,6 +6,7 @@ import styles from '../styles/NotificationBell.module.css';
 
 interface NotificationBellProps {
   userId: string;
+  buttonClassName?: string;
 }
 
 interface AppNotification {
@@ -19,7 +20,7 @@ interface AppNotification {
   data: any;
 }
 
-export const NotificationBell: React.FC<NotificationBellProps> = ({ userId }) => {
+export const NotificationBell: React.FC<NotificationBellProps> = ({ userId, buttonClassName }) => {
   const navigate = useNavigate();
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -182,9 +183,9 @@ export const NotificationBell: React.FC<NotificationBellProps> = ({ userId }) =>
       <button
         onClick={() => setOpen(!open)}
         aria-label={`Notifications (${unreadCount} unread)`}
-        className={styles.bellButton}
+        className={buttonClassName || styles.bellButton}
       >
-        <Bell size={22} />
+        <Bell size={22} style={{ color: 'inherit', stroke: 'currentColor' }} />
         {unreadCount > 0 && (
           <span className={styles.badge}>
             {unreadCount > 9 ? '9+' : unreadCount}

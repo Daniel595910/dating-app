@@ -94,7 +94,7 @@ export const CommunityHeader: React.FC<CommunityHeaderProps> = ({
         )}
 
         <div className={styles.headerActions}>
-          <NotificationBell userId={userId} />
+          <NotificationBell userId={userId} buttonClassName={styles.iconButton} />
           {onOpenConnections && (
             <button
               className={styles.iconButton}
