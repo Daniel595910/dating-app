@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Search, MoreVertical, Users, ChevronDown, Globe, Info, Flag, Compass, Star } from 'lucide-react';
 import { CommunityInfo } from '../../types/community.types';
 import { NotificationBell } from './NotificationBell';
+ import { AvatarStack } from './AvatarStack';
 import styles from '../styles/CommunityHeader.module.css';
 
 interface CommunityHeaderProps {
@@ -13,6 +14,8 @@ interface CommunityHeaderProps {
   onDiscover?: () => void;
   onCommunityInfo?: () => void;
   onReportCommunity?: () => void;
+  memberPreview?: Array<{ userId: string; name: string; avatarUrl: string | null }>;
+  onOpenMembers?: () => void;
 }
 
 export const CommunityHeader: React.FC<CommunityHeaderProps> = ({
@@ -24,6 +27,8 @@ export const CommunityHeader: React.FC<CommunityHeaderProps> = ({
   onDiscover,
   onCommunityInfo,
   onReportCommunity,
+  memberPreview = [],
+  onOpenMembers,
 }) => {
   const [moreMenuOpen, setMoreMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -72,6 +77,17 @@ export const CommunityHeader: React.FC<CommunityHeaderProps> = ({
             <span>{community.onlineCount} online</span>
           </div>
         </div>
+
+        {memberPreview.length > 0 && (
+          <div style={{ marginRight: '0.5rem' }}>
+            <AvatarStack
+              members={memberPreview}
+              totalCount={community.memberCount}
+              maxVisible={3}
+              onClick={onOpenMembers}
+            />
+          </div>
+        )}
 
         <div className={styles.headerActions}>
           <NotificationBell userId={userId} />

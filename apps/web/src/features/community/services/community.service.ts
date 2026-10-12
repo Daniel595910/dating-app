@@ -285,6 +285,7 @@ class CommunityService {
       countryCode?: string;
       state?: string | null;
       city?: string | null;
+      allowMemberConnections?: boolean;
     }
   ): Promise<{ success: boolean; error?: string }> {
     const patch: Record<string, any> = { updated_at: new Date().toISOString() };
@@ -297,6 +298,7 @@ class CommunityService {
     if (updates.countryCode !== undefined) patch.country_code = updates.countryCode;
     if (updates.state !== undefined) patch.state = updates.state;
     if (updates.city !== undefined) patch.city = updates.city;
+    if (updates.allowMemberConnections !== undefined) patch.allow_member_connections = updates.allowMemberConnections;
 
     const { error } = await supabase
       .from('communities')
@@ -558,6 +560,43 @@ class CommunityService {
       communitySlug: community.slug,
       requiresApproval: community.is_private,
     };
+  }
+  async getCommunityMembersPreview(
+    communityId: string,
+    excludeUserIds: string[],
+    limit: number = 5
+  ): Promise<Array<{ userId: string; name: string; avatarUrl: string | null }>> {
+    const { data: members } = await supabase
+      .from('community_members')
+      .select('user_id, joined_at')
+      .eq('community_id', communityId)
+      .eq('status', 'active')
+      .eq('is_banned', false)
+      .order('joined_at', { ascending: false })
+      .limit(limit * 3);
+
+    if (!members || members.length === 0) return [];
+
+    const excludeSet = new Set(excludeUserIds);
+    const candidates = members
+      .filter((m: any) => !excludeSet.has(m.user_id))
+      .slice(0, limit);
+
+    if (candidates.length === 0) return [];
+
+    const userIds = candidates.map((m: any) => m.user_id);
+    const { data: profiles } = await supabase
+      .from('profiles')
+      .select('user_id, display_name, avatar_url')
+      .in('user_id', userIds);
+
+    const profileMap = new Map((profiles || []).map((p: any) => [p.user_id, p]));
+
+    return candidates.map((m: any) => ({
+      userId: m.user_id,
+      name: profileMap.get(m.user_id)?.display_name || 'User',
+      avatarUrl: profileMap.get(m.user_id)?.avatar_url || null,
+    }));
   }
   subscribeToPresence(
     communityId: string,

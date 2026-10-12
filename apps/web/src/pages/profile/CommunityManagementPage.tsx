@@ -81,6 +81,7 @@ export const CommunityManagementPage: React.FC = () => {
   const [settingsCountry, setSettingsCountry] = useState('');
   const [settingsState, setSettingsState] = useState('');
   const [settingsCity, setSettingsCity] = useState('');
+  const [settingsAllowConnections, setSettingsAllowConnections] = useState(true);
   const [settingsSaving, setSettingsSaving] = useState(false);
   const [coverUploading, setCoverUploading] = useState(false);
   // --- Phase 3 state: invites + danger zone ---
@@ -192,6 +193,7 @@ export const CommunityManagementPage: React.FC = () => {
         setSettingsCountry(full.country || '');
         setSettingsState(full.state || '');
         setSettingsCity(full.city || '');
+        setSettingsAllowConnections(full.allow_member_connections !== false);
       }
     })();        loadCommunityData(selectedCommunity);
     }
@@ -360,6 +362,7 @@ export const CommunityManagementPage: React.FC = () => {
         country: settingsCountry.trim(),
         state: settingsState.trim() || null,
         city: settingsCity.trim() || null,
+        allowMemberConnections: settingsAllowConnections,
       });
 
       if (!result.success) {
@@ -1075,6 +1078,35 @@ export const CommunityManagementPage: React.FC = () => {
                     />
                   </div>
                 </div>
+
+                {/* Allow member connections toggle */}
+                <label
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.625rem',
+                    padding: '0.75rem',
+                    background: '#f9fafb',
+                    borderRadius: '0.75rem',
+                    marginBottom: '1rem',
+                    cursor: 'pointer',
+                  }}
+                >
+                  <input
+                    type="checkbox"
+                    checked={settingsAllowConnections}
+                    onChange={(e) => setSettingsAllowConnections(e.target.checked)}
+                    style={{ width: 18, height: 18, cursor: 'pointer', accentColor: '#ef4444' }}
+                  />
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: '0.875rem', fontWeight: 600, color: '#111827' }}>
+                      Allow member connections
+                    </div>
+                    <div style={{ fontSize: '0.75rem', color: '#6b7280', marginTop: '0.125rem' }}>
+                      Members can send "Get to Know" requests from your community page
+                    </div>
+                  </div>
+                </label>
 
                 {/* Save */}
                 <button

@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuthStore } from '@/store/auth.store';
 import { useCommunity } from '../../features/community/hooks/useCommunity';
@@ -9,6 +9,8 @@ import { usePullToRefresh } from '../../features/community/hooks/usePullToRefres
 import { useConnection } from '../../features/community/hooks/useConnection';
 import { useOfflineFeed } from '../../features/community/hooks/useOfflineFeed';
 import { CommunityHeader } from '../../features/community/components/CommunityHeader';
+import { MembersModal } from '../../features/community/components/MembersModal';
+import { communityService } from '../../features/community/services/community.service';
 import { FilterBar } from '../../features/community/components/FilterBar';
 import { CommunityPostCard } from '../../features/community/components/CommunityPostCard';
 import { CreatePostButton } from '../../features/community/components/CreatePostSheet';
@@ -46,6 +48,10 @@ export const CommunityPage: React.FC = () => {
   const [newPostCount, setNewPostCount] = useState(0);
   const [locationSheetOpen, setLocationSheetOpen] = useState(false);
   const [switcherOpen, setSwitcherOpen] = useState(false);
+  const [memberPreview, setMemberPreview] = useState<Array<{ userId: string; name: string; avatarUrl: string | null }>>([]);
+  const [membersModalOpen, setMembersModalOpen] = useState(false);
+  const [allowConnections, setAllowConnections] = useState(true);
+  const [connectingUserId, setConnectingUserId] = useState<string | null>(null);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -57,7 +63,7 @@ export const CommunityPage: React.FC = () => {
     }
   }, []);
 
-  const {
+  const { 
     community,
     loading: communityLoading,
     onlineCount,
@@ -92,6 +98,28 @@ export const CommunityPage: React.FC = () => {
     expressInterest,
     getOrCreateConversation,
   } = useConnection(user?.id || null);
+
+  // Load community member preview + allow_connections flag
+  useEffect(() => {
+    if (!community?.id || !user?.id) return;
+
+    const excludeIds = [
+      user.id,
+      ...activeConnections.map((c) => c.targetUserId),
+      ...pendingRequests.map((r) => r.requesterId),
+    ];
+
+    Promise.all([
+      communityService.getCommunityMembersPreview(community.id, excludeIds, 5),
+      communityService.getCommunityById(community.id),
+    ]).then(([preview, full]) => {
+      setMemberPreview(preview);
+      setAllowConnections(full?.allow_member_connections !== false);
+    }).catch(() => {
+      setMemberPreview([]);
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [community?.id, user?.id]);
 
   usePullToRefresh({ onRefresh: refresh, disabled: feedLoading });
 
@@ -191,6 +219,8 @@ export const CommunityPage: React.FC = () => {
         onMore={() => {}}
         onSwitchCommunity={() => setSwitcherOpen(true)}
         onDiscover={() => navigate('/discover-communities')}
+        memberPreview={memberPreview}
+        onOpenMembers={() => setMembersModalOpen(true)}
       />
 
       <FilterBar activeFilter={filter} onFilterChange={setFilter} />
@@ -283,6 +313,29 @@ export const CommunityPage: React.FC = () => {
         targetUserId={connectionTarget?.id || ''}
         targetUserName={connectionTarget?.name || ''}
         onSendRequest={sendRequest}
+      />
+
+      <MembersModal
+        open={membersModalOpen}
+        onClose={() => setMembersModalOpen(false)}
+        members={memberPreview}
+        allowConnections={allowConnections}
+        onViewProfile={(userId) => {
+          setMembersModalOpen(false);
+          navigate('/profile/' + userId);
+        }}
+        onGetToKnow={async (userId) => {
+          setConnectingUserId(userId);
+          try {
+            const ok = await sendRequest(userId);
+            if (ok) {
+              setMemberPreview((prev) => prev.filter((m) => m.userId !== userId));
+            }
+          } finally {
+            setConnectingUserId(null);
+          }
+        }}
+        loadingUserId={connectingUserId}
       />
 
       <MatchSuccess
