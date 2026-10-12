@@ -1,4 +1,4 @@
-﻿.communityPage {
+.communityPage {
   min-height: 100dvh;
   background-color: #faf9f7;
   display: flex;
@@ -40,7 +40,7 @@
 }
 
 .newPostsIndicator {
-  position: sticky;
+  position: relative;
   top: 0.5rem;
   z-index: 5;
   margin: 0 auto 0.5rem;
