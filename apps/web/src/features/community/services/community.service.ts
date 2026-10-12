@@ -305,6 +305,93 @@ class CommunityService {
     if (error) return { success: false, error: error.message };
     return { success: true };
   }
+  async archiveCommunity(communityId: string): Promise<{ success: boolean; error?: string }> {
+    const { error } = await supabase
+      .from('communities')
+      .update({ status: 'archived', updated_at: new Date().toISOString() })
+      .eq('id', communityId);
+    if (error) return { success: false, error: error.message };
+    return { success: true };
+  }
+
+  async unarchiveCommunity(communityId: string): Promise<{ success: boolean; error?: string }> {
+    const { error } = await supabase
+      .from('communities')
+      .update({ status: 'active', updated_at: new Date().toISOString() })
+      .eq('id', communityId);
+    if (error) return { success: false, error: error.message };
+    return { success: true };
+  }
+
+  async deleteCommunity(communityId: string): Promise<{ success: boolean; error?: string }> {
+    const { error } = await supabase
+      .from('communities')
+      .delete()
+      .eq('id', communityId);
+    if (error) return { success: false, error: error.message };
+    return { success: true };
+  }
+
+  async createInvite(
+    communityId: string,
+    userId: string,
+    options: { expiresInDays?: number; maxUses?: number | null } = {}
+  ): Promise<{ success: boolean; token?: string; error?: string }> {
+    const token = (crypto.randomUUID() + crypto.randomUUID()).replace(/-/g, '').slice(0, 24);
+    const expiresAt = options.expiresInDays
+      ? new Date(Date.now() + options.expiresInDays * 24 * 60 * 60 * 1000).toISOString()
+      : null;
+
+    const { data, error } = await supabase
+      .from('community_invites')
+      .insert({
+        community_id: communityId,
+        token,
+        created_by: userId,
+        expires_at: expiresAt,
+        max_uses: options.maxUses ?? null,
+      })
+      .select('token')
+      .single();
+
+    if (error || !data) return { success: false, error: error?.message || 'Insert failed' };
+    return { success: true, token: data.token };
+  }
+
+  async listInvites(communityId: string): Promise<Array<{
+    id: string;
+    token: string;
+    expiresAt: string | null;
+    maxUses: number | null;
+    useCount: number;
+    createdAt: string;
+  }>> {
+    const { data, error } = await supabase
+      .from('community_invites')
+      .select('id, token, expires_at, max_uses, use_count, created_at')
+      .eq('community_id', communityId)
+      .eq('is_revoked', false)
+      .order('created_at', { ascending: false });
+
+    if (error || !data) return [];
+    return data.map((r: any) => ({
+      id: r.id,
+      token: r.token,
+      expiresAt: r.expires_at,
+      maxUses: r.max_uses,
+      useCount: r.use_count,
+      createdAt: r.created_at,
+    }));
+  }
+
+  async revokeInvite(inviteId: string): Promise<{ success: boolean; error?: string }> {
+    const { error } = await supabase
+      .from('community_invites')
+      .update({ is_revoked: true })
+      .eq('id', inviteId);
+    if (error) return { success: false, error: error.message };
+    return { success: true };
+  }
   subscribeToPresence(
     communityId: string,
     userId: string,

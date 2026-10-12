@@ -6,6 +6,7 @@ import { supabase } from '@/config/supabase.client';
 import {
   ArrowLeft, Trash2, Ban, Lock, Globe, Star, Plus,
   Clock, CheckCircle2, XCircle, Coins, Upload, Save,
+  Archive, Link2, Copy, AlertTriangle,
 } from 'lucide-react';
 import { CommunityCreationSheet } from '@/features/community/components/CommunityCreationSheet';
 import { communityService } from '@/features/community/services/community.service';
@@ -78,6 +79,15 @@ export const CommunityManagementPage: React.FC = () => {
   const [settingsCity, setSettingsCity] = useState('');
   const [settingsSaving, setSettingsSaving] = useState(false);
   const [coverUploading, setCoverUploading] = useState(false);
+  // --- Phase 3 state: invites + danger zone ---
+  const [invites, setInvites] = useState<Array<{
+    id: string; token: string; expiresAt: string | null;
+    maxUses: number | null; useCount: number; createdAt: string;
+  }>>([]);
+  const [inviteLoading, setInviteLoading] = useState(false);
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [deleteConfirmText, setDeleteConfirmText] = useState('');
+  const [dangerLoading, setDangerLoading] = useState(false);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'overview' | 'members' | 'comments' | 'settings'>('overview');
   const [createOpen, setCreateOpen] = useState(false);
@@ -162,7 +172,9 @@ export const CommunityManagementPage: React.FC = () => {
 
   useEffect(() => {
     if (selectedCommunity) {
-      // Prefill settings form whenever selected community changes
+      // Load invites for this community
+    communityService.listInvites(selectedCommunity).then(setInvites);
+    // Prefill settings form whenever selected community changes
     (async () => {
       const full = await communityService.getCommunityById(selectedCommunity);
       if (full) {
@@ -235,6 +247,77 @@ export const CommunityManagementPage: React.FC = () => {
     }
   };
 
+  const handleArchive = async () => {
+    if (!selectedCommunity) return;
+    setDangerLoading(true);
+    try {
+      const result = await communityService.archiveCommunity(selectedCommunity);
+      if (!result.success) { showToast(result.error || 'Archive failed', 'error'); return; }
+      showToast('Community archived', 'success');
+      await loadManagedCommunities();
+    } finally { setDangerLoading(false); }
+  };
+
+  const handleUnarchive = async () => {
+    if (!selectedCommunity) return;
+    setDangerLoading(true);
+    try {
+      const result = await communityService.unarchiveCommunity(selectedCommunity);
+      if (!result.success) { showToast(result.error || 'Unarchive failed', 'error'); return; }
+      showToast('Community unarchived', 'success');
+      await loadManagedCommunities();
+    } finally { setDangerLoading(false); }
+  };
+
+  const handleDeleteCommunity = async () => {
+    if (!selectedCommunity || !currentCommunity) return;
+    if (deleteConfirmText !== currentCommunity.name) {
+      showToast('Type the community name exactly to confirm', 'error');
+      return;
+    }
+    setDangerLoading(true);
+    try {
+      const result = await communityService.deleteCommunity(selectedCommunity);
+      if (!result.success) { showToast(result.error || 'Delete failed', 'error'); return; }
+      showToast('Community deleted', 'success');
+      setDeleteConfirmOpen(false);
+      setDeleteConfirmText('');
+      setSelectedCommunity(null);
+      await loadManagedCommunities();
+    } finally { setDangerLoading(false); }
+  };
+
+  const handleGenerateInvite = async () => {
+    if (!selectedCommunity || !user) return;
+    setInviteLoading(true);
+    try {
+      const result = await communityService.createInvite(selectedCommunity, user.id, {
+        expiresInDays: 7,
+        maxUses: null,
+      });
+      if (!result.success) { showToast(result.error || 'Generate failed', 'error'); return; }
+      const fresh = await communityService.listInvites(selectedCommunity);
+      setInvites(fresh);
+      showToast('Invite link created', 'success');
+    } finally { setInviteLoading(false); }
+  };
+
+  const handleRevokeInvite = async (inviteId: string) => {
+    const result = await communityService.revokeInvite(inviteId);
+    if (!result.success) { showToast(result.error || 'Revoke failed', 'error'); return; }
+    setInvites((prev) => prev.filter((i) => i.id !== inviteId));
+    showToast('Invite revoked', 'success');
+  };
+
+  const handleCopyInvite = async (token: string) => {
+    const url = `${window.location.origin}/join/${token}`;
+    try {
+      await navigator.clipboard.writeText(url);
+      showToast('Link copied', 'success');
+    } catch {
+      showToast(url, 'info');
+    }
+  };
   const handleCoverUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !user) return;
@@ -901,12 +984,150 @@ export const CommunityManagementPage: React.FC = () => {
                   <Save size={16} />
                   {settingsSaving ? 'Saving...' : 'Save Changes'}
                 </button>
+
+                {/* ============ INVITE LINKS ============ */}
+                <div style={{ marginTop: '1.5rem', paddingTop: '1.5rem', borderTop: '1px solid #f3f4f6' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.75rem' }}>
+                    <Link2 size={16} style={{ color: '#6b7280' }} />
+                    <h4 style={{ fontSize: '0.875rem', fontWeight: 700, color: '#111827', margin: 0, flex: 1 }}>
+                      Invite Links
+                    </h4>
+                    <button
+                      onClick={handleGenerateInvite}
+                      disabled={inviteLoading}
+                      style={{ padding: '0.375rem 0.75rem', background: inviteLoading ? '#f3f4f6' : '#111827', color: inviteLoading ? '#9ca3af' : '#ffffff', border: 'none', borderRadius: '9999px', fontSize: '0.75rem', fontWeight: 600, cursor: inviteLoading ? 'wait' : 'pointer' }}
+                    >
+                      {inviteLoading ? 'Creating...' : 'Generate'}
+                    </button>
+                  </div>
+
+                  {invites.length === 0 ? (
+                    <p style={{ fontSize: '0.8125rem', color: '#9ca3af', margin: 0 }}>
+                      No active invites. Generate one to share.
+                    </p>
+                  ) : (
+                    invites.map((inv) => (
+                      <div
+                        key={inv.id}
+                        style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.625rem 0.75rem', background: '#f9fafb', borderRadius: '0.625rem', marginBottom: '0.5rem' }}
+                      >
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ fontSize: '0.75rem', fontWeight: 600, color: '#111827', fontFamily: 'monospace', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                            /join/{inv.token.slice(0, 12)}…
+                          </div>
+                          <div style={{ fontSize: '0.6875rem', color: '#6b7280' }}>
+                            {inv.expiresAt ? `Expires ${new Date(inv.expiresAt).toLocaleDateString()}` : 'No expiry'}
+                            {' · '}
+                            Used {inv.useCount}{inv.maxUses ? `/${inv.maxUses}` : ''}
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => handleCopyInvite(inv.token)}
+                          style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#111827', padding: '0.375rem', borderRadius: '9999px' }}
+                          title="Copy link"
+                        >
+                          <Copy size={14} />
+                        </button>
+                        <button
+                          onClick={() => handleRevokeInvite(inv.id)}
+                          style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ef4444', padding: '0.375rem', borderRadius: '9999px' }}
+                          title="Revoke"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
+                    ))
+                  )}
+                </div>
+
+                {/* ============ DANGER ZONE ============ */}
+                <div style={{ marginTop: '1.5rem', paddingTop: '1.5rem', borderTop: '1px solid #fef2f2' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.75rem' }}>
+                    <AlertTriangle size={16} style={{ color: '#ef4444' }} />
+                    <h4 style={{ fontSize: '0.875rem', fontWeight: 700, color: '#ef4444', margin: 0 }}>
+                      Danger Zone
+                    </h4>
+                  </div>
+
+                  {currentCommunity?.status === 'archived' ? (
+                    <button
+                      onClick={handleUnarchive}
+                      disabled={dangerLoading}
+                      style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', padding: '0.75rem', background: 'none', border: '1px solid #10b981', color: '#10b981', borderRadius: '0.75rem', fontSize: '0.8125rem', fontWeight: 600, cursor: dangerLoading ? 'wait' : 'pointer', marginBottom: '0.5rem' }}
+                    >
+                      <Archive size={14} />
+                      Unarchive Community
+                    </button>
+                  ) : (
+                    <button
+                      onClick={handleArchive}
+                      disabled={dangerLoading}
+                      style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', padding: '0.75rem', background: 'none', border: '1px solid #f59e0b', color: '#f59e0b', borderRadius: '0.75rem', fontSize: '0.8125rem', fontWeight: 600, cursor: dangerLoading ? 'wait' : 'pointer', marginBottom: '0.5rem' }}
+                    >
+                      <Archive size={14} />
+                      Archive Community
+                    </button>
+                  )}
+
+                  <button
+                    onClick={() => setDeleteConfirmOpen(true)}
+                    style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', padding: '0.75rem', background: '#fef2f2', border: '1px solid #ef4444', color: '#ef4444', borderRadius: '0.75rem', fontSize: '0.8125rem', fontWeight: 600, cursor: 'pointer' }}
+                  >
+                    <Trash2 size={14} />
+                    Delete Community
+                  </button>
+                </div>
               </div>
             )}
           </>
         )}
       </div>
 
+      {deleteConfirmOpen && (
+        <div
+          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}
+          onClick={() => { setDeleteConfirmOpen(false); setDeleteConfirmText(''); }}
+        >
+          <div
+            style={{ background: '#ffffff', borderRadius: '1rem', padding: '1.5rem', maxWidth: 400, width: '100%' }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.75rem' }}>
+              <AlertTriangle size={20} style={{ color: '#ef4444' }} />
+              <h3 style={{ fontSize: '1rem', fontWeight: 700, color: '#111827', margin: 0 }}>
+                Delete Community?
+              </h3>
+            </div>
+            <p style={{ fontSize: '0.8125rem', color: '#6b7280', margin: '0 0 1rem', lineHeight: 1.5 }}>
+              This permanently deletes <strong>{currentCommunity?.name}</strong>, all its members, posts, and invites. This cannot be undone.
+            </p>
+            <p style={{ fontSize: '0.75rem', color: '#6b7280', margin: '0 0 0.375rem' }}>
+              Type <strong>{currentCommunity?.name}</strong> to confirm:
+            </p>
+            <input
+              type="text"
+              value={deleteConfirmText}
+              onChange={(e) => setDeleteConfirmText(e.target.value)}
+              style={{ width: '100%', padding: '0.625rem 0.75rem', border: '1px solid #e5e7eb', borderRadius: '0.625rem', fontSize: '0.875rem', marginBottom: '1rem', boxSizing: 'border-box' }}
+            />
+            <div style={{ display: 'flex', gap: '0.5rem' }}>
+              <button
+                onClick={() => { setDeleteConfirmOpen(false); setDeleteConfirmText(''); }}
+                style={{ flex: 1, padding: '0.75rem', background: 'none', border: '1px solid #e5e7eb', color: '#6b7280', borderRadius: '0.75rem', fontSize: '0.875rem', fontWeight: 600, cursor: 'pointer' }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDeleteCommunity}
+                disabled={dangerLoading || deleteConfirmText !== currentCommunity?.name}
+                style={{ flex: 1, padding: '0.75rem', background: deleteConfirmText === currentCommunity?.name ? '#ef4444' : '#f3f4f6', color: deleteConfirmText === currentCommunity?.name ? '#ffffff' : '#9ca3af', border: 'none', borderRadius: '0.75rem', fontSize: '0.875rem', fontWeight: 600, cursor: deleteConfirmText === currentCommunity?.name ? 'pointer' : 'not-allowed' }}
+              >
+                {dangerLoading ? 'Deleting...' : 'Delete'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       <CommunityCreationSheet
         open={createOpen}
         onClose={() => setCreateOpen(false)}
