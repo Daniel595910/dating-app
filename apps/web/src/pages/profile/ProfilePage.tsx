@@ -401,6 +401,14 @@ export const ProfilePage: React.FC = () => {
       })
       .eq('id', matchId);
 
+    if (!error) {
+      // Close the associated conversation so neither user can message
+      await supabase
+        .from('conversations')
+        .update({ closed_at: new Date().toISOString() })
+        .eq('match_id', matchId);
+    }
+
     setUnmatchLoading(false);
 
     if (error) {
