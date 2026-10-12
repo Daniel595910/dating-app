@@ -52,6 +52,7 @@ export const CommunityPage: React.FC = () => {
   const [membersModalOpen, setMembersModalOpen] = useState(false);
   const [allowConnections, setAllowConnections] = useState(true);
   const [connectingUserId, setConnectingUserId] = useState<string | null>(null);
+  const [connectedIds, setConnectedIds] = useState<string[]>([]);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -103,16 +104,17 @@ export const CommunityPage: React.FC = () => {
   useEffect(() => {
     if (!community?.id || !user?.id) return;
 
-    const excludeIds = [
-      user.id,
-      ...activeConnections.map((c) => c.targetUserId),
-      ...pendingRequests.map((r) => r.requesterId),
-    ];
-
     Promise.all([
-      communityService.getCommunityMembersPreview(community.id, excludeIds, 5),
+      communityService.getConnectedUserIds(user.id),
       communityService.getCommunityById(community.id),
-    ]).then(([preview, full]) => {
+    ]).then(async ([connected, full]) => {
+      setConnectedIds(connected);
+      // Only exclude self — show all other members
+      const preview = await communityService.getCommunityMembersPreview(
+        community.id,
+        [user.id],
+        5
+      );
       setMemberPreview(preview);
       setAllowConnections(full?.allow_member_connections !== false);
     }).catch(() => {
@@ -320,6 +322,7 @@ export const CommunityPage: React.FC = () => {
         onClose={() => setMembersModalOpen(false)}
         members={memberPreview}
         allowConnections={allowConnections}
+        connectedUserIds={connectedIds}
         onViewProfile={(userId) => {
           setMembersModalOpen(false);
           navigate('/profile/' + userId);

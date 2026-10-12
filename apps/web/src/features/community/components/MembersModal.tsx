@@ -15,6 +15,7 @@ interface MembersModalProps {
   onViewProfile: (userId: string) => void;
   onGetToKnow: (userId: string) => void;
   loadingUserId?: string | null;
+  connectedUserIds?: string[];
 }
 
 export const MembersModal: React.FC<MembersModalProps> = ({
@@ -25,6 +26,7 @@ export const MembersModal: React.FC<MembersModalProps> = ({
   onViewProfile,
   onGetToKnow,
   loadingUserId,
+  connectedUserIds = [],
 }) => {
   if (!open) return null;
 
@@ -177,7 +179,7 @@ export const MembersModal: React.FC<MembersModalProps> = ({
                     <Eye size={12} />
                     View Profile
                   </button>
-                  {allowConnections && (
+                  {allowConnections && !connectedUserIds.includes(m.userId) && (
                     <button
                       onClick={() => onGetToKnow(m.userId)}
                       disabled={loadingUserId === m.userId}

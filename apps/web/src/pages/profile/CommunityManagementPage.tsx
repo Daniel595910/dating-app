@@ -1079,34 +1079,66 @@ export const CommunityManagementPage: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Allow member connections toggle */}
-                <label
+                {/* Allow member connections switch */}
+                <div
                   style={{
                     display: 'flex',
                     alignItems: 'center',
-                    gap: '0.625rem',
-                    padding: '0.75rem',
+                    gap: '0.75rem',
+                    padding: '0.875rem 1rem',
                     background: '#f9fafb',
-                    borderRadius: '0.75rem',
+                    border: '1px solid #f3f4f6',
+                    borderRadius: '0.875rem',
                     marginBottom: '1rem',
-                    cursor: 'pointer',
                   }}
                 >
-                  <input
-                    type="checkbox"
-                    checked={settingsAllowConnections}
-                    onChange={(e) => setSettingsAllowConnections(e.target.checked)}
-                    style={{ width: 18, height: 18, cursor: 'pointer', accentColor: '#ef4444' }}
-                  />
-                  <div style={{ flex: 1 }}>
+                  <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontSize: '0.875rem', fontWeight: 600, color: '#111827' }}>
                       Allow member connections
                     </div>
-                    <div style={{ fontSize: '0.75rem', color: '#6b7280', marginTop: '0.125rem' }}>
+                    <div style={{ fontSize: '0.75rem', color: '#6b7280', marginTop: '0.125rem', lineHeight: 1.4 }}>
                       Members can send "Get to Know" requests from your community page
                     </div>
                   </div>
-                </label>
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={settingsAllowConnections}
+                    aria-label="Allow member connections"
+                    onClick={() => setSettingsAllowConnections((v) => !v)}
+                    style={{
+                      position: 'relative',
+                      flexShrink: 0,
+                      width: 48,
+                      height: 28,
+                      borderRadius: '9999px',
+                      border: 'none',
+                      padding: 0,
+                      cursor: 'pointer',
+                      background: settingsAllowConnections
+                        ? 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)'
+                        : '#d1d5db',
+                      transition: 'background 0.2s ease',
+                      boxShadow: settingsAllowConnections
+                        ? '0 2px 8px rgba(239, 68, 68, 0.25)'
+                        : 'inset 0 1px 2px rgba(0,0,0,0.06)',
+                    }}
+                  >
+                    <span
+                      style={{
+                        position: 'absolute',
+                        top: 2,
+                        left: settingsAllowConnections ? 22 : 2,
+                        width: 24,
+                        height: 24,
+                        borderRadius: '50%',
+                        background: '#ffffff',
+                        boxShadow: '0 1px 3px rgba(0,0,0,0.2), 0 1px 2px rgba(0,0,0,0.1)',
+                        transition: 'left 0.2s ease',
+                      }}
+                    />
+                  </button>
+                </div>
 
                 {/* Save */}
                 <button

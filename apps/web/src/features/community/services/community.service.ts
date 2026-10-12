@@ -598,6 +598,36 @@ class CommunityService {
       avatarUrl: profileMap.get(m.user_id)?.avatar_url || null,
     }));
   }
+  async getConnectedUserIds(userId: string): Promise<string[]> {
+    const ids = new Set<string>();
+
+    const { data: requests } = await supabase
+      .from('match_requests')
+      .select('requester_id, target_id')
+      .or(`requester_id.eq.${userId},target_id.eq.${userId}`)
+      .in('status', ['pending', 'accepted']);
+
+    if (requests) {
+      for (const r of requests as any[]) {
+        if (r.requester_id === userId) ids.add(r.target_id);
+        else ids.add(r.requester_id);
+      }
+    }
+
+    const { data: matches } = await supabase
+      .from('matches')
+      .select('user1_id, user2_id')
+      .or(`user1_id.eq.${userId},user2_id.eq.${userId}`)
+      .eq('status', 'active');
+
+    if (matches) {
+      for (const m of matches as any[]) {
+        ids.add(m.user1_id === userId ? m.user2_id : m.user1_id);
+      }
+    }
+
+    return Array.from(ids);
+  }
   subscribeToPresence(
     communityId: string,
     userId: string,
