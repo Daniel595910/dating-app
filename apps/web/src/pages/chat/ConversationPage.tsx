@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/config/supabase.client';
 import { useAuthStore } from '@/store/auth.store';
@@ -11,6 +11,7 @@ export const ConversationPage: React.FC = () => {
   const { user } = useAuthStore();
   const [otherUser, setOtherUser] = useState<{ id: string; name: string; avatar: string | null; verified: boolean } | null>(null);
   const [isOnline, setIsOnline] = useState(false);
+  const [isClosed, setIsClosed] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -29,6 +30,7 @@ export const ConversationPage: React.FC = () => {
         .single();
 
       if (conversation) {
+        setIsClosed(Boolean(conversation.closed_at));
         const otherUserId = conversation.participant_ids.find((id: string) => id !== user.id);
         if (otherUserId) {
           const { data: profile } = await supabase
@@ -95,6 +97,7 @@ export const ConversationPage: React.FC = () => {
   return (
     <div className={styles.container}>
       <ChatWindow
+        readOnly={isClosed}
         conversationId={conversationId}
         targetUserName={otherUser.name}
         targetUserAvatar={otherUser.avatar}

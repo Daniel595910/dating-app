@@ -1,4 +1,4 @@
-﻿import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Send, Plus, X, Gift, Video } from 'lucide-react';
 import { supabase } from '@/config/supabase.client';
 import { ChatMessage } from '../../types/chat.types';
@@ -14,6 +14,7 @@ interface MessageComposerProps {
   replyingTo?: ChatMessage | null;
   onCancelReply?: () => void;
   onOpenGift?: () => void;
+  disabled?: boolean;
 }
 
 export const MessageComposer: React.FC<MessageComposerProps> = ({
@@ -26,6 +27,7 @@ export const MessageComposer: React.FC<MessageComposerProps> = ({
   replyingTo,
   onCancelReply,
   onOpenGift,
+  disabled = false,
 }) => {
   const [content, setContent] = useState('');
   const [sending, setSending] = useState(false);
@@ -185,7 +187,7 @@ export const MessageComposer: React.FC<MessageComposerProps> = ({
 
 
 
-        <button className={styles.sendButton} onClick={handleSend} disabled={!content.trim() || sending} aria-label="Send message">
+        <button className={styles.sendButton} onClick={handleSend} disabled={!content.trim() || sending || disabled} aria-label="Send message">
           <Send size={18} />
         </button>
       </div>

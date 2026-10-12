@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '@/store/auth.store';
 import { supabase } from '@/config/supabase.client';
@@ -31,6 +31,7 @@ interface ChatWindowProps {
   targetUserId: string;
   verified: boolean;
   initialOnline?: boolean;
+  readOnly?: boolean;
 }
 
 export const ChatWindow: React.FC<ChatWindowProps> = ({
@@ -40,6 +41,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
   targetUserId,
   verified,
   initialOnline = false,
+  readOnly = false,
 }) => {
   const { user } = useAuthStore();
   const { startCall } = useCall();
@@ -771,6 +773,28 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
       )}
 
       {!editingMessage && (
+        <>
+        {readOnly && (
+          <div
+            style={{
+              padding: '12px 16px',
+              background: '#fef2f2',
+              borderTop: '1px solid #fecaca',
+              color: '#991b1b',
+              fontSize: 13,
+              fontWeight: 500,
+              textAlign: 'center',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 8,
+            }}
+          >
+            <span style={{ fontSize: 16 }}>⚠️</span>
+            This connection has ended. You can no longer send messages.
+          </div>
+        )}
+
         <MessageComposer
           conversationId={conversationId}
           userId={user?.id || ''}
@@ -781,7 +805,9 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
           replyingTo={replyingTo}
           onCancelReply={() => setReplyingTo(null)}
           onOpenGift={() => setGiftPickerOpen(true)}
+          disabled={readOnly}
         />
+        </>
       )}
 
       <MessageActionSheet
