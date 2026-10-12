@@ -6,7 +6,7 @@ import { supabase } from '@/config/supabase.client';
 import {
   ArrowLeft, Trash2, Ban, Lock, Globe, Star, Plus,
   Clock, CheckCircle2, XCircle, Coins, Upload, Save,
-  Archive, Link2, Copy, AlertTriangle,
+  Archive, Link2, Copy, AlertTriangle, BarChart3,
 } from 'lucide-react';
 import { CommunityCreationSheet } from '@/features/community/components/CommunityCreationSheet';
 import { communityService } from '@/features/community/services/community.service';
@@ -82,6 +82,19 @@ export const CommunityManagementPage: React.FC = () => {
   const [settingsState, setSettingsState] = useState('');
   const [settingsCity, setSettingsCity] = useState('');
   const [settingsAllowConnections, setSettingsAllowConnections] = useState(true);
+
+  // --- Analytics state ---
+  const [analytics, setAnalytics] = useState<{
+    memberGrowth7d: number[]; memberGrowth30d: number[];
+    postVolume7d: number[]; postVolume30d: number[];
+    activeCount: number; inactiveCount: number;
+    topPosts: Array<{ id: string; preview: string; likes: number; comments: number }>;
+    topMembers: Array<{ userId: string; name: string; avatarUrl: string | null; postCount: number }>;
+    recentJoins: Array<{ userId: string; name: string; avatarUrl: string | null; role: string; joinedAt: string }>;
+  } | null>(null);
+  const [analyticsLoading, setAnalyticsLoading] = useState(false);
+  const [analyticsRange, setAnalyticsRange] = useState<7 | 30>(7);
+
   const [settingsSaving, setSettingsSaving] = useState(false);
   const [coverUploading, setCoverUploading] = useState(false);
   // --- Phase 3 state: invites + danger zone ---
@@ -97,7 +110,17 @@ export const CommunityManagementPage: React.FC = () => {
   const [deleteConfirmText, setDeleteConfirmText] = useState('');
   const [dangerLoading, setDangerLoading] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'overview' | 'members' | 'comments' | 'settings'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'members' | 'comments' | 'settings' | 'analytics'>('overview');
+
+  // Load analytics when the tab opens
+  useEffect(() => {
+    if (activeTab !== 'analytics' || !selectedCommunity) return;
+    setAnalyticsLoading(true);
+    communityService
+      .getCommunityAnalytics(selectedCommunity)
+      .then(setAnalytics)
+      .finally(() => setAnalyticsLoading(false));
+  }, [activeTab, selectedCommunity]);
   const [createOpen, setCreateOpen] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
 
@@ -716,7 +739,7 @@ export const CommunityManagementPage: React.FC = () => {
                 marginBottom: '1rem',
               }}
             >
-              {(['overview', 'members', 'comments', 'settings'] as const).map((tab) => (
+              {(['overview', 'members', 'comments', 'settings', 'analytics'] as const).map((tab) => (
                 <button
                   key={tab}
                   onClick={() => setActiveTab(tab)}
@@ -1262,6 +1285,147 @@ export const CommunityManagementPage: React.FC = () => {
         )}
       </div>
 
+      {activeTab === 'analytics' && (
+        <div style={{ paddingBottom: '1rem' }}>
+          <div style={{ display: 'flex', gap: '0.375rem', marginBottom: '1rem' }}>
+            {([7, 30] as const).map((r) => (
+              <button
+                key={r}
+                onClick={() => setAnalyticsRange(r)}
+                style={{
+                  padding: '0.5rem 0.875rem',
+                  background: analyticsRange === r ? '#ef4444' : '#ffffff',
+                  color: analyticsRange === r ? '#ffffff' : '#6b7280',
+                  border: analyticsRange === r ? 'none' : '1px solid #e5e7eb',
+                  borderRadius: '9999px',
+                  fontSize: '0.75rem',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                }}
+              >
+                Last {r} days
+              </button>
+            ))}
+          </div>
+
+          {analyticsLoading || !analytics ? (
+            <div style={{ textAlign: 'center', padding: '3rem 1rem', color: '#9ca3af' }}>
+              Loading analytics...
+            </div>
+          ) : (
+            <>
+              <div style={{ background: '#ffffff', borderRadius: '1rem', padding: '1rem', marginBottom: '0.75rem' }}>
+                <h4 style={{ fontSize: '0.875rem', fontWeight: 700, color: '#111827', margin: '0 0 0.125rem' }}>
+                  Member growth
+                </h4>
+                <p style={{ fontSize: '0.75rem', color: '#6b7280', margin: '0 0 0.875rem' }}>
+                  {(() => {
+                    const arr = analyticsRange === 7 ? analytics.memberGrowth7d : analytics.memberGrowth30d;
+                    const sum = arr.reduce((a, b) => a + b, 0);
+                    return `+${sum} new member${sum === 1 ? '' : 's'} in the last ${analyticsRange} days`;
+                  })()}
+                </p>
+                <MiniBarChart
+                  data={analyticsRange === 7 ? analytics.memberGrowth7d : analytics.memberGrowth30d}
+                  color="#10b981"
+                />
+              </div>
+
+              <div style={{ background: '#ffffff', borderRadius: '1rem', padding: '1rem', marginBottom: '0.75rem' }}>
+                <h4 style={{ fontSize: '0.875rem', fontWeight: 700, color: '#111827', margin: '0 0 0.125rem' }}>
+                  Post volume
+                </h4>
+                <p style={{ fontSize: '0.75rem', color: '#6b7280', margin: '0 0 0.875rem' }}>
+                  {(() => {
+                    const arr = analyticsRange === 7 ? analytics.postVolume7d : analytics.postVolume30d;
+                    const sum = arr.reduce((a, b) => a + b, 0);
+                    return `${sum} post${sum === 1 ? '' : 's'} in the last ${analyticsRange} days`;
+                  })()}
+                </p>
+                <MiniBarChart
+                  data={analyticsRange === 7 ? analytics.postVolume7d : analytics.postVolume30d}
+                  color="#ef4444"
+                />
+              </div>
+
+              <div style={{ background: '#ffffff', borderRadius: '1rem', padding: '1rem', marginBottom: '0.75rem' }}>
+                <h4 style={{ fontSize: '0.875rem', fontWeight: 700, color: '#111827', margin: '0 0 0.75rem' }}>
+                  Active vs inactive
+                </h4>
+                <div style={{ display: 'flex', gap: '0.75rem' }}>
+                  <div style={{ flex: 1, textAlign: 'center', padding: '0.75rem', background: '#f0fdf4', borderRadius: '0.75rem' }}>
+                    <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#16a34a' }}>{analytics.activeCount}</div>
+                    <div style={{ fontSize: '0.6875rem', color: '#166534', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.03em' }}>Active</div>
+                    <div style={{ fontSize: '0.625rem', color: '#6b7280', marginTop: '0.25rem' }}>posted this week</div>
+                  </div>
+                  <div style={{ flex: 1, textAlign: 'center', padding: '0.75rem', background: '#f3f4f6', borderRadius: '0.75rem' }}>
+                    <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#6b7280' }}>{analytics.inactiveCount}</div>
+                    <div style={{ fontSize: '0.6875rem', color: '#6b7280', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.03em' }}>Inactive</div>
+                    <div style={{ fontSize: '0.625rem', color: '#9ca3af', marginTop: '0.25rem' }}>silent this week</div>
+                  </div>
+                </div>
+              </div>
+
+              <div style={{ background: '#ffffff', borderRadius: '1rem', padding: '1rem', marginBottom: '0.75rem' }}>
+                <h4 style={{ fontSize: '0.875rem', fontWeight: 700, color: '#111827', margin: '0 0 0.75rem' }}>Top posts</h4>
+                {analytics.topPosts.length === 0 ? (
+                  <p style={{ fontSize: '0.8125rem', color: '#9ca3af', margin: 0 }}>No posts yet</p>
+                ) : (
+                  analytics.topPosts.map((p, idx) => (
+                    <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.625rem 0', borderBottom: idx < analytics.topPosts.length - 1 ? '1px solid #f3f4f6' : 'none' }}>
+                      <div style={{ width: 24, height: 24, borderRadius: '50%', background: '#fef2f2', color: '#ef4444', fontSize: '0.75rem', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{idx + 1}</div>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: '0.8125rem', color: '#111827', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.preview}</div>
+                        <div style={{ fontSize: '0.6875rem', color: '#9ca3af', marginTop: '0.125rem' }}>{p.likes} like{p.likes === 1 ? '' : 's'} · {p.comments} comment{p.comments === 1 ? '' : 's'}</div>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+
+              <div style={{ background: '#ffffff', borderRadius: '1rem', padding: '1rem', marginBottom: '0.75rem' }}>
+                <h4 style={{ fontSize: '0.875rem', fontWeight: 700, color: '#111827', margin: '0 0 0.75rem' }}>Top members</h4>
+                {analytics.topMembers.length === 0 ? (
+                  <p style={{ fontSize: '0.8125rem', color: '#9ca3af', margin: 0 }}>No activity yet</p>
+                ) : (
+                  analytics.topMembers.map((m) => (
+                    <div key={m.userId} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.5rem 0' }}>
+                      <div style={{ width: 36, height: 36, borderRadius: '50%', background: '#f3f4f6', overflow: 'hidden', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, color: '#6b7280', fontSize: '0.8125rem' }}>
+                        {m.avatarUrl ? <img src={m.avatarUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : m.name.charAt(0).toUpperCase()}
+                      </div>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: '0.875rem', fontWeight: 600, color: '#111827', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{m.name}</div>
+                        <div style={{ fontSize: '0.6875rem', color: '#9ca3af' }}>{m.postCount} post{m.postCount === 1 ? '' : 's'}</div>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+
+              <div style={{ background: '#ffffff', borderRadius: '1rem', padding: '1rem', marginBottom: '0.75rem' }}>
+                <h4 style={{ fontSize: '0.875rem', fontWeight: 700, color: '#111827', margin: '0 0 0.75rem' }}>Recent joins</h4>
+                {analytics.recentJoins.length === 0 ? (
+                  <p style={{ fontSize: '0.8125rem', color: '#9ca3af', margin: 0 }}>No joins yet</p>
+                ) : (
+                  analytics.recentJoins.map((m) => (
+                    <div key={m.userId + m.joinedAt} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.5rem 0' }}>
+                      <div style={{ width: 32, height: 32, borderRadius: '50%', background: '#f3f4f6', overflow: 'hidden', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, color: '#6b7280', fontSize: '0.75rem' }}>
+                        {m.avatarUrl ? <img src={m.avatarUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : m.name.charAt(0).toUpperCase()}
+                      </div>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: '0.8125rem', fontWeight: 600, color: '#111827', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{m.name}</div>
+                        <div style={{ fontSize: '0.6875rem', color: '#9ca3af' }}>Joined {new Date(m.joinedAt).toLocaleDateString()}</div>
+                      </div>
+                      <span style={{ fontSize: '0.625rem', fontWeight: 700, textTransform: 'uppercase', color: m.role === 'admin' ? '#92400e' : m.role === 'moderator' ? '#1e40af' : '#6b7280', background: m.role === 'admin' ? '#fef3c7' : m.role === 'moderator' ? '#dbeafe' : '#f3f4f6', padding: '0.1875rem 0.5rem', borderRadius: '9999px', letterSpacing: '0.03em' }}>{m.role}</span>
+                    </div>
+                  ))
+                )}
+              </div>
+            </>
+          )}
+        </div>
+      )}
+
       {deleteConfirmOpen && (
         <div
           style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}
@@ -1315,6 +1479,29 @@ export const CommunityManagementPage: React.FC = () => {
         credits={vipData.credits}
         onSuccess={handleCreateSuccess}
       />
+    </div>
+  );
+};
+
+
+const MiniBarChart: React.FC<{ data: number[]; color: string }> = ({ data, color }) => {
+  const max = Math.max(1, ...data);
+  return (
+    <div style={{ display: 'flex', alignItems: 'flex-end', gap: data.length > 15 ? '2px' : '4px', height: 60, padding: '0 2px' }}>
+      {data.map((v, i) => (
+        <div
+          key={i}
+          style={{
+            flex: 1,
+            height: `${Math.max(4, (v / max) * 100)}%`,
+            background: v > 0 ? color : '#f3f4f6',
+            borderRadius: data.length > 15 ? 1 : 2,
+            minWidth: 2,
+            transition: 'height 0.2s ease',
+          }}
+          title={`${v}`}
+        />
+      ))}
     </div>
   );
 };

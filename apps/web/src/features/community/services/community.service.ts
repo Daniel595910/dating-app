@@ -635,6 +635,171 @@ class CommunityService {
 
     return Array.from(ids);
   }
+  async getCommunityAnalytics(communityId: string): Promise<{
+    memberGrowth7d: number[];
+    memberGrowth30d: number[];
+    postVolume7d: number[];
+    postVolume30d: number[];
+    activeCount: number;
+    inactiveCount: number;
+    topPosts: Array<{ id: string; preview: string; likes: number; comments: number }>;
+    topMembers: Array<{ userId: string; name: string; avatarUrl: string | null; postCount: number }>;
+    recentJoins: Array<{ userId: string; name: string; avatarUrl: string | null; role: string; joinedAt: string }>;
+  }> {
+    const empty = {
+      memberGrowth7d: Array(7).fill(0) as number[],
+      memberGrowth30d: Array(30).fill(0) as number[],
+      postVolume7d: Array(7).fill(0) as number[],
+      postVolume30d: Array(30).fill(0) as number[],
+      activeCount: 0,
+      inactiveCount: 0,
+      topPosts: [] as Array<{ id: string; preview: string; likes: number; comments: number }>,
+      topMembers: [] as Array<{ userId: string; name: string; avatarUrl: string | null; postCount: number }>,
+      recentJoins: [] as Array<{ userId: string; name: string; avatarUrl: string | null; role: string; joinedAt: string }>,
+    };
+
+    try {
+      const now = new Date();
+      const daysAgo = (n: number) => new Date(now.getTime() - n * 24 * 60 * 60 * 1000).toISOString();
+      const startOfDay = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+
+      // ---- MEMBER GROWTH ----
+      const { data: memberRows } = await supabase
+        .from('community_members')
+        .select('user_id, status, role, joined_at')
+        .eq('community_id', communityId)
+        .eq('status', 'active')
+        .gte('joined_at', daysAgo(30));
+
+      const memberGrowth30d = Array(30).fill(0) as number[];
+      const memberGrowth7d = Array(7).fill(0) as number[];
+      const todayStart = startOfDay(now);
+
+      for (const m of (memberRows || []) as any[]) {
+        const joined = new Date(m.joined_at).getTime();
+        const daysBack = Math.floor((todayStart - startOfDay(new Date(joined))) / (24 * 60 * 60 * 1000));
+        if (daysBack >= 0 && daysBack < 30) {
+          memberGrowth30d[29 - daysBack] = (memberGrowth30d[29 - daysBack] || 0) + 1;
+        }
+        if (daysBack >= 0 && daysBack < 7) {
+          memberGrowth7d[6 - daysBack] = (memberGrowth7d[6 - daysBack] || 0) + 1;
+        }
+      }
+
+      // ---- POST VOLUME ----
+      const { data: postRows } = await supabase
+        .from('posts')
+        .select('id, created_at, author_id, like_count, comment_count, content, type')
+        .eq('community_id', communityId)
+        .neq('type', 'profile_share')
+        .gte('created_at', daysAgo(30));
+
+      const postVolume30d = Array(30).fill(0) as number[];
+      const postVolume7d = Array(7).fill(0) as number[];
+      const authorCounts = new Map<string, number>();
+
+      for (const p of (postRows || []) as any[]) {
+        const created = new Date(p.created_at).getTime();
+        const daysBack = Math.floor((todayStart - startOfDay(new Date(created))) / (24 * 60 * 60 * 1000));
+        if (daysBack >= 0 && daysBack < 30) {
+          postVolume30d[29 - daysBack] = (postVolume30d[29 - daysBack] || 0) + 1;
+        }
+        if (daysBack >= 0 && daysBack < 7) {
+          postVolume7d[6 - daysBack] = (postVolume7d[6 - daysBack] || 0) + 1;
+        }
+        authorCounts.set(p.author_id, (authorCounts.get(p.author_id) || 0) + 1);
+      }
+
+      // ---- ACTIVE vs INACTIVE ----
+      const { data: activeRows } = await supabase
+        .from('posts')
+        .select('author_id')
+        .eq('community_id', communityId)
+        .gte('created_at', daysAgo(7));
+
+      const activeUserIds = new Set((activeRows || []).map((r: any) => r.author_id));
+      const activeCount = activeUserIds.size;
+      const totalActiveMembers = (memberRows || []).length;
+      const inactiveCount = Math.max(0, totalActiveMembers - activeCount);
+
+      // ---- TOP POSTS ----
+      const topPosts = [...((postRows || []) as any[])]
+        .sort((a, b) => (b.like_count || 0) - (a.like_count || 0))
+        .slice(0, 5)
+        .map((p) => ({
+          id: p.id,
+          preview: (p.content || '').substring(0, 80) || 'Untitled post',
+          likes: p.like_count || 0,
+          comments: p.comment_count || 0,
+        }));
+
+      // ---- TOP MEMBERS ----
+      const topAuthorIds = [...authorCounts.entries()]
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 5);
+
+      const topMembers: Array<{ userId: string; name: string; avatarUrl: string | null; postCount: number }> = [];
+      if (topAuthorIds.length > 0) {
+        const { data: profiles } = await supabase
+          .from('profiles')
+          .select('user_id, display_name, avatar_url')
+          .in('user_id', topAuthorIds.map(([id]) => id));
+        const profileMap = new Map((profiles || []).map((p: any) => [p.user_id, p]));
+        for (const [userId, postCount] of topAuthorIds) {
+          const prof: any = profileMap.get(userId);
+          topMembers.push({
+            userId,
+            name: prof?.display_name || 'User',
+            avatarUrl: prof?.avatar_url || null,
+            postCount,
+          });
+        }
+      }
+
+      // ---- RECENT JOINS ----
+      const { data: recentMemberRows } = await supabase
+        .from('community_members')
+        .select('user_id, role, joined_at, status')
+        .eq('community_id', communityId)
+        .eq('status', 'active')
+        .order('joined_at', { ascending: false })
+        .limit(10);
+
+      const recentJoins: Array<{ userId: string; name: string; avatarUrl: string | null; role: string; joinedAt: string }> = [];
+      if (recentMemberRows && recentMemberRows.length > 0) {
+        const { data: profiles } = await supabase
+          .from('profiles')
+          .select('user_id, display_name, avatar_url')
+          .in('user_id', recentMemberRows.map((m: any) => m.user_id));
+        const profileMap = new Map((profiles || []).map((p: any) => [p.user_id, p]));
+        for (const m of recentMemberRows as any[]) {
+          const prof: any = profileMap.get(m.user_id);
+          recentJoins.push({
+            userId: m.user_id,
+            name: prof?.display_name || 'User',
+            avatarUrl: prof?.avatar_url || null,
+            role: m.role || 'member',
+            joinedAt: m.joined_at,
+          });
+        }
+      }
+
+      return {
+        memberGrowth7d,
+        memberGrowth30d,
+        postVolume7d,
+        postVolume30d,
+        activeCount,
+        inactiveCount,
+        topPosts,
+        topMembers,
+        recentJoins,
+      };
+    } catch (err) {
+      console.error('Failed to load analytics:', err);
+      return empty;
+    }
+  }
   subscribeToPresence(
     communityId: string,
     userId: string,
