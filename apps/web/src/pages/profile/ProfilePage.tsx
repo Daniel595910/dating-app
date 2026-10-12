@@ -595,6 +595,18 @@ export const ProfilePage: React.FC = () => {
 
         {profile.bio && <p className={styles.bio}>{profile.bio}</p>}
 
+        {/* Public VIP badge — visible to anyone viewing this profile */}
+        {!isOwnProfile && profile?.vipLevel && profile.vipLevel !== 'free' && (
+          <span
+            className={styles.vipBadgePublic}
+            title={`${profile.vipLevel.toUpperCase()} member`}
+          >
+            <Crown size={14} />
+            <span>{profile.vipLevel.toUpperCase()}</span>
+          </span>
+        )}
+
+        {/* Own profile — full badge with credits link */}
         {isOwnProfile && vipData.level !== 'free' && (
           <button className={styles.vipBadge} onClick={() => navigate('/profile/vip')}>
             <Crown size={14} />

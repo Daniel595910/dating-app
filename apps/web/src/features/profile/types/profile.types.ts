@@ -1,4 +1,4 @@
-﻿export interface ProfileData {
+export interface ProfileData {
   id: string;
   userId: string;
   displayName: string;
@@ -18,6 +18,7 @@
   languages: string[];
   isVerified: boolean;
   verificationBadge: string;
+  vipLevel: 'free' | 'basic' | 'premium' | 'vip';
   createdAt: string;
   updatedAt: string;
 }
