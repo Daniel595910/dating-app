@@ -1,4 +1,4 @@
-﻿import React from 'react';
+import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { LoginPage } from './pages/LoginPage';
 import { DashboardPage } from './pages/DashboardPage';
@@ -8,6 +8,7 @@ import { CommunitiesPage } from './pages/CommunitiesPage';
 import { ModerationPage } from './pages/ModerationPage';
 import { MatchesPage } from './pages/MatchesPage';
 import { VipPage } from './pages/VipPage';
+import { PaymentsPage } from './pages/PaymentsPage';
 import { ReportsPage } from './pages/ReportsPage';
 import { AnalyticsPage } from './pages/AnalyticsPage';
 import { SettingsPage } from './pages/SettingsPage';
@@ -34,6 +35,7 @@ export const AdminRouter: React.FC = () => {
       <Route path="/matches" element={<AdminGuard><MatchesPage /></AdminGuard>} />
       <Route path="/connections" element={<AdminGuard requiredPermissions={['USER_VIEW']}><ConnectionsPage /></AdminGuard>} />
       <Route path="/vip" element={<AdminGuard requiredPermissions={['VIP_VIEW']}><VipPage /></AdminGuard>} />
+      <Route path="/payments" element={<AdminGuard requiredPermissions={['VIP_VIEW']}><PaymentsPage /></AdminGuard>} />
       <Route path="/analytics" element={<AdminGuard requiredPermissions={['ANALYTICS_VIEW']}><AnalyticsPage /></AdminGuard>} />
       <Route path="/audit-log" element={<AdminGuard requiredPermissions={['AUDIT_VIEW']}><AuditLogPage /></AdminGuard>} />
       <Route path="/admin-users" element={<AdminGuard requiredPermissions={['ADMIN_MANAGE']}><AdminUsersPage /></AdminGuard>} />

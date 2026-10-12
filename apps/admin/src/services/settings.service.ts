@@ -1,4 +1,4 @@
-﻿import { supabase } from '@/config/supabase.client';
+import { supabase } from '@/config/supabase.client';
 import { auditService } from './audit.service';
 
 export interface Setting {
@@ -53,8 +53,9 @@ class SettingsService {
     const grouped: Record<string, Setting[]> = {};
 
     settings.forEach((s) => {
-      if (!grouped[s.category]) grouped[s.category] = [];
-      grouped[s.category].push(s);
+      const cat = s.category ?? 'general';
+      if (!grouped[cat]) grouped[cat] = [];
+      grouped[cat].push(s);
     });
 
     return grouped;

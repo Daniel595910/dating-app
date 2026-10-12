@@ -1,20 +1,18 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   ArrowLeft,
-  Mail,
-  Calendar,
-  MapPin,
+
   Shield,
   ShieldCheck,
   Crown,
   BadgeCheck,
   Ban,
-  UserCheck,
+
   FileText,
   Heart,
   Flag,
-  Loader2,
+
 } from 'lucide-react';
 import { useAdminAuth } from '@/hooks/useAdminAuth';
 import { useToast } from '@/components/ui/Toast';

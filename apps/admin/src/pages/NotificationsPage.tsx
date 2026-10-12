@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Bell,
   Send,
@@ -12,7 +12,7 @@ import {
   Trash2,
   CheckCircle,
   Clock,
-  X,
+
   Plus,
   Sparkles,
 } from 'lucide-react';

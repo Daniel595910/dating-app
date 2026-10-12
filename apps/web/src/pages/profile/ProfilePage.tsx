@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '@/store/auth.store';
 import { supabase } from '@/config/supabase.client';
@@ -22,7 +22,6 @@ export const ProfilePage: React.FC = () => {
   const [profilePhotos, setProfilePhotos] = useState<Array<{ id: string; url: string; order: number; isPrimary: boolean }>>([]);
   const [isFollowing, setIsFollowing] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [loadError, setLoadError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'posts' | 'videos' | 'about'>('posts');
   const [photoViewerIndex, setPhotoViewerIndex] = useState<number | null>(null);
   const [photoManagementOpen, setPhotoManagementOpen] = useState(false);
@@ -40,7 +39,6 @@ export const ProfilePage: React.FC = () => {
   const [showMoreMenu, setShowMoreMenu] = useState(false);
   const [reportSheetOpen, setReportSheetOpen] = useState(false);
   const [blockSheetOpen, setBlockSheetOpen] = useState(false);
-  const [shareProfileOpen, setShareProfileOpen] = useState(false);
   const [shareLoading, setShareLoading] = useState(false);
   const [hasShared, setHasShared] = useState(false);
   const [showUnshareConfirm, setShowUnshareConfirm] = useState(false);
@@ -49,7 +47,6 @@ export const ProfilePage: React.FC = () => {
   const [videoMenuOpen, setVideoMenuOpen] = useState<string | null>(null);
   const [postMenuOpen, setPostMenuOpen] = useState<string | null>(null);
   const [previewDiscoverVideo, setPreviewDiscoverVideo] = useState<any>(null);
-  const [videoPrivacy, setVideoPrivacy] = useState<'public' | 'friends' | 'private'>('public');
   const [previewMuted, setPreviewMuted] = useState(true);
   const previewVideoElementRef = useRef<HTMLVideoElement>(null);
 
@@ -83,7 +80,7 @@ export const ProfilePage: React.FC = () => {
             age: profile.age || null,
             location: profile.location ? [profile.location.city, profile.location.state].filter(Boolean).join(', ') : null,
             interests: profile.interests || [],
-            relationshipIntent: profile.relationship_intent || null,
+            relationshipIntent: profile.relationshipIntent || null,
           },
         });
 
@@ -394,7 +391,22 @@ export const ProfilePage: React.FC = () => {
         userId={user?.id || ''}
         vipLevel={vipData.level}
         credits={vipData.credits}
-        onSuccess={() => {}}
+        onSuccess={async () => {
+          if (!user) return;
+          const { data: vipAccount } = await supabase
+            .from('vip_accounts')
+            .select('level, community_credits, points_balance, plan_expires_at')
+            .eq('user_id', user.id)
+            .maybeSingle();
+          if (vipAccount) {
+            setVipData({
+              level: vipAccount.level,
+              credits: vipAccount.community_credits || 0,
+              points: vipAccount.points_balance || 0,
+              planExpiresAt: vipAccount.plan_expires_at || null,
+            });
+          }
+        }}
       />
 
       <PhotoManagement

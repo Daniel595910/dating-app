@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Heart,
   Search,
@@ -7,20 +7,18 @@ import {
   ChevronRight,
   TrendingUp,
   Activity,
-  Users,
+
   Flag,
   Trash2,
   ExternalLink,
-  Check,
+
   MoreVertical,
   Calendar,
   Award,
-  AlertTriangle,
+
 } from 'lucide-react';
 import { useAdminAuth } from '@/hooks/useAdminAuth';
 import { useToast } from '@/components/ui/Toast';
-import { Button } from '@/components/ui/Button';
-import { Badge } from '@/components/ui/Badge';
 import { Avatar } from '@/components/ui/Avatar';
 import { Card } from '@/components/ui/Card';
 import { Modal } from '@/components/ui/Modal';
@@ -504,7 +502,7 @@ export const MatchesPage: React.FC = () => {
       <ConfirmDialog
         open={confirmAction?.type === 'flag'}
         onClose={() => setConfirmAction(null)}
-        onConfirm={() => confirmAction && handleFlag(confirmAction.match)}
+        onConfirm={() => { if (confirmAction) void handleFlag(confirmAction.match); }}
         title="Flag this match?"
         description="This match will be marked for review by the moderation team."
         confirmText="Flag Match"
@@ -516,7 +514,7 @@ export const MatchesPage: React.FC = () => {
       <ConfirmDialog
         open={confirmAction?.type === 'delete'}
         onClose={() => setConfirmAction(null)}
-        onConfirm={() => confirmAction && handleDelete(confirmAction.match)}
+        onConfirm={() => { if (confirmAction) void handleDelete(confirmAction.match); }}
         title="Delete this match?"
         description="This will remove the match and any associated conversation. This cannot be undone."
         confirmText="Delete Match"

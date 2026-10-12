@@ -1,4 +1,4 @@
-﻿import { supabase } from '@/config/supabase.client';
+import { supabase } from '@/config/supabase.client';
 
 export interface TimeSeriesPoint {
   date: string;
@@ -189,8 +189,8 @@ class AnalyticsService {
     for (let i = days - 1; i >= 0; i--) {
       const date = new Date();
       date.setDate(date.getDate() - i);
-      const key = date.toISOString().split('T')[0];
-      counts.set(key, 0);
+      const key = date.toISOString().split('T')[0] ?? '';
+      if (key) counts.set(key, 0);
     }
 
     // Count by date
@@ -233,11 +233,11 @@ class AnalyticsService {
           const age = Math.floor(
             (Date.now() - new Date(p.birth_date).getTime()) / (365.25 * 24 * 60 * 60 * 1000)
           );
-          if (age < 25) ageRanges['18-24']++;
-          else if (age < 35) ageRanges['25-34']++;
-          else if (age < 45) ageRanges['35-44']++;
-          else if (age < 55) ageRanges['45-54']++;
-          else ageRanges['55+']++;
+          if (age < 25) ageRanges['18-24'] = (ageRanges['18-24'] ?? 0) + 1;
+          else if (age < 35) ageRanges['25-34'] = (ageRanges['25-34'] ?? 0) + 1;
+          else if (age < 45) ageRanges['35-44'] = (ageRanges['35-44'] ?? 0) + 1;
+          else if (age < 55) ageRanges['45-54'] = (ageRanges['45-54'] ?? 0) + 1;
+          else ageRanges['55+'] = (ageRanges['55+'] ?? 0) + 1;
         }
 
         // Location

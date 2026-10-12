@@ -1,11 +1,11 @@
-﻿import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   UsersRound,
   Search,
   RefreshCw,
   ChevronLeft,
   ChevronRight,
-  Plus,
+
   Check,
   X,
   Star,
@@ -18,7 +18,7 @@ import {
   Users,
   Lock,
   Clock,
-  ExternalLink,
+
 } from 'lucide-react';
 import { useAdminAuth } from '@/hooks/useAdminAuth';
 import { useToast } from '@/components/ui/Toast';
@@ -58,7 +58,7 @@ export const CommunitiesPage: React.FC = () => {
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
 
   // Actions
-  const [selectedCommunity, setSelectedCommunity] = useState<Community | null>(null);
+  const [, setSelectedCommunity] = useState<Community | null>(null);
   const [selectedRequest, setSelectedRequest] = useState<CommunityRequest | null>(null);
   const [rejectReason, setRejectReason] = useState('');
   const [confirmAction, setConfirmAction] = useState<{
@@ -628,7 +628,7 @@ export const CommunitiesPage: React.FC = () => {
       <ConfirmDialog
         open={confirmAction?.type === 'delete'}
         onClose={() => setConfirmAction(null)}
-        onConfirm={() => confirmAction && handleDelete(confirmAction.id)}
+        onConfirm={() => { if (confirmAction) void handleDelete(confirmAction.id); }}
         title="Delete this community?"
         description="This action cannot be undone. All posts and memberships will be affected."
         confirmText="Delete Community"

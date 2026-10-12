@@ -51,16 +51,16 @@ export const LineChart: React.FC<LineChartProps> = ({
 
     const pathD = points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ');
 
-    const areaD = `${pathD} L ${points[points.length - 1].x} ${padding.top + chartHeight} L ${points[0].x} ${padding.top + chartHeight} Z`;
+    const lastPoint = points[points.length - 1]!;
+    const firstPoint = points[0]!;
+    const areaD = `${pathD} L ${lastPoint.x} ${padding.top + chartHeight} L ${firstPoint.x} ${padding.top + chartHeight} Z`;
 
-    // Y-axis labels (5 ticks)
     const yTicks = Array.from({ length: 5 }, (_, i) => {
       const value = minValue + (range / 4) * i;
       const y = padding.top + chartHeight - ((value - minValue) / range) * chartHeight;
       return { value: Math.round(value), y };
     });
 
-    // X-axis labels (every ~5th point)
     const step = Math.max(1, Math.ceil(data.length / 6));
     const xTicks = points.filter((_, i) => i % step === 0 || i === points.length - 1);
 
@@ -87,7 +87,7 @@ export const LineChart: React.FC<LineChartProps> = ({
     );
   }
 
-  const { width, padding, chartHeight, points, pathD, areaD, yTicks, xTicks } = chartData;
+  const { width, padding, points, pathD, areaD, yTicks, xTicks } = chartData;
 
   return (
     <div className={styles.chartWrapper} style={{ height }}>
@@ -96,7 +96,6 @@ export const LineChart: React.FC<LineChartProps> = ({
         preserveAspectRatio="none"
         className={styles.svg}
       >
-        {/* Grid lines */}
         {showGrid &&
           yTicks.map((tick, i) => (
             <line
@@ -112,7 +111,6 @@ export const LineChart: React.FC<LineChartProps> = ({
             />
           ))}
 
-        {/* Area */}
         {showArea && (
           <defs>
             <linearGradient id={`area-${color.replace('#', '')}`} x1="0" x2="0" y1="0" y2="1">
@@ -123,7 +121,6 @@ export const LineChart: React.FC<LineChartProps> = ({
         )}
         {showArea && <path d={areaD} fill={`url(#area-${color.replace('#', '')})`} />}
 
-        {/* Line */}
         <path
           d={pathD}
           fill="none"
@@ -134,7 +131,6 @@ export const LineChart: React.FC<LineChartProps> = ({
           vectorEffect="non-scaling-stroke"
         />
 
-        {/* Points */}
         {points.map((p, i) => (
           <circle
             key={i}
@@ -150,7 +146,6 @@ export const LineChart: React.FC<LineChartProps> = ({
           </circle>
         ))}
 
-        {/* Y-axis labels */}
         {showAxis &&
           yTicks.map((tick, i) => (
             <text
@@ -164,7 +159,6 @@ export const LineChart: React.FC<LineChartProps> = ({
             </text>
           ))}
 
-        {/* X-axis labels */}
         {showAxis &&
           xTicks.map((tick, i) => (
             <text

@@ -1,13 +1,11 @@
-﻿import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Shield,
-  ShieldCheck,
-  Users,
   Search,
   Plus,
   MoreVertical,
   Activity,
-  Crown,
+
   UserCog,
   UserX,
   Check,
@@ -64,7 +62,7 @@ const ROLE_INFO: Record<AdminRole, { label: string; color: string; description: 
 const PAGE_SIZE = 20;
 
 export const AdminUsersPage: React.FC = () => {
-  const { adminUser, isSuperAdmin, hasPermission } = useAdminAuth();
+  const { adminUser, isSuperAdmin } = useAdminAuth();
   const toast = useToast();
 
   const [admins, setAdmins] = useState<AdminUser[]>([]);
@@ -328,7 +326,7 @@ export const AdminUsersPage: React.FC = () => {
           <div className={styles.adminsGrid}>
             {admins.map((admin) => {
               const roleInfo = ROLE_INFO[admin.role];
-              const isSelf = admin.user_id === adminUser?.user_id;
+              const isSelf = admin.user_id === adminUser?.userId;
               const isSuperAdminRow = admin.role === 'super_admin';
 
               return (
@@ -686,7 +684,7 @@ export const AdminUsersPage: React.FC = () => {
       <ConfirmDialog
         open={confirmAction?.type === 'revoke'}
         onClose={() => setConfirmAction(null)}
-        onConfirm={() => confirmAction && handleRevoke(confirmAction.user)}
+        onConfirm={() => { if (confirmAction) void handleRevoke(confirmAction.user); }}
         title="Revoke admin access?"
         description={`${confirmAction?.user.display_name} will lose all admin privileges and become a regular user.`}
         confirmText="Revoke Access"

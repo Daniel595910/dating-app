@@ -1,5 +1,5 @@
-﻿import React, { useState, useEffect, useRef } from 'react';
-import { Search, MoreVertical, Users, ChevronDown, Globe, Info, Settings, Flag, Compass } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { Search, MoreVertical, Users, ChevronDown, Globe, Info, Flag, Compass, Star } from 'lucide-react';
 import { CommunityInfo } from '../../types/community.types';
 import { NotificationBell } from './NotificationBell';
 import styles from '../styles/CommunityHeader.module.css';

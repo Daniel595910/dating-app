@@ -1,3 +1,4 @@
+﻿/**
  * VIP Service
  * Handles VIP membership and points operations
  */

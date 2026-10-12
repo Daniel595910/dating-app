@@ -1,9 +1,9 @@
-﻿import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Search,
   RefreshCw,
-  Filter,
+
   Eye,
   EyeOff,
   Trash2,
@@ -14,13 +14,10 @@ import {
   ChevronLeft,
   ChevronRight,
   ExternalLink,
-  Heart,
-  MessageCircle,
-  ShieldAlert,
+
 } from 'lucide-react';
 import { useAdminAuth } from '@/hooks/useAdminAuth';
 import { useToast } from '@/components/ui/Toast';
-import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { Avatar } from '@/components/ui/Avatar';
 import { Loader } from '@/components/ui/Loader';
@@ -394,7 +391,7 @@ export const ModerationPage: React.FC = () => {
       <ConfirmDialog
         open={confirmAction?.type === 'delete'}
         onClose={() => setConfirmAction(null)}
-        onConfirm={() => confirmAction && handleDelete(confirmAction.postId)}
+        onConfirm={() => { if (confirmAction) void handleDelete(confirmAction.postId); }}
         title="Delete this post?"
         description="The post will be hidden from all users. This can be reversed from the database."
         confirmText="Delete"
@@ -404,7 +401,7 @@ export const ModerationPage: React.FC = () => {
       <ConfirmDialog
         open={confirmAction?.type === 'ban'}
         onClose={() => setConfirmAction(null)}
-        onConfirm={() => confirmAction && handleBan(confirmAction.authorId)}
+        onConfirm={() => { if (confirmAction) void handleBan(confirmAction.authorId); }}
         title="Ban this author?"
         description="The user will lose access to the platform. This action is logged."
         confirmText="Ban User"

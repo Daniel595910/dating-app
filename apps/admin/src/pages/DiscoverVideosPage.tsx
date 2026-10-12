@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Video,
   Search,
@@ -18,7 +18,7 @@ import {
   Square,
   CheckSquare,
   Flag,
-  Archive,
+
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAdminAuth } from '@/hooks/useAdminAuth';
@@ -823,7 +823,7 @@ export const DiscoverVideosPage: React.FC = () => {
       <ConfirmDialog
         open={confirmAction?.type === 'approve'}
         onClose={() => setConfirmAction(null)}
-        onConfirm={() => confirmAction?.video && handleApprove(confirmAction.video)}
+        onConfirm={() => { if (confirmAction?.video) void handleApprove(confirmAction.video); }}
         title={confirmAction?.video?.status === 'removed' ? 'Restore this video?' : 'Approve this video?'}
         description={
           confirmAction?.video?.status === 'removed'
@@ -842,7 +842,7 @@ export const DiscoverVideosPage: React.FC = () => {
           setConfirmAction(null);
           setRejectReason('');
         }}
-        onConfirm={() => confirmAction?.video && handleReject(confirmAction.video)}
+        onConfirm={() => { if (confirmAction?.video) void handleReject(confirmAction.video); }}
         title="Reject this video?"
         description="Provide a reason for rejection. The user will see this reason."
         confirmText="Reject"
@@ -875,7 +875,7 @@ export const DiscoverVideosPage: React.FC = () => {
       <ConfirmDialog
         open={confirmAction?.type === 'remove'}
         onClose={() => setConfirmAction(null)}
-        onConfirm={() => confirmAction?.video && handleRemove(confirmAction.video)}
+        onConfirm={() => { if (confirmAction?.video) void handleRemove(confirmAction.video); }}
         title="Remove this video?"
         description="The video will be hidden from the discover feed but not deleted."
         confirmText="Remove"
@@ -887,7 +887,7 @@ export const DiscoverVideosPage: React.FC = () => {
       <ConfirmDialog
         open={confirmAction?.type === 'delete'}
         onClose={() => setConfirmAction(null)}
-        onConfirm={() => confirmAction?.video && handleDelete(confirmAction.video)}
+        onConfirm={() => { if (confirmAction?.video) void handleDelete(confirmAction.video); }}
         title="Delete this video?"
         description="This action cannot be undone. The video will be permanently deleted."
         confirmText="Delete"

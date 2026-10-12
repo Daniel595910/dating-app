@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Flag,
   Search,
@@ -17,7 +17,7 @@ import {
   Clock,
   Shield,
   UserCheck,
-  AlertTriangle,
+
 } from 'lucide-react';
 import { useAdminAuth } from '@/hooks/useAdminAuth';
 import { useToast } from '@/components/ui/Toast';
@@ -61,7 +61,7 @@ const SEVERITY_CONFIG: Record<string, { label: string; variant: 'default' | 'suc
 };
 
 export const ReportsPage: React.FC = () => {
-  const { hasPermission } = useAdminAuth();
+  useAdminAuth();
   const toast = useToast();
 
   const [reports, setReports] = useState<EnrichedReport[]>([]);
@@ -341,8 +341,8 @@ export const ReportsPage: React.FC = () => {
                       {report.status.replace('_', ' ')}
                     </Badge>
                     {report.severity && SEVERITY_CONFIG[report.severity] && (
-                      <Badge variant={SEVERITY_CONFIG[report.severity].variant} size="sm">
-                        {SEVERITY_CONFIG[report.severity].label}
+                      <Badge variant={(SEVERITY_CONFIG[report.severity] ?? { variant: 'default' as const }).variant} size="sm">
+                        {(SEVERITY_CONFIG[report.severity] ?? { label: report.severity }).label}
                       </Badge>
                     )}
                     <span className={styles.reportTime}>
@@ -556,7 +556,7 @@ export const ReportsPage: React.FC = () => {
       <ConfirmDialog
         open={!!confirmAction}
         onClose={() => setConfirmAction(null)}
-        onConfirm={() => confirmAction && handleAction(confirmAction.action)}
+        onConfirm={() => { if (confirmAction) void handleAction(confirmAction.action); }}
         title={
           confirmAction?.action === 'ban_user'
             ? 'Ban this user?'

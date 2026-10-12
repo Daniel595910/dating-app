@@ -1,13 +1,10 @@
-﻿import React, { useState } from 'react';
+import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import {
   Menu,
   Search,
   Bell,
   ChevronRight,
-  Sun,
-  Moon,
-  Command,
 } from 'lucide-react';
 import { useAdminAuth } from '@/hooks/useAdminAuth';
 import styles from './TopNav.module.css';
@@ -28,6 +25,7 @@ const ROUTE_LABELS: Record<string, string> = {
   '/connections': 'Connections',
   '/matches': 'Matches',
   '/vip': 'VIP Management',
+  '/payments': 'Payments',
   '/analytics': 'Analytics',
   '/audit-log': 'Audit Log',
   '/notifications': 'Notifications',
@@ -40,7 +38,6 @@ export const TopNav: React.FC<TopNavProps> = ({ onMenuClick }) => {
   const location = useLocation();
   const { adminUser, isSuperAdmin } = useAdminAuth();
   const [searchQuery, setSearchQuery] = useState('');
-  const [showNotifications, setShowNotifications] = useState(false);
 
   const currentLabel = ROUTE_LABELS[location.pathname] || 'Admin';
   const isRoot = location.pathname === '/';
@@ -48,7 +45,6 @@ export const TopNav: React.FC<TopNavProps> = ({ onMenuClick }) => {
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (searchQuery.trim()) {
-      // Navigate to users page with search query
       navigate(`/users?q=${encodeURIComponent(searchQuery.trim())}`);
       setSearchQuery('');
     }
@@ -56,21 +52,13 @@ export const TopNav: React.FC<TopNavProps> = ({ onMenuClick }) => {
 
   return (
     <header className={styles.topNav}>
-      {/* Left section: menu button + breadcrumb */}
       <div className={styles.left}>
-        <button
-          className={styles.menuButton}
-          onClick={onMenuClick}
-          aria-label="Toggle menu"
-        >
+        <button className={styles.menuButton} onClick={onMenuClick} aria-label="Toggle menu">
           <Menu size={20} />
         </button>
 
         <div className={styles.breadcrumb}>
-          <button
-            className={styles.breadcrumbRoot}
-            onClick={() => navigate('/')}
-          >
+          <button className={styles.breadcrumbRoot} onClick={() => navigate('/')}>
             Admin
           </button>
           {!isRoot && (
@@ -82,7 +70,6 @@ export const TopNav: React.FC<TopNavProps> = ({ onMenuClick }) => {
         </div>
       </div>
 
-      {/* Center: search */}
       <form className={styles.search} onSubmit={handleSearch}>
         <Search size={16} className={styles.searchIcon} />
         <input
@@ -92,26 +79,18 @@ export const TopNav: React.FC<TopNavProps> = ({ onMenuClick }) => {
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
         />
-        <kbd className={styles.searchShortcut}>⌘ K</kbd>
+        <kbd className={styles.searchShortcut}>? K</kbd>
       </form>
 
-      {/* Right: notifications + user */}
       <div className={styles.right}>
-        <button
-          className={styles.iconButton}
-          aria-label="Notifications"
-          onClick={() => setShowNotifications((s) => !s)}
-        >
+        <button className={styles.iconButton} aria-label="Notifications">
           <Bell size={18} />
           <span className={styles.notificationDot} />
         </button>
 
         <div className={styles.divider} />
 
-        <button
-          className={styles.userButton}
-          onClick={() => navigate('/settings')}
-        >
+        <button className={styles.userButton} onClick={() => navigate('/settings')}>
           <div className={styles.userAvatar}>
             {adminUser?.avatarUrl ? (
               <img src={adminUser.avatarUrl} alt={adminUser.displayName} />

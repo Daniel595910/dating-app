@@ -5,8 +5,8 @@ export interface Community {
   id: string;
   name: string;
   slug: string;
-  type: string;             // enum: country | state | city | ...
-  status: string;           // enum: active | inactive | pending | ...
+  type: string;
+  status: string;
   description?: string | null;
   country: string;
   country_code: string;
@@ -31,19 +31,21 @@ export interface Community {
 
 export interface CommunityRequest {
   id: string;
+  user_id: string;
   name: string;
-  description: string;
+  description: string | null;
   country: string;
   state: string | null;
   city: string | null;
-  region_type: string;
-  is_private: boolean;
+  region_type: string | null;
+  is_private: boolean | null;
+  allow_join_requests: boolean | null;
   status: 'pending' | 'approved' | 'rejected';
-  requested_by: string;
   reviewed_by?: string | null;
   reviewed_at?: string | null;
   rejection_reason?: string | null;
   created_at: string;
+  updated_at: string;
   requester?: {
     display_name: string;
     avatar_url: string | null;
@@ -94,23 +96,19 @@ class CommunityService {
       query = query.eq('country', country);
     }
 
-    try {
-      switch (status) {
-        case 'active':
-          query = query.eq('is_active', true);
-          break;
-        case 'inactive':
-          query = query.eq('is_active', false);
-          break;
-        case 'private':
-          query = query.eq('is_private', true);
-          break;
-        case 'featured':
-          query = query.eq('is_featured', true);
-          break;
-      }
-    } catch (err) {
-      console.warn('Failed to apply status filter:', err);
+    switch (status) {
+      case 'active':
+        query = query.eq('is_active', true);
+        break;
+      case 'inactive':
+        query = query.eq('is_active', false);
+        break;
+      case 'private':
+        query = query.eq('is_private', true);
+        break;
+      case 'featured':
+        query = query.eq('is_featured', true);
+        break;
     }
 
     query = query
@@ -144,7 +142,7 @@ class CommunityService {
 
   async getPendingRequests(limit = 20, offset = 0): Promise<RequestsResult> {
     const { data, error, count } = await supabase
-      .from('community_requests')
+      .from('community_creation_requests')
       .select('*', { count: 'exact' })
       .eq('status', 'pending')
       .order('created_at', { ascending: false })
@@ -155,25 +153,36 @@ class CommunityService {
       return { items: [], total: 0, hasMore: false };
     }
 
-    const requesterIds = [...new Set((data || []).map((r: any) => r.requested_by).filter(Boolean))];
+    const requesterIds = [...new Set((data || []).map((r: any) => r.user_id).filter(Boolean))];
     let profileMap = new Map<string, any>();
 
     if (requesterIds.length > 0) {
-      try {
-        const { data: profiles } = await supabase
-          .from('profiles')
-          .select('user_id, display_name, avatar_url')
-          .in('user_id', requesterIds);
-        profileMap = new Map((profiles || []).map((p: any) => [p.user_id, p]));
-      } catch (err) {
-        console.warn('Failed to enrich requests:', err);
-      }
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('user_id, display_name, avatar_url')
+        .in('user_id', requesterIds);
+      profileMap = new Map((profiles || []).map((p: any) => [p.user_id, p]));
     }
 
     const items: CommunityRequest[] = (data || []).map((r: any) => {
-      const requester = profileMap.get(r.requested_by);
+      const requester = profileMap.get(r.user_id);
       return {
-        ...r,
+        id: r.id,
+        user_id: r.user_id,
+        name: r.name,
+        description: r.description,
+        country: r.country,
+        state: r.state,
+        city: r.city,
+        region_type: r.region_type,
+        is_private: r.is_private,
+        allow_join_requests: r.allow_join_requests,
+        status: r.status,
+        reviewed_by: r.reviewed_by,
+        reviewed_at: r.reviewed_at,
+        rejection_reason: r.rejection_reason,
+        created_at: r.created_at,
+        updated_at: r.updated_at,
         requester: requester
           ? { display_name: requester.display_name, avatar_url: requester.avatar_url }
           : undefined,
@@ -191,59 +200,17 @@ class CommunityService {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('Not authenticated');
 
-    const { data: request } = await supabase
-      .from('community_requests')
-      .select('*')
-      .eq('id', requestId)
-      .single();
-
-    if (!request) throw new Error('Request not found');
-
-    const slug = request.name
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/^-|-$/g, '');
-
-    // Map region_type to community_type enum - default to 'city'
-    const communityType = request.region_type || 'city';
-
-    // Generate a country code if missing (fallback)
-    const countryCode = (request.country || '').substring(0, 2).toUpperCase() || 'XX';
-
-    const { error: createError } = await supabase.from('communities').insert({
-      name: request.name,
-      slug,
-      type: communityType,
-      status: 'active',
-      description: request.description,
-      country: request.country,
-      country_code: countryCode,
-      state: request.state,
-      city: request.city,
-      is_private: request.is_private || false,
-      is_active: true,
-      is_featured: false,
-      created_by: request.requested_by,
+    const { data: communityId, error } = await supabase.rpc('approve_community_creation_request', {
+      p_request_id: requestId,
     });
 
-    if (createError) throw new Error(createError.message);
-
-    const { error: updateError } = await supabase
-      .from('community_requests')
-      .update({
-        status: 'approved',
-        reviewed_by: user.id,
-        reviewed_at: new Date().toISOString(),
-      })
-      .eq('id', requestId);
-
-    if (updateError) throw new Error(updateError.message);
+    if (error) throw new Error(error.message);
 
     await auditService.logAction({
       action: 'approve_community_request',
       resourceType: 'community_request',
       resourceId: requestId,
-      changes: { name: request.name },
+      changes: { community_id: communityId },
     });
 
     return true;
@@ -253,15 +220,10 @@ class CommunityService {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('Not authenticated');
 
-    const { error } = await supabase
-      .from('community_requests')
-      .update({
-        status: 'rejected',
-        reviewed_by: user.id,
-        reviewed_at: new Date().toISOString(),
-        rejection_reason: reason,
-      })
-      .eq('id', requestId);
+    const { error } = await supabase.rpc('reject_community_creation_request', {
+      p_request_id: requestId,
+      p_reason: reason,
+    });
 
     if (error) throw new Error(error.message);
 
@@ -326,7 +288,7 @@ class CommunityService {
       supabase.from('communities').select('*', { count: 'exact', head: true }),
       supabase.from('communities').select('*', { count: 'exact', head: true }).eq('is_active', true),
       supabase.from('communities').select('*', { count: 'exact', head: true }).eq('is_private', true),
-      supabase.from('community_requests').select('*', { count: 'exact', head: true }).eq('status', 'pending'),
+      supabase.from('community_creation_requests').select('*', { count: 'exact', head: true }).eq('status', 'pending'),
     ]);
 
     const getCount = (r: any) =>

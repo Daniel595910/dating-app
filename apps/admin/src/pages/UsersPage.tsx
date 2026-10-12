@@ -1,28 +1,25 @@
-﻿import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Search,
-  Filter,
+
   Users as UsersIcon,
   Shield,
-  ShieldCheck,
+
   Crown,
   BadgeCheck,
   MoreVertical,
-  UserX,
-  UserCheck,
+
   ChevronLeft,
   ChevronRight,
   RefreshCw,
-  Download,
+
   Eye,
   Ban,
   CheckCircle,
 } from 'lucide-react';
 import { useAdminAuth } from '@/hooks/useAdminAuth';
 import { useToast } from '@/components/ui/Toast';
-import { Button } from '@/components/ui/Button';
-import { Input } from '@/components/ui/Input';
 import { Badge } from '@/components/ui/Badge';
 import { Avatar } from '@/components/ui/Avatar';
 import { EmptyState } from '@/components/ui/EmptyState';

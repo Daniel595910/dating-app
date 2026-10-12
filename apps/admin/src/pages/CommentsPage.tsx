@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   MessageSquare,
@@ -21,7 +21,6 @@ import {
 } from 'lucide-react';
 import { useAdminAuth } from '@/hooks/useAdminAuth';
 import { useToast } from '@/components/ui/Toast';
-import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { Avatar } from '@/components/ui/Avatar';
 import { Loader } from '@/components/ui/Loader';
@@ -488,7 +487,7 @@ export const CommentsPage: React.FC = () => {
       <ConfirmDialog
         open={confirmAction?.type === 'hide'}
         onClose={() => setConfirmAction(null)}
-        onConfirm={() => confirmAction && handleHide(confirmAction.comment)}
+        onConfirm={() => { if (confirmAction) void handleHide(confirmAction.comment); }}
         title="Hide this comment?"
         description="The comment will be hidden from all users but not deleted."
         confirmText="Hide Comment"
@@ -499,7 +498,7 @@ export const CommentsPage: React.FC = () => {
       <ConfirmDialog
         open={confirmAction?.type === 'unhide'}
         onClose={() => setConfirmAction(null)}
-        onConfirm={() => confirmAction && handleHide(confirmAction.comment)}
+        onConfirm={() => { if (confirmAction) void handleHide(confirmAction.comment); }}
         title="Unhide this comment?"
         description="The comment will be visible to all users again."
         confirmText="Unhide"
@@ -510,7 +509,7 @@ export const CommentsPage: React.FC = () => {
       <ConfirmDialog
         open={confirmAction?.type === 'delete'}
         onClose={() => setConfirmAction(null)}
-        onConfirm={() => confirmAction && handleDelete(confirmAction.comment)}
+        onConfirm={() => { if (confirmAction) void handleDelete(confirmAction.comment); }}
         title="Delete this comment?"
         description="This action cannot be undone."
         confirmText="Delete"
@@ -521,7 +520,7 @@ export const CommentsPage: React.FC = () => {
       <ConfirmDialog
         open={confirmAction?.type === 'flag'}
         onClose={() => setConfirmAction(null)}
-        onConfirm={() => confirmAction && handleFlag(confirmAction.comment)}
+        onConfirm={() => { if (confirmAction) void handleFlag(confirmAction.comment); }}
         title="Flag this comment?"
         description="The comment will be marked for review by the moderation team."
         confirmText="Flag"

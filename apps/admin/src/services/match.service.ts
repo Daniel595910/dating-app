@@ -1,4 +1,4 @@
-﻿import { supabase } from '@/config/supabase.client';
+import { supabase } from '@/config/supabase.client';
 import { auditService } from './audit.service';
 
 export interface Match {
@@ -213,7 +213,7 @@ class MatchService {
       for (let i = days - 1; i >= 0; i--) {
         const date = new Date();
         date.setDate(date.getDate() - i);
-        counts.set(date.toISOString().split('T')[0], 0);
+        const k = date.toISOString().split('T')[0]; if (k) counts.set(k, 0);
       }
 
       data.forEach((m: any) => {

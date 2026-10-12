@@ -1,3 +1,4 @@
+﻿/**
  * Notification Service
  * Handles notification operations
  */

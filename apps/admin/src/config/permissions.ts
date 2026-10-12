@@ -1,4 +1,4 @@
-﻿export type AdminRole = 'super_admin' | 'admin' | 'moderator' | 'support_agent' | 'analyst';
+export type AdminRole = 'super_admin' | 'admin' | 'moderator' | 'support_agent' | 'analyst';
 
 export interface Permission {
   id: string;
@@ -101,8 +101,9 @@ export function getPermissionsByCategory(role: AdminRole): Record<string, Permis
 
   Object.values(PERMISSIONS).forEach((p) => {
     if (permissions.includes(p.id)) {
-      if (!grouped[p.category]) grouped[p.category] = [];
-      grouped[p.category].push(p);
+      const cat = p.category ?? 'system';
+      if (!grouped[cat]) grouped[cat] = [];
+      grouped[cat].push(p);
     }
   });
 

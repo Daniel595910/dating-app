@@ -1,23 +1,30 @@
 ﻿import { useState, useEffect, useCallback } from 'react';
-import { supabase } from '@/config/supabase.client';
 import { CommunityInfo, CommunityMember } from '../types/community.types';
 import { communityService } from '../services/community.service';
+
+const SELECTED_COMMUNITY_KEY = 'selectedCommunityId';
 
 interface UseCommunityResult {
   community: CommunityInfo | null;
   membership: CommunityMember | null;
+  memberships: CommunityMember[];
   loading: boolean;
   error: string | null;
   onlineCount: number;
   refresh: () => Promise<void>;
+  setSelectedCommunity: (communityId: string) => void;
 }
 
 export function useCommunity(userId: string | null): UseCommunityResult {
   const [community, setCommunity] = useState<CommunityInfo | null>(null);
   const [membership, setMembership] = useState<CommunityMember | null>(null);
+  const [memberships, setMemberships] = useState<CommunityMember[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [onlineCount, setOnlineCount] = useState(0);
+  const [selectedId, setSelectedId] = useState<string | null>(() => {
+    try { return localStorage.getItem(SELECTED_COMMUNITY_KEY); } catch { return null; }
+  });
 
   const loadCommunity = useCallback(async () => {
     if (!userId) {
@@ -29,20 +36,43 @@ export function useCommunity(userId: string | null): UseCommunityResult {
       setLoading(true);
       setError(null);
 
-      // Get user's membership
-      const userMembership = await communityService.getUserCommunityMembership(userId);
+      // Fetch ALL memberships
+      const allMemberships = await communityService.getAllUserCommunities(userId);
 
-      if (!userMembership) {
+      if (allMemberships.length === 0) {
+        setMemberships([]);
         setMembership(null);
         setCommunity(null);
         setLoading(false);
         return;
       }
 
-      setMembership(userMembership);
+      setMemberships(allMemberships);
 
-      // Get community info
-      const info = await communityService.getCommunityInfo(userMembership.communityId);
+      // Pick the "current" community:
+      // 1. The one in localStorage (if the user is a member of it)
+      // 2. Otherwise the first membership
+      const preferred = selectedId
+        ? allMemberships.find((m) => m.communityId === selectedId)
+        : null;
+      const currentMembership = preferred ?? allMemberships[0] ?? null;
+
+      if (!currentMembership) {
+        setMembership(null);
+        setCommunity(null);
+        setLoading(false);
+        return;
+      }
+
+      setMembership(currentMembership);
+
+      // Persist it if it was a fallback
+      if (currentMembership.communityId !== selectedId) {
+        try { localStorage.setItem(SELECTED_COMMUNITY_KEY, currentMembership.communityId); } catch {}
+      }
+
+      // Fetch the community info
+      const info = await communityService.getCommunityInfo(currentMembership.communityId);
       if (info) {
         setCommunity(info);
       } else {
@@ -54,15 +84,15 @@ export function useCommunity(userId: string | null): UseCommunityResult {
     } finally {
       setLoading(false);
     }
-  }, [userId]);
+  }, [userId, selectedId]);
 
   useEffect(() => {
     loadCommunity();
   }, [loadCommunity]);
 
-  // Subscribe to presence when community is loaded
+  // Subscribe to presence whenever community changes
   useEffect(() => {
-    if (!community || !userId) return;
+    if (!community?.id || !userId) return;
 
     const unsubscribe = communityService.subscribeToPresence(
       community.id,
@@ -75,12 +105,19 @@ export function useCommunity(userId: string | null): UseCommunityResult {
     };
   }, [community?.id, userId]);
 
+  const setSelectedCommunity = useCallback((communityId: string) => {
+    try { localStorage.setItem(SELECTED_COMMUNITY_KEY, communityId); } catch {}
+    setSelectedId(communityId);
+  }, []);
+
   return {
     community,
     membership,
+    memberships,
     loading,
     error,
     onlineCount,
     refresh: loadCommunity,
+    setSelectedCommunity,
   };
 }

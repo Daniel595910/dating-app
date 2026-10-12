@@ -1,4 +1,4 @@
-﻿import { supabase } from '@/config/supabase.client';
+import { supabase } from '@/config/supabase.client';
 import {
   CommunityInfo,
   CommunityMember,
@@ -8,8 +8,6 @@ import {
   FeedFilter,
   FeedResponse,
   PostMedia,
-  PostStats,
-  PostViewerState,
 } from '../types/community.types';
 
 class CommunityService {
@@ -56,6 +54,24 @@ class CommunityService {
     };
   }
 
+  async getAllUserCommunities(userId: string): Promise<CommunityMember[]> {
+    const { data, error } = await supabase
+      .from('community_members')
+      .select('*')
+      .eq('user_id', userId)
+      .order('joined_at', { ascending: false });
+
+    if (error || !data) return [];
+
+    return data.map((m: any) => ({
+      id: m.id,
+      communityId: m.community_id,
+      userId: m.user_id,
+      role: m.role,
+      joinedAt: m.joined_at,
+    }));
+  }
+
   async getUserFollowingIds(userId: string): Promise<string[]> {
     const { data } = await supabase
       .from('follows')
@@ -72,10 +88,10 @@ class CommunityService {
     cursor?: FeedCursor | null,
     limit: number = 20
   ): Promise<FeedResponse> {
-    console.log('=== getFeedPosts called ===');
-    console.log('communityId:', communityId);
-    console.log('userId:', userId);
-    console.log('filter:', filter);
+    // Nearby filter uses an RPC for distance-based queries
+    if (filter === 'nearby') {
+      return this.getNearbyPosts(communityId, userId, cursor, limit);
+    }
 
     let query = supabase
       .from('posts')
@@ -86,119 +102,32 @@ class CommunityService {
       .order('created_at', { ascending: false })
       .limit(limit + 1);
 
-    // Apply filter logic
     if (filter === 'looking') {
-      console.log('Filtering by looking_for type');
       query = query.eq('type', 'looking_for');
     } else if (filter === 'new') {
       const last24h = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
-      console.log('Filtering by new (last 24h):', last24h);
       query = query.gte('created_at', last24h);
     } else if (filter === 'following') {
-      console.log('Filtering by following users');
       const followingIds = await this.getUserFollowingIds(userId);
-      console.log('Following IDs:', followingIds);
-      if (followingIds.length > 0) {
-        query = query.in('author_id', followingIds);
-      } else {
-        console.log('No following, returning empty');
+      if (followingIds.length === 0) {
         return { posts: [], nextCursor: null, hasMore: false };
       }
-    } else if (filter === 'nearby') {
-      // Use RPC for distance-based filtering
-      const { data: nearbyPosts, error: nearbyError } = await supabase.rpc('get_nearby_posts', {
-        p_user_id: userId,
-        p_community_id: communityId,
-        p_radius_km: 50,
-        p_cursor: cursor?.createdAt || null,
-        p_limit: limit + 1,
-      });
-
-      if (nearbyError) {
-        console.error('Nearby filter error:', nearbyError);
-        return { posts: [], nextCursor: null, hasMore: false };
-      }
-
-      if (!nearbyPosts || nearbyPosts.length === 0) {
-        return { posts: [], nextCursor: null, hasMore: false };
-      }
-
-      const hasMoreNearby = nearbyPosts.length > limit;
-      const nearbyFeedPosts = hasMoreNearby ? nearbyPosts.slice(0, limit) : nearbyPosts;
-
-      // Get author profiles
-      const nearbyAuthorIds = [...new Set(nearbyFeedPosts.map((p: any) => p.author_id))];
-      const { data: nearbyProfiles } = await supabase
-        .from('profiles')
-        .select('*')
-        .in('user_id', nearbyAuthorIds);
-
-      const nearbyProfileMap = new Map((nearbyProfiles || []).map((p: any) => [p.user_id, p]));
-
-      const nearbyCommunityPosts: CommunityPost[] = nearbyFeedPosts.map((post: any) => {
-        const profile = nearbyProfileMap.get(post.author_id);
-        return this.mapPostToCommunityPost(post, profile, false);
-      });
-
-      const nearbyLastPost = nearbyFeedPosts[nearbyFeedPosts.length - 1];
-      const nearbyNextCursor: FeedCursor | null = hasMoreNearby
-        ? { createdAt: nearbyLastPost.created_at, id: nearbyLastPost.id }
-        : null;
-
-      return { posts: nearbyCommunityPosts, nextCursor: nearbyNextCursor, hasMore: hasMoreNearby };
-    } else if (filter === 'following') {
-      console.log('Filtering by nearby users');
-      const { data: userProfile } = await supabase
-        .from('profiles')
-        .select('location')
-        .eq('user_id', userId)
-        .single();
-
-      console.log('Current user location:', userProfile?.location);
-
-      if (userProfile?.location?.city) {
-        const { data: nearbyProfiles } = await supabase
-          .from('profiles')
-          .select('user_id')
-          .filter('location->>city', 'eq', userProfile.location.city);
-
-        const nearbyUserIds = (nearbyProfiles || []).map((p: any) => p.user_id);
-        console.log('Nearby user IDs:', nearbyUserIds);
-
-        if (nearbyUserIds.length > 0) {
-          query = query.in('author_id', nearbyUserIds);
-        } else {
-          console.log('No nearby users, returning empty');
-          return { posts: [], nextCursor: null, hasMore: false };
-        }
-      } else {
-        console.log('No location set, returning empty');
-        return { posts: [], nextCursor: null, hasMore: false };
-      }
+      query = query.in('author_id', followingIds);
     }
 
-    // Apply cursor for pagination
     if (cursor) {
       query = query.lt('created_at', cursor.createdAt);
     }
 
     const { data: posts, error } = await query;
 
-    if (error) {
-      console.error('Failed to fetch posts:', error);
-      return { posts: [], nextCursor: null, hasMore: false };
-    }
-
-    console.log('Posts fetched:', posts?.length || 0);
-
-    if (!posts || posts.length === 0) {
+    if (error || !posts || posts.length === 0) {
       return { posts: [], nextCursor: null, hasMore: false };
     }
 
     const hasMore = posts.length > limit;
     const feedPosts = hasMore ? posts.slice(0, limit) : posts;
 
-    // Get author profiles
     const authorIds = [...new Set(feedPosts.map((p: any) => p.author_id))];
     const { data: profiles } = await supabase
       .from('profiles')
@@ -207,7 +136,6 @@ class CommunityService {
 
     const profileMap = new Map((profiles || []).map((p: any) => [p.user_id, p]));
 
-    // Get user's reactions
     const postIds = feedPosts.map((p: any) => p.id);
     const { data: reactions } = await supabase
       .from('post_reactions')
@@ -227,7 +155,47 @@ class CommunityService {
       ? { createdAt: lastPost.created_at, id: lastPost.id }
       : null;
 
-    console.log('Returning posts:', communityPosts.length, 'hasMore:', hasMore);
+    return { posts: communityPosts, nextCursor, hasMore };
+  }
+
+  private async getNearbyPosts(
+    communityId: string,
+    userId: string,
+    cursor: FeedCursor | null | undefined,
+    limit: number
+  ): Promise<FeedResponse> {
+    const { data: nearbyPosts, error } = await supabase.rpc('get_nearby_posts', {
+      p_user_id: userId,
+      p_community_id: communityId,
+      p_radius_km: 50,
+      p_cursor: cursor?.createdAt || null,
+      p_limit: limit + 1,
+    });
+
+    if (error || !nearbyPosts || nearbyPosts.length === 0) {
+      return { posts: [], nextCursor: null, hasMore: false };
+    }
+
+    const hasMore = nearbyPosts.length > limit;
+    const feedPosts = hasMore ? nearbyPosts.slice(0, limit) : nearbyPosts;
+
+    const authorIds = [...new Set(feedPosts.map((p: any) => p.author_id))];
+    const { data: profiles } = await supabase
+      .from('profiles')
+      .select('*')
+      .in('user_id', authorIds);
+
+    const profileMap = new Map((profiles || []).map((p: any) => [p.user_id, p]));
+
+    const communityPosts: CommunityPost[] = feedPosts.map((post: any) => {
+      const profile = profileMap.get(post.author_id);
+      return this.mapPostToCommunityPost(post, profile, false);
+    });
+
+    const lastPost = feedPosts[feedPosts.length - 1];
+    const nextCursor: FeedCursor | null = hasMore
+      ? { createdAt: lastPost.created_at, id: lastPost.id }
+      : null;
 
     return { posts: communityPosts, nextCursor, hasMore };
   }
@@ -355,10 +323,10 @@ class CommunityService {
     };
   }
 
-  private parseLookingFor(content: string) {
+  private parseLookingFor(content: string): { type: 'relationship'; label: string } {
     const match = content.match(/Looking for:\s*(.+)/);
-    const label = match ? match[1] : 'Connection';
-    return { type: 'relationship' as const, label };
+    const label = match?.[1] ?? 'Connection';
+    return { type: 'relationship', label };
   }
 
   private getFlagEmoji(countryCode: string): string {
@@ -370,7 +338,3 @@ class CommunityService {
 }
 
 export const communityService = new CommunityService();
-
-
-
-

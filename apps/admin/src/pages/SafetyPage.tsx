@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Shield,
   UserX,
@@ -550,7 +550,7 @@ export const SafetyPage: React.FC = () => {
       <ConfirmDialog
         open={!!blockToUnblock}
         onClose={() => setBlockToUnblock(null)}
-        onConfirm={() => blockToUnblock && handleUnblock(blockToUnblock)}
+        onConfirm={() => { if (blockToUnblock) void handleUnblock(blockToUnblock); }}
         title="Unblock this user?"
         description={`${blockToUnblock?.blocker?.display_name} will be able to see and interact with ${blockToUnblock?.blocked?.display_name} again.`}
         confirmText="Unblock"

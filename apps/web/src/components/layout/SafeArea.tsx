@@ -1,3 +1,4 @@
+﻿/**
  * SafeArea Component
  * Provides safe area insets for mobile devices
  */

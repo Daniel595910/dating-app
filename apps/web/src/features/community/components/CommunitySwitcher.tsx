@@ -31,27 +31,34 @@ export const CommunitySwitcher: React.FC<CommunitySwitcherProps> = ({
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (open) {
+    if (open && userId) {
       loadCommunities();
     }
-  }, [open]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, userId]);
 
   const loadCommunities = async () => {
     setLoading(true);
 
-    // Get user's memberships
-    const { data: memberships } = await supabase
-      .from('community_members')
-      .select('community_id')
-      .eq('user_id', userId);
+    try {
+      const { data: memberships } = await supabase
+        .from('community_members')
+        .select('community_id')
+        .eq('user_id', userId);
 
-    if (memberships && memberships.length > 0) {
-      const communityIds = memberships.map((m: any) => m.community_id);
+      if (!memberships || memberships.length === 0) {
+        setCommunities([]);
+        setLoading(false);
+        return;
+      }
+
+      const communityIds = [...new Set(memberships.map((m: any) => m.community_id))];
 
       const { data: communityData } = await supabase
         .from('communities')
-        .select('*')
+        .select('id, name, country, state, city, member_count')
         .in('id', communityIds)
+        .eq('is_active', true)
         .order('member_count', { ascending: false });
 
       setCommunities(
@@ -65,9 +72,17 @@ export const CommunitySwitcher: React.FC<CommunitySwitcherProps> = ({
           isCurrent: c.id === currentCommunityId,
         }))
       );
+    } catch (err) {
+      console.error('Failed to load communities:', err);
+      setCommunities([]);
     }
 
     setLoading(false);
+  };
+
+  const handleSelect = (communityId: string) => {
+    onSwitch(communityId);
+    onClose();
   };
 
   if (!open) return null;
@@ -143,7 +158,7 @@ export const CommunitySwitcher: React.FC<CommunitySwitcherProps> = ({
         ) : communities.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '2rem' }}>
             <p style={{ fontSize: '0.9375rem', color: '#6b7280', margin: 0 }}>
-              You haven't joined any communities yet.
+              You haven&apos;t joined any communities yet.
             </p>
             <button
               style={{
@@ -170,10 +185,7 @@ export const CommunitySwitcher: React.FC<CommunitySwitcherProps> = ({
             {communities.map((community) => (
               <button
                 key={community.id}
-                onClick={() => {
-                  onSwitch(community.id);
-                  onClose();
-                }}
+                onClick={() => handleSelect(community.id)}
                 style={{
                   display: 'flex',
                   alignItems: 'center',
@@ -204,15 +216,35 @@ export const CommunitySwitcher: React.FC<CommunitySwitcherProps> = ({
                   {community.isCurrent ? <Check size={20} /> : <Users size={20} />}
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <p style={{ fontSize: '0.9375rem', fontWeight: 600, color: '#111827', margin: 0 }}>
+                  <p
+                    style={{
+                      fontSize: '0.9375rem',
+                      fontWeight: 600,
+                      color: '#111827',
+                      margin: 0,
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
                     {community.name}
                   </p>
-                  <p style={{ fontSize: '0.75rem', color: '#6b7280', margin: '2px 0 0' }}>
+                  <p
+                    style={{
+                      fontSize: '0.75rem',
+                      color: '#6b7280',
+                      margin: '2px 0 0',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.25rem',
+                    }}
+                  >
                     <MapPin size={10} />
-                    {' '}
-                    {[community.city, community.state, community.country].filter(Boolean).join(', ')}
-                    {' • '}
-                    {community.memberCount} members
+                    {[community.city, community.state, community.country]
+                      .filter(Boolean)
+                      .join(', ')}
+                    {' · '}
+                    {community.memberCount} member{community.memberCount === 1 ? '' : 's'}
                   </p>
                 </div>
                 <ChevronRight size={16} style={{ color: '#d1d5db', flexShrink: 0 }} />

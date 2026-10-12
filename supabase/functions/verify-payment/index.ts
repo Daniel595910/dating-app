@@ -1,7 +1,8 @@
 ﻿import { jsonResponse, handleOptions } from '../_shared/cors.ts';
-import { verifyTransaction } from '../_shared/paystack.ts';
+import { verifyTransaction, getRequestedAmount } from '../_shared/paystack.ts';
 import { serviceClient, userClient } from '../_shared/db.ts';
 import { creditUserAccount } from '../_shared/credits.ts';
+import { activateVipSubscription } from '../_shared/vip-activation.ts';
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return handleOptions();
@@ -22,14 +23,12 @@ Deno.serve(async (req) => {
 
     const db = serviceClient();
 
-    // 1. VIP payment?
     const { data: payment } = await db
       .from('payments')
       .select('id, user_id, plan_id, plan_code, currency, amount, status, paystack_reference')
       .eq('paystack_reference', reference)
       .maybeSingle();
 
-    // 2. Credit purchase?
     let purchase: any = null;
     if (!payment) {
       const { data: cp } = await db
@@ -45,7 +44,6 @@ Deno.serve(async (req) => {
     const ownerId = payment?.user_id ?? purchase?.user_id;
     if (ownerId !== user.id) return jsonResponse({ error: 'Not your transaction' }, 403);
 
-    // 3. Idempotent short circuit
     if (payment?.status === 'success') {
       return jsonResponse({ ok: true, already_verified: true, status: 'success', type: 'vip' });
     }
@@ -53,7 +51,6 @@ Deno.serve(async (req) => {
       return jsonResponse({ ok: true, already_verified: true, status: 'success', type: 'credits' });
     }
 
-    // 4. Verify with Paystack
     const verify = await verifyTransaction(reference);
     const data = verify.data;
     if (!verify.status || !data) {
@@ -62,11 +59,22 @@ Deno.serve(async (req) => {
 
     const expectedAmount = payment?.amount ?? purchase?.amount;
     const expectedCurrency = payment?.currency ?? purchase?.currency;
+    const paidAmount = getRequestedAmount(data);
 
-    if (data.currency !== expectedCurrency || Number(data.amount) !== Number(expectedAmount)) {
-      console.warn('Amount/currency mismatch', { reference, expectedCurrency, expectedAmount, got: { c: data.currency, a: data.amount } });
-      if (payment) await db.from('payments').update({ status: 'failed' }).eq('id', payment.id);
-      if (purchase) await db.from('credit_purchases').update({ status: 'failed' }).eq('id', purchase.id);
+    if (data.currency !== expectedCurrency || paidAmount !== Number(expectedAmount)) {
+      console.warn('Amount/currency mismatch', {
+        reference,
+        expectedCurrency, expectedAmount,
+        got: { currency: data.currency, requested_amount: data.requested_amount, amount: data.amount, fees: data.fees },
+      });
+      const meta = {
+        mismatch: true,
+        expected: { currency: expectedCurrency, amount: expectedAmount },
+        got: { currency: data.currency, requested_amount: data.requested_amount, amount: data.amount, fees: data.fees },
+        detected_at: new Date().toISOString(),
+      };
+      if (payment) await db.from('payments').update({ status: 'failed', metadata: meta }).eq('id', payment.id);
+      if (purchase) await db.from('credit_purchases').update({ status: 'failed', metadata: meta }).eq('id', purchase.id);
       return jsonResponse({ error: 'Amount/currency mismatch' }, 400);
     }
 
@@ -76,9 +84,6 @@ Deno.serve(async (req) => {
       data.status === 'failed' ? 'failed' :
       data.status === 'reversed' ? 'reversed' : 'pending';
 
-    // ============================================================
-    // VIP path
-    // ============================================================
     if (payment) {
       await db.from('payments').update({
         status: mappedStatus,
@@ -106,9 +111,6 @@ Deno.serve(async (req) => {
       return jsonResponse({ ok: true, status: mappedStatus, type: 'vip' });
     }
 
-    // ============================================================
-    // Credits path
-    // ============================================================
     if (purchase) {
       await db.from('credit_purchases').update({
         status: mappedStatus,
@@ -147,78 +149,3 @@ Deno.serve(async (req) => {
     return jsonResponse({ error: (err as Error).message ?? 'Server error' }, 500);
   }
 });
-
-async function activateVipSubscription(args: {
-  db: any;
-  userId: string;
-  planId: string;
-  planCode: string;
-  currency: string;
-  amount: number;
-  reference: string;
-  paystackSubscriptionCode: string | null;
-  paystackCustomerCode: string | null;
-  paystackAuthorizationCode: string | null;
-  periodStart: Date;
-}) {
-  const {
-    db, userId, planId, planCode, currency, amount, reference,
-    paystackSubscriptionCode, paystackCustomerCode, paystackAuthorizationCode, periodStart,
-  } = args;
-
-  const periodEnd = new Date(periodStart);
-  periodEnd.setDate(periodEnd.getDate() + 30);
-
-  const { data: existing } = await db
-    .from('subscriptions')
-    .select('id')
-    .eq('paystack_reference', reference)
-    .maybeSingle();
-  if (existing) return;
-
-  const { data: active } = await db
-    .from('subscriptions')
-    .select('id')
-    .eq('user_id', userId)
-    .in('status', ['active', 'pending', 'non_renewing'])
-    .maybeSingle();
-  if (active) return;
-
-  const { data: sub, error: subErr } = await db
-    .from('subscriptions')
-    .insert({
-      user_id: userId,
-      plan_id: planId,
-      plan_code: planCode,
-      provider: 'paystack',
-      status: 'active',
-      currency,
-      amount,
-      paystack_subscription_code: paystackSubscriptionCode,
-      paystack_customer_code: paystackCustomerCode,
-      paystack_authorization_code: paystackAuthorizationCode,
-      paystack_reference: reference,
-      current_period_start: periodStart.toISOString(),
-      current_period_end: periodEnd.toISOString(),
-      next_payment_date: periodEnd.toISOString(),
-    })
-    .select('id')
-    .single();
-
-  if (subErr) {
-    console.error('Subscription insert failed', subErr);
-    return;
-  }
-
-  await db.from('vip_accounts').upsert(
-    {
-      user_id: userId,
-      plan_id: planId,
-      plan_expires_at: periodEnd.toISOString(),
-      active_subscription_id: sub.id,
-    },
-    { onConflict: 'user_id' }
-  );
-
-  await db.from('profiles').update({ is_vip: true }).eq('user_id', userId);
-}

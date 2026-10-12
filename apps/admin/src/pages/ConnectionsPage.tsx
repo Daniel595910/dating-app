@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Heart,
@@ -7,14 +7,14 @@ import {
   ChevronLeft,
   ChevronRight,
   Clock,
-  Check,
+
   X,
   Trash2,
   ExternalLink,
   MessageSquare,
   UserCheck,
   UserX,
-  AlertCircle,
+
 } from 'lucide-react';
 import { useAdminAuth } from '@/hooks/useAdminAuth';
 import { useToast } from '@/components/ui/Toast';
@@ -24,7 +24,9 @@ import { Avatar } from '@/components/ui/Avatar';
 import { Loader } from '@/components/ui/Loader';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
-import { connectionService, MatchRequest, RequestFilters } from '@/services/connection.service';
+import { connectionService } from '@/services/connection.service';
+type MatchRequest = any;
+type RequestFilters = { status?: string };
 import styles from './ConnectionsPage.module.css';
 
 const PAGE_SIZE = 20;
@@ -42,8 +44,7 @@ export const ConnectionsPage: React.FC = () => {
     pending: 0,
     accepted: 0,
     declined: 0,
-    cancelled: 0,
-    today: 0,
+        today: 0,
     week: 0,
   });
   const [total, setTotal] = useState(0);
@@ -417,7 +418,7 @@ export const ConnectionsPage: React.FC = () => {
       <ConfirmDialog
         open={confirmAction?.type === 'cancel'}
         onClose={() => setConfirmAction(null)}
-        onConfirm={() => confirmAction && handleCancel(confirmAction.request)}
+        onConfirm={() => { if (confirmAction) void handleCancel(confirmAction.request); }}
         title="Cancel this connection request?"
         description="The request will be marked as cancelled. The user can send a new request later."
         confirmText="Cancel Request"
@@ -429,7 +430,7 @@ export const ConnectionsPage: React.FC = () => {
       <ConfirmDialog
         open={confirmAction?.type === 'delete'}
         onClose={() => setConfirmAction(null)}
-        onConfirm={() => confirmAction && handleDelete(confirmAction.request)}
+        onConfirm={() => { if (confirmAction) void handleDelete(confirmAction.request); }}
         title="Delete this connection request?"
         description="This action cannot be undone. The request will be permanently removed."
         confirmText="Delete"

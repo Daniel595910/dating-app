@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '@/store/auth.store';
 import { supabase } from '@/config/supabase.client';
@@ -26,7 +26,7 @@ interface DiscoverCommunity {
 }
 
 type SortOption = 'popular' | 'newest' | 'sponsored' | 'nearest';
-type FilterType = 'all' | 'city' | 'state' | 'country' | 'private' | 'public';
+type FilterType = 'all' | 'featured' | 'city' | 'state' | 'country' | 'private' | 'public';
 
 export const DiscoverCommunitiesPage: React.FC = () => {
   const navigate = useNavigate();
@@ -269,7 +269,7 @@ export const DiscoverCommunitiesPage: React.FC = () => {
               </button>
             </div>
             <div className={styles.filterGrid}>
-              {(['all', 'city', 'state', 'country', 'private', 'public'] as FilterType[]).map((type) => (
+              {(['all', 'featured', 'city', 'state', 'country', 'private', 'public'] as FilterType[]).map((type) => (
                 <button
                   key={type}
                   onClick={() => setFilterType(type)}

@@ -1,23 +1,21 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Settings as SettingsIcon,
   ToggleLeft,
   ToggleRight,
   Save,
   RefreshCw,
-  Bell,
+
   Shield,
   Zap,
   Users,
-  Ban,
-  SaveAll,
+
   AlertCircle,
-  Check,
+
 } from 'lucide-react';
 import { useAdminAuth } from '@/hooks/useAdminAuth';
 import { useToast } from '@/components/ui/Toast';
 import { Button } from '@/components/ui/Button';
-import { Input } from '@/components/ui/Input';
 import { Badge } from '@/components/ui/Badge';
 import { Loader } from '@/components/ui/Loader';
 import { settingsService, Setting, SettingUpdate } from '@/services/settings.service';
@@ -58,7 +56,7 @@ export const SettingsPage: React.FC = () => {
   const [pendingChanges, setPendingChanges] = useState<Map<string, any>>(new Map());
   const [activeCategory, setActiveCategory] = useState<string>('general');
 
-  const loadSettings = async (showLoader = true, force = false) => {
+  const loadSettings = async (showLoader = true) => {
     try {
       if (showLoader) setLoading(true);
       const grouped = await settingsService.getGroupedByCategory();
@@ -79,7 +77,7 @@ export const SettingsPage: React.FC = () => {
 
   const handleRefresh = async () => {
     setRefreshing(true);
-    await loadSettings(false, true);
+    await loadSettings(false);
     toast.success('Settings refreshed');
   };
 
@@ -108,7 +106,7 @@ export const SettingsPage: React.FC = () => {
       setGroupedSettings((prev) => {
         const next = { ...prev };
         for (const category of Object.keys(next)) {
-          next[category] = next[category].map((s) =>
+          next[category] = (next[category] ?? []).map((s) =>
             pendingChanges.has(s.key) ? { ...s, value: pendingChanges.get(s.key) } : s
           );
         }
@@ -147,12 +145,7 @@ export const SettingsPage: React.FC = () => {
     return typeof value === 'number';
   };
 
-  const isString = (setting: Setting) => {
-    const value = getValue(setting);
-    return typeof value === 'string';
-  };
-
-  const hasPermissionToEdit = hasPermission('SETTINGS_EDIT');
+    const hasPermissionToEdit = hasPermission('SETTINGS_EDIT');
   const categories = Object.keys(groupedSettings).filter((c) => CATEGORY_INFO[c]);
   const settings = groupedSettings[activeCategory] || [];
 
@@ -217,9 +210,9 @@ export const SettingsPage: React.FC = () => {
                 className={`${styles.categoryButton} ${activeCategory === category ? styles.categoryButtonActive : ''}`}
                 onClick={() => setActiveCategory(category)}
               >
-                <span className={styles.categoryIcon}>{info.icon}</span>
+                <span className={styles.categoryIcon}>{info?.icon}</span>
                 <div className={styles.categoryInfo}>
-                  <span className={styles.categoryLabel}>{info.label}</span>
+                  <span className={styles.categoryLabel}>{info?.label}</span>
                   <span className={styles.categoryCount}>
                     {count} setting{count !== 1 ? 's' : ''}
                   </span>

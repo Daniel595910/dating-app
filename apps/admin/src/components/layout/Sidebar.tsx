@@ -1,4 +1,4 @@
-﻿import React from 'react';
+import React from 'react';
 import { NavLink } from 'react-router-dom';
 import {
   LayoutDashboard,
@@ -18,6 +18,7 @@ import {
   MessageSquare,
   Video,
   UserPlus,
+  DollarSign,
 } from 'lucide-react';
 import { useAdminAuth } from '@/hooks/useAdminAuth';
 import { APP_NAME, APP_VERSION } from '@/config/constants';
@@ -47,6 +48,7 @@ const NAV_ITEMS: NavItem[] = [
   { path: '/connections', label: 'Connections', icon: <UserPlus size={18} />, permission: 'USER_VIEW' },
   { path: '/matches', label: 'Matches', icon: <Heart size={18} /> },
   { path: '/vip', label: 'VIP', icon: <Crown size={18} />, permission: 'VIP_VIEW' },
+  { path: '/payments', label: 'Payments', icon: <DollarSign size={18} />, permission: 'VIP_VIEW' },
   { path: '/analytics', label: 'Analytics', icon: <BarChart3 size={18} />, permission: 'ANALYTICS_VIEW' },
   { path: '/audit-log', label: 'Audit Log', icon: <ScrollText size={18} />, permission: 'AUDIT_VIEW' },
   { path: '/notifications', label: 'Notifications', icon: <Bell size={18} />, permission: 'SETTINGS_VIEW' },

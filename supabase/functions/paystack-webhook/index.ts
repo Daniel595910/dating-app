@@ -1,16 +1,8 @@
-﻿import { verifyTransaction } from '../_shared/paystack.ts';
+﻿import { verifyTransaction, getRequestedAmount } from '../_shared/paystack.ts';
 import { serviceClient } from '../_shared/db.ts';
 import { creditUserAccount } from '../_shared/credits.ts';
+import { activateVipSubscription } from '../_shared/vip-activation.ts';
 
-/**
- * POST /paystack-webhook
- *
- * Called by Paystack. Must:
- *   1. Verify x-paystack-signature HMAC-SHA512 using PAYSTACK_SECRET_KEY
- *   2. Persist event for idempotency (webhook_events unique(provider,event_id))
- *   3. Perform DB changes idempotently (VIP + credits)
- *   4. Return 200 quickly so Paystack doesn't retry
- */
 Deno.serve(async (req) => {
   if (req.method !== 'POST') return new Response('Method not allowed', { status: 405 });
 
@@ -42,7 +34,6 @@ Deno.serve(async (req) => {
 
   const db = serviceClient();
 
-  // Idempotency gate
   const { error: evtErr } = await db.from('webhook_events').insert({
     provider: 'paystack',
     event_type: eventType,
@@ -65,27 +56,21 @@ Deno.serve(async (req) => {
       case 'charge.success':
         await handleChargeSuccess(db, reference);
         break;
-
       case 'subscription.create':
         await handleSubscriptionCreate(db, data);
         break;
-
       case 'invoice.payment_failed':
         await handleInvoiceFailed(db, data);
         break;
-
       case 'subscription.not_renew':
         await handleSubscriptionNotRenew(db, data);
         break;
-
       case 'subscription.disable':
         await handleSubscriptionDisable(db, data);
         break;
-
       case 'invoice.update':
         await handleInvoiceUpdate(db, data);
         break;
-
       default:
         console.log('Unhandled event', eventType);
     }
@@ -125,23 +110,41 @@ async function verifyHmac(payload: string, signature: string, secret: string): P
 async function handleChargeSuccess(db: any, reference: string | null) {
   if (!reference) return;
 
-  // ---- VIP payment path ----
   const { data: payment } = await db
     .from('payments')
-    .select('id, user_id, plan_id, plan_code, currency, amount, status')
+    .select('id, user_id, plan_id, plan_code, currency, amount, status, metadata')
     .eq('paystack_reference', reference)
     .maybeSingle();
 
   if (payment) {
     const verify = await verifyTransaction(reference);
     if (!verify.status || verify.data.status !== 'success') {
-      console.warn('charge.success but verify returned non-success');
+      await db.from('payments').update({
+        status: 'failed',
+        metadata: { ...(payment.metadata ?? {}), verify_status: verify.data?.status ?? 'unknown' },
+      }).eq('id', payment.id).eq('status', 'pending');
       return;
     }
 
+    const paidAmount = getRequestedAmount(verify.data);
+
     if (verify.data.currency !== payment.currency ||
-        Number(verify.data.amount) !== Number(payment.amount)) {
-      console.error('Webhook amount/currency mismatch (VIP)', reference);
+        paidAmount !== Number(payment.amount)) {
+      console.error('Webhook amount/currency mismatch (VIP)', {
+        reference,
+        expected: { currency: payment.currency, amount: payment.amount },
+        got: { currency: verify.data.currency, requested_amount: verify.data.requested_amount, amount: verify.data.amount },
+      });
+      await db.from('payments').update({
+        status: 'failed',
+        metadata: {
+          ...(payment.metadata ?? {}),
+          mismatch: true,
+          expected: { currency: payment.currency, amount: payment.amount },
+          got: { currency: verify.data.currency, requested_amount: verify.data.requested_amount, amount: verify.data.amount, fees: verify.data.fees },
+          detected_at: new Date().toISOString(),
+        },
+      }).eq('id', payment.id).eq('status', 'pending');
       return;
     }
 
@@ -152,75 +155,48 @@ async function handleChargeSuccess(db: any, reference: string | null) {
       paid_at: verify.data.paid_at ?? new Date().toISOString(),
     }).eq('id', payment.id).eq('status', 'pending');
 
-    const { data: existing } = await db
-      .from('subscriptions')
-      .select('id')
-      .eq('paystack_reference', reference)
-      .maybeSingle();
-    if (existing) return;
-
-    const { data: active } = await db
-      .from('subscriptions').select('id')
-      .eq('user_id', payment.user_id)
-      .in('status', ['active', 'pending', 'non_renewing'])
-      .maybeSingle();
-    if (active) return;
-
-    const periodStart = verify.data.paid_at ? new Date(verify.data.paid_at) : new Date();
-    const periodEnd = new Date(periodStart);
-    periodEnd.setDate(periodEnd.getDate() + 30);
-
-    const { data: sub } = await db.from('subscriptions').insert({
-      user_id: payment.user_id,
-      plan_id: payment.plan_id,
-      plan_code: payment.plan_code,
-      provider: 'paystack',
-      status: 'active',
+    await activateVipSubscription({
+      db,
+      userId: payment.user_id,
+      planId: payment.plan_id,
+      planCode: payment.plan_code,
       currency: payment.currency,
       amount: payment.amount,
-      paystack_subscription_code: verify.data.subscription_code ?? null,
-      paystack_customer_code: verify.data.customer?.customer_code ?? null,
-      paystack_authorization_code: verify.data.authorization?.authorization_code ?? null,
-      paystack_reference: reference,
-      current_period_start: periodStart.toISOString(),
-      current_period_end: periodEnd.toISOString(),
-      next_payment_date: periodEnd.toISOString(),
-    }).select('id').single();
-
-    if (sub) {
-      await db.from('vip_accounts').upsert({
-        user_id: payment.user_id,
-        plan_id: payment.plan_id,
-        plan_expires_at: periodEnd.toISOString(),
-        active_subscription_id: sub.id,
-      }, { onConflict: 'user_id' });
-
-      await db.from('profiles').update({ is_vip: true }).eq('user_id', payment.user_id);
-    }
+      reference,
+      paystackSubscriptionCode: verify.data.subscription_code ?? null,
+      paystackCustomerCode: verify.data.customer?.customer_code ?? null,
+      paystackAuthorizationCode: verify.data.authorization?.authorization_code ?? null,
+      periodStart: verify.data.paid_at ? new Date(verify.data.paid_at) : new Date(),
+    });
     return;
   }
 
-  // ---- Credit purchase path ----
   const { data: purchase } = await db
     .from('credit_purchases')
     .select('id, user_id, pack_code, credits, currency, amount, status, metadata')
     .eq('paystack_reference', reference)
     .maybeSingle();
 
-  if (!purchase) {
-    console.warn('charge.success: no payment or purchase for', reference);
-    return;
-  }
+  if (!purchase) return;
 
   const verify = await verifyTransaction(reference);
-  if (!verify.status || verify.data.status !== 'success') {
-    console.warn('charge.success (credits) but verify returned non-success');
-    return;
-  }
+  if (!verify.status || verify.data.status !== 'success') return;
+
+  const paidAmount = getRequestedAmount(verify.data);
 
   if (verify.data.currency !== purchase.currency ||
-      Number(verify.data.amount) !== Number(purchase.amount)) {
+      paidAmount !== Number(purchase.amount)) {
     console.error('Webhook amount/currency mismatch (credits)', reference);
+    await db.from('credit_purchases').update({
+      status: 'failed',
+      metadata: {
+        ...(purchase.metadata ?? {}),
+        mismatch: true,
+        expected: { currency: purchase.currency, amount: purchase.amount },
+        got: { currency: verify.data.currency, requested_amount: verify.data.requested_amount, amount: verify.data.amount },
+        detected_at: new Date().toISOString(),
+      },
+    }).eq('id', purchase.id).eq('status', 'pending');
     return;
   }
 
@@ -242,15 +218,12 @@ async function handleChargeSuccess(db: any, reference: string | null) {
 
 async function handleSubscriptionCreate(db: any, data: any) {
   const subCode = data?.subscription_code;
-  const emailToken = data?.email_token;
-  const customerCode = data?.customer?.customer_code;
   if (!subCode) return;
-
   await db.from('subscriptions')
     .update({
       paystack_subscription_code: subCode,
-      paystack_email_token: emailToken,
-      paystack_customer_code: customerCode,
+      paystack_email_token: data?.email_token,
+      paystack_customer_code: data?.customer?.customer_code,
     })
     .eq('paystack_subscription_code', subCode);
 }
@@ -258,7 +231,6 @@ async function handleSubscriptionCreate(db: any, data: any) {
 async function handleInvoiceFailed(db: any, data: any) {
   const subCode = data?.subscription?.subscription_code ?? data?.subscription_code;
   if (!subCode) return;
-
   await db.from('subscriptions')
     .update({ status: 'failed' })
     .eq('paystack_subscription_code', subCode)
@@ -268,7 +240,6 @@ async function handleInvoiceFailed(db: any, data: any) {
 async function handleSubscriptionNotRenew(db: any, data: any) {
   const subCode = data?.subscription_code;
   if (!subCode) return;
-
   await db.from('subscriptions')
     .update({ status: 'non_renewing', cancel_at_period_end: true })
     .eq('paystack_subscription_code', subCode);
@@ -277,7 +248,6 @@ async function handleSubscriptionNotRenew(db: any, data: any) {
 async function handleSubscriptionDisable(db: any, data: any) {
   const subCode = data?.subscription_code;
   if (!subCode) return;
-
   const { data: sub } = await db
     .from('subscriptions')
     .select('id, user_id')
@@ -292,7 +262,6 @@ async function handleSubscriptionDisable(db: any, data: any) {
     await db.from('vip_accounts')
       .update({ plan_expires_at: new Date().toISOString() })
       .eq('user_id', sub.user_id);
-
     await db.from('profiles').update({ is_vip: false }).eq('user_id', sub.user_id);
   }
 }
@@ -323,6 +292,5 @@ async function handleInvoiceUpdate(db: any, data: any) {
   await db.from('vip_accounts')
     .update({ plan_expires_at: periodEnd.toISOString() })
     .eq('user_id', sub.user_id);
-
   await db.from('profiles').update({ is_vip: true }).eq('user_id', sub.user_id);
 }

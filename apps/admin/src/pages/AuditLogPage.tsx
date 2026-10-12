@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   ScrollText,
   Search,
@@ -7,10 +7,10 @@ import {
   ChevronRight,
   Download,
   Filter,
-  User,
+
   Clock,
   Activity,
-  Shield,
+
   Eye,
   X,
 } from 'lucide-react';
@@ -21,7 +21,7 @@ import { Avatar } from '@/components/ui/Avatar';
 import { Modal } from '@/components/ui/Modal';
 import { Loader } from '@/components/ui/Loader';
 import { EmptyState } from '@/components/ui/EmptyState';
-import { auditService, AuditLogEntry, AuditFilters } from '@/services/audit.service';
+import { auditService, AuditLogEntry } from '@/services/audit.service';
 import styles from './AuditLogPage.module.css';
 
 const PAGE_SIZE = 50;
@@ -49,7 +49,7 @@ const ACTION_LABELS: Record<string, { label: string; variant: 'default' | 'succe
 };
 
 export const AuditLogPage: React.FC = () => {
-  const { hasPermission } = useAdminAuth();
+  useAdminAuth();
   const toast = useToast();
 
   const [logs, setLogs] = useState<AuditLogEntry[]>([]);

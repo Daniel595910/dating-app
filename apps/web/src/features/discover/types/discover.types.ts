@@ -1,5 +1,6 @@
 ﻿export interface DiscoverCandidate {
-  userId: string;\n  videoId: string;
+  userId: string;
+  videoId: string;
   displayName: string;
   avatarUrl: string | null;
   videoUrl: string;
@@ -21,4 +22,3 @@ export interface SwipeResult {
   matched: boolean;
   matchId: string | null;
 }
-

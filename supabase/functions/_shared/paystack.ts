@@ -18,6 +18,8 @@ export interface PaystackVerifyResponse {
     status: 'success' | 'failed' | 'abandoned' | 'reversed' | 'pending';
     reference: string;
     amount: number;
+    requested_amount?: number;
+    fees?: number;
     currency: string;
     channel: string;
     paid_at: string | null;
@@ -52,7 +54,6 @@ async function callPaystack<T>(
   catch { payload = { raw: text }; }
 
   if (!res.ok) {
-    // Log full server response but throw a safe error
     console.error('Paystack API error', path, res.status, payload);
     throw new Error(`Paystack API error ${res.status}: ${payload?.message ?? 'unknown'}`);
   }
@@ -61,11 +62,11 @@ async function callPaystack<T>(
 
 export async function initializeTransaction(params: {
   email: string;
-  amount: number;          // smallest unit
-  currency: string;        // NGN | USD
+  amount: number;
+  currency: string;
   reference: string;
   callback_url: string;
-  plan?: string;           // Paystack plan code if using subscriptions
+  plan?: string;
   metadata?: Record<string, unknown>;
 }): Promise<PaystackInitResponse> {
   return callPaystack<PaystackInitResponse>('/transaction/initialize', {
@@ -98,4 +99,12 @@ export async function disableSubscription(
     method: 'POST',
     body: JSON.stringify({ code: subscriptionCode, token: emailToken }),
   });
+}
+
+/**
+ * Returns the amount the merchant initialized (pre-fee), falling back to
+ * the amount the customer paid if Paystack doesn't provide requested_amount.
+ */
+export function getRequestedAmount(data: PaystackVerifyResponse['data']): number {
+  return Number(data.requested_amount ?? data.amount);
 }

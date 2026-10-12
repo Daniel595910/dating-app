@@ -33,7 +33,8 @@ import styles from '../../features/community/styles/CommunityPage.module.css';
 
 export const CommunityPage: React.FC = () => {
   const navigate = useNavigate();
-  const location = useLocation();
+  useLocation(); // retain router context
+
   const { user } = useAuthStore();
   const [filter, setFilter] = useState<FeedFilter>('all');
   const [createSheetOpen, setCreateSheetOpen] = useState(false);
@@ -49,15 +50,19 @@ export const CommunityPage: React.FC = () => {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const postId = params.get('postId');
-    
+
     if (postId) {
       setCommentPostId(postId);
-      // Clear URL params after opening
       window.history.replaceState({}, '', '/community');
     }
   }, []);
 
-  const { community, loading: communityLoading, onlineCount } = useCommunity(user?.id || null);
+  const {
+    community,
+    loading: communityLoading,
+    onlineCount,
+    setSelectedCommunity,
+  } = useCommunity(user?.id || null);
 
   const {
     posts,
@@ -88,7 +93,7 @@ export const CommunityPage: React.FC = () => {
     getOrCreateConversation,
   } = useConnection(user?.id || null);
 
-  const pullToRefresh = usePullToRefresh({ onRefresh: refresh, disabled: feedLoading });
+  usePullToRefresh({ onRefresh: refresh, disabled: feedLoading });
 
   const { isOffline, hasCachedFeed } = useOfflineFeed({
     communityId: community?.id || null,
@@ -143,6 +148,11 @@ export const CommunityPage: React.FC = () => {
     }
   };
 
+  const handleSwitchCommunity = (communityId: string) => {
+    setSwitcherOpen(false);
+    setSelectedCommunity(communityId);
+  };
+
   if (communityLoading) return <CommunitySkeleton />;
 
   if (!community) {
@@ -186,8 +196,11 @@ export const CommunityPage: React.FC = () => {
       <FilterBar activeFilter={filter} onFilterChange={setFilter} />
 
       {newPostCount > 0 && (
-        <button className={styles.newPostsIndicator} onClick={() => { setNewPostCount(0); refresh(); }}>
-          ↑ {newPostCount} new posts
+        <button
+          className={styles.newPostsIndicator}
+          onClick={() => { setNewPostCount(0); refresh(); }}
+        >
+          {newPostCount} new posts
         </button>
       )}
 
@@ -211,8 +224,8 @@ export const CommunityPage: React.FC = () => {
         />
 
         {filter === 'profiles' ? (
-            <ProfileSwipeDeck userId={user?.id || ''} communityId={community.id} />
-          ) : feedLoading && posts.length === 0 ? (
+          <ProfileSwipeDeck userId={user?.id || ''} communityId={community.id} />
+        ) : feedLoading && posts.length === 0 ? (
           <CommunitySkeleton />
         ) : feedError && posts.length === 0 ? (
           <FeedErrorState onRetry={refresh} />
@@ -243,10 +256,7 @@ export const CommunityPage: React.FC = () => {
         onClose={() => setSwitcherOpen(false)}
         userId={user?.id || ''}
         currentCommunityId={community.id}
-        onSwitch={() => {
-          setSwitcherOpen(false);
-          window.location.reload();
-        }}
+        onSwitch={handleSwitchCommunity}
       />
 
       <BottomNav />
@@ -292,12 +302,3 @@ export const CommunityPage: React.FC = () => {
     </div>
   );
 };
-
-
-
-
-
-
-
-
-

@@ -1,4 +1,4 @@
-﻿export type CommunityPostType = 'introduction' | 'looking_for' | 'discussion' | 'question' | 'photo';
+export type CommunityPostType = 'introduction' | 'looking_for' | 'discussion' | 'question' | 'photo';
 
 export type ConnectionStatus = 'none' | 'requested' | 'accepted' | 'getting_to_know' | 'mutual_interest' | 'matched';
 
