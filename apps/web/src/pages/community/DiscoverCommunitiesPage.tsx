@@ -19,6 +19,7 @@ interface DiscoverCommunity {
   postCount: number;
   isPrivate: boolean;
   isSponsored: boolean;
+  isFeatured: boolean;
   isJoined: boolean;
   isAdmin: boolean;
   rules: string[];
@@ -107,6 +108,7 @@ export const DiscoverCommunitiesPage: React.FC = () => {
           postCount: c.post_count || 0,
           isPrivate: c.status === 'locked',
           isSponsored: sponsoredIds.has(c.id),
+          isFeatured: c.is_featured || false,
           isJoined: membershipMap.has(c.id),
           isAdmin: membershipMap.get(c.id) === 'admin',
           rules: c.rules || [],
@@ -173,6 +175,7 @@ export const DiscoverCommunitiesPage: React.FC = () => {
     if (filterType === 'country') result = result.filter((c) => c.type === 'country');
     if (filterType === 'private') result = result.filter((c) => c.isPrivate);
     if (filterType === 'public') result = result.filter((c) => !c.isPrivate);
+    if (filterType === 'featured') result = result.filter((c) => c.isFeatured);
 
     // Search
     if (searchTerm.trim()) {
@@ -189,7 +192,10 @@ export const DiscoverCommunitiesPage: React.FC = () => {
 
     // Sort
     if (sortBy === 'popular') {
-      result.sort((a, b) => b.memberCount - a.memberCount);
+      result.sort((a, b) => {
+        if (a.isFeatured !== b.isFeatured) return a.isFeatured ? -1 : 1;
+        return b.memberCount - a.memberCount;
+      });
     } else if (sortBy === 'newest') {
       result.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
     } else if (sortBy === 'sponsored') {

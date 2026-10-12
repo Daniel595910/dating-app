@@ -71,6 +71,31 @@ export const CommunityHeader: React.FC<CommunityHeaderProps> = ({
             <h1 className={styles.title}>
               {community.flag} {community.name}
             </h1>
+            {community.isFeatured && (
+              <span
+                title="Featured community"
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '0.1875rem',
+                  padding: '0.1875rem 0.5rem',
+                  marginRight: '0.375rem',
+                  background: 'linear-gradient(135deg, #fef3c7, #fde68a)',
+                  color: '#92400e',
+                  borderRadius: '9999px',
+                  fontSize: '0.625rem',
+                  fontWeight: 700,
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.03em',
+                  lineHeight: 1,
+                  flexShrink: 0,
+                  border: '1px solid #fcd34d',
+                }}
+              >
+                <Star size={10} fill="currentColor" />
+                Featured
+              </span>
+            )}
             {onSwitchCommunity && <ChevronDown size={16} style={{ color: hasCover ? "#ffffff" : "#9ca3af", flexShrink: 0 }} />}
           </div>
           <div className={styles.subtitleRow}>
