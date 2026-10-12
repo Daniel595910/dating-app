@@ -30,6 +30,9 @@
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   border-bottom: 1px solid #f3f4f6;
+  position: relative;
+  z-index: 100;
+  isolation: isolate;
 }
 
 .headerButton {

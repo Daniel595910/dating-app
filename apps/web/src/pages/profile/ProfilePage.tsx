@@ -506,7 +506,7 @@ export const ProfilePage: React.FC = () => {
               <Settings size={22} />
             </button>
         ) : (
-          <div style={{ position: 'relative' }}>
+          <div style={{ position: 'relative', zIndex: 9999 }}>
             <button
               className={styles.headerButton}
               onClick={() => setShowMoreMenu((prev) => !prev)}
