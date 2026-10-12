@@ -25,7 +25,7 @@ import { ProfilePreviewSheet } from '../../features/community/components/Profile
 import { ConnectionPrompt } from '../../features/community/components/ConnectionPrompt';
 import { MatchSuccess } from '../../features/community/components/MatchSuccess';
 import { PendingRequests } from '../../features/community/components/PendingRequests';
-import { ConnectionStatusCard } from '../../features/community/components/ConnectionStatusCard';
+import { ConnectionsModal } from '../../features/community/components/ConnectionsModal';
 import { BottomNav } from '../../features/community/components/BottomNav';
 import { LocationSetupSheet } from '../../features/community/components/LocationSetupSheet';
 import { OfflineBanner } from '../../features/community/components/OfflineBanner';
@@ -48,6 +48,7 @@ export const CommunityPage: React.FC = () => {
   const [newPostCount, setNewPostCount] = useState(0);
   const [locationSheetOpen, setLocationSheetOpen] = useState(false);
   const [switcherOpen, setSwitcherOpen] = useState(false);
+  const [connectionsModalOpen, setConnectionsModalOpen] = useState(false);
   const [memberPreview, setMemberPreview] = useState<Array<{ userId: string; name: string; avatarUrl: string | null }>>([]);
   const [membersModalOpen, setMembersModalOpen] = useState(false);
   const [allowConnections, setAllowConnections] = useState(true);
@@ -223,6 +224,8 @@ export const CommunityPage: React.FC = () => {
         onDiscover={() => navigate('/discover-communities')}
         memberPreview={memberPreview}
         onOpenMembers={() => setMembersModalOpen(true)}
+        connectionCount={activeConnections.length + pendingRequests.length}
+        onOpenConnections={() => setConnectionsModalOpen(true)}
       />
 
       <FilterBar activeFilter={filter} onFilterChange={setFilter} />
@@ -237,23 +240,7 @@ export const CommunityPage: React.FC = () => {
       )}
 
       <main className={styles.feedContainer}>
-        {activeConnections.map((conn) => (
-          <ConnectionStatusCard
-            key={conn.matchId}
-            matchId={conn.matchId}
-            targetUserName={conn.targetUserName}
-            myInterest={conn.myInterest}
-            otherInterest={conn.otherInterest}
-            onExpressInterest={handleExpressInterest}
-            loading={connectionLoading}
-          />
-        ))}
-
-        <PendingRequests
-          requests={pendingRequests.map((r) => ({ id: r.id, requesterName: r.requesterName, message: r.message }))}
-          onAccept={acceptRequest}
-          onReject={declineRequest}
-        />
+        
 
         {filter === 'profiles' ? (
           <ProfileSwipeDeck userId={user?.id || ''} communityId={community.id} />
@@ -315,6 +302,17 @@ export const CommunityPage: React.FC = () => {
         targetUserId={connectionTarget?.id || ''}
         targetUserName={connectionTarget?.name || ''}
         onSendRequest={sendRequest}
+      />
+
+      <ConnectionsModal
+        open={connectionsModalOpen}
+        onClose={() => setConnectionsModalOpen(false)}
+        outgoing={activeConnections}
+        incoming={pendingRequests}
+        onExpressInterest={handleExpressInterest}
+        onAccept={acceptRequest}
+        onDecline={declineRequest}
+        loading={connectionLoading}
       />
 
       <MembersModal

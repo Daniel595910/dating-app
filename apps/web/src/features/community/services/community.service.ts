@@ -601,11 +601,13 @@ class CommunityService {
   async getConnectedUserIds(userId: string): Promise<string[]> {
     const ids = new Set<string>();
 
+    // Only ACCEPTED requests count as connected. Pending requests do not
+    // block the "Get to Know" button.
     const { data: requests } = await supabase
       .from('match_requests')
       .select('requester_id, target_id')
       .or(`requester_id.eq.${userId},target_id.eq.${userId}`)
-      .in('status', ['pending', 'accepted']);
+      .eq('status', 'accepted');
 
     if (requests) {
       for (const r of requests as any[]) {
@@ -614,11 +616,15 @@ class CommunityService {
       }
     }
 
+    // Only FULLY MATCHED rows count. Rejected, expired, cancelled, and
+    // getting_to_know stages do not block the button.
     const { data: matches } = await supabase
       .from('matches')
-      .select('user1_id, user2_id')
+      .select('user1_id, user2_id, stage, status')
       .or(`user1_id.eq.${userId},user2_id.eq.${userId}`)
-      .eq('status', 'active');
+      .eq('status', 'active')
+      .eq('stage', 'matched')
+      .is('rejected_at', null);
 
     if (matches) {
       for (const m of matches as any[]) {

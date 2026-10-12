@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Search, MoreVertical, Users, ChevronDown, Globe, Info, Flag, Compass, Star } from 'lucide-react';
+import { Search, MoreVertical, Users, ChevronDown, Globe, Info, Flag, Compass, Star, Handshake } from 'lucide-react';
 import { CommunityInfo } from '../../types/community.types';
 import { NotificationBell } from './NotificationBell';
  import { AvatarStack } from './AvatarStack';
@@ -16,6 +16,8 @@ interface CommunityHeaderProps {
   onReportCommunity?: () => void;
   memberPreview?: Array<{ userId: string; name: string; avatarUrl: string | null }>;
   onOpenMembers?: () => void;
+  connectionCount?: number;
+  onOpenConnections?: () => void;
 }
 
 export const CommunityHeader: React.FC<CommunityHeaderProps> = ({
@@ -29,6 +31,8 @@ export const CommunityHeader: React.FC<CommunityHeaderProps> = ({
   onReportCommunity,
   memberPreview = [],
   onOpenMembers,
+  connectionCount = 0,
+  onOpenConnections,
 }) => {
   const [moreMenuOpen, setMoreMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -91,6 +95,40 @@ export const CommunityHeader: React.FC<CommunityHeaderProps> = ({
 
         <div className={styles.headerActions}>
           <NotificationBell userId={userId} />
+          {onOpenConnections && (
+            <button
+              className={styles.iconButton}
+              onClick={onOpenConnections}
+              aria-label="Connections"
+              style={{ position: 'relative' }}
+            >
+              <Handshake size={20} />
+              {connectionCount > 0 && (
+                <span
+                  style={{
+                    position: 'absolute',
+                    top: 4,
+                    right: 4,
+                    minWidth: 16,
+                    height: 16,
+                    borderRadius: '9999px',
+                    background: '#ef4444',
+                    color: '#ffffff',
+                    fontSize: 10,
+                    fontWeight: 700,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    padding: '0 4px',
+                    border: '2px solid #ffffff',
+                    lineHeight: 1,
+                  }}
+                >
+                  {connectionCount}
+                </span>
+              )}
+            </button>
+          )}
           <button className={styles.iconButton} onClick={onSearch} aria-label="Search">
             <Search size={20} />
           </button>
