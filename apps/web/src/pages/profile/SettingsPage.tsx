@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '@/store/auth.store';
+import { useUIStore } from '@/store/ui.store';
 import { supabase } from '@/config/supabase.client';
 import {
   ArrowLeft, ChevronRight, User, Bell, Lock, MapPin, Ban,
-  HelpCircle, Info, LogOut, Trash2, X, Shield, Eye, MessageSquare,
+  HelpCircle, Info, LogOut, Trash2, X, Shield, Eye, MessageSquare, Copy as CopyIcon,
   Globe, FileText, Mail, Smartphone,
 } from 'lucide-react';
 import styles from './SettingsPage.module.css';
@@ -35,6 +36,7 @@ interface SettingSection {
 export const SettingsPage: React.FC = () => {
   const navigate = useNavigate();
   const { user, logout } = useAuthStore();
+  const showToast = useUIStore((state) => state.showToast);
   const { theme, setTheme } = useThemeStore();
   const [modal, setModal] = useState<ModalType>(null);
   const [deleteConfirmText, setDeleteConfirmText] = useState('');
@@ -433,9 +435,16 @@ export const SettingsPage: React.FC = () => {
             </div>
             <div className={styles.sheetBody}>
               <p><strong>Need a hand?</strong></p>
-              <p>
-                Check our community guidelines for rules, safety tips, and how to report
-                someone.
+              <p style={{ marginBottom: '1rem' }}>
+                Email us directly at{' '}
+                <a
+                  href="mailto:surportdatingservice@gmail.com"
+                  style={{ color: '#ef4444', fontWeight: 600, textDecoration: 'none' }}
+                >
+                  surportdatingservice@gmail.com
+                </a>
+                {' '}— we usually reply within 24 hours. You can also check the
+                community guidelines for rules and safety tips.
               </p>
 
               <button
@@ -449,14 +458,36 @@ export const SettingsPage: React.FC = () => {
               </button>
 
               <a
-                href="mailto:support@datingapp.com"
+                href="mailto:surportdatingservice@gmail.com?subject=Dating%20App%20Support%20Request&body=Hi%20team%2C%0A%0AI%20need%20help%20with%3A%0A%0A"
                 className={styles.row}
                 style={{ background: '#f9fafb', borderRadius: '1rem', marginBottom: '0.75rem', textDecoration: 'none' }}
               >
                 <span className={styles.rowIcon}><Mail size={18} /></span>
-                <span className={styles.rowLabel}>Email Support</span>
+                <span className={styles.rowLabel}>
+                  Email Support
+                  <br />
+                  <span style={{ fontSize: '0.75rem', color: '#6b7280', fontWeight: 400 }}>
+                    surportdatingservice@gmail.com
+                  </span>
+                </span>
                 <ChevronRight size={16} className={styles.rowChevron} />
               </a>
+
+              <button
+                className={styles.row}
+                onClick={async () => {
+                  try {
+                    await navigator.clipboard.writeText('surportdatingservice@gmail.com');
+                    showToast('Email copied to clipboard', 'success');
+                  } catch {
+                    showToast('surportdatingservice@gmail.com', 'info');
+                  }
+                }}
+                style={{ background: '#f9fafb', borderRadius: '1rem', marginBottom: '0.75rem' }}
+              >
+                <span className={styles.rowIcon}><CopyIcon size={18} /></span>
+                <span className={styles.rowLabel}>Copy email address</span>
+              </button>
 
               <button
                 className={styles.row}
