@@ -1,4 +1,4 @@
-﻿import { defineConfig } from 'vite';
+import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
 import path from 'path';
@@ -9,6 +9,12 @@ export default defineConfig({
     VitePWA({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.ico', 'icons/*.png'],
+      strategies: 'injectManifest',
+      srcDir: 'src',
+      filename: 'sw.ts',
+      injectManifest: {
+        globPatterns: ['**/*.{js,css,html,ico,png,svg,woff,woff2}'],
+      },
       manifest: {
         name: 'Dating App',
         short_name: 'DatingApp',

@@ -1,7 +1,8 @@
-﻿import React, { useEffect } from 'react';
+import React, { useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '@/store/auth.store';
 import { ROUTES } from '@/config/constants';
+import { NotificationPromptBanner } from '@/features/notifications/components/NotificationPromptBanner';
 
 interface AppShellProps {
   children: React.ReactNode;
@@ -38,5 +39,10 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
     }
   }, [user, loading, location.pathname, navigate]);
 
-  return <>{children}</>;
+  return (
+    <>
+      {user && <NotificationPromptBanner />}
+      {children}
+    </>
+  );
 };

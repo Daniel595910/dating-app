@@ -1,4 +1,4 @@
-﻿import { supabase } from '@/config/supabase.client';
+import { supabase } from '@/config/supabase.client';
 
 interface CreateNotificationInput {
   userId: string;
@@ -10,6 +10,11 @@ interface CreateNotificationInput {
 
 export const notificationService = {
   async createNotification(input: CreateNotificationInput): Promise<boolean> {
+    const channels = ['in_app'];
+    if (['match', 'connection', 'message'].includes(input.type)) {
+      channels.push('push');
+    }
+
     const { error } = await supabase.from('notifications').insert({
       user_id: input.userId,
       type: input.type,
@@ -17,7 +22,7 @@ export const notificationService = {
       body: input.body,
       status: 'unread',
       data: input.data || null,
-      channels: ['in_app'],
+      channels,
     });
 
     return !error;

@@ -1,4 +1,4 @@
-﻿import { supabase } from '@/config/supabase.client';
+import { supabase } from '@/config/supabase.client';
 
 class PushNotificationService {
   private swRegistration: ServiceWorkerRegistration | null = null;
@@ -40,18 +40,38 @@ class PushNotificationService {
       const subscription = await this.swRegistration!.pushManager.subscribe({
         userVisibleOnly: true,
         applicationServerKey: this.urlBase64ToUint8Array(
-          'BEgUCgKSrXBAvymB4NIxB-mfQkkvxbucYeK1uUH4ljnSUbmd2FPxFpDe-fgi7rLza05ZxJHcxOk6e1U5sniXD54'
+          'BJf1uKQI_KjwafsJIf2UOBZ6iUKYH7MH1LLOnIHMQPbOH-_0DscclfGdawa_etmFGldXddSoreeEivWlFbEyaE0'
         ),
       });
 
-      // Save subscription to database
-      await supabase.from('push_subscriptions').upsert({
-        user_id: userId,
-        endpoint: subscription.endpoint,
-        p256dh: this.arrayBufferToBase64(subscription.getKey('p256dh')!),
-        auth: this.arrayBufferToBase64(subscription.getKey('auth')!),
-        created_at: new Date().toISOString(),
-      });
+      // Save subscription to database.
+      // Conflict target is (user_id, endpoint) — matches the table's unique constraint.
+      const { error: upsertError, status } = await supabase
+        .from('push_subscriptions')
+        .upsert(
+          {
+            user_id: userId,
+            endpoint: subscription.endpoint,
+            p256dh: this.arrayBufferToBase64(subscription.getKey('p256dh')!),
+            auth: this.arrayBufferToBase64(subscription.getKey('auth')!),
+          },
+          { onConflict: 'user_id,endpoint' }
+        );
+
+      console.log('Push upsert result:', { status, error: upsertError });
+
+      if (upsertError) {
+        console.error(
+          'Failed to save push subscription:',
+          upsertError.message,
+          '| code:', upsertError.code,
+          '| details:', upsertError.details,
+          '| hint:', upsertError.hint
+        );
+        return false;
+      }
+
+      console.log('Push subscription saved successfully.');
 
       return true;
     } catch (err) {
@@ -79,38 +99,19 @@ class PushNotificationService {
 
   async sendNotification(userId: string, title: string, body: string, data?: Record<string, any>): Promise<boolean> {
     try {
-      // Get user's subscription
-      const { data: subscription } = await supabase
-        .from('push_subscriptions')
-        .select('*')
-        .eq('user_id', userId)
-        .single();
+      // Insert into the notifications table. The Postgres trigger will
+      // call the edge function, which sends the actual web push.
+      const { error } = await supabase.from('notifications').insert({
+        user_id: userId,
+        type: 'system',
+        title,
+        body,
+        status: 'unread',
+        channels: ['in_app', 'push'],
+        data: data || { source: 'test-button' },
+      });
 
-      if (!subscription) return false;
-
-      // In production, this would be sent from a server
-      // For now, we use the Notification API
-      if (Notification.permission === 'granted') {
-        const notification = new Notification(title, {
-          body,
-          icon: '/icons/icon-192x192.png',
-          badge: '/icons/icon-192x192.png',
-          data,
-        });
-
-        notification.onclick = () => {
-          window.focus();
-          if (data?.conversationId) {
-            window.location.href = '/chats/' + data.conversationId;
-          } else if (data?.postId) {
-            window.location.href = '/community/' + data.postId;
-          }
-        };
-
-        return true;
-      }
-
-      return false;
+      return !error;
     } catch (err) {
       console.error('Failed to send notification:', err);
       return false;

@@ -1,7 +1,8 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '@/store/auth.store';
 import { pushNotificationService } from '../../features/notifications/services/push-notification.service';
+import { supabase } from '@/config/supabase.client';
 import { ArrowLeft, Bell, BellOff, Check } from 'lucide-react';
 
 export const NotificationSettingsPage: React.FC = () => {
@@ -14,33 +15,91 @@ export const NotificationSettingsPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
 
   const notificationOptions = [
-    { id: 'connection_requests', label: 'Connection Requests', description: 'When someone wants to get to know you' },
-    { id: 'matches', label: 'Matches', description: 'When you match with someone' },
-    { id: 'messages', label: 'Messages', description: 'When you receive a new message' },
-    { id: 'comments', label: 'Comments', description: 'When someone comments on your post' },
-    { id: 'likes', label: 'Likes', description: 'When someone likes your post' },
-    { id: 'gifts', label: 'Gifts', description: 'When someone sends you a gift' },
+    { id: 'match', label: 'Matches', description: 'When you match or get a connection request' },
+    { id: 'message', label: 'Messages', description: 'When you receive a new message' },
+    { id: 'like', label: 'Likes', description: 'When someone likes your post' },
+    { id: 'comment', label: 'Comments', description: 'When someone comments on your post' },
+    { id: 'mention', label: 'Mentions', description: 'When someone mentions you' },
     { id: 'community', label: 'Community', description: 'Community announcements and updates' },
+    { id: 'system', label: 'System', description: 'Account, security, and gift notifications' },
   ];
 
   const [preferences, setPreferences] = useState<Record<string, boolean>>({
-    connection_requests: true,
-    matches: true,
-    messages: true,
-    comments: true,
-    likes: true,
-    gifts: true,
+    match: true,
+    message: true,
+    like: true,
+    comment: true,
+    mention: true,
     community: true,
+    system: true,
   });
 
   useEffect(() => {
     checkPermission();
   }, []);
 
-  const checkPermission = () => {
-    if ('Notification' in window) {
-      setPermissionStatus(Notification.permission);
-      setPushEnabled(Notification.permission === 'granted');
+  // Refresh subscription state when the page becomes visible again
+  useEffect(() => {
+    const onVisible = () => { if (document.visibilityState === 'visible') checkPermission(); };
+    document.addEventListener('visibilitychange', onVisible);
+    return () => document.removeEventListener('visibilitychange', onVisible);
+  }, []);
+
+  useEffect(() => {
+    if (!user) return;
+    (async () => {
+      const { data } = await supabase
+        .from('notification_preferences')
+        .select('type, enabled')
+        .eq('user_id', user.id);
+      if (data && data.length > 0) {
+        const map: Record<string, boolean> = {};
+        for (const row of data as any[]) {
+          map[row.type] = row.enabled;
+        }
+        setPreferences((prev) => ({ ...prev, ...map }));
+      }
+    })();
+  }, [user]);
+
+  const savePreference = async (type: string, enabled: boolean) => {
+    if (!user) return;
+    const { error } = await supabase
+      .from('notification_preferences')
+      .upsert(
+        {
+          user_id: user.id,
+          type,
+          enabled,
+        },
+        { onConflict: 'user_id,type' }
+      );
+    if (error) {
+      console.error('Failed to save preference:', type, error.message, error.code, error.details);
+    }
+  };
+
+
+  const checkPermission = async () => {
+    if (!('Notification' in window)) return;
+    setPermissionStatus(Notification.permission);
+
+    // pushEnabled should reflect an ACTIVE SUBSCRIPTION, not just permission
+    if (Notification.permission !== 'granted') {
+      setPushEnabled(false);
+      return;
+    }
+
+    try {
+      const reg = await navigator.serviceWorker.getRegistration();
+      if (!reg) {
+        setPushEnabled(false);
+        return;
+      }
+      const sub = await reg.pushManager.getSubscription();
+      setPushEnabled(Boolean(sub));
+    } catch {
+      setPushEnabled(false);
     }
   };
 
@@ -52,19 +111,23 @@ export const NotificationSettingsPage: React.FC = () => {
 
     try {
       if (pushEnabled) {
-        await pushNotificationService.unsubscribeUser(user.id);
-        setPushEnabled(false);
-        setSuccess('Push notifications disabled');
+        const unsubscribed = await pushNotificationService.unsubscribeUser(user.id);
+        if (unsubscribed) {
+          setPushEnabled(false);
+          setSuccess('Push notifications disabled');
+        } else {
+          setError('Failed to disable push notifications');
+        }
       } else {
         const subscribed = await pushNotificationService.subscribeUser(user.id);
         if (subscribed) {
           setPushEnabled(true);
           setSuccess('Push notifications enabled!');
         } else {
-          setError('Failed to enable push notifications');
+          setError('Failed to enable push notifications — check browser permissions');
         }
       }
-      checkPermission();
+      await checkPermission();
     } catch (err: any) {
       setError(err.message || 'Failed to update push notifications');
     } finally {
@@ -74,7 +137,9 @@ export const NotificationSettingsPage: React.FC = () => {
   };
 
   const handleTogglePreference = (id: string) => {
-    setPreferences((prev) => ({ ...prev, [id]: !prev[id] }));
+    const next = !preferences[id];
+    setPreferences((prev) => ({ ...prev, [id]: next }));
+    savePreference(id, next);
   };
 
   const handleTestNotification = async () => {
