@@ -54,6 +54,7 @@ export const CommunityPage: React.FC = () => {
   const [allowConnections, setAllowConnections] = useState(true);
   const [connectingUserId, setConnectingUserId] = useState<string | null>(null);
   const [connectedIds, setConnectedIds] = useState<string[]>([]);
+  const [memberPreviewCommunityId, setMemberPreviewCommunityId] = useState<string | null>(null);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -105,22 +106,48 @@ export const CommunityPage: React.FC = () => {
   useEffect(() => {
     if (!community?.id || !user?.id) return;
 
+    // Capture this run's community id so stale resolves are ignored
+    const targetCommunityId = community.id;
+    let cancelled = false;
+
+    // Tag the preview with the community id it belongs to. The header
+    // uses this to guard against rendering a previous community's avatars
+    // while a new fetch is in-flight.
+    setMemberPreviewCommunityId(targetCommunityId);
+
+    // Clear previous community's data immediately so the header doesn't
+    // briefly show the wrong community's avatars during switch
+    setMemberPreview([]);
+
     Promise.all([
       communityService.getConnectedUserIds(user.id),
-      communityService.getCommunityById(community.id),
-    ]).then(async ([connected, full]) => {
-      setConnectedIds(connected);
-      // Only exclude self — show all other members
-      const preview = await communityService.getCommunityMembersPreview(
-        community.id,
-        [user.id],
-        5
-      );
-      setMemberPreview(preview);
-      setAllowConnections(full?.allow_member_connections !== false);
-    }).catch(() => {
-      setMemberPreview([]);
-    });
+      communityService.getCommunityById(targetCommunityId),
+    ])
+      .then(async ([connected, full]) => {
+        if (cancelled) return;
+
+        const preview = await communityService.getCommunityMembersPreview(
+          targetCommunityId,
+          [user.id],
+          5
+        );
+
+        // Abort if the community changed while this was in-flight
+        if (cancelled) return;
+
+        setConnectedIds(connected);
+        setMemberPreview(preview);
+        setAllowConnections(full?.allow_member_connections !== false);
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setMemberPreview([]);
+      });
+
+    // Cleanup: mark this run as stale when the effect re-runs
+    return () => {
+      cancelled = true;
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [community?.id, user?.id]);
 
@@ -223,6 +250,7 @@ export const CommunityPage: React.FC = () => {
         onSwitchCommunity={() => setSwitcherOpen(true)}
         onDiscover={() => navigate('/discover-communities')}
         memberPreview={memberPreview}
+        memberPreviewCommunityId={memberPreviewCommunityId}
         onOpenMembers={() => setMembersModalOpen(true)}
         connectionCount={activeConnections.length + pendingRequests.length}
         onOpenConnections={() => setConnectionsModalOpen(true)}

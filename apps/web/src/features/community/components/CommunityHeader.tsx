@@ -15,6 +15,7 @@ interface CommunityHeaderProps {
   onCommunityInfo?: () => void;
   onReportCommunity?: () => void;
   memberPreview?: Array<{ userId: string; name: string; avatarUrl: string | null }>;
+  memberPreviewCommunityId?: string | null;
   onOpenMembers?: () => void;
   connectionCount?: number;
   onOpenConnections?: () => void;
@@ -30,6 +31,7 @@ export const CommunityHeader: React.FC<CommunityHeaderProps> = ({
   onCommunityInfo,
   onReportCommunity,
   memberPreview = [],
+  memberPreviewCommunityId = null,
   onOpenMembers,
   connectionCount = 0,
   onOpenConnections,
@@ -107,7 +109,7 @@ export const CommunityHeader: React.FC<CommunityHeaderProps> = ({
           </div>
         </div>
 
-        {memberPreview.length > 0 && (
+        {memberPreview.length > 0 && memberPreviewCommunityId === community.id && (
           <div style={{ marginRight: '0.5rem' }}>
             <AvatarStack
               members={memberPreview}
