@@ -1,4 +1,4 @@
-﻿import { supabase } from '@/config/supabase.client';
+import { supabase } from '@/config/supabase.client';
 
 class ChatNotificationService {
   private activeConversationId: string | null = null;
@@ -23,7 +23,11 @@ class ChatNotificationService {
         title: senderName,
         body: messagePreview.length > 100 ? messagePreview.substring(0, 100) + '...' : messagePreview,
         status: 'unread',
-        data: { conversation_id: conversationId },
+        data: {
+          conversation_id: conversationId,
+          url: `/chats/${conversationId}`,
+          tag: `chat-${conversationId}`,
+        },
         channels: ['in_app', 'push'],
       });
     } catch (err) {
@@ -41,7 +45,7 @@ class ChatNotificationService {
         title: senderName,
         body: 'Sent a photo',
         status: 'unread',
-        data: { conversation_id: conversationId },
+        data: { conversation_id: conversationId, url: /chats/, tag: chat- },
         channels: ['in_app', 'push'],
       });
     } catch (err) {
@@ -59,7 +63,7 @@ class ChatNotificationService {
         title: senderName,
         body: 'Sent a voice message',
         status: 'unread',
-        data: { conversation_id: conversationId },
+        data: { conversation_id: conversationId, url: /chats/, tag: chat- },
         channels: ['in_app', 'push'],
       });
     } catch (err) {
@@ -77,7 +81,7 @@ class ChatNotificationService {
         title: senderName,
         body: `Sent you a ${giftName}`,
         status: 'unread',
-        data: { conversation_id: conversationId },
+        data: { conversation_id: conversationId, url: /chats/, tag: chat- },
         channels: ['in_app', 'push'],
       });
     } catch (err) {

@@ -4,8 +4,8 @@
 declare const self: ServiceWorkerGlobalScope;
 
 // Service Worker for Dating App PWA — caching + push notifications
-const CACHE_NAME = 'dating-app-v3';
-const RUNTIME_CACHE = 'dating-app-runtime-v3';
+const CACHE_NAME = 'dating-app-v5';
+const RUNTIME_CACHE = 'dating-app-runtime-v5';
 
 // VitePWA replaces this exact token with the precache manifest.
 // Do not rename or wrap it — workbox-build string-matches on it.
@@ -81,21 +81,58 @@ async function handleStaticRequest(request) {
 
 // ==================== PUSH ====================
 self.addEventListener('push', (event) => {
-  let data = {};
+  let data: any = {};
   try {
     data = event.data ? event.data.json() : {};
   } catch {
-    data = { title: 'New notification', body: event.data ? event.data.text() : '' };
+    data = { title: 'Dating App', body: event.data ? event.data.text() : '' };
   }
 
+  const type = data.data?.type || 'system';
+
+  // Default vibrate patterns per notification type
+  const vibrateByType: Record<string, number[]> = {
+    message: [200, 100, 200],
+    match: [300, 100, 300, 100, 300],
+    connection: [250, 100, 250],
+    like: [150],
+    comment: [150, 100, 150],
+    community: [200],
+    system: [100],
+  };
+
+  // Default actions per type
+  const actionsByType: Record<string, { action: string; title: string }[]> = {
+    message: [{ action: 'open', title: 'Open' }],
+    match: [{ action: 'open', title: 'Open' }],
+    connection: [
+      { action: 'open', title: 'Open' },
+      { action: 'dismiss', title: 'Dismiss' },
+    ],
+    like: [{ action: 'open', title: 'Open' }],
+    comment: [{ action: 'open', title: 'Open' }],
+    community: [{ action: 'open', title: 'Open' }],
+    system: [{ action: 'open', title: 'Open' }],
+  };
+
   const title = data.title || 'Dating App';
-  const options = {
+
+  const options: NotificationOptions & Record<string, any> = {
     body: data.body || '',
-    icon: '/icons/icon-192x192.png',
+    icon: data.icon || '/icons/icon-192x192.png',
     badge: '/icons/icon-192x192.png',
-    data: data.data || {},
-    tag: data.data?.notificationId || 'default',
-    renotify: true,
+    image: data.image,                              // optional hero image
+    data: {
+      ...(data.data || {}),
+      type,
+    },
+    tag: data.tag || data.data?.tag || 'default',   // grouping key
+    renotify: data.renotify !== undefined ? data.renotify : true,
+    vibrate: data.vibrate || vibrateByType[type] || [200],
+    actions: data.actions || actionsByType[type] || [{ action: 'open', title: 'Open' }],
+    timestamp: Date.now(),
+    requireInteraction: false,
+    silent: false,
   };
 
   event.waitUntil(self.registration.showNotification(title, options));
@@ -103,12 +140,20 @@ self.addEventListener('push', (event) => {
 
 // ==================== NOTIFICATION CLICK ====================
 self.addEventListener('notificationclick', (event) => {
+  const action = event.action;
+  const notificationData = event.notification.data || {};
   event.notification.close();
-  const url = event.notification.data?.url || '/';
+
+  // Dismiss action — just close, do nothing
+  if (action === 'dismiss') {
+    return;
+  }
+
+  // Open (or default click) — focus or open the app at the deep link
+  const url = notificationData.url || '/';
 
   event.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true }).then((windowClients) => {
-      // Focus an existing window if one is open
       for (const client of windowClients) {
         if ('focus' in client) {
           client.focus();
@@ -116,7 +161,6 @@ self.addEventListener('notificationclick', (event) => {
           return;
         }
       }
-      // Otherwise open a new one
       if (clients.openWindow) return clients.openWindow(url);
     })
   );

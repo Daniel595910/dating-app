@@ -21,6 +21,13 @@ interface NotificationPayload {
   data?: Record<string, unknown>;
   action_url?: string;
   channels?: string[];
+  // Rich push fields
+  image?: string;
+  icon?: string;
+  tag?: string;
+  renotify?: boolean;
+  vibrate?: number[];
+  actions?: { action: string; title: string }[];
 }
 
 interface PushRow {
@@ -106,9 +113,16 @@ serve(async (req: Request) => {
       const pushPayload = JSON.stringify({
         title: payload.title,
         body: payload.body,
+        // Rich fields — passed through to the SW push handler
+        image: payload.image,
+        icon: payload.icon,
+        tag: payload.tag,
+        renotify: payload.renotify,
+        vibrate: payload.vibrate,
+        actions: payload.actions,
         data: {
           url: payload.action_url || '/',
-          notificationId: null,
+          type: payload.type,
           ...(payload.data || {}),
         },
       });

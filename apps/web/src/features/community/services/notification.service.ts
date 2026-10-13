@@ -21,7 +21,10 @@ export const notificationService = {
       title: input.title,
       body: input.body,
       status: 'unread',
-      data: input.data || null,
+      data: {
+        ...(input.data || {}),
+        tag: input.data?.tag || `${input.type}-${Date.now()}`,
+      },
       channels,
     });
 
