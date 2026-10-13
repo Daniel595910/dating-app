@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '@/store/auth.store';
+import { useUIStore } from '@/store/ui.store';
 import { supabase } from '@/config/supabase.client';
 import { profileService } from '../../features/profile/services/profile.service';
 import { ProfileData, ProfileStats, UserPost } from '../../features/profile/types/profile.types';
@@ -16,6 +17,7 @@ export const ProfilePage: React.FC = () => {
   const { userId } = useParams<{ userId: string }>();
   const navigate = useNavigate();
   const { user } = useAuthStore();
+  const showToast = useUIStore((state) => state.showToast);
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [stats, setStats] = useState<ProfileStats>({ posts: 0, followers: 0, following: 0, connections: 0 });
   const [userPosts, setUserPosts] = useState<UserPost[]>([]);
@@ -447,6 +449,17 @@ export const ProfilePage: React.FC = () => {
     if (!user) return;
 
     try {
+      // Respect the target user's allow_messages setting
+      const { data: targetPrivacy } = await supabase
+        .from('profiles')
+        .select('allow_messages')
+        .eq('user_id', targetUserId)
+        .maybeSingle();
+
+      if (targetPrivacy && targetPrivacy.allow_messages === false) {
+        showToast('This user is not accepting messages right now', 'warning');
+        return;
+      }
       const { data: existingConv } = await supabase
         .from('conversations')
         .select('id')

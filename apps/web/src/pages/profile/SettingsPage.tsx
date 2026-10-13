@@ -8,9 +8,11 @@ import {
   Globe, FileText, Mail, Smartphone,
 } from 'lucide-react';
 import styles from './SettingsPage.module.css';
+import { LocationSetupSheet } from '@/features/community/components/LocationSetupSheet';
 import { useThemeStore, ThemeMode } from '@/store/theme.store';
 
 type ModalType =
+  | 'location'
   | 'logout'
   | 'delete'
   | 'privacy'
@@ -123,7 +125,7 @@ export const SettingsPage: React.FC = () => {
       items: [
         { icon: Lock, label: 'Privacy Settings', action: () => setModal('privacy') },
         { icon: Ban, label: 'Blocked Users', action: () => navigate('/settings/blocked-users') },
-        { icon: MapPin, label: 'Location Settings', value: locationLabel, action: () => navigate('/location') },
+        { icon: MapPin, label: 'Location Settings', value: locationLabel, action: () => setModal('location') },
       ],
     },
     {
@@ -471,6 +473,22 @@ export const SettingsPage: React.FC = () => {
       )}
 
       {/* ============================================================
+          LOCATION MODAL
+         ============================================================ */}
+      {modal === 'location' && (
+        <LocationSetupSheet
+          open={true}
+          onClose={closeModal}
+          userId={user?.id || ''}
+          onLocationSaved={() => {
+            closeModal();
+            // Reload settings to refresh the location label
+            window.location.reload();
+          }}
+        />
+      )}
+
+      {/* ============================================================
           ABOUT MODAL
          ============================================================ */}
       {modal === 'about' && (
@@ -512,7 +530,7 @@ export const SettingsPage: React.FC = () => {
 
               <button
                 className={styles.row}
-                onClick={() => {}}
+                onClick={() => window.open('https://datingapp.com/terms', '_blank', 'noopener')}
                 style={{ background: '#f9fafb', borderRadius: '1rem', marginBottom: '0.75rem' }}
               >
                 <span className={styles.rowIcon}><FileText size={18} /></span>
@@ -522,7 +540,7 @@ export const SettingsPage: React.FC = () => {
 
               <button
                 className={styles.row}
-                onClick={() => {}}
+                onClick={() => window.open('https://datingapp.com/privacy', '_blank', 'noopener')}
                 style={{ background: '#f9fafb', borderRadius: '1rem', marginBottom: '0.75rem' }}
               >
                 <span className={styles.rowIcon}><Shield size={18} /></span>
@@ -532,7 +550,7 @@ export const SettingsPage: React.FC = () => {
 
               <button
                 className={styles.row}
-                onClick={() => {}}
+                onClick={() => window.open('https://datingapp.com/permissions', '_blank', 'noopener')}
                 style={{ background: '#f9fafb', borderRadius: '1rem' }}
               >
                 <span className={styles.rowIcon}><Smartphone size={18} /></span>

@@ -589,7 +589,8 @@ class CommunityService {
     const { data: profiles } = await supabase
       .from('profiles')
       .select('user_id, display_name, avatar_url')
-      .in('user_id', userIds);
+      .in('user_id', userIds)
+      .or('is_discoverable.is.null,is_discoverable.eq.true');
 
     const profileMap = new Map((profiles || []).map((p: any) => [p.user_id, p]));
 
