@@ -1,4 +1,4 @@
-﻿import React, { createContext, useContext, useState, useCallback, useRef, useEffect } from 'react';
+import React, { createContext, useContext, useState, useCallback, useRef, useEffect } from 'react';
 import { useAuthStore } from '@/store/auth.store';
 import { supabase } from '@/config/supabase.client';
 import { callService } from './services/call.service';
@@ -66,9 +66,8 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     };
 
-    checkIncomingCalls();
-    const pollInterval = setInterval(checkIncomingCalls, 10000);
-
+    // Realtime subscription covers this — no polling needed.
+    // The old 10s interval was causing 503s due to request pile-up.
     unsubscribeRef.current = callService.subscribeToIncomingCalls(user.id, (call) => {
       setIncomingCall(call);
       setCallState('ringing');
@@ -85,7 +84,6 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return () => {
       unsubscribeRef.current?.();
       if (ringTimeoutRef.current) clearTimeout(ringTimeoutRef.current);
-      clearInterval(pollInterval);
     };
   }, [user]);
 
