@@ -67,6 +67,41 @@ export const ConversationPage: React.FC = () => {
     loadConversationInfo();
   }, [conversationId, user, navigate]);
 
+  // Refetch the closed_at state when the tab regains focus or becomes visible.
+  // This catches rematch → chat reopen while the user is on another tab.
+  useEffect(() => {
+    const refresh = async () => {
+      if (document.visibilityState !== 'visible') return;
+      if (!conversationId) return;
+      const { data } = await supabase
+        .from('conversations')
+        .select('closed_at')
+        .eq('id', conversationId)
+        .maybeSingle();
+      if (data) {
+        setIsClosed(Boolean(data.closed_at));
+      }
+    };
+
+    document.addEventListener('visibilitychange', refresh);
+    window.addEventListener('focus', refresh);
+
+    // Immediately reopen when the ChatClosedBanner emits the event
+    const onReopened = (e: Event) => {
+      const detail = (e as CustomEvent).detail;
+      if (detail?.conversationId === conversationId) {
+        setIsClosed(false);
+      }
+    };
+    window.addEventListener('chat-reopened', onReopened);
+
+    return () => {
+      document.removeEventListener('visibilitychange', refresh);
+      window.removeEventListener('focus', refresh);
+      window.removeEventListener('chat-reopened', onReopened);
+    };
+  }, [conversationId]);
+
   // Realtime presence updates
   useEffect(() => {
     if (!otherUser?.id) return;

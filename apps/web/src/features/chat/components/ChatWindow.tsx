@@ -6,6 +6,7 @@ import { chatService } from '../services/chat.service';
 import { messageService } from '../services/message.service';
 import { ChatMessage, MessageCursor, MessageReactionSummary } from '../types/chat.types';
 import { ChatHeader } from './ChatHeader';
+import { ChatClosedBanner } from './ChatClosedBanner';
 import { MessageBubble } from './MessageBubble';
 import { MessageComposer } from './MessageComposer';
 import { TypingIndicator } from './TypingIndicator';
@@ -749,7 +750,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
 
       {editingMessage && (
         <div className={styles.editBar}>
-          <span className={styles.editBarLabel}>✏️</span>
+          <span className={styles.editBarLabel}>âœï¸</span>
           <input
             autoFocus
             defaultValue={editingMessage.content}
@@ -776,24 +777,16 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
       {!editingMessage && (
         <>
         {readOnly && (
-          <div
-            style={{
-              padding: '12px 16px',
-              background: '#fef2f2',
-              borderTop: '1px solid #fecaca',
-              color: '#991b1b',
-              fontSize: 13,
-              fontWeight: 500,
-              textAlign: 'center',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: 8,
+          <ChatClosedBanner
+            conversationId={conversationId}
+            otherUserId={targetUserId}
+            otherUserName={targetUserName}
+            onReopened={() => {
+              window.dispatchEvent(new CustomEvent('chat-reopened', {
+                detail: { conversationId },
+              }));
             }}
-          >
-            <span style={{ fontSize: 16 }}>⚠️</span>
-            This connection has ended. You can no longer send messages.
-          </div>
+          />
         )}
 
         <MessageComposer
@@ -879,7 +872,6 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
     </div>
   );
 };
-
 
 
 
