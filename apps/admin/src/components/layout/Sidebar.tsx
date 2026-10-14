@@ -45,6 +45,7 @@ const NAV_ITEMS: NavItem[] = [
   { path: '/discover-videos', label: 'Discover Videos', icon: <Video size={18} />, permission: 'CONTENT_VIEW' },
   { path: '/reports', label: 'Reports', icon: <Flag size={18} />, permission: 'CONTENT_VIEW' },
   { path: '/safety', label: 'Safety', icon: <UserX size={18} />, permission: 'USER_VIEW' },
+  { path: '/verifications', label: 'Verifications', icon: <ShieldCheck size={18} />, permission: 'USER_VERIFY' },
   { path: '/connections', label: 'Connections', icon: <UserPlus size={18} />, permission: 'USER_VIEW' },
   { path: '/matches', label: 'Matches', icon: <Heart size={18} /> },
   { path: '/vip', label: 'VIP', icon: <Crown size={18} />, permission: 'VIP_VIEW' },
