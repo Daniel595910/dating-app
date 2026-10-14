@@ -120,6 +120,7 @@ export const SettingsPage: React.FC = () => {
       items: [
         { icon: User, label: 'Edit Profile', action: () => navigate('/profile/edit') },
         { icon: User, label: 'Dating Preferences', action: () => navigate('/profile/preferences') },
+        { icon: Shield, label: 'Verify Your Identity', action: () => navigate('/profile/verify') },
       ],
     },
     {
