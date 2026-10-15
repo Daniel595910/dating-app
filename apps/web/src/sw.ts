@@ -1,28 +1,32 @@
 /// <reference lib="webworker" />
 /// <reference types="vite-plugin-pwa/client" />
 
-declare const self: ServiceWorkerGlobalScope;
+// Cast globalThis to the Service Worker scope. Using a cast (not
+// `declare const self`) avoids clashing with the DOM lib's built-in
+// `self` declaration that TypeScript also loads.
+const sw = self as unknown as ServiceWorkerGlobalScope;
 
 // Service Worker for Dating App PWA — caching + push notifications
 const CACHE_NAME = 'dating-app-v5';
 const RUNTIME_CACHE = 'dating-app-runtime-v5';
 
 // VitePWA replaces this exact token with the precache manifest.
-// Do not rename or wrap it — workbox-build string-matches on it.
+// DO NOT rename, wrap, or move `self.__WB_MANIFEST` — workbox-build
+// string-matches on it and will fail the build if it's not present.
 const STATIC_ASSETS: string[] = Array.from(
-  new Set(self.__WB_MANIFEST.map((entry) => entry.url))
+  new Set((self.__WB_MANIFEST || []).map((entry: any) => entry.url))
 );
 
 // ==================== INSTALL ====================
-self.addEventListener('install', (event) => {
+sw.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => cache.addAll(STATIC_ASSETS))
   );
-  self.skipWaiting();
+  sw.skipWaiting();
 });
 
 // ==================== ACTIVATE ====================
-self.addEventListener('activate', (event) => {
+sw.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((cacheNames) =>
       Promise.all(
@@ -32,11 +36,11 @@ self.addEventListener('activate', (event) => {
       )
     )
   );
-  self.clients.claim();
+  sw.clients.claim();
 });
 
 // ==================== FETCH ====================
-self.addEventListener('fetch', (event) => {
+sw.addEventListener('fetch', (event) => {
   const { request } = event;
   if (request.method !== 'GET') return;
 
@@ -48,7 +52,7 @@ self.addEventListener('fetch', (event) => {
   event.respondWith(handleStaticRequest(request));
 });
 
-async function handleApiRequest(request) {
+async function handleApiRequest(request: Request) {
   const cache = await caches.open(RUNTIME_CACHE);
   try {
     const response = await fetch(request);
@@ -64,7 +68,7 @@ async function handleApiRequest(request) {
   }
 }
 
-async function handleStaticRequest(request) {
+async function handleStaticRequest(request: Request) {
   const cache = await caches.open(CACHE_NAME);
   const cached = await cache.match(request);
   if (cached) return cached;
@@ -80,7 +84,7 @@ async function handleStaticRequest(request) {
 }
 
 // ==================== PUSH ====================
-self.addEventListener('push', (event) => {
+sw.addEventListener('push', (event) => {
   let data: any = {};
   try {
     data = event.data ? event.data.json() : {};
@@ -121,12 +125,12 @@ self.addEventListener('push', (event) => {
     body: data.body || '',
     icon: data.icon || '/icons/icon-192x192.png',
     badge: '/icons/icon-192x192.png',
-    image: data.image,                              // optional hero image
+    image: data.image,
     data: {
       ...(data.data || {}),
       type,
     },
-    tag: data.tag || data.data?.tag || 'default',   // grouping key
+    tag: data.tag || data.data?.tag || 'default',
     renotify: data.renotify !== undefined ? data.renotify : true,
     vibrate: data.vibrate || vibrateByType[type] || [200],
     actions: data.actions || actionsByType[type] || [{ action: 'open', title: 'Open' }],
@@ -135,11 +139,11 @@ self.addEventListener('push', (event) => {
     silent: false,
   };
 
-  event.waitUntil(self.registration.showNotification(title, options));
+  event.waitUntil(sw.registration.showNotification(title, options));
 });
 
 // ==================== NOTIFICATION CLICK ====================
-self.addEventListener('notificationclick', (event) => {
+sw.addEventListener('notificationclick', (event) => {
   const action = event.action;
   const notificationData = event.notification.data || {};
   event.notification.close();
@@ -153,7 +157,7 @@ self.addEventListener('notificationclick', (event) => {
   const url = notificationData.url || '/';
 
   event.waitUntil(
-    clients.matchAll({ type: 'window', includeUncontrolled: true }).then((windowClients) => {
+    sw.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((windowClients) => {
       for (const client of windowClients) {
         if ('focus' in client) {
           client.focus();
@@ -161,7 +165,7 @@ self.addEventListener('notificationclick', (event) => {
           return;
         }
       }
-      if (clients.openWindow) return clients.openWindow(url);
+      if (sw.clients.openWindow) return sw.clients.openWindow(url);
     })
   );
 });
