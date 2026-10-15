@@ -2,17 +2,16 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   ArrowLeft,
-
   Shield,
   ShieldCheck,
   Crown,
   BadgeCheck,
   Ban,
-
+  Mail,
+  Send,
   FileText,
   Heart,
   Flag,
-
 } from 'lucide-react';
 import { useAdminAuth } from '@/hooks/useAdminAuth';
 import { useToast } from '@/components/ui/Toast';
@@ -25,6 +24,12 @@ import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { userService, AdminUserRecord } from '@/services/user.service';
 import styles from './UserDetailPage.module.css';
 
+interface EmailStatus {
+  email: string | null;
+  email_confirmed_at: string | null;
+  last_sign_in_at: string | null;
+}
+
 export const UserDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -36,6 +41,8 @@ export const UserDetailPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
   const [confirmAction, setConfirmAction] = useState<'ban' | 'unban' | 'verify' | 'unverify' | null>(null);
+  const [emailStatus, setEmailStatus] = useState<EmailStatus | null>(null);
+  const [sendingEmail, setSendingEmail] = useState(false);
 
   useEffect(() => {
     if (!id) return;
@@ -48,6 +55,14 @@ export const UserDetailPage: React.FC = () => {
       if (userData) {
         const userStats = await userService.getUserStats(id);
         setStats(userStats);
+
+        // Batch-fetch email confirmation status via edge function
+        userService
+          .getEmailStatuses([userData.user_id])
+          .then((statuses) => {
+            setEmailStatus(statuses[userData.user_id] ?? null);
+          })
+          .catch((err) => console.error('getEmailStatuses failed:', err));
       }
       setLoading(false);
     };
@@ -70,6 +85,28 @@ export const UserDetailPage: React.FC = () => {
     }
   };
 
+  const handleSendVerificationEmail = async () => {
+    if (!user) return;
+    if (!hasPermission('USER_VERIFY')) {
+      toast.error('Permission denied', 'You cannot send verification emails');
+      return;
+    }
+
+    setSendingEmail(true);
+    try {
+      const result = await userService.sendVerificationEmail(user.user_id);
+      if (result.success) {
+        toast.success('Verification email sent');
+      } else {
+        toast.error('Failed to send', result.error || 'Unknown error');
+      }
+    } catch (err: any) {
+      toast.error('Action failed', err.message);
+    } finally {
+      setSendingEmail(false);
+    }
+  };
+
   if (loading) return <Loader fullScreen text="Loading user..." />;
   if (!user) {
     return (
@@ -84,6 +121,8 @@ export const UserDetailPage: React.FC = () => {
       </div>
     );
   }
+
+  const emailUnconfirmed = emailStatus && !emailStatus.email_confirmed_at;
 
   return (
     <div className={styles.container}>
@@ -101,8 +140,16 @@ export const UserDetailPage: React.FC = () => {
             {user.is_verified && <BadgeCheck size={20} className={styles.verifiedIcon} />}
             {user.is_vip && <Badge variant="warning" size="sm"><Crown size={10} /> VIP</Badge>}
             {user.is_admin && <Badge variant="error" size="sm"><Shield size={10} /> {user.role}</Badge>}
+            {emailUnconfirmed && (
+              <Badge variant="warning" size="sm">
+                <Mail size={10} /> Email unverified
+              </Badge>
+            )}
           </div>
           <p className={styles.userId}>ID: {user.user_id}</p>
+          {emailStatus?.email && (
+            <p className={styles.userId}>Email: {emailStatus.email}</p>
+          )}
           {user.bio && <p className={styles.bio}>{user.bio}</p>}
         </div>
       </div>
@@ -117,6 +164,16 @@ export const UserDetailPage: React.FC = () => {
             loading={actionLoading && confirmAction === (user.is_verified ? 'unverify' : 'verify')}
           >
             {user.is_verified ? 'Unverify User' : 'Verify User'}
+          </Button>
+        )}
+        {hasPermission('USER_VERIFY') && emailUnconfirmed && (
+          <Button
+            variant="primary"
+            icon={<Send size={16} />}
+            onClick={handleSendVerificationEmail}
+            loading={sendingEmail}
+          >
+            Send verification email
           </Button>
         )}
         {hasPermission('USER_BAN') && (
@@ -191,6 +248,16 @@ export const UserDetailPage: React.FC = () => {
           <div className={styles.detailRow}>
             <span className={styles.detailLabel}>Gender</span>
             <span className={styles.detailValue}>{user.gender || 'Not specified'}</span>
+          </div>
+          <div className={styles.detailRow}>
+            <span className={styles.detailLabel}>Email status</span>
+            <span className={styles.detailValue}>
+              {emailStatus
+                ? emailStatus.email_confirmed_at
+                  ? `Confirmed ${new Date(emailStatus.email_confirmed_at).toLocaleDateString()}`
+                  : 'Not confirmed'
+                : 'Loading…'}
+            </span>
           </div>
           {user.birth_date && (
             <div className={styles.detailRow}>
