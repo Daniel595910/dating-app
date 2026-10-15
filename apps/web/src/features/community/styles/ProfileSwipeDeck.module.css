@@ -1,22 +1,28 @@
-﻿.deck {
+.deck {
   position: relative;
   width: 100%;
   max-width: 480px;
   margin: 0 auto;
-  min-height: 500px;
+  /* Fit under header + filter bar + bottom nav on any viewport.
+     Falls back gracefully to a min of 360px on very short screens. */
+  height: calc(100dvh - 210px);
+  min-height: 360px;
+  max-height: 620px;
   display: flex;
   align-items: center;
   justify-content: center;
+  padding: 0 0.5rem;
 }
 
 .card {
   position: relative;
   width: 100%;
-  height: 550px;
-  border-radius: 24px;
+  height: 100%;
+  max-height: 100%;
+  border-radius: 20px;
   overflow: hidden;
   background: #ffffff;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.14);
   cursor: grab;
   user-select: none;
   -webkit-user-select: none;
@@ -53,11 +59,11 @@
 
 .infoOverlay {
   position: absolute;
-  bottom: 100px;
+  bottom: 84px;
   left: 0;
   right: 0;
-  padding: 20px;
-  background: linear-gradient(0deg, rgba(0,0,0,0.8) 0%, transparent 100%);
+  padding: 16px 16px 12px;
+  background: linear-gradient(0deg, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.35) 60%, transparent 100%);
   pointer-events: none;
 }
 
@@ -69,9 +75,11 @@
 }
 
 .name {
-  font-size: 24px;
+  font-size: 20px;
   font-weight: 700;
   color: #ffffff;
+  line-height: 1.15;
+  letter-spacing: -0.01em;
 }
 
 .verifiedIcon {
@@ -88,10 +96,14 @@
 }
 
 .bio {
-  font-size: 14px;
+  font-size: 13px;
   color: rgba(255, 255, 255, 0.9);
-  margin: 0 0 8px;
-  line-height: 1.4;
+  margin: 0 0 6px;
+  line-height: 1.35;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
 .interests {
@@ -101,30 +113,31 @@
 }
 
 .interestTag {
-  font-size: 11px;
-  font-weight: 500;
+  font-size: 10px;
+  font-weight: 600;
   color: #ffffff;
-  background: rgba(255, 255, 255, 0.2);
-  padding: 3px 10px;
+  background: rgba(255, 255, 255, 0.22);
+  padding: 2px 8px;
   border-radius: 9999px;
+  white-space: nowrap;
 }
 
 .actionButtons {
   position: absolute;
-  bottom: 20px;
+  bottom: 14px;
   left: 0;
   right: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 40px;
+  gap: 28px;
   pointer-events: auto;
 }
 
 .passButton,
 .likeButton {
-  width: 64px;
-  height: 64px;
+  width: 56px;
+  height: 56px;
   border-radius: 50%;
   border: none;
   cursor: pointer;
@@ -132,7 +145,7 @@
   align-items: center;
   justify-content: center;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-  transition: all 0.2s ease;
+  transition: all 0.15s ease;
 }
 
 .passButton {
@@ -245,16 +258,20 @@
 
 .matchScoreBadge {
   position: absolute;
-  top: 16px;
-  right: 16px;
+  top: 12px;
+  right: 12px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  background: rgba(239, 68, 68, 0.9);
-  border-radius: 16px;
-  padding: 8px 12px;
-  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
+  background: rgba(239, 68, 68, 0.92);
+  border-radius: 12px;
+  padding: 6px 10px;
+  box-shadow: 0 3px 10px rgba(239, 68, 68, 0.4);
   animation: scoreIn 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+.matchScoreValue {
+  font-size: 16px;
 }
 
 .matchScoreValue {
@@ -503,4 +520,340 @@
 .closeMapButton:hover {
   background: #ffffff;
   transform: scale(1.05);
+}
+
+
+/* ============================================================
+   RESPONSIVE — small phones
+   ============================================================ */
+@media (max-width: 400px) {
+  .deck {
+    height: calc(100dvh - 200px);
+    min-height: 340px;
+  }
+  .card {
+    border-radius: 18px;
+  }
+  .name {
+    font-size: 18px;
+  }
+  .location {
+    font-size: 12px;
+  }
+  .bio {
+    font-size: 12px;
+    -webkit-line-clamp: 2;
+  }
+  .infoOverlay {
+    bottom: 76px;
+    padding: 12px 12px 10px;
+  }
+  .passButton,
+  .likeButton {
+    width: 52px;
+    height: 52px;
+  }
+  .actionButtons {
+    gap: 24px;
+    bottom: 12px;
+  }
+  .interestTag {
+    font-size: 9px;
+    padding: 2px 7px;
+  }
+  .swipeIndicator {
+    padding: 6px 12px;
+    font-size: 12px;
+  }
+  .swipeLeft { left: 12px; }
+  .swipeRight { right: 12px; }
+  .matchScoreBadge {
+    top: 10px;
+    right: 10px;
+    padding: 5px 8px;
+  }
+  .matchScoreValue {
+    font-size: 14px;
+  }
+  .matchScoreLabel {
+    font-size: 8px;
+  }
+}
+
+/* ============================================================
+   RESPONSIVE — very short viewports (landscape phones)
+   ============================================================ */
+@media (max-height: 640px) {
+  .deck {
+    height: calc(100dvh - 180px);
+    min-height: 320px;
+  }
+  .infoOverlay {
+    bottom: 68px;
+    padding: 10px 14px 8px;
+  }
+  .bio {
+    -webkit-line-clamp: 1;
+    margin-bottom: 4px;
+  }
+  .passButton,
+  .likeButton {
+    width: 48px;
+    height: 48px;
+  }
+  .actionButtons {
+    bottom: 10px;
+    gap: 24px;
+  }
+}
+
+/* ============================================================
+   RESPONSIVE — tablets and up
+   ============================================================ */
+@media (min-width: 768px) {
+  .deck {
+    height: 620px;
+    min-height: 620px;
+    max-height: 620px;
+  }
+  .name {
+    font-size: 24px;
+  }
+  .bio {
+    font-size: 14px;
+    -webkit-line-clamp: 3;
+  }
+  .passButton,
+  .likeButton {
+    width: 64px;
+    height: 64px;
+  }
+  .actionButtons {
+    gap: 40px;
+    bottom: 20px;
+  }
+  .infoOverlay {
+    bottom: 100px;
+    padding: 20px;
+  }
+}
+
+/* ============================================================
+   Filter panel header (source-of-prefs indicator + reset)
+   ============================================================ */
+.filterPanelHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.filterPanelTitle {
+  font-size: 11px;
+  font-weight: 700;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.resetToPrefsButton {
+  background: none;
+  border: none;
+  padding: 4px 8px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #ef4444;
+  cursor: pointer;
+  border-radius: 6px;
+  font-family: inherit;
+  transition: background-color 0.15s ease;
+}
+
+.resetToPrefsButton:hover {
+  background: #fef2f2;
+}
+/* ============================================================
+   Get to know button — mirrors pass/like shape, blue accent
+   ============================================================ */
+.getToKnowButton {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  transition: all 0.15s ease;
+  background: #3b82f6;
+  color: #ffffff;
+}
+
+.getToKnowButton:hover {
+  transform: scale(1.1);
+  background: #2563eb;
+}
+
+@media (max-width: 400px) {
+  .getToKnowButton {
+    width: 52px;
+    height: 52px;
+  }
+}
+
+@media (max-height: 640px) {
+  .getToKnowButton {
+    width: 48px;
+    height: 48px;
+  }
+}
+
+@media (min-width: 768px) {
+  .getToKnowButton {
+    width: 64px;
+    height: 64px;
+  }
+}
+/* ============================================================
+   VIP-required modal — bottom sheet matching ConnectionPrompt
+   ============================================================ */
+.vipBlockOverlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.55);
+  z-index: 200;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  animation: fadeIn 0.2s ease;
+}
+
+.vipBlockSheet {
+  background-color: #ffffff;
+  border-radius: 1.5rem 1.5rem 0 0;
+  width: 100%;
+  max-width: 480px;
+  margin: 0 auto;
+  padding: 0.5rem 1.25rem calc(1.5rem + env(safe-area-inset-bottom));
+  position: relative;
+  animation: slideUp 0.3s ease;
+  text-align: center;
+}
+
+.vipBlockDragHandle {
+  width: 40px;
+  height: 4px;
+  background-color: #e5e7eb;
+  border-radius: 9999px;
+  margin: 0 auto 0.75rem;
+}
+
+.vipBlockClose {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.75rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #6b7280;
+  padding: 0.5rem;
+  border-radius: 9999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 44px;
+  min-height: 44px;
+  transition: background-color 0.15s ease;
+}
+
+.vipBlockClose:hover {
+  background-color: #f3f4f6;
+}
+
+.vipBlockIconWrapper {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0.5rem auto 1rem;
+}
+
+.vipBlockIcon {
+  color: #f59e0b;
+}
+
+.vipBlockTitle {
+  font-size: 20px;
+  font-weight: 700;
+  color: #111827;
+  margin: 0 0 0.5rem;
+  letter-spacing: -0.01em;
+}
+
+.vipBlockText {
+  font-size: 14px;
+  line-height: 1.5;
+  color: #6b7280;
+  margin: 0 0 1.5rem;
+  max-width: 340px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.vipBlockActions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.vipBlockPrimary {
+  width: 100%;
+  padding: 14px 20px;
+  border-radius: 9999px;
+  border: none;
+  background: #ef4444;
+  color: #ffffff;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background-color 0.15s ease, transform 0.1s ease;
+  font-family: inherit;
+}
+
+.vipBlockPrimary:hover {
+  background: #dc2626;
+}
+
+.vipBlockPrimary:active {
+  transform: scale(0.98);
+}
+
+.vipBlockSecondary {
+  width: 100%;
+  padding: 12px 20px;
+  border-radius: 9999px;
+  border: none;
+  background: transparent;
+  color: #6b7280;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: color 0.15s ease, background-color 0.15s ease;
+  font-family: inherit;
+}
+
+.vipBlockSecondary:hover {
+  color: #111827;
+  background-color: #f9fafb;
+}
+
+@keyframes slideUp {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
 }

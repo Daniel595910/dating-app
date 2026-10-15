@@ -271,7 +271,7 @@ export const CommunityPage: React.FC = () => {
         
 
         {filter === 'profiles' ? (
-          <ProfileSwipeDeck userId={user?.id || ''} communityId={community.id} />
+          <ProfileSwipeDeck userId={user?.id || ''} communityId={community.id} onGetToKnow={(id) => handleGetToKnow(id)} />
         ) : feedLoading && posts.length === 0 ? (
           <CommunitySkeleton />
         ) : feedError && posts.length === 0 ? (

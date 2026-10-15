@@ -55,24 +55,47 @@ export const ProfilePage: React.FC = () => {
   const previewVideoElementRef = useRef<HTMLVideoElement>(null);
 
   const handleShareProfile = async () => {
-    if (!user || !profile) return;
+    console.log('[share] tapped. hasShared=', hasShared, 'user=', user?.id, 'profile=', !!profile);
+    if (!user || !profile) {
+      showToast('You need to be signed in', 'warning');
+      return;
+    }
     if (hasShared) {
+      console.log('[share] already shared in this community → opening unshare confirm');
       setShowUnshareConfirm(true);
       return;
     }
     setShareLoading(true);
     try {
-        // Share profile
-        const { data: membership } = await supabase
+        // Figure out which community to share to.
+        // Priority:
+        //   1. The community currently selected in the app (from localStorage)
+        //   2. The first ACTIVE membership otherwise
+        const preferredId = (() => {
+          try { return localStorage.getItem('selectedCommunityId'); } catch { return null; }
+        })();
+
+        const { data: memberships } = await supabase
           .from('community_members')
           .select('community_id')
           .eq('user_id', user.id)
-          .maybeSingle();
+          .eq('status', 'active');
 
-        if (!membership) return;
+        if (!memberships || memberships.length === 0) {
+          console.error('Cannot share: no active community memberships');
+          showToast('Join a community first to share your profile', 'warning');
+          setShareLoading(false);
+          return;
+        }
+
+        const targetCommunityId =
+          (preferredId && memberships.some((m) => m.community_id === preferredId))
+            ? preferredId
+            : memberships[0].community_id;
+        console.log('[share] inserting to community', targetCommunityId, 'preferredId=', preferredId, 'memberships=', memberships.map(m => m.community_id));
 
         const { error: insertError } = await supabase.from('posts').insert({
-          community_id: membership.community_id,
+          community_id: targetCommunityId,
           author_id: user.id,
           type: 'profile_share',
           content: profile.bio || 'Check out my profile!',
@@ -88,12 +111,17 @@ export const ProfilePage: React.FC = () => {
           },
         });
 
-        if (insertError) throw insertError;
+        if (insertError) {
+          console.error('[share] insert error:', insertError);
+          throw insertError;
+        }
+        console.log('[share] insert OK');
         setHasShared(true);
         setShareSuccess(true);
         setTimeout(() => setShareSuccess(false), 4000);
-    } catch (err) {
-      console.error('Share/Unshare failed:', err);
+    } catch (err: any) {
+      console.error('[share] caught:', err);
+      showToast(err?.message || 'Failed to share profile', 'error');
     } finally {
       setShareLoading(false);
     }
@@ -120,14 +148,23 @@ export const ProfilePage: React.FC = () => {
 
         if (user) {
           if (targetUserId === user.id) {
-            // Check if already shared profile
-            const { data: existingShare } = await supabase
+            // Check if already shared to the CURRENTLY SELECTED community
+            const preferredId = (() => {
+              try { return localStorage.getItem('selectedCommunityId'); } catch { return null; }
+            })();
+
+            let shareQuery = supabase
               .from('posts')
               .select('id')
               .eq('author_id', user.id)
               .eq('type', 'profile_share')
-              .eq('status', 'published')
-              .maybeSingle();
+              .eq('status', 'published');
+
+            if (preferredId) {
+              shareQuery = shareQuery.eq('community_id', preferredId);
+            }
+
+            const { data: existingShare } = await shareQuery.maybeSingle();
             setHasShared(Boolean(existingShare));
           }
           if (targetUserId !== user.id) {
@@ -898,7 +935,7 @@ export const ProfilePage: React.FC = () => {
                 color: hasShared ? '#10b981' : '#ef4444',
               }}>
               <Share2 size={18} />
-              {shareLoading ? '...' : hasShared ? '' : ''}
+              {shareLoading ? 'Sharing…' : hasShared ? 'Shared' : 'Share'}
             </button>
             <button className={styles.primaryAction} onClick={() => navigate('/profile/edit')}>
               Edit Profile
@@ -1112,7 +1149,7 @@ export const ProfilePage: React.FC = () => {
           </div>
           <div className={styles.shareSuccessContent}>
             <p className={styles.shareSuccessTitle}>Profile Shared!</p>
-            <p className={styles.shareSuccessText}>Your profile is now in the community Profiles tab.</p>
+            <p className={styles.shareSuccessText}>Your profile is now visible in the community Profiles tab.</p>
           </div>
           <button 
             onClick={() => navigate('/community?filter=profiles')}
@@ -1138,11 +1175,18 @@ export const ProfilePage: React.FC = () => {
                   setShowUnshareConfirm(false);
                   setShareLoading(true);
                   try {
-                    const { error: deleteError } = await supabase
+                    const preferredId = (() => {
+                      try { return localStorage.getItem('selectedCommunityId'); } catch { return null; }
+                    })();
+                    let delQuery = supabase
                       .from('posts')
                       .delete()
                       .eq('author_id', user?.id)
                       .eq('type', 'profile_share');
+                    if (preferredId) {
+                      delQuery = delQuery.eq('community_id', preferredId);
+                    }
+                    const { error: deleteError } = await delQuery;
                     if (deleteError) throw deleteError;
                     setHasShared(false);
                   } catch (err) {
