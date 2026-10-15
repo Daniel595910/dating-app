@@ -1,6 +1,8 @@
-﻿import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { Heart, X, MapPin, BadgeCheck, Users, Crown, SlidersHorizontal, ChevronDown, Map as MapIcon, List } from 'lucide-react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Heart, X, MapPin, BadgeCheck, Users, Crown, SlidersHorizontal, ChevronDown, Map as MapIcon, List, ShieldCheck, MessageCircle } from 'lucide-react';
 import { supabase } from '@/config/supabase.client';
+import { useUIStore } from '@/store/ui.store';
 import styles from '../styles/ProfileSwipeDeck.module.css';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -8,7 +10,10 @@ import 'leaflet/dist/leaflet.css';
 interface ProfileSwipeDeckProps {
   userId: string;
   communityId: string;
+  onGetToKnow?: (targetUserId: string) => void;
 }
+
+type VipLevel = 'free' | 'basic' | 'premium' | 'vip';
 
 interface ProfileCard {
   id: string;
@@ -26,6 +31,7 @@ interface ProfileCard {
   interests: string[];
   relationshipIntent: string | null;
   verified: boolean;
+  vipLevel: VipLevel;
   distanceKm: number | null;
 }
 
@@ -36,7 +42,10 @@ interface FilterOptions {
   verifiedOnly: boolean;
 }
 
-export const ProfileSwipeDeck: React.FC<ProfileSwipeDeckProps> = ({ userId, communityId }) => {
+export const ProfileSwipeDeck: React.FC<ProfileSwipeDeckProps> = ({ userId, communityId, onGetToKnow }) => {
+  const navigate = useNavigate();
+  const showToast = useUIStore((s) => s.showToast);
+
   const [profiles, setProfiles] = useState<ProfileCard[]>([]);
   const [filteredProfiles, setFilteredProfiles] = useState<ProfileCard[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -51,7 +60,49 @@ export const ProfileSwipeDeck: React.FC<ProfileSwipeDeckProps> = ({ userId, comm
     maxDistance: 50,
     verifiedOnly: false,
   });
+  const [filtersFromPrefs, setFiltersFromPrefs] = useState(true);
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
+  const [viewerQualified, setViewerQualified] = useState<boolean | null>(null);
+  const [viewerVipLevel, setViewerVipLevel] = useState<VipLevel>('free');
+  const [vipBlockOpen, setVipBlockOpen] = useState(false);
+
+  useEffect(() => {
+    if (!userId) return;
+    (async () => {
+      const { data } = await supabase
+        .from('match_preferences')
+        .select('age_range, distance_radius, verified_only')
+        .eq('user_id', userId)
+        .maybeSingle();
+
+      if (data) {
+        setFilters({
+          minAge: data.age_range?.min ?? 18,
+          maxAge: data.age_range?.max ?? 60,
+          maxDistance: data.distance_radius ?? 50,
+          verifiedOnly: data.verified_only ?? false,
+        });
+        setFiltersFromPrefs(true);
+      }
+    })();
+  }, [userId]);
+
+  useEffect(() => {
+    if (!userId) return;
+    (async () => {
+      const { data } = await supabase
+        .from('profiles')
+        .select('face_verified, vip_level')
+        .eq('user_id', userId)
+        .maybeSingle();
+
+      const vip = (data?.vip_level as VipLevel) || 'free';
+      const verified = Boolean(data?.face_verified);
+      setViewerVipLevel(vip);
+      setViewerQualified(verified);
+    })();
+  }, [userId]);
+
   const [cardBackground, setCardBackground] = useState<string>('linear-gradient(135deg, #fecaca 0%, #f87171 100%)');
   const cardRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<HTMLDivElement>(null);
@@ -213,12 +264,14 @@ export const ProfileSwipeDeck: React.FC<ProfileSwipeDeckProps> = ({ userId, comm
           interests: prof?.interests || metadata.interests || [],
           relationshipIntent: prof?.relationship_intent || null,
           verified: prof?.is_verified || false,
+          vipLevel: (prof?.vip_level as VipLevel) || 'free',
           distanceKm: distance,
         });
       }
 
-      setProfiles(cards);
-      setFilteredProfiles(cards);
+      const vipCards = cards.filter((c) => c.vipLevel !== 'free');
+      setProfiles(vipCards);
+      setFilteredProfiles(vipCards);
     } catch (err) {
       console.error('Failed to fetch profile shares:', err);
     } finally {
@@ -243,7 +296,6 @@ export const ProfileSwipeDeck: React.FC<ProfileSwipeDeckProps> = ({ userId, comm
     setCurrentIndex(0);
   }, [filters, profiles]);
 
-  // Update card background when current profile changes
   useEffect(() => {
     const current = filteredProfiles[currentIndex];
     if (current?.avatarUrl) {
@@ -327,11 +379,55 @@ export const ProfileSwipeDeck: React.FC<ProfileSwipeDeckProps> = ({ userId, comm
   const handlePass = () => setCurrentIndex((prev) => prev + 1);
   const handleLike = () => setCurrentIndex((prev) => prev + 1);
 
-  if (loading) {
+  const handleGetToKnowClick = () => {
+    if (!current) return;
+    if (viewerVipLevel === 'free') {
+      setVipBlockOpen(true);
+      return;
+    }
+    if (onGetToKnow) {
+      onGetToKnow(current.userId);
+    }
+  };
+
+  const handleGoToVip = () => {
+    setVipBlockOpen(false);
+    navigate('/profile/vip');
+  };
+
+  if (viewerQualified === null || loading) {
     return (
       <div className={styles.loading}>
         <div className={styles.spinner} />
         <p>Loading profiles...</p>
+      </div>
+    );
+  }
+
+  if (!viewerQualified) {
+    return (
+      <div className={styles.empty}>
+        <ShieldCheck size={48} className={styles.emptyIcon} />
+        <p className={styles.emptyTitle}>Verify your identity first</p>
+        <p className={styles.emptyText} style={{ maxWidth: 280 }}>
+          Only verified members can browse VIP profiles in the swipe deck.
+        </p>
+        <button
+          onClick={() => { window.location.href = '/profile/verify'; }}
+          style={{
+            marginTop: 12,
+            padding: '10px 20px',
+            borderRadius: 9999,
+            border: 'none',
+            background: '#ef4444',
+            color: '#fff',
+            fontSize: 14,
+            fontWeight: 700,
+            cursor: 'pointer',
+          }}
+        >
+          Verify my identity
+        </button>
       </div>
     );
   }
@@ -360,18 +456,86 @@ export const ProfileSwipeDeck: React.FC<ProfileSwipeDeckProps> = ({ userId, comm
 
       {showFilters && (
         <div className={styles.filterPanel}>
+          <div className={styles.filterPanelHeader}>
+            <span className={styles.filterPanelTitle}>
+              {filtersFromPrefs ? 'From your preferences' : 'Adjusting this session'}
+            </span>
+            {!filtersFromPrefs && (
+              <button
+                type="button"
+                className={styles.resetToPrefsButton}
+                onClick={async () => {
+                  const { data } = await supabase
+                    .from('match_preferences')
+                    .select('age_range, distance_radius, verified_only')
+                    .eq('user_id', userId)
+                    .maybeSingle();
+                  if (data) {
+                    setFilters({
+                      minAge: data.age_range?.min ?? 18,
+                      maxAge: data.age_range?.max ?? 60,
+                      maxDistance: data.distance_radius ?? 50,
+                      verifiedOnly: data.verified_only ?? false,
+                    });
+                    setFiltersFromPrefs(true);
+                  }
+                }}
+              >
+                Reset
+              </button>
+            )}
+          </div>
+
           <div className={styles.filterRow}>
             <label className={styles.filterLabel}>Age: {filters.minAge} - {filters.maxAge}</label>
-            <input type="range" min={18} max={60} value={filters.minAge} onChange={(e) => setFilters({ ...filters, minAge: Number(e.target.value) })} className={styles.rangeSlider} />
-            <input type="range" min={18} max={60} value={filters.maxAge} onChange={(e) => setFilters({ ...filters, maxAge: Number(e.target.value) })} className={styles.rangeSlider} />
+            <input
+              type="range"
+              min={18}
+              max={80}
+              value={filters.minAge}
+              onChange={(e) => {
+                setFilters({ ...filters, minAge: Number(e.target.value) });
+                setFiltersFromPrefs(false);
+              }}
+              className={styles.rangeSlider}
+            />
+            <input
+              type="range"
+              min={18}
+              max={80}
+              value={filters.maxAge}
+              onChange={(e) => {
+                setFilters({ ...filters, maxAge: Number(e.target.value) });
+                setFiltersFromPrefs(false);
+              }}
+              className={styles.rangeSlider}
+            />
           </div>
           <div className={styles.filterRow}>
             <label className={styles.filterLabel}>Max Distance: {filters.maxDistance} km</label>
-            <input type="range" min={5} max={200} step={5} value={filters.maxDistance} onChange={(e) => setFilters({ ...filters, maxDistance: Number(e.target.value) })} className={styles.rangeSlider} />
+            <input
+              type="range"
+              min={5}
+              max={500}
+              step={5}
+              value={filters.maxDistance}
+              onChange={(e) => {
+                setFilters({ ...filters, maxDistance: Number(e.target.value) });
+                setFiltersFromPrefs(false);
+              }}
+              className={styles.rangeSlider}
+            />
           </div>
           <div className={styles.filterRow}>
             <label className={styles.filterCheckbox}>
-              <input type="checkbox" checked={filters.verifiedOnly} onChange={(e) => setFilters({ ...filters, verifiedOnly: e.target.checked })} />
+              <input
+                type="checkbox"
+                checked={filters.verifiedOnly}
+                onChange={(e) => {
+                  setFilters({ ...filters, verifiedOnly: e.target.checked });
+                  setFiltersFromPrefs(false);
+                }}
+              />
               Verified only
             </label>
           </div>
@@ -418,7 +582,7 @@ export const ProfileSwipeDeck: React.FC<ProfileSwipeDeckProps> = ({ userId, comm
                 <div className={styles.location}>
                   <MapPin size={12} />
                   {current.location}
-                  {current.distanceKm && <span className={styles.distance}> • {current.distanceKm} km</span>}
+                  {current.distanceKm && <span className={styles.distance}> â€¢ {current.distanceKm} km</span>}
                 </div>
               )}
               {current.interests.length > 0 && (
@@ -431,8 +595,15 @@ export const ProfileSwipeDeck: React.FC<ProfileSwipeDeckProps> = ({ userId, comm
             </div>
 
             <div className={styles.actionButtons}>
-              <button className={styles.passButton} onClick={handlePass}><X size={28} /></button>
-              <button className={styles.likeButton} onClick={handleLike}><Heart size={28} /></button>
+              <button className={styles.passButton} onClick={handlePass} aria-label="Pass">
+                <X size={28} />
+              </button>
+              <button className={styles.getToKnowButton} onClick={handleGetToKnowClick} aria-label="Get to know">
+                <MessageCircle size={28} />
+              </button>
+              <button className={styles.likeButton} onClick={handleLike} aria-label="Like">
+                <Heart size={28} />
+              </button>
             </div>
           </div>
         </div>
@@ -442,7 +613,39 @@ export const ProfileSwipeDeck: React.FC<ProfileSwipeDeckProps> = ({ userId, comm
           <p className={styles.emptyTitle}>No profiles match your filters</p>
         </div>
       )}
+
+      {vipBlockOpen && (
+        <div className={styles.vipBlockOverlay} onClick={() => setVipBlockOpen(false)}>
+          <div className={styles.vipBlockSheet} onClick={(e) => e.stopPropagation()}>
+            <div className={styles.vipBlockDragHandle} />
+            <button
+              onClick={() => setVipBlockOpen(false)}
+              className={styles.vipBlockClose}
+              aria-label="Close"
+            >
+              <X size={20} />
+            </button>
+
+            <div className={styles.vipBlockIconWrapper}>
+              <Crown size={32} className={styles.vipBlockIcon} />
+            </div>
+
+            <h2 className={styles.vipBlockTitle}>VIP members only</h2>
+            <p className={styles.vipBlockText}>
+              This user is a VIP member. You need a VIP account to communicate with them.
+            </p>
+
+            <div className={styles.vipBlockActions}>
+              <button className={styles.vipBlockPrimary} onClick={handleGoToVip}>
+                Become a VIP
+              </button>
+              <button className={styles.vipBlockSecondary} onClick={() => setVipBlockOpen(false)}>
+                Not now
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
-
