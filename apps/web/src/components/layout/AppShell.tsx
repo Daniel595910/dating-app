@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '@/store/auth.store';
 import { ROUTES } from '@/config/constants';
 import { NotificationPromptBanner } from '@/features/notifications/components/NotificationPromptBanner';
+import { EmailVerificationBanner } from './EmailVerificationBanner';
 
 interface AppShellProps {
   children: React.ReactNode;
@@ -41,7 +42,11 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
 
   return (
     <>
-      {user && <NotificationPromptBanner />}
+      {user && !user.email_confirmed_at ? (
+        <EmailVerificationBanner />
+      ) : user ? (
+        <NotificationPromptBanner />
+      ) : null}
       {children}
     </>
   );

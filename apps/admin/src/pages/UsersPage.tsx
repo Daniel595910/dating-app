@@ -17,6 +17,8 @@ import {
   Eye,
   Ban,
   CheckCircle,
+  Mail,
+  Send,
 } from 'lucide-react';
 import { useAdminAuth } from '@/hooks/useAdminAuth';
 import { useToast } from '@/components/ui/Toast';
@@ -45,6 +47,8 @@ export const UsersPage: React.FC = () => {
   const [sortBy, setSortBy] = useState<'created_at' | 'display_name'>('created_at');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+  const [emailStatuses, setEmailStatuses] = useState<Record<string, { email: string | null; email_confirmed_at: string | null; last_sign_in_at: string | null }>>({});
+  const [sendingEmailId, setSendingEmailId] = useState<string | null>(null);
 
   // Debounce search
   useEffect(() => {
@@ -67,6 +71,15 @@ export const UsersPage: React.FC = () => {
 
       setUsers(result.users);
       setTotal(result.total);
+
+
+      if (result.users.length > 0) {
+        const ids = result.users.map((u) => u.user_id);
+        userService
+          .getEmailStatuses(ids)
+          .then((statuses) => setEmailStatuses(statuses))
+          .catch((err) => console.error('getEmailStatuses failed:', err));
+      }
     } catch (err: any) {
       toast.error('Failed to load users', err.message);
     } finally {
@@ -106,6 +119,28 @@ export const UsersPage: React.FC = () => {
       toast.error('Action failed', err.message);
     }
     setOpenMenuId(null);
+  };
+
+  const handleSendVerificationEmail = async (userId: string) => {
+    if (!hasPermission('USER_VERIFY')) {
+      toast.error('Permission denied', 'You cannot send verification emails');
+      return;
+    }
+
+    setSendingEmailId(userId);
+    try {
+      const result = await userService.sendVerificationEmail(userId);
+      if (result.success) {
+        toast.success('Verification email sent');
+      } else {
+        toast.error('Failed to send', result.error || 'Unknown error');
+      }
+    } catch (err: any) {
+      toast.error('Action failed', err.message);
+    } finally {
+      setSendingEmailId(null);
+      setOpenMenuId(null);
+    }
   };
 
   const handleSort = (field: 'created_at' | 'display_name') => {
@@ -219,6 +254,11 @@ export const UsersPage: React.FC = () => {
                         <div className={styles.userInfo}>
                           <span className={styles.userName}>
                             {user.display_name || 'Unnamed User'}
+                            {emailStatuses[user.user_id] && !emailStatuses[user.user_id].email_confirmed_at && (
+                              <span title="Email not confirmed" style={{ display: 'inline-flex', alignItems: 'center', gap: 3, marginLeft: 6, padding: '1px 6px', fontSize: 10, fontWeight: 700, color: '#b45309', background: '#fef3c7', border: '1px solid #fde68a', borderRadius: 9999, verticalAlign: 'middle', textTransform: 'uppercase', letterSpacing: '0.03em' }}>
+                                <Mail size={10} /> Email unverified
+                              </span>
+                            )}
                           </span>
                           <span className={styles.userId}>
                             ID: {user.user_id.substring(0, 8)}
@@ -293,6 +333,15 @@ export const UsersPage: React.FC = () => {
                                 >
                                   <CheckCircle size={14} />
                                   {user.is_verified ? 'Unverify' : 'Verify user'}
+                                </button>
+                              )}
+                              {hasPermission('USER_VERIFY') && emailStatuses[user.user_id] && !emailStatuses[user.user_id].email_confirmed_at && (
+                                <button
+                                  className={styles.menuItem}
+                                  disabled={sendingEmailId === user.user_id}
+                                  onClick={() => handleSendVerificationEmail(user.user_id)}
+                                >
+                                  {sendingEmailId === user.user_id ? (<><RefreshCw size={14} className={styles.spinning} /> Sending…</>) : (<><Send size={14} /> Send verification email</>)}
                                 </button>
                               )}
                               {hasPermission('USER_BAN') && (

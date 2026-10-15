@@ -1,4 +1,4 @@
-﻿import { supabase } from '@/config/supabase.client';
+import { supabase } from '@/config/supabase.client';
 import { auditService } from './audit.service';
 
 export interface AdminUserRecord {
@@ -216,6 +216,58 @@ class UserService {
     });
 
     return true;
+  }
+
+  // ---- Email verification (admin-side) ----
+
+  /**
+   * Batch-fetch email confirmation status for a list of user ids.
+   * Calls the admin-user-status edge function.
+   */
+  async getEmailStatuses(userIds: string[]): Promise<Record<string, {
+    email: string | null;
+    email_confirmed_at: string | null;
+    last_sign_in_at: string | null;
+  }>> {
+    if (!userIds || userIds.length === 0) return {};
+
+    const { data, error } = await supabase.functions.invoke('admin-user-status', {
+      body: { user_ids: userIds },
+    });
+
+    if (error) {
+      console.error('admin-user-status failed:', error);
+      return {};
+    }
+
+    return (data as any)?.statuses ?? {};
+  }
+
+  /**
+   * Send a fresh verification email to a user via the
+   * send-verification-email edge function.
+   * Logs the action to the audit trail on success.
+   */
+  async sendVerificationEmail(userId: string): Promise<{ success: boolean; error?: string }> {
+    const { data, error } = await supabase.functions.invoke('send-verification-email', {
+      body: { user_id: userId },
+    });
+
+    if (error) {
+      return { success: false, error: error.message };
+    }
+    const payload = data as any;
+    if (payload?.error) {
+      return { success: false, error: payload.error };
+    }
+
+    await auditService.logAction({
+      action: 'send_verification_email',
+      resourceType: 'profile',
+      resourceId: userId,
+    });
+
+    return { success: true };
   }
 
   async updateUserRole(userId: string, role: string): Promise<boolean> {
