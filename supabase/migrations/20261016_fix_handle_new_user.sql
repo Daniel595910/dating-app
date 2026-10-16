@@ -79,3 +79,16 @@ CREATE TRIGGER on_auth_user_created
   AFTER INSERT OR UPDATE OF raw_user_meta_data ON auth.users
   FOR EACH ROW
   EXECUTE FUNCTION public.handle_new_user();
+
+-- ============================================================
+-- Restrict trigger to INSERT only. The UPDATE OF raw_user_meta_data
+-- branch was firing during sign-in (Supabase syncs provider metadata)
+-- and could abort the auth transaction, causing 403 on /auth/v1/user.
+-- ============================================================
+
+DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
+
+CREATE TRIGGER on_auth_user_created
+  AFTER INSERT ON auth.users
+  FOR EACH ROW
+  EXECUTE FUNCTION public.handle_new_user();
