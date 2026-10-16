@@ -16,6 +16,7 @@ import { LocationSetup } from './pages/auth/LocationSetup';
 import { CommunityAssign } from './pages/auth/CommunityAssign';
 import { ConfirmEmail } from './pages/auth/ConfirmEmail';
 import { AuthCallbackPage } from './pages/auth/AuthCallbackPage';
+import { ProfileCompletionPage } from './pages/auth/ProfileCompletionPage';
 
 // Community Pages
 import { CommunityPage } from './pages/community/CommunityPage';
@@ -57,7 +58,7 @@ export const AppRouter: React.FC = () => {
       <Route path={ROUTES.COMMUNITY_ASSIGN} element={<CommunityAssign />} />
       <Route path="/confirm-email" element={<ConfirmEmail />} />
       <Route path="/auth/callback" element={<AuthCallbackPage />} />
-      <Route path="/register/complete" element={<Navigate to={ROUTES.REGISTER} replace />} />
+      <Route path="/register/complete" element={<ProfileCompletionPage />} />
 
       {/* Protected Routes */}
       <Route
