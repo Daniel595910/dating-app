@@ -28,7 +28,7 @@ export const ConfirmEmail: React.FC = () => {
   const { refreshUser } = useAuthStore();
 
   const emailFromUrl = searchParams.get('email') || '';
-  const [email, setEmail] = useState(emailFromUrl);
+  const [email] = useState(emailFromUrl);
   const [digits, setDigits] = useState<string[]>(Array(CODE_LENGTH).fill(''));
   const [verifying, setVerifying] = useState(false);
   const [resending, setResending] = useState(false);

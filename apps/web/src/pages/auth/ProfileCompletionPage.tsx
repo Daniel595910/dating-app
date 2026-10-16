@@ -15,7 +15,7 @@ import { supabase } from '@/config/supabase.client';
 import { useAuthStore } from '@/store/auth.store';
 import { useUIStore } from '@/store/ui.store';
 import { ROUTES } from '@/config/constants';
-import { ArrowLeft, User, Calendar, Camera, Check, X } from 'lucide-react';
+import { ArrowLeft, User, Calendar, Camera, Check } from 'lucide-react';
 import { AvatarCropper } from '@/features/profile/components/AvatarCropper';
 import styles from './ProfileCompletionPage.module.css';
 
@@ -97,6 +97,7 @@ export const ProfileCompletionPage: React.FC = () => {
   const handleFileSelect = (files: FileList | null) => {
     if (!files || files.length === 0) return;
     const file = files[0];
+    if (!file) return;
     if (!file.type.startsWith('image/')) {
       showToast('Pick an image file', 'warning');
       return;
