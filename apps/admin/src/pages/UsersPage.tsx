@@ -254,7 +254,7 @@ export const UsersPage: React.FC = () => {
                         <div className={styles.userInfo}>
                           <span className={styles.userName}>
                             {user.display_name || 'Unnamed User'}
-                            {emailStatuses[user.user_id] && !emailStatuses[user.user_id].email_confirmed_at && (
+                            {emailStatuses[user.user_id]?.email_confirmed_at === null && (
                               <span title="Email not confirmed" style={{ display: 'inline-flex', alignItems: 'center', gap: 3, marginLeft: 6, padding: '1px 6px', fontSize: 10, fontWeight: 700, color: '#b45309', background: '#fef3c7', border: '1px solid #fde68a', borderRadius: 9999, verticalAlign: 'middle', textTransform: 'uppercase', letterSpacing: '0.03em' }}>
                                 <Mail size={10} /> Email unverified
                               </span>
@@ -335,7 +335,7 @@ export const UsersPage: React.FC = () => {
                                   {user.is_verified ? 'Unverify' : 'Verify user'}
                                 </button>
                               )}
-                              {hasPermission('USER_VERIFY') && emailStatuses[user.user_id] && !emailStatuses[user.user_id].email_confirmed_at && (
+                              {hasPermission('USER_VERIFY') && emailStatuses[user.user_id]?.email_confirmed_at === null && (
                                 <button
                                   className={styles.menuItem}
                                   disabled={sendingEmailId === user.user_id}
