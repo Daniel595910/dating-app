@@ -3,10 +3,11 @@ import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '@/store/auth.store';
 import { useUIStore } from '@/store/ui.store';
 import { supabase } from '@/config/supabase.client';
+import { authService } from '@/services/auth.service';
 import {
   ArrowLeft, ChevronRight, User, Bell, Lock, MapPin, Ban,
   HelpCircle, Info, LogOut, Trash2, X, Shield, Eye, MessageSquare, Copy as CopyIcon,
-  Globe, FileText, Mail, Smartphone,
+  Globe, FileText, Mail, Smartphone, Key, Calendar,
 } from 'lucide-react';
 import styles from './SettingsPage.module.css';
 import { LocationSetupSheet } from '@/features/community/components/LocationSetupSheet';
@@ -19,6 +20,9 @@ type ModalType =
   | 'privacy'
   | 'help'
   | 'about'
+  | 'password'
+  | 'email'
+  | 'dob'
   | null;
 
 interface SettingItem {
@@ -51,12 +55,19 @@ export const SettingsPage: React.FC = () => {
   // Location display
   const [locationLabel, setLocationLabel] = useState('Set your location');
 
+  // Account & Security state
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [newEmail, setNewEmail] = useState('');
+  const [newDob, setNewDob] = useState('');
+  const [savingAccount, setSavingAccount] = useState(false);
+
   useEffect(() => {
     if (!user) return;
     (async () => {
       const { data } = await supabase
         .from('profiles')
-        .select('location, show_activity, allow_messages, is_discoverable')
+        .select('location, show_activity, allow_messages, is_discoverable, birth_date')
         .eq('user_id', user.id)
         .maybeSingle();
       if (data) {
@@ -67,6 +78,7 @@ export const SettingsPage: React.FC = () => {
         setShowActivity(data.show_activity !== false);
         setAllowMessages(data.allow_messages !== false);
         setDiscoverable(data.is_discoverable !== false);
+        if (data.birth_date) setNewDob(String(data.birth_date).slice(0, 10));
       }
     })();
   }, [user]);
@@ -109,9 +121,76 @@ export const SettingsPage: React.FC = () => {
     }
   };
 
+  const handleChangePassword = async () => {
+    if (newPassword.length < 8) {
+      showToast('Password must be at least 8 characters', 'warning');
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      showToast('Passwords do not match', 'warning');
+      return;
+    }
+    setSavingAccount(true);
+    const result = await authService.updatePassword(newPassword);
+    setSavingAccount(false);
+    if (!result.success) {
+      showToast(result.error || 'Could not update password', 'error');
+      return;
+    }
+    showToast('Password updated', 'success');
+    setNewPassword('');
+    setConfirmPassword('');
+    closeModal();
+  };
+
+  const handleChangeEmail = async () => {
+    const email = newEmail.trim();
+    if (!email || !email.includes('@')) {
+      showToast('Enter a valid email', 'warning');
+      return;
+    }
+    if (email === user?.email) {
+      showToast('That is already your email', 'info');
+      return;
+    }
+    setSavingAccount(true);
+    const result = await authService.updateEmail(email);
+    setSavingAccount(false);
+    if (!result.success) {
+      showToast(result.error || 'Could not update email', 'error');
+      return;
+    }
+    showToast('Confirmation sent — check both inboxes to finish the change', 'success', 7000);
+    setNewEmail('');
+    closeModal();
+  };
+
+  const handleChangeDob = async () => {
+    if (!newDob) {
+      showToast('Pick a date', 'warning');
+      return;
+    }
+    if (!user) return;
+    setSavingAccount(true);
+    const { error } = await supabase
+      .from('profiles')
+      .update({ birth_date: newDob })
+      .eq('user_id', user.id);
+    setSavingAccount(false);
+    if (error) {
+      showToast(error.message || 'Could not update date of birth', 'error');
+      return;
+    }
+    showToast('Date of birth updated', 'success');
+    closeModal();
+  };
+
   const closeModal = () => {
     setModal(null);
     setDeleteConfirmText('');
+    setNewPassword('');
+    setConfirmPassword('');
+    setNewEmail('');
   };
 
   const settingsSections: SettingSection[] = [
@@ -121,6 +200,14 @@ export const SettingsPage: React.FC = () => {
         { icon: User, label: 'Edit Profile', action: () => navigate('/profile/edit') },
         { icon: User, label: 'Dating Preferences', action: () => navigate('/profile/preferences') },
         { icon: Shield, label: 'Verify Your Identity', action: () => navigate('/profile/verify') },
+      ],
+    },
+    {
+      title: 'Account & Security',
+      items: [
+        { icon: Key, label: 'Change Password', action: () => setModal('password') },
+        { icon: Mail, label: 'Change Email', value: user?.email || '', action: () => setModal('email') },
+        { icon: Calendar, label: 'Date of Birth', action: () => setModal('dob') },
       ],
     },
     {
@@ -189,7 +276,7 @@ export const SettingsPage: React.FC = () => {
           </div>
         ))}
 
-        {/* Appearance — theme toggle */}
+        {/* Appearance â€” theme toggle */}
         <div className={styles.section}>
           <h3 className={styles.sectionTitle}>Appearance</h3>
           <div className={styles.group} style={{ padding: '0.875rem 1rem' }}>
@@ -252,9 +339,148 @@ export const SettingsPage: React.FC = () => {
         </div>
       </div>
 
-      {/* ============================================================
-          LOGOUT MODAL
-         ============================================================ */}
+      {/* CHANGE PASSWORD MODAL */}
+      {modal === 'password' && (
+        <div className={`${styles.modalOverlay} ${styles.modalOverlayBottom}`} onClick={closeModal}>
+          <div className={styles.sheet} onClick={(e) => e.stopPropagation()}>
+            <div className={styles.sheetHeader}>
+              <h2 className={styles.sheetTitle}>Change Password</h2>
+              <button className={styles.sheetClose} onClick={closeModal} aria-label="Close">
+                <X size={20} />
+              </button>
+            </div>
+            <div className={styles.sheetBody}>
+              <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, marginBottom: 6, color: 'var(--color-text)' }}>
+                New password
+              </label>
+              <input
+                type="password"
+                className={styles.modalInput}
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                placeholder="At least 8 characters"
+                autoFocus
+              />
+              <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, margin: '1rem 0 6px', color: 'var(--color-text)' }}>
+                Confirm new password
+              </label>
+              <input
+                type="password"
+                className={styles.modalInput}
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                placeholder="Repeat new password"
+              />
+              <div className={styles.modalActions} style={{ marginTop: '1.5rem' }}>
+                <button
+                  className={`${styles.modalButton} ${styles.modalButtonSecondary}`}
+                  onClick={closeModal}
+                >
+                  Cancel
+                </button>
+                <button
+                  className={`${styles.modalButton} ${styles.modalButtonDanger}`}
+                  onClick={handleChangePassword}
+                  disabled={savingAccount}
+                >
+                  {savingAccount ? 'Saving…' : 'Change'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* CHANGE EMAIL MODAL */}
+      {modal === 'email' && (
+        <div className={`${styles.modalOverlay} ${styles.modalOverlayBottom}`} onClick={closeModal}>
+          <div className={styles.sheet} onClick={(e) => e.stopPropagation()}>
+            <div className={styles.sheetHeader}>
+              <h2 className={styles.sheetTitle}>Change Email</h2>
+              <button className={styles.sheetClose} onClick={closeModal} aria-label="Close">
+                <X size={20} />
+              </button>
+            </div>
+            <div className={styles.sheetBody}>
+              <p style={{ fontSize: '0.8125rem', color: 'var(--color-text-secondary)', marginBottom: '0.75rem' }}>
+                Current: <strong>{user?.email}</strong>
+              </p>
+              <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, marginBottom: 6, color: 'var(--color-text)' }}>
+                New email
+              </label>
+              <input
+                type="email"
+                className={styles.modalInput}
+                value={newEmail}
+                onChange={(e) => setNewEmail(e.target.value)}
+                placeholder="you@example.com"
+                autoFocus
+              />
+              <p style={{ fontSize: '0.75rem', color: 'var(--color-text-tertiary)', marginTop: '0.75rem' }}>
+                Supabase will send a confirmation email. The change only takes effect after you confirm.
+              </p>
+              <div className={styles.modalActions} style={{ marginTop: '1.5rem' }}>
+                <button
+                  className={`${styles.modalButton} ${styles.modalButtonSecondary}`}
+                  onClick={closeModal}
+                >
+                  Cancel
+                </button>
+                <button
+                  className={`${styles.modalButton} ${styles.modalButtonDanger}`}
+                  onClick={handleChangeEmail}
+                  disabled={savingAccount}
+                >
+                  {savingAccount ? 'Sending…' : 'Send confirmation'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* CHANGE DOB MODAL */}
+      {modal === 'dob' && (
+        <div className={`${styles.modalOverlay} ${styles.modalOverlayBottom}`} onClick={closeModal}>
+          <div className={styles.sheet} onClick={(e) => e.stopPropagation()}>
+            <div className={styles.sheetHeader}>
+              <h2 className={styles.sheetTitle}>Date of Birth</h2>
+              <button className={styles.sheetClose} onClick={closeModal} aria-label="Close">
+                <X size={20} />
+              </button>
+            </div>
+            <div className={styles.sheetBody}>
+              <p style={{ fontSize: '0.8125rem', color: 'var(--color-text-secondary)', marginBottom: '0.75rem' }}>
+                Used to calculate your age on your profile.
+              </p>
+              <input
+                type="date"
+                className={styles.modalInput}
+                value={newDob}
+                onChange={(e) => setNewDob(e.target.value)}
+                max={new Date().toISOString().slice(0, 10)}
+              />
+              <div className={styles.modalActions} style={{ marginTop: '1.5rem' }}>
+                <button
+                  className={`${styles.modalButton} ${styles.modalButtonSecondary}`}
+                  onClick={closeModal}
+                >
+                  Cancel
+                </button>
+                <button
+                  className={`${styles.modalButton} ${styles.modalButtonDanger}`}
+                  onClick={handleChangeDob}
+                  disabled={savingAccount}
+                >
+                  {savingAccount ? 'Saving…' : 'Save'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* LOGOUT MODAL */}
       {modal === 'logout' && (
         <div className={styles.modalOverlay} onClick={closeModal}>
           <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
@@ -284,9 +510,7 @@ export const SettingsPage: React.FC = () => {
         </div>
       )}
 
-      {/* ============================================================
-          DELETE ACCOUNT MODAL (type-to-confirm)
-         ============================================================ */}
+      {/* DELETE ACCOUNT MODAL */}
       {modal === 'delete' && (
         <div className={styles.modalOverlay} onClick={closeModal}>
           <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
@@ -329,9 +553,7 @@ export const SettingsPage: React.FC = () => {
         </div>
       )}
 
-      {/* ============================================================
-          PRIVACY & SAFETY MODAL (bottom sheet)
-         ============================================================ */}
+      {/* PRIVACY & SAFETY MODAL */}
       {modal === 'privacy' && (
         <div className={`${styles.modalOverlay} ${styles.modalOverlayBottom}`} onClick={closeModal}>
           <div className={styles.sheet} onClick={(e) => e.stopPropagation()}>
@@ -422,9 +644,7 @@ export const SettingsPage: React.FC = () => {
         </div>
       )}
 
-      {/* ============================================================
-          HELP & SUPPORT MODAL
-         ============================================================ */}
+      {/* HELP & SUPPORT MODAL */}
       {modal === 'help' && (
         <div className={`${styles.modalOverlay} ${styles.modalOverlayBottom}`} onClick={closeModal}>
           <div className={styles.sheet} onClick={(e) => e.stopPropagation()}>
@@ -444,7 +664,7 @@ export const SettingsPage: React.FC = () => {
                 >
                   surportdatingservice@gmail.com
                 </a>
-                {' '}— we usually reply within 24 hours. You can also check the
+                {' '}â€” we usually reply within 24 hours. You can also check the
                 community guidelines for rules and safety tips.
               </p>
 
@@ -504,9 +724,7 @@ export const SettingsPage: React.FC = () => {
         </div>
       )}
 
-      {/* ============================================================
-          LOCATION MODAL
-         ============================================================ */}
+      {/* LOCATION MODAL */}
       {modal === 'location' && (
         <LocationSetupSheet
           open={true}
@@ -514,15 +732,12 @@ export const SettingsPage: React.FC = () => {
           userId={user?.id || ''}
           onLocationSaved={() => {
             closeModal();
-            // Reload settings to refresh the location label
             window.location.reload();
           }}
         />
       )}
 
-      {/* ============================================================
-          ABOUT MODAL
-         ============================================================ */}
+      {/* ABOUT MODAL */}
       {modal === 'about' && (
         <div className={`${styles.modalOverlay} ${styles.modalOverlayBottom}`} onClick={closeModal}>
           <div className={styles.sheet} onClick={(e) => e.stopPropagation()}>
@@ -591,7 +806,7 @@ export const SettingsPage: React.FC = () => {
               </button>
 
               <p style={{ textAlign: 'center', fontSize: '0.75rem', color: '#9ca3af', marginTop: '1.5rem' }}>
-                © 2026 Dating App. All rights reserved.
+                Â© 2026 Dating App. All rights reserved.
               </p>
             </div>
           </div>
