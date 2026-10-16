@@ -55,13 +55,11 @@ export const ProfilePage: React.FC = () => {
   const previewVideoElementRef = useRef<HTMLVideoElement>(null);
 
   const handleShareProfile = async () => {
-    console.log('[share] tapped. hasShared=', hasShared, 'user=', user?.id, 'profile=', !!profile);
     if (!user || !profile) {
       showToast('You need to be signed in', 'warning');
       return;
     }
     if (hasShared) {
-      console.log('[share] already shared in this community → opening unshare confirm');
       setShowUnshareConfirm(true);
       return;
     }
@@ -92,7 +90,6 @@ export const ProfilePage: React.FC = () => {
           (preferredId && memberships.some((m) => m.community_id === preferredId))
             ? preferredId
             : memberships[0].community_id;
-        console.log('[share] inserting to community', targetCommunityId, 'preferredId=', preferredId, 'memberships=', memberships.map(m => m.community_id));
 
         const { error: insertError } = await supabase.from('posts').insert({
           community_id: targetCommunityId,
@@ -115,7 +112,6 @@ export const ProfilePage: React.FC = () => {
           console.error('[share] insert error:', insertError);
           throw insertError;
         }
-        console.log('[share] insert OK');
         setHasShared(true);
         setShareSuccess(true);
         setTimeout(() => setShareSuccess(false), 4000);
