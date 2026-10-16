@@ -1,190 +1,366 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '@/store/auth.store';
 import { supabase } from '@/config/supabase.client';
-import { ArrowLeft, Save } from 'lucide-react';
+import {
+  ArrowLeft, Save, Calendar, MapPin, Heart, BadgeCheck, RotateCcw, Check,
+} from 'lucide-react';
+import styles from './DatingPreferencesPage.module.css';
+
+const INTENT_OPTIONS: { value: string; label: string }[] = [
+  { value: 'serious_relationship', label: 'Serious Relationship' },
+  { value: 'marriage', label: 'Marriage' },
+  { value: 'long_term', label: 'Long Term' },
+  { value: 'casual_dating', label: 'Casual Dating' },
+  { value: 'friendship', label: 'Friendship' },
+  { value: 'unsure', label: 'Not Sure' },
+];
+
+const AGE_MIN = 18;
+const AGE_MAX = 80;
+const DISTANCE_MIN = 5;
+const DISTANCE_MAX = 500;
+
+interface Preferences {
+  ageMin: number;
+  ageMax: number;
+  distance: number;
+  intents: string[];
+  verifiedOnly: boolean;
+}
+
+const DEFAULTS: Preferences = {
+  ageMin: 18,
+  ageMax: 50,
+  distance: 50,
+  intents: [],
+  verifiedOnly: false,
+};
 
 export const DatingPreferencesPage: React.FC = () => {
   const navigate = useNavigate();
-  const { user } = useAuthStore();
-  const [ageMin, setAgeMin] = useState(18);
-  const [ageMax, setAgeMax] = useState(50);
-  const [distance, setDistance] = useState(50);
-  const [lookingFor, setLookingFor] = useState('');
+  const { user, loading: authLoading } = useAuthStore();
+
+  const [prefs, setPrefs] = useState<Preferences>(DEFAULTS);
+  const [initialPrefs, setInitialPrefs] = useState<Preferences>(DEFAULTS);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState(false);
+  const [toast, setToast] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
+  // ============================================================
+  // Load preferences
+  // ============================================================
   useEffect(() => {
-    const loadPreferences = async () => {
-      if (!user) return;
+    // Wait until auth has finished hydrating — otherwise we'd
+    // fetch with a null user and never fire again on some setups.
+    if (authLoading) return;
 
-      const { data } = await supabase
-        .from('match_preferences')
-        .select('*')
-        .eq('user_id', user.id)
-        .maybeSingle();
-
-      if (data) {
-        setAgeMin(data.age_range?.min || 18);
-        setAgeMax(data.age_range?.max || 50);
-        setDistance(data.distance_radius || 50);
-        setLookingFor(data.relationship_intent?.[0] || '');
-      }
-
+    // No user (logged out) — stop loading and show defaults
+    if (!user) {
       setLoading(false);
-    };
+      return;
+    }
 
-    loadPreferences();
-  }, [user]);
+    let cancelled = false;
+    setLoading(true);
+
+    (async () => {
+      try {
+        const { data } = await supabase
+          .from('match_preferences')
+          .select('age_range, distance_radius, relationship_intent, verified_only')
+          .eq('user_id', user.id)
+          .maybeSingle();
+
+        if (cancelled) return;
+
+        if (data) {
+          const loaded: Preferences = {
+            ageMin: data.age_range?.min ?? DEFAULTS.ageMin,
+            ageMax: data.age_range?.max ?? DEFAULTS.ageMax,
+            distance: data.distance_radius ?? DEFAULTS.distance,
+            intents: Array.isArray(data.relationship_intent) ? data.relationship_intent : [],
+            verifiedOnly: data.verified_only ?? false,
+          };
+          setPrefs(loaded);
+          setInitialPrefs(loaded);
+        }
+      } catch (err) {
+        console.error('Failed to load preferences:', err);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [user?.id, authLoading]);
+
+  // ============================================================
+  // Detect changes
+  // ============================================================
+  const hasChanges = useMemo(() => {
+    if (prefs.ageMin !== initialPrefs.ageMin) return true;
+    if (prefs.ageMax !== initialPrefs.ageMax) return true;
+    if (prefs.distance !== initialPrefs.distance) return true;
+    if (prefs.verifiedOnly !== initialPrefs.verifiedOnly) return true;
+    if (prefs.intents.length !== initialPrefs.intents.length) return true;
+    const sortedA = [...prefs.intents].sort().join(',');
+    const sortedB = [...initialPrefs.intents].sort().join(',');
+    return sortedA !== sortedB;
+  }, [prefs, initialPrefs]);
+
+  // ============================================================
+  // Actions
+  // ============================================================
+  const showToast = (type: 'success' | 'error', text: string) => {
+    setToast({ type, text });
+    setTimeout(() => setToast(null), 2500);
+  };
 
   const handleSave = async () => {
-    if (!user) return;
+    if (!user || !hasChanges) return;
     setSaving(true);
-    setError(null);
-    setSuccess(false);
-
     try {
-      const { error: upsertError } = await supabase
+      const { error } = await supabase
         .from('match_preferences')
-        .upsert({
-          user_id: user.id,
-          age_range: { min: ageMin, max: ageMax },
-          distance_radius: distance,
-          relationship_intent: lookingFor ? [lookingFor] : [],
-        });
+        .upsert(
+          {
+            user_id: user.id,
+            age_range: { min: prefs.ageMin, max: prefs.ageMax },
+            distance_radius: prefs.distance,
+            relationship_intent: prefs.intents,
+            verified_only: prefs.verifiedOnly,
+            updated_at: new Date().toISOString(),
+          },
+          { onConflict: 'user_id' }
+        );
 
-      if (upsertError) throw upsertError;
+      if (error) throw error;
 
-      setSuccess(true);
-      setTimeout(() => {
-        setSuccess(false);
-        navigate('/profile');
-      }, 1500);
+      setInitialPrefs(prefs);
+      showToast('success', 'Preferences saved');
     } catch (err: any) {
-      setError(err.message || 'Failed to save');
+      showToast('error', err?.message || 'Failed to save');
     } finally {
       setSaving(false);
     }
   };
 
+  const handleClear = () => {
+    setPrefs(DEFAULTS);
+  };
+
+  const toggleIntent = (value: string) => {
+    setPrefs((prev) => ({
+      ...prev,
+      intents: prev.intents.includes(value)
+        ? prev.intents.filter((i) => i !== value)
+        : [...prev.intents, value],
+    }));
+  };
+
+  const sliderFillPct =
+    ((prefs.distance - DISTANCE_MIN) / (DISTANCE_MAX - DISTANCE_MIN)) * 100;
+
+  // ============================================================
+  // Render
+  // ============================================================
   if (loading) {
     return (
-      <div style={{ textAlign: 'center', padding: '2rem', color: '#9ca3af' }}>
-        Loading...
+      <div className={styles.page}>
+        <header className={styles.header}>
+          <button className={styles.headerButton} onClick={() => navigate(-1)} aria-label="Back">
+            <ArrowLeft size={22} />
+          </button>
+          <h1 className={styles.headerTitle}>Dating Preferences</h1>
+        </header>
+        <div className={styles.loading}>Loading preferences…</div>
       </div>
     );
   }
 
   return (
-    <div style={{
-      minHeight: '100dvh',
-      backgroundColor: '#faf9f7',
-      maxWidth: 480,
-      margin: '0 auto',
-    }}>
-      <header style={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        padding: '0.625rem 0.75rem',
-        paddingTop: 'calc(0.625rem + env(safe-area-inset-top))',
-        backgroundColor: '#ffffff',
-        borderBottom: '1px solid #f3f4f6',
-      }}>
-        <button
-          onClick={() => navigate('/profile')}
-          style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#111827', padding: '0.5rem', borderRadius: '9999px', minWidth: 44, minHeight: 44 }}
-        >
+    <div className={styles.page}>
+      <header className={styles.header}>
+        <button className={styles.headerButton} onClick={() => navigate(-1)} aria-label="Back">
           <ArrowLeft size={22} />
         </button>
-        <h1 style={{ fontSize: '1rem', fontWeight: 700, color: '#111827', margin: 0 }}>Dating Preferences</h1>
-        <button onClick={handleSave} disabled={saving} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ef4444', padding: '0.5rem', minWidth: 44, minHeight: 44 }}>
-          {saving ? '...' : <Save size={20} />}
+        <h1 className={styles.headerTitle}>Dating Preferences</h1>
+        <button
+          className={`${styles.saveButton} ${hasChanges ? styles.saveButtonWithChanges : ''}`}
+          onClick={handleSave}
+          disabled={!hasChanges || saving}
+        >
+          <Save size={14} />
+          {saving ? 'Saving…' : 'Save'}
         </button>
       </header>
 
-      <div style={{ padding: '1rem' }}>
-        {success && (
-          <div style={{ backgroundColor: '#d1fae5', color: '#065f46', padding: '0.75rem 1rem', borderRadius: '0.5rem', fontSize: '0.875rem', marginBottom: '1rem' }}>
-            Preferences saved!
-          </div>
-        )}
-        {error && (
-          <div style={{ backgroundColor: '#fee2e2', color: '#991b1b', padding: '0.75rem 1rem', borderRadius: '0.5rem', fontSize: '0.875rem', marginBottom: '1rem' }}>
-            {error}
-          </div>
-        )}
+      {toast && (
+        <div className={`${styles.toast} ${toast.type === 'success' ? styles.toastSuccess : styles.toastError}`}>
+          {toast.text}
+        </div>
+      )}
 
-        {/* Age Range */}
-        <div style={{ backgroundColor: '#ffffff', borderRadius: '1rem', padding: '1rem', marginBottom: '1rem' }}>
-          <h3 style={{ fontSize: '0.9375rem', fontWeight: 700, color: '#111827', margin: '0 0 0.75rem' }}>
-            Age Range
-          </h3>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-            <select
-              value={ageMin}
-              onChange={(e) => setAgeMin(Number(e.target.value))}
-              style={{ flex: 1, padding: '0.625rem', border: '1px solid #e5e7eb', borderRadius: '0.5rem', fontSize: '0.9375rem', fontFamily: 'inherit' }}
-            >
-              {Array.from({ length: 43 }, (_, i) => i + 18).map((age) => (
-                <option key={age} value={age}>{age}</option>
-              ))}
-            </select>
-            <span style={{ color: '#9ca3af' }}>to</span>
-            <select
-              value={ageMax}
-              onChange={(e) => setAgeMax(Number(e.target.value))}
-              style={{ flex: 1, padding: '0.625rem', border: '1px solid #e5e7eb', borderRadius: '0.5rem', fontSize: '0.9375rem', fontFamily: 'inherit' }}
-            >
-              {Array.from({ length: 43 }, (_, i) => i + 18).map((age) => (
-                <option key={age} value={age}>{age}</option>
-              ))}
-            </select>
+      <div className={styles.content}>
+        {/* ============ AGE RANGE ============ */}
+        <div className={styles.section}>
+          <div className={styles.card}>
+            <div className={styles.cardHeader}>
+              <div className={styles.cardIconWrap}>
+                <Calendar size={18} />
+              </div>
+              <div className={styles.cardTitleGroup}>
+                <h3 className={styles.cardTitle}>Age Range</h3>
+                <p className={styles.cardSubtitle}>
+                  Only show people within this age range
+                </p>
+              </div>
+            </div>
+            <div className={styles.ageRow}>
+              <select
+                className={styles.ageSelect}
+                value={prefs.ageMin}
+                onChange={(e) => {
+                  const v = Number(e.target.value);
+                  setPrefs((p) => ({ ...p, ageMin: Math.min(v, p.ageMax) }));
+                }}
+                aria-label="Minimum age"
+              >
+                {Array.from({ length: AGE_MAX - AGE_MIN + 1 }, (_, i) => AGE_MIN + i).map((age) => (
+                  <option key={age} value={age}>{age}</option>
+                ))}
+              </select>
+              <span className={styles.ageSeparator}>to</span>
+              <select
+                className={styles.ageSelect}
+                value={prefs.ageMax}
+                onChange={(e) => {
+                  const v = Number(e.target.value);
+                  setPrefs((p) => ({ ...p, ageMax: Math.max(v, p.ageMin) }));
+                }}
+                aria-label="Maximum age"
+              >
+                {Array.from({ length: AGE_MAX - AGE_MIN + 1 }, (_, i) => AGE_MIN + i).map((age) => (
+                  <option key={age} value={age}>{age}</option>
+                ))}
+              </select>
+            </div>
           </div>
         </div>
 
-        {/* Distance */}
-        <div style={{ backgroundColor: '#ffffff', borderRadius: '1rem', padding: '1rem', marginBottom: '1rem' }}>
-          <h3 style={{ fontSize: '0.9375rem', fontWeight: 700, color: '#111827', margin: '0 0 0.5rem' }}>
-            Distance
-          </h3>
-          <input
-            type="range"
-            min={5}
-            max={500}
-            step={5}
-            value={distance}
-            onChange={(e) => setDistance(Number(e.target.value))}
-            style={{ width: '100%', accentColor: '#ef4444' }}
-          />
-          <p style={{ textAlign: 'center', fontSize: '0.875rem', color: '#6b7280', margin: '0.25rem 0 0' }}>
-            {distance} km
-          </p>
+        {/* ============ DISTANCE ============ */}
+        <div className={styles.section}>
+          <div className={styles.card}>
+            <div className={styles.cardHeader}>
+              <div className={styles.cardIconWrap}>
+                <MapPin size={18} />
+              </div>
+              <div className={styles.cardTitleGroup}>
+                <h3 className={styles.cardTitle}>Maximum Distance</h3>
+                <p className={styles.cardSubtitle}>
+                  How far away can a match be?
+                </p>
+              </div>
+            </div>
+            <div className={styles.distanceValue}>
+              <span className={styles.distanceNumber}>{prefs.distance}</span>
+              <span className={styles.distanceUnit}>km</span>
+            </div>
+            <div className={styles.sliderWrap}>
+              <input
+                type="range"
+                min={DISTANCE_MIN}
+                max={DISTANCE_MAX}
+                step={5}
+                value={prefs.distance}
+                onChange={(e) => setPrefs((p) => ({ ...p, distance: Number(e.target.value) }))}
+                className={styles.slider}
+                style={{ ['--slider-fill' as any]: `${sliderFillPct}%` }}
+                aria-label="Maximum distance in kilometers"
+              />
+              <div className={styles.sliderRangeLabels}>
+                <span>{DISTANCE_MIN} km</span>
+                <span>{DISTANCE_MAX} km</span>
+              </div>
+            </div>
+          </div>
         </div>
 
-        {/* Looking For */}
-        <div style={{ backgroundColor: '#ffffff', borderRadius: '1rem', padding: '1rem' }}>
-          <h3 style={{ fontSize: '0.9375rem', fontWeight: 700, color: '#111827', margin: '0 0 0.75rem' }}>
-            Looking For
-          </h3>
-          <select
-            value={lookingFor}
-            onChange={(e) => setLookingFor(e.target.value)}
-            style={{ width: '100%', padding: '0.625rem', border: '1px solid #e5e7eb', borderRadius: '0.5rem', fontSize: '0.9375rem', fontFamily: 'inherit' }}
-          >
-            <option value="">Select...</option>
-            <option value="serious_relationship">Serious Relationship</option>
-            <option value="marriage">Marriage</option>
-            <option value="casual_dating">Casual Dating</option>
-            <option value="friendship">Friendship</option>
-            <option value="long_term">Long Term</option>
-            <option value="unsure">Not Sure</option>
-          </select>
+        {/* ============ LOOKING FOR ============ */}
+        <div className={styles.section}>
+          <div className={styles.card}>
+            <div className={styles.cardHeader}>
+              <div className={styles.cardIconWrap}>
+                <Heart size={18} />
+              </div>
+              <div className={styles.cardTitleGroup}>
+                <h3 className={styles.cardTitle}>Looking For</h3>
+                <p className={styles.cardSubtitle}>
+                  Choose one or more. Leave empty to see everyone.
+                </p>
+              </div>
+            </div>
+            <div className={styles.pillsGrid}>
+              {INTENT_OPTIONS.map((opt) => {
+                const active = prefs.intents.includes(opt.value);
+                return (
+                  <button
+                    key={opt.value}
+                    onClick={() => toggleIntent(opt.value)}
+                    className={`${styles.pill} ${active ? styles.pillActive : ''}`}
+                    aria-pressed={active}
+                  >
+                    {active && (
+                      <span className={styles.pillCheck}>
+                        <Check size={12} strokeWidth={3} />
+                      </span>
+                    )}
+                    {opt.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
         </div>
+
+        {/* ============ VERIFICATION ============ */}
+        <div className={styles.section}>
+          <div className={styles.card}>
+            <div className={styles.toggleRow}>
+              <div className={styles.cardIconWrap}>
+                <BadgeCheck size={18} />
+              </div>
+              <div className={styles.toggleLabel}>
+                <h3 className={styles.cardTitle}>Verified Profiles Only</h3>
+                <p className={styles.cardSubtitle}>
+                  Only match with verified users
+                </p>
+              </div>
+              <button
+                className={`${styles.toggle} ${prefs.verifiedOnly ? styles.toggleOn : ''}`}
+                onClick={() => setPrefs((p) => ({ ...p, verifiedOnly: !p.verifiedOnly }))}
+                aria-label="Toggle verified profiles only"
+                aria-pressed={prefs.verifiedOnly}
+              >
+                <span className={`${styles.toggleThumb} ${prefs.verifiedOnly ? styles.toggleThumbOn : ''}`} />
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* ============ CLEAR ============ */}
+        <button
+          className={styles.clearButton}
+          onClick={handleClear}
+          disabled={!hasChanges && prefs === initialPrefs}
+        >
+          <RotateCcw size={16} />
+          Reset to defaults
+        </button>
       </div>
     </div>
   );
 };
-
