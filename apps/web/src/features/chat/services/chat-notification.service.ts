@@ -45,7 +45,7 @@ class ChatNotificationService {
         title: senderName,
         body: 'Sent a photo',
         status: 'unread',
-        data: { conversation_id: conversationId, url: /chats/, tag: chat- },
+        data: { conversation_id: conversationId, url: `/chats/${conversationId}`, tag: `chat-${conversationId}` },
         channels: ['in_app', 'push'],
       });
     } catch (err) {
@@ -63,7 +63,7 @@ class ChatNotificationService {
         title: senderName,
         body: 'Sent a voice message',
         status: 'unread',
-        data: { conversation_id: conversationId, url: /chats/, tag: chat- },
+        data: { conversation_id: conversationId, url: `/chats/${conversationId}`, tag: `chat-${conversationId}` },
         channels: ['in_app', 'push'],
       });
     } catch (err) {
@@ -81,7 +81,7 @@ class ChatNotificationService {
         title: senderName,
         body: `Sent you a ${giftName}`,
         status: 'unread',
-        data: { conversation_id: conversationId, url: /chats/, tag: chat- },
+        data: { conversation_id: conversationId, url: `/chats/${conversationId}`, tag: `chat-${conversationId}` },
         channels: ['in_app', 'push'],
       });
     } catch (err) {
