@@ -1,119 +1,263 @@
 /**
  * Auth Service
- * Handles authentication operations
+ *
+ * Single source of truth for all authentication operations.
+ * Wraps Supabase auth calls with typed return values so callers
+ * never have to think about Supabase's error shapes.
  */
 
 import { supabase } from '@/config/supabase.client';
-import { User } from '@supabase/supabase-js';
+import type { Session, User } from '@supabase/supabase-js';
 
-export interface LoginCredentials {
-  email: string;
-  password: string;
+export interface AuthResult {
+  success: boolean;
+  error?: string;
 }
 
-export interface RegisterCredentials {
+export interface SignUpInput {
   email: string;
   password: string;
-  phone ? : string;
+  firstName: string;
+  lastName: string;
 }
 
-export interface AuthResponse {
-  user: User | null;
-  error: string | null;
+export interface SignUpResult extends AuthResult {
+  user?: User;
+  needsEmailVerification?: boolean;
+}
+
+export interface OtpVerifyResult extends AuthResult {
+  session?: Session;
 }
 
 class AuthService {
-  async login({ email, password }: LoginCredentials): Promise < AuthResponse > {
-    try {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
-      
-      if (error) throw error;
-      
-      return {
-        user: data.user,
-        error: null,
-      };
-    } catch (error: any) {
-      return {
-        user: null,
-        error: error.message || 'Failed to login',
-      };
-    }
-  }
-  
-  async register({ email, password, phone }: RegisterCredentials): Promise < AuthResponse > {
-    try {
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
-        phone,
-        options: {
-          emailRedirectTo: window.location.origin,
+  /**
+   * Email + password signup.
+   * Names go into user_metadata so a DB trigger can populate
+   * profiles.first_name / last_name automatically.
+   */
+  async signUpWithPassword(input: SignUpInput): Promise<SignUpResult> {
+    const { email, password, firstName, lastName } = input;
+
+    const displayName = [firstName.trim(), lastName.trim()]
+      .filter(Boolean)
+      .join(' ');
+
+    const { data, error } = await supabase.auth.signUp({
+      email: email.trim(),
+      password,
+      options: {
+        data: {
+          first_name: firstName.trim(),
+          last_name: lastName.trim() || null,
+          display_name: displayName,
         },
-      });
-      
-      if (error) throw error;
-      
-      return {
-        user: data.user,
-        error: null,
-      };
-    } catch (error: any) {
-      return {
-        user: null,
-        error: error.message || 'Failed to register',
-      };
+        emailRedirectTo: `${window.location.origin}/confirm-email`,
+      },
+    });
+
+    if (error) {
+      return { success: false, error: this.translateError(error.message) };
     }
+
+    const needsVerification = Boolean(data.user && !data.session);
+
+    return {
+      success: true,
+      user: data.user ?? undefined,
+      needsEmailVerification: needsVerification,
+    };
   }
-  
-  async logout(): Promise < void > {
+
+  /**
+   * Email + password sign-in.
+   */
+  async signInWithPassword(email: string, password: string): Promise<AuthResult> {
+    const { error } = await supabase.auth.signInWithPassword({
+      email: email.trim(),
+      password,
+    });
+
+    if (error) {
+      return { success: false, error: this.translateError(error.message) };
+    }
+    return { success: true };
+  }
+
+  /**
+   * Google OAuth. Redirects the browser to Google, then back to
+   * /auth/callback where the session is picked up.
+   */
+  async signInWithGoogle(): Promise<AuthResult> {
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: `${window.location.origin}/auth/callback`,
+        queryParams: {
+          access_type: 'offline',
+          prompt: 'consent',
+        },
+      },
+    });
+
+    if (error) {
+      return { success: false, error: this.translateError(error.message) };
+    }
+    return { success: true };
+  }
+
+  /**
+   * Verify a 6-digit OTP code sent to the user's email.
+   * Used for signup confirmation when the user is on a different device
+   * and can't click the link.
+   */
+  async verifySignupOtp(email: string, token: string): Promise<OtpVerifyResult> {
+    const { data, error } = await supabase.auth.verifyOtp({
+      email: email.trim(),
+      token: token.trim(),
+      type: 'signup',
+    });
+
+    if (error) {
+      return { success: false, error: this.translateError(error.message) };
+    }
+    return { success: true, session: data.session ?? undefined };
+  }
+
+  /**
+   * Verify a recovery OTP (password reset code).
+   */
+  async verifyRecoveryOtp(email: string, token: string): Promise<OtpVerifyResult> {
+    const { data, error } = await supabase.auth.verifyOtp({
+      email: email.trim(),
+      token: token.trim(),
+      type: 'recovery',
+    });
+
+    if (error) {
+      return { success: false, error: this.translateError(error.message) };
+    }
+    return { success: true, session: data.session ?? undefined };
+  }
+
+  /**
+   * Resend the signup confirmation email.
+   */
+  async resendSignupEmail(email: string): Promise<AuthResult> {
+    const { error } = await supabase.auth.resend({
+      type: 'signup',
+      email: email.trim(),
+    });
+
+    if (error) {
+      return { success: false, error: this.translateError(error.message) };
+    }
+    return { success: true };
+  }
+
+  /**
+   * Request a password reset. Sends the recovery email.
+   */
+  async requestPasswordReset(email: string): Promise<AuthResult> {
+    const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
+      redirectTo: `${window.location.origin}/reset-password`,
+    });
+
+    if (error) {
+      return { success: false, error: this.translateError(error.message) };
+    }
+    return { success: true };
+  }
+
+  /**
+   * Change the signed-in user's password.
+   * Requires an active session (user must be logged in).
+   */
+  async updatePassword(newPassword: string): Promise<AuthResult> {
+    const { error } = await supabase.auth.updateUser({
+      password: newPassword,
+    });
+
+    if (error) {
+      return { success: false, error: this.translateError(error.message) };
+    }
+    return { success: true };
+  }
+
+  /**
+   * Change the signed-in user's email.
+   * Supabase sends a confirmation to the new address.
+   */
+  async updateEmail(newEmail: string): Promise<AuthResult> {
+    const { error } = await supabase.auth.updateUser({
+      email: newEmail.trim(),
+    });
+
+    if (error) {
+      return { success: false, error: this.translateError(error.message) };
+    }
+    return { success: true };
+  }
+
+  /**
+   * Sign out the current session.
+   */
+  async signOut(): Promise<void> {
     await supabase.auth.signOut();
   }
-  
-  async getCurrentUser(): Promise < User | null > {
+
+  /**
+   * Get the current session, if any.
+   */
+  async getSession(): Promise<Session | null> {
+    const { data } = await supabase.auth.getSession();
+    return data.session;
+  }
+
+  /**
+   * Get the current user, if any.
+   */
+  async getUser(): Promise<User | null> {
     const { data } = await supabase.auth.getUser();
     return data.user;
   }
-  
-  async resetPassword(email: string): Promise < { error: string | null } > {
-    try {
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/reset-password`,
-      });
-      
-      if (error) throw error;
-      
-      return { error: null };
-    } catch (error: any) {
-      return { error: error.message || 'Failed to send reset email' };
-    }
-  }
-  
-  async updatePassword(newPassword: string): Promise < { error: string | null } > {
-    try {
-      const { error } = await supabase.auth.updateUser({
-        password: newPassword,
-      });
-      
-      if (error) throw error;
-      
-      return { error: null };
-    } catch (error: any) {
-      return { error: error.message || 'Failed to update password' };
-    }
-  }
-  
-  onAuthStateChange(callback: (user: User | null) => void): () => void {
-    const { data } = supabase.auth.onAuthStateChange((_event, session) => {
-      callback(session?.user ?? null);
+
+  /**
+   * Subscribe to auth state changes. Returns an unsubscribe function.
+   */
+  onAuthStateChange(callback: (user: User | null, session: Session | null) => void) {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      callback(session?.user ?? null, session);
     });
-    
-    return () => {
-      data.subscription.unsubscribe();
-    };
+    return () => subscription.unsubscribe();
+  }
+
+  /**
+   * Turn Supabase's raw error strings into user-facing text.
+   */
+  private translateError(message: string): string {
+    const lower = message.toLowerCase();
+
+    if (lower.includes('user already registered')) {
+      return 'An account with this email already exists. Try signing in instead.';
+    }
+    if (lower.includes('invalid login credentials')) {
+      return 'Incorrect email or password.';
+    }
+    if (lower.includes('email not confirmed')) {
+      return 'Please verify your email before signing in.';
+    }
+    if (lower.includes('password should be at least')) {
+      return 'Password must be at least 8 characters.';
+    }
+    if (lower.includes('rate limit')) {
+      return 'Too many attempts. Please wait a moment and try again.';
+    }
+    if (lower.includes('token has expired') || lower.includes('invalid token')) {
+      return 'That code has expired or is invalid. Request a new one.';
+    }
+
+    return message;
   }
 }
 
