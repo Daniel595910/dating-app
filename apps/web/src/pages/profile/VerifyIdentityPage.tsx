@@ -26,18 +26,21 @@ export const VerifyIdentityPage: React.FC = () => {
   const [idDocType, setIdDocType] = useState<'passport' | 'national_id' | 'drivers_license'>('national_id');
   const [countryCode, setCountryCode] = useState<string>('NG');
   const [loading, setLoading] = useState(true);
+  const [exampleUrl, setExampleUrl] = useState<string | null>(null);
 
-  // Load existing verification status + user country
+  // Load existing verification status + user country + admin example image
   useEffect(() => {
     if (!user) return;
     (async () => {
-      const [verif, profile] = await Promise.all([
+      const [verif, profile, example] = await Promise.all([
         verificationService.getMyLatestVerification(user.id),
         supabase.from('profiles').select('location').eq('user_id', user.id).maybeSingle(),
+        verificationService.getSelfieExampleUrl(),
       ]);
       setExisting(verif);
       const cc = profile.data?.location?.countryCode || profile.data?.location?.country_code || 'NG';
       setCountryCode(cc);
+      setExampleUrl(example);
       setLoading(false);
     })();
   }, [user]);
@@ -90,15 +93,11 @@ export const VerifyIdentityPage: React.FC = () => {
     }
 
     showToast('Submitted! We\'ll review within 24 hours.', 'success');
-    // Reload the latest request so the status screen shows 'pending'
     const fresh = await verificationService.getMyLatestVerification(user.id);
     setExisting(fresh);
     setStep('status');
   };
 
-  // ============================================================
-  // RENDER
-  // ============================================================
   if (loading) {
     return (
       <div className={styles.page}>
@@ -127,7 +126,7 @@ export const VerifyIdentityPage: React.FC = () => {
         <h1 className={styles.headerTitle}>Verify Identity</h1>
       </header>
 
-      {/* ===================== STATUS SCREEN ===================== */}
+      {/* STATUS */}
       {step === 'status' && (
         <div className={styles.content}>
           {isApproved && (
@@ -189,7 +188,7 @@ export const VerifyIdentityPage: React.FC = () => {
         </div>
       )}
 
-      {/* ===================== INTRO ===================== */}
+      {/* INTRO */}
       {step === 'intro' && (
         <div className={styles.content}>
           <h2 className={styles.stepTitle}>How it works</h2>
@@ -230,7 +229,7 @@ export const VerifyIdentityPage: React.FC = () => {
         </div>
       )}
 
-      {/* ===================== SELFIE ===================== */}
+      {/* SELFIE */}
       {step === 'selfie' && (
         <div className={styles.content}>
           <h2 className={styles.stepTitle}>Step 1 — Selfie with hand</h2>
@@ -239,10 +238,23 @@ export const VerifyIdentityPage: React.FC = () => {
             and hand are clearly visible.
           </p>
 
-          <div className={styles.exampleBox}>
-            <Hand size={40} />
-            <div className={styles.exampleText}>Face + open hand beside it</div>
-          </div>
+          {exampleUrl ? (
+            <div className={styles.exampleBox} style={{ padding: 0, overflow: 'hidden' }}>
+              <img
+                src={exampleUrl}
+                alt="Example selfie pose"
+                style={{ width: '100%', height: 'auto', display: 'block' }}
+              />
+              <div className={styles.exampleText} style={{ padding: '10px 12px' }}>
+                Face + open hand beside it
+              </div>
+            </div>
+          ) : (
+            <div className={styles.exampleBox}>
+              <Hand size={40} />
+              <div className={styles.exampleText}>Face + open hand beside it</div>
+            </div>
+          )}
 
           {selfiePreview ? (
             <img src={selfiePreview} alt="Selfie preview" className={styles.preview} />
@@ -275,7 +287,7 @@ export const VerifyIdentityPage: React.FC = () => {
         </div>
       )}
 
-      {/* ===================== ID ===================== */}
+      {/* ID */}
       {step === 'id' && (
         <div className={styles.content}>
           <h2 className={styles.stepTitle}>Step 2 — Your ID</h2>
@@ -332,7 +344,7 @@ export const VerifyIdentityPage: React.FC = () => {
         </div>
       )}
 
-      {/* ===================== REVIEW ===================== */}
+      {/* REVIEW */}
       {step === 'review' && (
         <div className={styles.content}>
           <h2 className={styles.stepTitle}>Confirm and submit</h2>
@@ -371,7 +383,7 @@ export const VerifyIdentityPage: React.FC = () => {
         </div>
       )}
 
-      {/* ===================== SUBMITTING ===================== */}
+      {/* SUBMITTING */}
       {step === 'submitting' && (
         <div className={styles.content}>
           <div className={styles.statusCard}>

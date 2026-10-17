@@ -214,6 +214,78 @@ class VerificationService {
     return data.signedUrl;
   }
 
+  // ---- Admin-configurable example image ----
+
+  /**
+   * Reads the current selfie example URL from verification_settings.
+   * Returns null if none has been uploaded yet.
+   */
+  async getSelfieExampleUrl(): Promise<string | null> {
+    const { data, error } = await supabase
+      .from('verification_settings')
+      .select('value')
+      .eq('key', 'selfie_example_url')
+      .maybeSingle();
+
+    if (error || !data) return null;
+    return data.value ?? null;
+  }
+
+  /**
+   * Uploads a new selfie example image to the public 'media' bucket
+   * and updates verification_settings.selfie_example_url.
+   * Returns the new public URL on success.
+   */
+  async uploadSelfieExample(file: File): Promise<{ success: boolean; url?: string; error?: string }> {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return { success: false, error: 'Not authenticated' };
+
+    // Store the example under a fixed path so old versions are always replaced.
+    const ext = file.name.split('.').pop()?.toLowerCase() || 'jpg';
+    const path = `verification-examples/selfie-example.${ext}`;
+
+    const { error: uploadErr } = await supabase.storage
+      .from('media')
+      .upload(path, file, {
+        cacheControl: '300',      // short cache so admins see the change immediately
+        contentType: file.type,
+        upsert: true,
+      });
+
+    if (uploadErr) {
+      return { success: false, error: uploadErr.message };
+    }
+
+    const { data: urlData } = supabase.storage
+      .from('media')
+      .getPublicUrl(path);
+
+    // Cache-bust the URL so users don't see the old image
+    const url = `${urlData.publicUrl}?v=${Date.now()}`;
+
+    const { error: updateErr } = await supabase
+      .from('verification_settings')
+      .update({
+        value: url,
+        updated_by: user.id,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('key', 'selfie_example_url');
+
+    if (updateErr) {
+      return { success: false, error: updateErr.message };
+    }
+
+    await auditService.logAction({
+      action: 'update_verification_example',
+      resourceType: 'verification_settings',
+      resourceId: 'selfie_example_url',
+      changes: { url },
+    });
+
+    return { success: true, url };
+  }
+
   async getStats(): Promise<VerificationStats> {
     const startOfDay = new Date();
     startOfDay.setHours(0, 0, 0, 0);

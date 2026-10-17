@@ -112,6 +112,21 @@ class VerificationService {
   /**
    * Admin-only: returns a 5-minute signed URL for the given storage path.
    */
+  /**
+   * Reads the admin-configured example selfie URL from verification_settings.
+   * Returns null if no example has been uploaded yet.
+   */
+  async getSelfieExampleUrl(): Promise<string | null> {
+    const { data, error } = await supabase
+      .from('verification_settings')
+      .select('value')
+      .eq('key', 'selfie_example_url')
+      .maybeSingle();
+
+    if (error || !data) return null;
+    return data.value ?? null;
+  }
+
   async getSignedUrl(path: string): Promise<string | null> {
     if (!path) return null;
     const { data, error } = await supabase.storage

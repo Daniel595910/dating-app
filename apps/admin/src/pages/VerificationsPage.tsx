@@ -8,6 +8,8 @@ import {
   Eye,
   AlertTriangle,
   FileText,
+  Upload,
+  Image as ImageIcon,
   Globe,
 } from 'lucide-react';
 import { useToast } from '@/components/ui/Toast';
@@ -26,7 +28,7 @@ import styles from './VerificationsPage.module.css';
 
 const PAGE_SIZE = 20;
 
-type Tab = 'pending' | 'approved' | 'rejected';
+type Tab = 'pending' | 'approved' | 'rejected' | 'example';
 
 const STATUS_BADGE: Record<string, 'warning' | 'success' | 'error' | 'default'> = {
   pending: 'warning',
@@ -60,6 +62,33 @@ export const VerificationsPage: React.FC = () => {
   const [actionLoading, setActionLoading] = useState(false);
   const [rejectReason, setRejectReason] = useState('');
   const [showRejectModal, setShowRejectModal] = useState(false);
+  const [exampleUrl, setExampleUrl] = useState<string | null>(null);
+  const [uploadingExample, setUploadingExample] = useState(false);
+
+  const loadExample = useCallback(async () => {
+    const url = await verificationService.getSelfieExampleUrl();
+    setExampleUrl(url);
+  }, []);
+
+  const handleExampleUpload = async (file: File) => {
+    if (!file.type.startsWith('image/')) {
+      toast.error('Please choose an image file');
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('Image must be under 5 MB');
+      return;
+    }
+    setUploadingExample(true);
+    const result = await verificationService.uploadSelfieExample(file);
+    setUploadingExample(false);
+    if (!result.success) {
+      toast.error('Upload failed', result.error || 'Unknown error');
+      return;
+    }
+    setExampleUrl(result.url || null);
+    toast.success('Example updated');
+  };
 
   const loadData = useCallback(async (showLoader = true) => {
     try {
@@ -86,8 +115,12 @@ export const VerificationsPage: React.FC = () => {
   }, [activeTab, page, toast]);
 
   useEffect(() => {
-    loadData();
-  }, [loadData]);
+    if (activeTab === 'example') {
+      loadExample();
+    } else {
+      loadData();
+    }
+  }, [activeTab, loadData, loadExample]);
 
   const openDetail = async (row: VerificationRequest) => {
     setSelected(row);
@@ -177,7 +210,7 @@ export const VerificationsPage: React.FC = () => {
         </button>
       </div>
 
-      <div className={styles.statsGrid}>
+      {activeTab !== 'example' && (<div className={styles.statsGrid}>
         <div className={styles.statCard}>
           <div className={styles.statIcon}><Clock size={20} /></div>
           <div>
@@ -206,10 +239,10 @@ export const VerificationsPage: React.FC = () => {
             <div className={styles.statValue}>{stats.totalApproved}</div>
           </div>
         </div>
-      </div>
+      </div>)}
 
       <div className={styles.tabs}>
-        {(['pending', 'approved', 'rejected'] as Tab[]).map((t) => (
+        {(['pending', 'approved', 'rejected', 'example'] as Tab[]).map((t) => (
           <button
             key={t}
             className={`${styles.tab} ${activeTab === t ? styles.tabActive : ''}`}
@@ -223,7 +256,82 @@ export const VerificationsPage: React.FC = () => {
         ))}
       </div>
 
-      {loading ? (
+      {activeTab === 'example' ? (
+        <div style={{ marginTop: 16 }}>
+          <div style={{
+            background: '#fff',
+            border: '1px solid #e5e7eb',
+            borderRadius: 12,
+            padding: 20,
+            maxWidth: 640,
+          }}>
+            <h3 style={{ margin: '0 0 6px', fontSize: 16, fontWeight: 700, color: '#111827' }}>
+              Selfie example
+            </h3>
+            <p style={{ margin: '0 0 16px', fontSize: 13, color: '#6b7280', lineHeight: 1.5 }}>
+              This image is shown to users on Step 1 of the identity verification wizard.
+              Upload a photo that clearly demonstrates the required pose — face plus an open
+              hand beside it. Changes take effect immediately.
+            </p>
+
+            {exampleUrl ? (
+              <div style={{
+                width: '100%',
+                borderRadius: 10,
+                overflow: 'hidden',
+                border: '1px solid #e5e7eb',
+                background: '#f9fafb',
+                marginBottom: 16,
+              }}>
+                <img
+                  src={exampleUrl}
+                  alt="Selfie example"
+                  style={{ width: '100%', height: 'auto', display: 'block' }}
+                />
+              </div>
+            ) : (
+              <div style={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: 8,
+                padding: '40px 20px',
+                border: '2px dashed #e5e7eb',
+                borderRadius: 10,
+                background: '#f9fafb',
+                color: '#9ca3af',
+                fontSize: 13,
+                marginBottom: 16,
+              }}>
+                <ImageIcon size={32} />
+                <span>No example uploaded yet</span>
+              </div>
+            )}
+
+            <div style={{ display: 'flex', gap: 10 }}>
+              <label style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '10px 18px', background: '#ef4444', color: '#fff', borderRadius: 9999, fontSize: 14, fontWeight: 600, cursor: uploadingExample ? 'wait' : 'pointer', opacity: uploadingExample ? 0.6 : 1 }}>
+                <Upload size={16} />
+                {uploadingExample ? 'Uploading…' : exampleUrl ? 'Replace example' : 'Upload example'}
+                <input
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  disabled={uploadingExample}
+                  onChange={(e) => {
+                    const f = e.target.files?.[0];
+                    if (f) handleExampleUpload(f);
+                    e.currentTarget.value = '';
+                  }}
+                  style={{ display: 'none' }}
+                />
+              </label>
+            </div>
+
+            <p style={{ margin: '12px 0 0', fontSize: 12, color: '#9ca3af' }}>
+              JPG, PNG, or WebP · max 5 MB · stored in the public media bucket
+            </p>
+          </div>
+        </div>
+      ) : loading ? (
         <Loader size="lg" text="Loading queue..." />
       ) : items.length === 0 ? (
         <EmptyState
