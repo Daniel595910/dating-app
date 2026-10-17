@@ -1,6 +1,7 @@
-﻿import React, { useState, useEffect } from 'react';
-import { X, MapPin, Check, Loader2 } from 'lucide-react';
-import { supabase } from '@/config/supabase.client';
+import React, { useState, useEffect } from 'react';
+import { X, MapPin, Check, Loader2, ShieldCheck, AlertCircle } from 'lucide-react';
+import { locationService } from '@/services/location.service';
+import { reverseGeocode, countryCodeToFlag } from '@/utils/reverseGeocode';
 import styles from '../styles/LocationSetupSheet.module.css';
 
 interface LocationSetupSheetProps {
@@ -10,25 +11,16 @@ interface LocationSetupSheetProps {
   onLocationSaved: () => void;
 }
 
-interface LocationOption {
+type DetectState = 'idle' | 'detecting' | 'success' | 'denied' | 'error';
+
+interface VerifiedLocation {
   country: string;
   countryCode: string;
-  states: string[];
+  state: string;
+  city: string;
+  lat: number;
+  lng: number;
 }
-
-const NIGERIA_STATES = ['Lagos', 'Rivers', 'Abuja', 'Kano', 'Oyo', 'Enugu', 'Delta', 'Edo', 'Kaduna', 'Anambra'];
-const GHANA_STATES = ['Accra', 'Kumasi', 'Takoradi', 'Tamale', 'Cape Coast'];
-const SOUTH_AFRICA_STATES = ['Johannesburg', 'Cape Town', 'Durban', 'Pretoria', 'Port Elizabeth'];
-const UK_STATES = ['London', 'Manchester', 'Birmingham', 'Liverpool', 'Leeds'];
-const USA_STATES = ['California', 'New York', 'Texas', 'Florida', 'Illinois'];
-
-const LOCATIONS: LocationOption[] = [
-  { country: 'Nigeria', countryCode: 'NG', states: NIGERIA_STATES },
-  { country: 'Ghana', countryCode: 'GH', states: GHANA_STATES },
-  { country: 'South Africa', countryCode: 'ZA', states: SOUTH_AFRICA_STATES },
-  { country: 'United Kingdom', countryCode: 'GB', states: UK_STATES },
-  { country: 'United States', countryCode: 'US', states: USA_STATES },
-];
 
 export const LocationSetupSheet: React.FC<LocationSetupSheetProps> = ({
   open,
@@ -37,107 +29,101 @@ export const LocationSetupSheet: React.FC<LocationSetupSheetProps> = ({
   onLocationSaved,
 }) => {
   const [step, setStep] = useState<'select' | 'saving' | 'success'>('select');
-  const [selectedCountry, setSelectedCountry] = useState<string>('');
-  const [selectedState, setSelectedState] = useState<string>('');
-  const [selectedCity, setSelectedCity] = useState<string>('');
-  const [error, setError] = useState<string | null>(null);
-  const [detectingLocation, setDetectingLocation] = useState(false);
+  const [detectState, setDetectState] = useState<DetectState>('idle');
+  const [detectError, setDetectError] = useState<string | null>(null);
+  const [verified, setVerified] = useState<VerifiedLocation | null>(null);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const [unsupportedCountry, setUnsupportedCountry] = useState<string | null>(null);
 
-  const handleDetectLocation = () => {
-    setDetectingLocation(true);
-    setError(null);
-
-    if (!navigator.geolocation) {
-      setDetectingLocation(false);
-      setError('Geolocation is not supported by your browser');
-      return;
+  // Reset state when sheet opens
+  useEffect(() => {
+    if (open) {
+      setStep('select');
+      setDetectState('idle');
+      setDetectError(null);
+      setVerified(null);
+      setSaveError(null);
+      setUnsupportedCountry(null);
     }
+  }, [open]);
 
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        setDetectingLocation(false);
-        // We got coordinates. For privacy, we don't store exact coords.
-        // In production, you'd use reverse geocoding here.
-        // For now, let user select manually with a hint.
-        setError('Location detected! Please select your city/state below.');
-      },
-      (err) => {
-        setDetectingLocation(false);
-        if (err.code === err.PERMISSION_DENIED) {
-          setError('Location permission denied. Please select your location manually.');
-        } else {
-          setError('Unable to detect location. Please select manually.');
-        }
-      },
-      { timeout: 10000, maximumAge: 60000 }
-    );
+  const handleDetect = async () => {
+    setDetectState('detecting');
+    setDetectError(null);
+    setVerified(null);
+
+    try {
+      // Step 1 — get GPS
+      const gps = await locationService.requestGps(15000);
+
+      // Step 2 — reverse geocode for immediate preview
+      const geo = await reverseGeocode(gps.lat, gps.lng);
+
+      if (!geo.countryCode) {
+        setDetectState('error');
+        setDetectError('We could not figure out your location from those coordinates. Please try again.');
+        return;
+      }
+
+      // Step 3 — mark verified
+      setVerified({
+        country: geo.country || geo.countryCode,
+        countryCode: geo.countryCode,
+        state: geo.state || '',
+        city: geo.city || '',
+        lat: gps.lat,
+        lng: gps.lng,
+      });
+      setDetectState('success');
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Could not detect location';
+      setDetectState('denied');
+      setDetectError(msg);
+    }
   };
 
   const handleSave = async () => {
-    if (!selectedCountry || !selectedState) {
-      setError('Please select your country and state');
+    if (!verified) {
+      setSaveError('Please verify your location with GPS first.');
       return;
     }
 
     setStep('saving');
-    setError(null);
+    setSaveError(null);
+    setUnsupportedCountry(null);
 
-    try {
-      const countryCode = LOCATIONS.find((l) => l.country === selectedCountry)?.countryCode || '';
+    const result = await locationService.captureLocation({
+      lat: verified.lat,
+      lng: verified.lng,
+      displayCity: verified.city,
+      displayState: verified.state,
+      displayCountry: verified.country,
+      displayCountryCode: verified.countryCode,
+    });
 
-      // Update profile location
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .update({
-          location: {
-            country: selectedCountry,
-            countryCode,
-            state: selectedState,
-            city: selectedCity || null,
-          },
-        })
-        .eq('user_id', userId);
+    if (!result.success) {
+      setStep('select');
 
-      if (profileError) throw profileError;
-
-      // Find matching community
-      const { data: communities } = await supabase
-        .from('communities')
-        .select('id')
-        .eq('country', selectedCountry)
-        .eq('status', 'active')
-        .limit(1);
-
-      if (communities && communities.length > 0) {
-        // Assign user to community
-        const { error: joinError } = await supabase
-          .from('community_members')
-          .insert({
-            community_id: communities[0].id,
-            user_id: userId,
-            role: 'member',
-          })
-          .select();
-
-        // 23505 = already member, that's fine
-        if (joinError && joinError.code !== '23505') {
-          console.error('Failed to join community:', joinError);
-        }
+      if (result.errorCode === 'unsupported_country') {
+        setUnsupportedCountry(verified.country);
+        return;
       }
 
-      setStep('success');
-      setTimeout(() => {
-        setStep('select');
-        onLocationSaved();
-        onClose();
-      }, 1500);
-    } catch (err: any) {
-      setError(err.message || 'Failed to save location');
-      setStep('select');
+      setSaveError(result.error || 'Could not save location');
+      return;
     }
+
+    setStep('success');
+    setTimeout(() => {
+      onLocationSaved();
+      onClose();
+    }, 1500);
   };
 
   if (!open) return null;
+
+  const isVerifying = detectState === 'detecting';
+  const saveEnabled = detectState === 'success' && verified !== null && step === 'select';
 
   return (
     <div className={styles.overlay} onClick={onClose}>
@@ -159,7 +145,7 @@ export const LocationSetupSheet: React.FC<LocationSetupSheetProps> = ({
               <Check size={32} />
             </div>
             <p className={styles.successText}>
-              Your location is set! You'll be assigned to your regional community.
+              Your location is set! You&apos;ll be assigned to your regional community.
             </p>
           </div>
         ) : (
@@ -169,96 +155,98 @@ export const LocationSetupSheet: React.FC<LocationSetupSheetProps> = ({
             </div>
 
             <p className={styles.description}>
-              Choose your location to be matched with your regional dating community.
-              We never share your exact address.
+              To keep matches real, we verify your location with your device GPS. You cannot proceed without this step.
             </p>
 
-            <button
-              className={styles.detectButton}
-              onClick={handleDetectLocation}
-              disabled={detectingLocation}
-            >
-              {detectingLocation ? (
-                <>
-                  <Loader2 size={16} className={styles.spinnerIcon} />
-                  Detecting...
-                </>
-              ) : (
-                <>
-                  <MapPin size={16} />
-                  Detect My Location
-                </>
-              )}
-            </button>
-
-            <div className={styles.divider}>
-              <span>or select manually</span>
-            </div>
-
-            {/* Country Select */}
-            <div className={styles.fieldGroup}>
-              <label className={styles.fieldLabel}>Country</label>
-              <select
-                className={styles.select}
-                value={selectedCountry}
-                onChange={(e) => {
-                  setSelectedCountry(e.target.value);
-                  setSelectedState('');
-                  setSelectedCity('');
-                }}
+            {/* Detect button — primary CTA */}
+            {!verified && (
+              <button
+                className={styles.detectButton}
+                onClick={handleDetect}
+                disabled={isVerifying}
               >
-                <option value="">Select country</option>
-                {LOCATIONS.map((loc) => (
-                  <option key={loc.countryCode} value={loc.country}>
-                    {loc.country}
-                  </option>
-                ))}
-              </select>
-            </div>
+                {isVerifying ? (
+                  <>
+                    <Loader2 size={16} className={styles.spinnerIcon} />
+                    Detecting your location…
+                  </>
+                ) : detectState === 'denied' || detectState === 'error' ? (
+                  <>
+                    <MapPin size={16} />
+                    Retry Detect
+                  </>
+                ) : (
+                  <>
+                    <MapPin size={16} />
+                    Detect My Location
+                  </>
+                )}
+              </button>
+            )}
 
-            {/* State Select */}
-            <div className={styles.fieldGroup}>
-              <label className={styles.fieldLabel}>State / Region</label>
-              <select
-                className={styles.select}
-                value={selectedState}
-                onChange={(e) => {
-                  setSelectedState(e.target.value);
-                  setSelectedCity('');
-                }}
-                disabled={!selectedCountry}
-              >
-                <option value="">Select state</option>
-                {selectedCountry &&
-                  LOCATIONS.find((l) => l.country === selectedCountry)?.states.map((state) => (
-                    <option key={state} value={state}>
-                      {state}
-                    </option>
-                  ))}
-              </select>
-            </div>
+            {/* Error state */}
+            {detectError && (
+              <div className={styles.errorBox}>
+                <AlertCircle size={16} />
+                <span>{detectError}</span>
+              </div>
+            )}
 
-            {/* City Input */}
-            <div className={styles.fieldGroup}>
-              <label className={styles.fieldLabel}>City (optional)</label>
-              <input
-                className={styles.input}
-                value={selectedCity}
-                onChange={(e) => setSelectedCity(e.target.value)}
-                placeholder="e.g. Ikeja, Port Harcourt, etc."
-                disabled={!selectedState}
-              />
-            </div>
+            {/* Verified state */}
+            {verified && (
+              <div className={styles.verifiedBox}>
+                <div className={styles.verifiedIcon}>
+                  <ShieldCheck size={20} />
+                </div>
+                <div className={styles.verifiedContent}>
+                  <p className={styles.verifiedTitle}>Location verified</p>
+                  <p className={styles.verifiedDetail}>
+                    {countryCodeToFlag(verified.countryCode)}{' '}
+                    {[verified.city, verified.state, verified.country].filter(Boolean).join(', ')}
+                  </p>
+                </div>
+                <button
+                  className={styles.verifiedRetry}
+                  onClick={handleDetect}
+                  disabled={isVerifying}
+                >
+                  Retry
+                </button>
+              </div>
+            )}
 
-            {error && <p className={styles.error}>{error}</p>}
+            {/* Unsupported country */}
+            {unsupportedCountry && (
+              <div className={styles.errorBox}>
+                <AlertCircle size={16} />
+                <span>
+                  We&apos;re not available in {unsupportedCountry} yet. We currently support
+                  Nigeria, Ghana, South Africa, the UK, and the US.
+                </span>
+              </div>
+            )}
+
+            {/* Save error */}
+            {saveError && (
+              <div className={styles.errorBox}>
+                <AlertCircle size={16} />
+                <span>{saveError}</span>
+              </div>
+            )}
 
             <button
               className={styles.saveButton}
               onClick={handleSave}
-              disabled={!selectedCountry || !selectedState || step === 'saving'}
+              disabled={!saveEnabled}
             >
-              {step === 'saving' ? 'Saving...' : 'Save Location & Join Community'}
+              {step === 'saving' ? 'Saving…' : 'Save Location & Join Community'}
             </button>
+
+            {!verified && (
+              <p className={styles.requiredNote}>
+                Verification required — click &quot;Detect My Location&quot; to continue.
+              </p>
+            )}
           </>
         )}
       </div>
