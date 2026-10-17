@@ -8,7 +8,10 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import { ROUTES } from './config/constants';
 
 // Auth Pages
+import { WelcomePage } from './pages/auth/WelcomePage';
 import { LoginPage } from './pages/auth/LoginPage';
+import { ForgotPasswordPage } from './pages/auth/ForgotPasswordPage';
+import { ResetPasswordPage } from './pages/auth/ResetPasswordPage';
 import { RegisterPage } from './pages/auth/RegisterPage';
 import { PhoneVerify } from './pages/auth/PhoneVerify';
 import { KycPage } from './pages/auth/KycPage';
@@ -51,6 +54,9 @@ export const AppRouter: React.FC = () => {
   return (
     <Routes>
       {/* Public Routes */}
+      <Route path={ROUTES.WELCOME} element={<WelcomePage />} />
+      <Route path={ROUTES.FORGOT_PASSWORD} element={<ForgotPasswordPage />} />
+      <Route path={ROUTES.RESET_PASSWORD} element={<ResetPasswordPage />} />
       <Route path={ROUTES.LOGIN} element={<LoginPage />} />
       <Route path={ROUTES.REGISTER} element={<RegisterPage />} />
       <Route path={ROUTES.VERIFY_PHONE} element={<PhoneVerify />} />

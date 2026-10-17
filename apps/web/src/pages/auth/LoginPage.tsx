@@ -111,19 +111,9 @@ export const LoginPage: React.FC = () => {
     }
   };
 
-  const handleForgotPassword = async () => {
-    setError(null);
-    setInfo(null);
-    if (!email.trim()) {
-      setError('Enter your email first, then tap "Forgot password".');
-      return;
-    }
-    const result = await authService.requestPasswordReset(email);
-    if (!result.success) {
-      setError(result.error || 'Could not send reset email');
-      return;
-    }
-    setInfo('Password reset email sent. Check your inbox.');
+  const handleForgotPassword = () => {
+    // Navigate to the dedicated forgot-password page
+    navigate(ROUTES.FORGOT_PASSWORD);
   };
 
   // ---------- Check-your-email screen ----------
