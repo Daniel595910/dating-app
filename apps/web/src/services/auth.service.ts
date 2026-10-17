@@ -202,6 +202,79 @@ class AuthService {
   /**
    * Sign out the current session.
    */
+  // ---------- Login device trust ----------
+
+  /**
+   * Asks the server whether the current device is already trusted.
+   * Reads the device_token from localStorage; if none, returns false.
+   */
+  async checkDeviceTrust(userId: string): Promise<boolean> {
+    let deviceToken: string | null = null;
+    try {
+      deviceToken = localStorage.getItem('device_token');
+    } catch {
+      deviceToken = null;
+    }
+    if (!deviceToken || !userId) return false;
+
+    try {
+      const { data, error } = await supabase.functions.invoke('check-device-trust', {
+        body: { device_token: deviceToken, user_id: userId },
+      });
+      if (error) return false;
+      return Boolean((data as any)?.trusted);
+    } catch {
+      return false;
+    }
+  }
+
+  /**
+   * Triggers the Supabase magic-link email for a new device login.
+   * The email goes through the project's configured SMTP.
+   */
+  async sendNewDeviceMagicLink(email: string): Promise<AuthResult> {
+    const { error } = await supabase.auth.signInWithOtp({
+      email: email.trim(),
+      options: {
+        shouldCreateUser: false,
+        emailRedirectTo: `${window.location.origin}/auth/new-device`,
+      },
+    });
+
+    if (error) {
+      return { success: false, error: this.translateError(error.message) };
+    }
+    return { success: true };
+  }
+
+  /**
+   * Called on /auth/new-device after the magic-link lands.
+   * Trusts this device for 30 days and stores the token locally.
+   * Returns true on success.
+   */
+  async trustCurrentDevice(): Promise<boolean> {
+    try {
+      const { data, error } = await supabase.functions.invoke('trust-device', {
+        body: {},
+      });
+      if (error) {
+        console.error('trust-device failed:', error);
+        return false;
+      }
+      const token = (data as any)?.device_token;
+      if (!token) return false;
+      try {
+        localStorage.setItem('device_token', token);
+      } catch {
+        return false;
+      }
+      return true;
+    } catch (err) {
+      console.error('trust-device exception:', err);
+      return false;
+    }
+  }
+
   async signOut(): Promise<void> {
     await supabase.auth.signOut();
   }

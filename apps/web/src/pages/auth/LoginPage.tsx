@@ -4,6 +4,7 @@ import { useAuthStore } from '@/store/auth.store';
 import { authService } from '@/services/auth.service';
 import { ROUTES } from '@/config/constants';
 import { Button, Input } from '@dating-app/ui';
+import { Mail, ArrowLeft } from 'lucide-react';
 
 export const LoginPage: React.FC = () => {
   const navigate = useNavigate();
@@ -14,6 +15,8 @@ export const LoginPage: React.FC = () => {
   const [googleLoading, setGoogleLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
+  const [otpSent, setOtpSent] = useState(false);
+  const [resending, setResending] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -22,14 +25,58 @@ export const LoginPage: React.FC = () => {
     setInfo(null);
     setLoading(true);
 
+    // Step 1 — password sign-in
     const result = await authService.signInWithPassword(email, password);
-    setLoading(false);
 
     if (!result.success) {
+      setLoading(false);
       setError(result.error || 'Login failed');
       return;
     }
-    navigate(ROUTES.COMMUNITY, { replace: true });
+
+    // Step 2 — get the authenticated user
+    const user = await authService.getUser();
+
+    // Step 3 — check device trust
+    const trusted = user ? await authService.checkDeviceTrust(user.id) : false;
+
+    if (trusted) {
+      // Skip OTP for trusted devices
+      setLoading(false);
+      navigate(ROUTES.COMMUNITY, { replace: true });
+      return;
+    }
+
+    // Step 4 — new device: send magic link
+    const otpResult = await authService.sendNewDeviceMagicLink(email);
+    setLoading(false);
+
+    if (!otpResult.success) {
+      setError(otpResult.error || 'Could not send verification email');
+      return;
+    }
+
+    setOtpSent(true);
+  };
+
+  const handleResend = async () => {
+    setError(null);
+    setInfo(null);
+    setResending(true);
+    const result = await authService.sendNewDeviceMagicLink(email);
+    setResending(false);
+    if (!result.success) {
+      setError(result.error || 'Could not resend');
+      return;
+    }
+    setInfo('New verification link sent. Check your inbox.');
+  };
+
+  const handleBackToLogin = () => {
+    setOtpSent(false);
+    setPassword('');
+    setInfo(null);
+    setError(null);
   };
 
   const handleGoogle = async () => {
@@ -41,7 +88,7 @@ export const LoginPage: React.FC = () => {
       setGoogleLoading(false);
       setError(result.error || 'Google sign-in failed');
     }
-    // On success the browser is redirected to Google — no navigate() here.
+    // On success the browser redirects to Google - no navigate() here.
   };
 
   const handleForgotPassword = async () => {
@@ -59,6 +106,108 @@ export const LoginPage: React.FC = () => {
     setInfo('Password reset email sent. Check your inbox.');
   };
 
+  // ---------- Check-your-email screen ----------
+  if (otpSent) {
+    return (
+      <div style={{ padding: '2rem', maxWidth: '400px', margin: '0 auto' }}>
+        <button
+          onClick={handleBackToLogin}
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 6,
+            background: 'none',
+            border: 'none',
+            color: '#6b7280',
+            cursor: 'pointer',
+            fontSize: '0.875rem',
+            fontWeight: 600,
+            padding: 0,
+            marginBottom: '1.5rem',
+          }}
+        >
+          <ArrowLeft size={16} />
+          Back to login
+        </button>
+
+        <div
+          style={{
+            width: 88,
+            height: 88,
+            marginBottom: '1.5rem',
+            borderRadius: '50%',
+            background: 'linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          <Mail size={40} style={{ color: '#ef4444' }} />
+        </div>
+
+        <h1
+          style={{
+            fontSize: '1.5rem',
+            fontWeight: 700,
+            color: '#111827',
+            marginBottom: '0.75rem',
+            letterSpacing: '-0.02em',
+          }}
+        >
+          Check your email
+        </h1>
+        <p
+          style={{
+            fontSize: '0.9375rem',
+            color: '#6b7280',
+            lineHeight: 1.55,
+            marginBottom: '1.5rem',
+          }}
+        >
+          We sent a sign-in link to <strong style={{ color: '#111827' }}>{email}</strong>.
+          Open it on this device to verify and finish logging in.
+        </p>
+
+        {error && (
+          <p style={{ color: '#ef4444', fontSize: '0.875rem', margin: '0 0 1rem' }}>
+            {error}
+          </p>
+        )}
+        {info && (
+          <p style={{ color: '#10b981', fontSize: '0.875rem', margin: '0 0 1rem' }}>
+            {info}
+          </p>
+        )}
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+          <Button
+            onClick={handleResend}
+            loading={resending}
+            fullWidth
+            variant="secondary"
+          >
+            Resend email
+          </Button>
+          <button
+            onClick={handleBackToLogin}
+            style={{
+              background: 'none',
+              border: 'none',
+              color: '#6b7280',
+              cursor: 'pointer',
+              fontSize: '0.875rem',
+              padding: '0.5rem',
+              fontWeight: 500,
+            }}
+          >
+            Use a different account
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // ---------- Normal login form ----------
   return (
     <div style={{ padding: '2rem', maxWidth: '400px', margin: '0 auto' }}>
       <h1 style={{ fontSize: '1.5rem', fontWeight: 600, marginBottom: '1.5rem' }}>
