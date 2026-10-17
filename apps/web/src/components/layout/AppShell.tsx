@@ -26,16 +26,22 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
       ROUTES.KYC,
       ROUTES.LOCATION,
       ROUTES.COMMUNITY_ASSIGN,
-      '/confirm-email'
+      '/confirm-email',
+      ROUTES.WELCOME,
+      ROUTES.FORGOT_PASSWORD,
+      ROUTES.RESET_PASSWORD,
+      '/auth/callback',
+      '/auth/new-device',
+      '/register/complete'
     ];
 
     const isPublicRoute = publicRoutes.includes(location.pathname as any);
 
     if (!loading && !isPublicRoute && !user) {
-      navigate(ROUTES.LOGIN, { replace: true });
+      navigate(ROUTES.WELCOME, { replace: true });
     }
 
-    if (!loading && user && (location.pathname === ROUTES.LOGIN || location.pathname === ROUTES.REGISTER)) {
+    if (!loading && user && (location.pathname === ROUTES.WELCOME || location.pathname === ROUTES.LOGIN || location.pathname === ROUTES.REGISTER)) {
       navigate(ROUTES.COMMUNITY, { replace: true });
     }
   }, [user, loading, location.pathname, navigate]);

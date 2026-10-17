@@ -226,7 +226,7 @@ export const AppRouter: React.FC = () => {
       />
 
       {/* Default Routes */}
-      <Route path={ROUTES.HOME} element={<Navigate to={ROUTES.COMMUNITY} replace />} />
+      <Route path={ROUTES.HOME} element={<Navigate to={ROUTES.WELCOME} replace />} />
       <Route path="/join/:token" element={<JoinCommunityPage />} />
       <Route path="*" element={<Navigate to={ROUTES.COMMUNITY} replace />} />
     </Routes>
