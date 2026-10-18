@@ -1,4 +1,4 @@
-﻿import { supabase } from '@/config/supabase.client';
+import { supabase } from '@/config/supabase.client';
 import { auditService } from './audit.service';
 
 export type ConnectionStatus = 'pending' | 'accepted' | 'declined' | 'cancelled' | 'expired';
@@ -50,7 +50,7 @@ class ConnectionService {
         offset = 0,
       } = filters;
 
-      let query = supabase.from('connection_requests').select('*', { count: 'exact' });
+      let query = supabase.from('match_requests').select('*', { count: 'exact' });
 
       if (status !== 'all') {
         query = query.eq('status', status);
@@ -131,7 +131,7 @@ class ConnectionService {
 
     const safeCount = async (filter?: (q: any) => any) => {
       try {
-        let q = supabase.from('connection_requests').select('*', { count: 'exact', head: true });
+        let q = supabase.from('match_requests').select('*', { count: 'exact', head: true });
         if (filter) q = filter(q);
         const { count, error } = await q;
         return error ? 0 : count || 0;
@@ -154,8 +154,8 @@ class ConnectionService {
 
   async cancelRequest(requestId: string): Promise<boolean> {
     const { error } = await supabase
-      .from('connection_requests')
-      .update({ status: 'cancelled', responded_at: new Date().toISOString() })
+      .from('match_requests')
+      .update({ status: 'cancelled' })
       .eq('id', requestId);
 
     if (error) throw new Error(error.message);
@@ -171,7 +171,7 @@ class ConnectionService {
 
   async deleteRequest(requestId: string): Promise<boolean> {
     const { error } = await supabase
-      .from('connection_requests')
+      .from('match_requests')
       .delete()
       .eq('id', requestId);
 
