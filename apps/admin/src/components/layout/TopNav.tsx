@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { useAdminAuth } from '@/hooks/useAdminAuth';
 import styles from './TopNav.module.css';
+import { NotificationBell } from './NotificationBell';
 
 interface TopNavProps {
   onMenuClick?: () => void;
@@ -83,10 +84,7 @@ export const TopNav: React.FC<TopNavProps> = ({ onMenuClick }) => {
       </form>
 
       <div className={styles.right}>
-        <button className={styles.iconButton} aria-label="Notifications">
-          <Bell size={18} />
-          <span className={styles.notificationDot} />
-        </button>
+        <NotificationBell />
 
         <div className={styles.divider} />
 
