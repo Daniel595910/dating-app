@@ -5,13 +5,12 @@ import {
   ToggleRight,
   Save,
   RefreshCw,
-
   Shield,
   Zap,
   Users,
-
   AlertCircle,
-
+  Upload,
+  Image as ImageIcon,
 } from 'lucide-react';
 import { useAdminAuth } from '@/hooks/useAdminAuth';
 import { useToast } from '@/components/ui/Toast';
@@ -19,6 +18,7 @@ import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { Loader } from '@/components/ui/Loader';
 import { settingsService, Setting, SettingUpdate } from '@/services/settings.service';
+import { supabase } from '@/config/supabase.client';
 import styles from './SettingsPage.module.css';
 
 const CATEGORY_INFO: Record<string, { label: string; icon: React.ReactNode; description: string }> = {
@@ -55,6 +55,31 @@ export const SettingsPage: React.FC = () => {
   const [hasChanges, setHasChanges] = useState(false);
   const [pendingChanges, setPendingChanges] = useState<Map<string, any>>(new Map());
   const [activeCategory, setActiveCategory] = useState<string>('general');
+  const [uploadingKey, setUploadingKey] = useState<string | null>(null);
+
+  const isUploadableUrl = (key: string): boolean => {
+    return key === 'general.favicon_url' || key === 'general.logo_url';
+  };
+
+  const handleFileUpload = async (key: string, file: File) => {
+    setUploadingKey(key);
+    try {
+      const ext = file.name.split('.').pop() || 'png';
+      const safeKey = key.replace(/\./g, '-');
+      const path = `platform/${safeKey}-${Date.now()}.${ext}`;
+      const { error: uploadError } = await supabase.storage
+        .from('media')
+        .upload(path, file, { cacheControl: '3600', upsert: true });
+      if (uploadError) throw new Error(uploadError.message);
+      const { data: urlData } = supabase.storage.from('media').getPublicUrl(path);
+      handleChange(key, urlData.publicUrl);
+      toast.success('File uploaded');
+    } catch (err: any) {
+      toast.error('Upload failed', err.message);
+    } finally {
+      setUploadingKey(null);
+    }
+  };
 
   const loadSettings = async (showLoader = true) => {
     try {
@@ -92,17 +117,10 @@ export const SettingsPage: React.FC = () => {
 
   const handleSave = async () => {
     if (pendingChanges.size === 0) return;
-
     setSaving(true);
     try {
-      const updates: SettingUpdate[] = Array.from(pendingChanges.entries()).map(([key, value]) => ({
-        key,
-        value,
-      }));
-
+      const updates: SettingUpdate[] = Array.from(pendingChanges.entries()).map(([key, value]) => ({ key, value }));
       await settingsService.updateMany(updates);
-
-      // Update local state
       setGroupedSettings((prev) => {
         const next = { ...prev };
         for (const category of Object.keys(next)) {
@@ -112,7 +130,6 @@ export const SettingsPage: React.FC = () => {
         }
         return next;
       });
-
       toast.success(`${pendingChanges.size} setting${pendingChanges.size > 1 ? 's' : ''} saved`);
       setPendingChanges(new Map());
       setHasChanges(false);
@@ -145,7 +162,7 @@ export const SettingsPage: React.FC = () => {
     return typeof value === 'number';
   };
 
-    const hasPermissionToEdit = hasPermission('SETTINGS_EDIT');
+  const hasPermissionToEdit = hasPermission('SETTINGS_EDIT');
   const categories = Object.keys(groupedSettings).filter((c) => CATEGORY_INFO[c]);
   const settings = groupedSettings[activeCategory] || [];
 
@@ -153,13 +170,11 @@ export const SettingsPage: React.FC = () => {
 
   return (
     <div className={styles.container}>
-      {/* Header */}
       <div className={styles.header}>
         <div>
           <h1 className={styles.title}>Settings</h1>
           <p className={styles.subtitle}>Configure platform features and behavior</p>
         </div>
-
         <div className={styles.headerActions}>
           {hasChanges && (
             <>
@@ -193,9 +208,7 @@ export const SettingsPage: React.FC = () => {
         </div>
       )}
 
-      {/* Layout */}
       <div className={styles.layout}>
-        {/* Sidebar */}
         <aside className={styles.sidebar}>
           {categories.map((category) => {
             const info = CATEGORY_INFO[category];
@@ -203,7 +216,6 @@ export const SettingsPage: React.FC = () => {
             const changedCount = (groupedSettings[category] || []).filter((s) =>
               pendingChanges.has(s.key)
             ).length;
-
             return (
               <button
                 key={category}
@@ -225,7 +237,6 @@ export const SettingsPage: React.FC = () => {
           })}
         </aside>
 
-        {/* Content */}
         <div className={styles.content}>
           <div className={styles.contentHeader}>
             <h2 className={styles.contentTitle}>{CATEGORY_INFO[activeCategory]?.label}</h2>
@@ -243,7 +254,6 @@ export const SettingsPage: React.FC = () => {
               settings.map((setting) => {
                 const value = getValue(setting);
                 const isChanged = pendingChanges.has(setting.key);
-
                 return (
                   <div
                     key={setting.id}
@@ -265,7 +275,41 @@ export const SettingsPage: React.FC = () => {
                     </div>
 
                     <div className={styles.settingControl}>
-                      {isBoolean(setting) ? (
+                      {isUploadableUrl(setting.key) ? (
+                        <div className={styles.uploadControl}>
+                          {value ? (
+                            <img src={value} alt={setting.label} className={styles.uploadPreview} />
+                          ) : (
+                            <div className={styles.uploadPlaceholder}>
+                              <ImageIcon size={20} />
+                            </div>
+                          )}
+                          <div className={styles.uploadActions}>
+                            <label className={styles.uploadButton}>
+                              {uploadingKey === setting.key ? 'Uploading...' : (value ? 'Replace' : 'Upload')}
+                              <input
+                                type="file"
+                                accept="image/*"
+                                onChange={(e) => {
+                                  const file = e.target.files?.[0];
+                                  if (file) handleFileUpload(setting.key, file);
+                                }}
+                                disabled={!hasPermissionToEdit || uploadingKey === setting.key}
+                                style={{ display: 'none' }}
+                              />
+                            </label>
+                            {value && (
+                              <button
+                                className={styles.clearUpload}
+                                onClick={() => handleChange(setting.key, null)}
+                                disabled={!hasPermissionToEdit}
+                              >
+                                Clear
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      ) : isBoolean(setting) ? (
                         <button
                           className={`${styles.toggle} ${value ? styles.toggleActive : ''}`}
                           onClick={() => handleChange(setting.key, !value)}

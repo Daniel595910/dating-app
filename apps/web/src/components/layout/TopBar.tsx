@@ -8,13 +8,16 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { ROUTES } from '@/config/constants';
 import { getNavigationByPath } from '@/config/navigation';
 import styles from './TopBar.module.css';
+import { useSettings } from '@/hooks/useSettings';
 
 export const TopBar: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
   
+  const appName = useSettings((s) => s.settings['general.app_name']);
+
   const navigationItem = getNavigationByPath(location.pathname);
-  const title = navigationItem?.label || 'Dating App';
+  const title = navigationItem?.label || appName || 'Dating App';
   
   const handleBack = () => {
     navigate(-1);
