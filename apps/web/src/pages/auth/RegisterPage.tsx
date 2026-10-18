@@ -4,6 +4,7 @@ import { authService } from '@/services/auth.service';
 import { validateFirstAndLastName } from '@/utils/name-validation';
 import { ROUTES } from '@/config/constants';
 import { Check, Eye, EyeOff } from 'lucide-react';
+import { useSettings } from '@/hooks/useSettings';
 import styles from './RegisterPage.module.css';
 
 function passwordStrength(pw: string): { level: 0 | 1 | 2 | 3 | 4; label: string } {
@@ -22,6 +23,8 @@ function passwordStrength(pw: string): { level: 0 | 1 | 2 | 3 | 4; label: string
 
 export const RegisterPage: React.FC = () => {
   const navigate = useNavigate();
+  const appName = useSettings((s) => s.settings['general.app_name']) || 'Dating App';
+  const logoUrl = useSettings((s) => s.settings['general.logo_url']) || null;
 
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
@@ -93,7 +96,11 @@ export const RegisterPage: React.FC = () => {
       <div className={styles.container}>
         {/* Brand */}
         <div className={styles.brand}>
-          <div className={styles.brandMark}>SG</div>
+          {logoUrl ? (
+            <img src={logoUrl} alt={appName} className={styles.brandLogo} />
+          ) : (
+            <div className={styles.brandMark}>{(appName || 'SG').slice(0, 2).toUpperCase()}</div>
+          )}
           <h1 className={styles.brandName}>Create your account</h1>
           <p className={styles.brandTagline}>Join in seconds — it's free</p>
         </div>

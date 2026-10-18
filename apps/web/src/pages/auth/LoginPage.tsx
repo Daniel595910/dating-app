@@ -4,12 +4,15 @@ import { useAuthStore } from '@/store/auth.store';
 import { authService } from '@/services/auth.service';
 import { ROUTES } from '@/config/constants';
 import { Mail, ArrowLeft, Check } from 'lucide-react';
+import { useSettings } from '@/hooks/useSettings';
 import styles from './LoginPage.module.css';
 
 const REMEMBER_DEVICE_KEY = 'remember_device_pref';
 
 export const LoginPage: React.FC = () => {
   const navigate = useNavigate();
+  const appName = useSettings((s) => s.settings['general.app_name']) || 'Dating App';
+  const logoUrl = useSettings((s) => s.settings['general.logo_url']) || null;
   const { clearError } = useAuthStore();
 
   const [email, setEmail] = useState('');
@@ -161,7 +164,11 @@ export const LoginPage: React.FC = () => {
       <div className={styles.container}>
         {/* Brand */}
         <div className={styles.brand}>
-          <div className={styles.brandMark}>SG</div>
+          {logoUrl ? (
+            <img src={logoUrl} alt={appName} className={styles.brandLogo} />
+          ) : (
+            <div className={styles.brandMark}>{(appName || 'SG').slice(0, 2).toUpperCase()}</div>
+          )}
           <h1 className={styles.brandName}>Welcome back</h1>
           <p className={styles.brandTagline}>Sign in to continue</p>
         </div>

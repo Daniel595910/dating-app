@@ -470,3 +470,15 @@
     height: 50px;
   }
 }
+/* ================================
+   LOGO (uploaded via admin)
+   ================================ */
+.brandLogo {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  object-fit: contain;
+  background: #fff;
+  padding: 4px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}

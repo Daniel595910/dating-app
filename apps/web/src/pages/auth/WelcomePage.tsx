@@ -3,10 +3,13 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/config/supabase.client';
 import { ROUTES } from '@/config/constants';
 import { Heart, Sparkles, ShieldCheck, ArrowRight, Users } from 'lucide-react';
+import { useSettings } from '@/hooks/useSettings';
 import styles from './WelcomePage.module.css';
 
 export const WelcomePage: React.FC = () => {
   const navigate = useNavigate();
+  const appName = useSettings((s) => s.settings['general.app_name']) || 'Dating App';
+  const logoUrl = useSettings((s) => s.settings['general.logo_url']) || null;
   const [exiting, setExiting] = useState(false);
 
   useEffect(() => {
@@ -30,8 +33,12 @@ export const WelcomePage: React.FC = () => {
 
       <div className={styles.container}>
         <div className={styles.brand}>
-          <div className={styles.brandMark}>SG</div>
-          <span className={styles.brandName}>Dating App</span>
+          {logoUrl ? (
+            <img src={logoUrl} alt={appName} className={styles.brandLogo} />
+          ) : (
+            <div className={styles.brandMark}>{(appName || 'SG').slice(0, 2).toUpperCase()}</div>
+          )}
+          <span className={styles.brandName}>{appName}</span>
         </div>
 
         <div className={styles.hero}>
