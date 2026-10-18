@@ -5,6 +5,8 @@ import { ROUTES } from '@/config/constants';
 import { NotificationPromptBanner } from '@/features/notifications/components/NotificationPromptBanner';
 import { pushNotificationService } from '@/features/notifications/services/push-notification.service';
 import { EmailVerificationBanner } from './EmailVerificationBanner';
+import { useSettings } from '@/hooks/useSettings';
+import { MaintenancePage } from '@/pages/MaintenancePage';
 
 interface AppShellProps {
   children: React.ReactNode;
@@ -14,6 +16,9 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, loading, refreshUser } = useAuthStore();
+
+  // Maintenance mode — blocks ALL users when enabled (toggle in admin /settings)
+  const maintenanceEnabled = useSettings((s) => s.settings['general.maintenance_enabled']) === true;
 
   useEffect(() => {
     refreshUser();
@@ -57,6 +62,11 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
       navigate(ROUTES.COMMUNITY, { replace: true });
     }
   }, [user, loading, location.pathname, navigate]);
+
+  // Block all users when maintenance mode is enabled
+  if (maintenanceEnabled) {
+    return <MaintenancePage />;
+  }
 
   return (
     <>
