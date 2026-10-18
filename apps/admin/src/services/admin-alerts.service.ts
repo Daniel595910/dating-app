@@ -56,8 +56,8 @@ class AdminAlertsService {
     ] = await Promise.all([
       // High priority
       this.count('identity_verifications', { status: 'pending' }),
-      this.count('reports', { status: 'open' }),
-      this.count('reports', { status: 'open', severity: 'critical' }),
+      this.count('reports', { status: 'pending' }),
+      this.count('reports', { status: 'pending', severity: 'critical' }),
       this.count('posts', { is_hidden: false }, undefined, undefined, (q) => q.gt('report_count', 0)),
       this.count('comments', { is_hidden: false }, undefined, undefined, (q) => q.gt('report_count', 0)),
       this.count('profiles', { location_signals_match: false }, undefined, undefined, (q) => q.is('deleted_at', null)),
