@@ -105,6 +105,23 @@ serve(async (req: Request) => {
     let pushFailed = 0;
 
     if (channels.includes('push')) {
+      // Skip push if recipient has muted this conversation
+      if (payload.data?.conversation_id) {
+        const { data: muted } = await supabase
+          .from('muted_conversations')
+          .select('user_id')
+          .eq('user_id', payload.user_id)
+          .eq('conversation_id', payload.data.conversation_id)
+          .gt('muted_until', new Date().toISOString())
+          .maybeSingle();
+        if (muted) {
+          return new Response(
+            JSON.stringify({ success: true, skipped: 'muted' }),
+            { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+      }
+
       const { data: subs } = await supabase
         .from('push_subscriptions')
         .select('id, user_id, endpoint, p256dh, auth')

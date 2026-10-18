@@ -107,7 +107,11 @@ sw.addEventListener('push', (event) => {
 
   // Default actions per type
   const actionsByType: Record<string, { action: string; title: string }[]> = {
-    message: [{ action: 'open', title: 'Open' }],
+    message: [
+      { action: 'reply', title: 'Reply' },
+      { action: 'mark-read', title: 'Mark read' },
+      { action: 'open', title: 'Open' },
+    ],
     match: [{ action: 'open', title: 'Open' }],
     connection: [
       { action: 'open', title: 'Open' },
@@ -149,6 +153,28 @@ sw.addEventListener('notificationclick', (event) => {
   event.notification.close();
 
   // Dismiss action — just close, do nothing
+  // Mark as read — patch the notification row directly, don't open app
+  if (action === 'mark-read') {
+    const notificationId = notificationData.notification_id;
+    if (notificationId) {
+      const supabaseUrl = 'https://bngrqxtxppuhtrtqmlli.supabase.co';
+      const anonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJuZ3JxeHR4cHB1aHRydHFtbGxpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODgyNjk2MjksImV4cCI6MjEwMzg0NTYyOX0.GoCsq6n2iO5PB4mFqqLW1icMP5fyO9_8M4gTLhXSnRs';
+      event.waitUntil(
+        fetch(`${supabaseUrl}/rest/v1/notifications?id=eq.${notificationId}`, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            'apikey': anonKey,
+            'Authorization': `Bearer ${anonKey}`,
+            'Prefer': 'return=minimal',
+          },
+          body: JSON.stringify({ status: 'read', read_at: new Date().toISOString() }),
+        }).catch(() => {})
+      );
+    }
+    return;
+  }
+
   if (action === 'dismiss') {
     return;
   }
