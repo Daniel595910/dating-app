@@ -53,6 +53,7 @@ const NAV_ITEMS: NavItem[] = [
   { path: '/analytics', label: 'Analytics', icon: <BarChart3 size={18} />, permission: 'ANALYTICS_VIEW' },
   { path: '/audit-log', label: 'Audit Log', icon: <ScrollText size={18} />, permission: 'AUDIT_VIEW' },
   { path: '/notifications', label: 'Notifications', icon: <Bell size={18} />, permission: 'SETTINGS_VIEW' },
+  { path: '/notification-settings', label: 'Notif. Settings', icon: <Settings size={18} />, permission: 'SETTINGS_VIEW' },
   { path: '/admin-users', label: 'Admin Users', icon: <ShieldCheck size={18} />, permission: 'ADMIN_MANAGE' },
   { path: '/settings', label: 'Settings', icon: <Settings size={18} />, permission: 'SETTINGS_VIEW' },
 ];

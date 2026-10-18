@@ -15,6 +15,7 @@ import { SettingsPage } from './pages/SettingsPage';
 import { AuditLogPage } from './pages/AuditLogPage';
 import { AdminUsersPage } from './pages/AdminUsersPage';
 import { NotificationsPage } from './pages/NotificationsPage';
+import { NotificationSettingsPage } from './pages/NotificationSettingsPage';
 import { SafetyPage } from './pages/SafetyPage';
 import { VerificationsPage } from './pages/VerificationsPage';
 import { CommentsPage } from './pages/CommentsPage';
@@ -41,6 +42,7 @@ export const AdminRouter: React.FC = () => {
       <Route path="/audit-log" element={<AdminGuard requiredPermissions={['AUDIT_VIEW']}><AuditLogPage /></AdminGuard>} />
       <Route path="/admin-users" element={<AdminGuard requiredPermissions={['ADMIN_MANAGE']}><AdminUsersPage /></AdminGuard>} />
       <Route path="/notifications" element={<AdminGuard requiredPermissions={['SETTINGS_VIEW']}><NotificationsPage /></AdminGuard>} />
+      <Route path="/notification-settings" element={<AdminGuard requiredPermissions={['SETTINGS_VIEW']}><NotificationSettingsPage /></AdminGuard>} />
       <Route path="/safety" element={<AdminGuard requiredPermissions={['USER_VIEW']}><SafetyPage /></AdminGuard>} />
       <Route path="/verifications" element={<AdminGuard requiredPermissions={['USER_VERIFY']}><VerificationsPage /></AdminGuard>} />
       <Route path="/comments" element={<AdminGuard requiredPermissions={['CONTENT_VIEW']}><CommentsPage /></AdminGuard>} />
