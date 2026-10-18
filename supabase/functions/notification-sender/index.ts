@@ -110,12 +110,14 @@ serve(async (req: Request) => {
         .select('id, user_id, endpoint, p256dh, auth')
         .eq('user_id', payload.user_id);
 
+      const avatarUrl = (payload.data as any)?.avatar_url || null;
+
       const pushPayload = JSON.stringify({
         title: payload.title,
         body: payload.body,
         // Rich fields — passed through to the SW push handler
-        image: payload.image,
-        icon: payload.icon,
+        image: payload.image || avatarUrl,
+        icon: payload.icon || avatarUrl,
         tag: payload.tag,
         renotify: payload.renotify,
         vibrate: payload.vibrate,
