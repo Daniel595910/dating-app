@@ -1,31 +1,29 @@
 -- ============================================================
--- Fix audit log: two bugs prevented the admin /audit-log page
--- from showing any entries.
+-- Fix audit log: two bugs prevented /audit-log from showing rows.
 --
 -- Bug 1 (WRITE): audit_logs.resource_id was NOT NULL, but the RPC
 --   log_audit_entry accepts p_resource_id DEFAULT NULL and the client
---   (audit.service.ts) passes params.resourceId || null for actions
---   that have no resource (login, logout, bulk operations). Those
---   writes silently failed on the NOT NULL constraint.
+--   audit.service.ts passes params.resourceId || null for actions
+--   without a resource (login, logout, settings, etc). Those writes
+--   silently failed on the NOT NULL constraint — so no new rows
+--   were created since the table was added.
 --
--- Bug 2 (READ): RLS was enabled on audit_logs with NO SELECT policy,
---   so even though old rows existed in the table, the client-side
---   getLogs() query returned 0 rows. The admin page always showed
---   "No audit log entries".
+-- Bug 2 (READ): RLS was enabled on audit_logs with NO SELECT policy.
+--   Existing rows (some 6 days old) were invisible to any client
+--   query. The admin page always showed "No audit log entries"
+--   even though the table had data.
 --
 -- This migration:
---   1. Drops the NOT NULL constraint on resource_id (matches the RPC)
---   2. Adds a SELECT policy for admin users
+--   1. Drops the NOT NULL constraint on resource_id (matches RPC).
+--   2. Adds a SELECT policy for admin users.
 --   3. Blocks direct client INSERT/UPDATE/DELETE — writes only go
 --      through the log_audit_entry SECURITY DEFINER function, which
---      bypasses RLS. This makes the audit trail tamper-proof.
+--      bypasses RLS. This keeps the audit trail tamper-proof.
 -- ============================================================
 
--- 1. Allow NULL resource_id
 ALTER TABLE public.audit_logs
   ALTER COLUMN resource_id DROP NOT NULL;
 
--- 2. RLS SELECT policy — admins only
 DROP POLICY IF EXISTS "Admins can view audit logs" ON public.audit_logs;
 CREATE POLICY "Admins can view audit logs"
   ON public.audit_logs
@@ -42,7 +40,6 @@ CREATE POLICY "Admins can view audit logs"
     )
   );
 
--- 3. Block direct writes (audit trail integrity)
 DROP POLICY IF EXISTS "No direct inserts to audit logs" ON public.audit_logs;
 CREATE POLICY "No direct inserts to audit logs"
   ON public.audit_logs
