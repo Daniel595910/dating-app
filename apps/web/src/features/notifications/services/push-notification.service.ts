@@ -31,18 +31,29 @@ class PushNotificationService {
   async subscribeUser(userId: string): Promise<boolean> {
     try {
       if (!this.swRegistration) {
-        await this.init();
+        const ready = await this.init();
+        if (!ready) {
+          console.warn('[push] service worker not ready - cannot subscribe');
+          return false;
+        }
       }
 
       const permission = await Notification.requestPermission();
       if (permission !== 'granted') return false;
 
-      const subscription = await this.swRegistration!.pushManager.subscribe({
-        userVisibleOnly: true,
-        applicationServerKey: this.urlBase64ToUint8Array(
-          'BJf1uKQI_KjwafsJIf2UOBZ6iUKYH7MH1LLOnIHMQPbOH-_0DscclfGdawa_etmFGldXddSoreeEivWlFbEyaE0'
-        ),
-      });
+      // Reuse an existing subscription if the browser already has one.
+      // pushManager.subscribe() throws InvalidStateError if a subscription
+      // already exists, so we must check first.
+      let subscription = await this.swRegistration!.pushManager.getSubscription();
+
+      if (!subscription) {
+        subscription = await this.swRegistration!.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: this.urlBase64ToUint8Array(
+            'BJf1uKQI_KjwafsJIf2UOBZ6iUKYH7MH1LLOnIHMQPbOH-_0DscclfGdawa_etmFGldXddSoreeEivWlFbEyaE0'
+          ),
+        });
+      }
 
       // Save subscription to database.
       // Conflict target is (user_id, endpoint) — matches the table's unique constraint.

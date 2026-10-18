@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '@/store/auth.store';
 import { ROUTES } from '@/config/constants';
 import { NotificationPromptBanner } from '@/features/notifications/components/NotificationPromptBanner';
+import { pushNotificationService } from '@/features/notifications/services/push-notification.service';
 import { EmailVerificationBanner } from './EmailVerificationBanner';
 
 interface AppShellProps {
@@ -17,6 +18,17 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
   useEffect(() => {
     refreshUser();
   }, [refreshUser]);
+
+  // Silent boot-time push subscribe: if permission is already granted
+  // but no active subscription exists (e.g. cache cleared), re-establish it.
+  useEffect(() => {
+    if (!user) return;
+    if (typeof window === 'undefined' || !('Notification' in window)) return;
+    if (Notification.permission !== 'granted') return;
+    pushNotificationService.subscribeUser(user.id).catch(() => {
+      // Silent failure — banner will prompt if needed
+    });
+  }, [user]);
 
   useEffect(() => {
     const publicRoutes = [
