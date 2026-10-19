@@ -77,7 +77,7 @@ export function useConnection(userId: string | null): UseConnectionResult {
         return {
           matchId: m.id,
           targetUserId: otherUserId,
-          targetUserName: profileMap.get(otherUserId) || 'User',
+          targetUserName: profileMap.get(otherUserId)?.display_name || 'User',
           targetAvatarUrl: profileMap.get(otherUserId)?.avatar_url || null,
           myInterest: isUser1 ? m.user1_interest : m.user2_interest,
           otherInterest: isUser1 ? m.user2_interest : m.user1_interest,
@@ -110,7 +110,7 @@ export function useConnection(userId: string | null): UseConnectionResult {
         requests.map((r: any) => ({
           id: r.id,
           requesterId: r.requester_id,
-          requesterName: profileMap.get(r.requester_id) || 'Someone',
+          requesterName: profileMap.get(r.requester_id)?.display_name || 'Someone',
           requesterAvatarUrl: profileMap.get(r.requester_id)?.avatar_url || null,
           message: r.message,
         }))
