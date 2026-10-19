@@ -1,9 +1,12 @@
-﻿import React from 'react';
+import React from 'react';
 import { Heart, Handshake, Crown, Check, CheckCheck } from 'lucide-react';
 
 interface ConnectionStatusCardProps {
   matchId: string;
   targetUserName: string;
+  targetUserId: string;
+  targetAvatarUrl: string | null;
+  onViewProfile: (userId: string) => void;
   myInterest: boolean;
   otherInterest: boolean;
   onExpressInterest: (matchId: string) => void;
@@ -11,6 +14,9 @@ interface ConnectionStatusCardProps {
 }
 
 export const ConnectionStatusCard: React.FC<ConnectionStatusCardProps> = ({
+  targetUserId,
+  targetAvatarUrl,
+  onViewProfile,
   matchId,
   targetUserName,
   myInterest,
@@ -32,7 +38,9 @@ export const ConnectionStatusCard: React.FC<ConnectionStatusCardProps> = ({
       }}
     >
       <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px' }}>
-        <div
+        <button
+          onClick={() => onViewProfile(targetUserId)}
+          aria-label={`View ${targetUserName} profile`}
           style={{
             width: 44,
             height: 44,
@@ -41,10 +49,21 @@ export const ConnectionStatusCard: React.FC<ConnectionStatusCardProps> = ({
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
+            border: 'none',
+            cursor: 'pointer',
+            padding: 0,
+            overflow: 'hidden',
+            flexShrink: 0,
           }}
         >
-          <Heart size={20} color="#ef4444" fill="#ef4444" />
-        </div>
+          {targetAvatarUrl ? (
+            <img src={targetAvatarUrl} alt={targetUserName} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+          ) : (
+            <span style={{ color: '#ef4444', fontWeight: 700, fontSize: 15 }}>
+              {targetUserName.charAt(0).toUpperCase()}
+            </span>
+          )}
+        </button>
         <div style={{ flex: 1 }}>
           <h3 style={{ fontSize: '15px', fontWeight: 700, color: '#111827', margin: 0 }}>
             Getting to Know {targetUserName}

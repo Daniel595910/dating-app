@@ -1,4 +1,4 @@
-﻿import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { supabase } from '@/config/supabase.client';
 import { ConnectionState, ConnectionStatus } from '../types/connection.types';
 
@@ -6,6 +6,7 @@ interface PendingRequest {
   id: string;
   requesterId: string;
   requesterName: string;
+  requesterAvatarUrl?: string | null;
   message?: string;
 }
 
@@ -15,12 +16,15 @@ interface ActiveConnection {
   targetUserName: string;
   myInterest: boolean;
   otherInterest: boolean;
+  targetAvatarUrl: string | null;
 }
 
 interface UseConnectionResult {
   connection: ConnectionState | null;
   pendingRequests: PendingRequest[];
   activeConnections: ActiveConnection[];
+  matchedConnections: ActiveConnection[];
+  likesReceived: ActiveConnection[];
   loading: boolean;
   error: string | null;
   sendRequest: (targetId: string, message?: string) => Promise<boolean>;
@@ -30,12 +34,17 @@ interface UseConnectionResult {
   expressInterest: (matchId: string) => Promise<ConnectionState | null>;
   getConnectionStatus: (targetUserId: string) => Promise<ConnectionStatus>;
   getOrCreateConversation: (matchId: string) => Promise<string | null>;
+  unmatch: (matchId: string, otherUserId: string) => Promise<boolean>;
+  likeBack: (matchId: string) => Promise<boolean>;
+  skipLike: (matchId: string) => Promise<boolean>;
 }
 
 export function useConnection(userId: string | null): UseConnectionResult {
   const [connection, setConnection] = useState<ConnectionState | null>(null);
   const [pendingRequests, setPendingRequests] = useState<PendingRequest[]>([]);
   const [activeConnections, setActiveConnections] = useState<ActiveConnection[]>([]);
+  const [matchedConnections, setMatchedConnections] = useState<ActiveConnection[]>([]);
+  const [likesReceived, setLikesReceived] = useState<ActiveConnection[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -56,10 +65,10 @@ export function useConnection(userId: string | null): UseConnectionResult {
 
       const { data: profiles } = await supabase
         .from('profiles')
-        .select('user_id, display_name')
+        .select('user_id, display_name, avatar_url')
         .in('user_id', otherUserIds);
 
-      const profileMap = new Map((profiles || []).map((p: any) => [p.user_id, p.display_name]));
+      const profileMap = new Map((profiles || []).map((p: any) => [p.user_id, p]));
 
       const connections: ActiveConnection[] = matches.map((m: any) => {
         const isUser1 = m.user1_id === userId;
@@ -69,6 +78,7 @@ export function useConnection(userId: string | null): UseConnectionResult {
           matchId: m.id,
           targetUserId: otherUserId,
           targetUserName: profileMap.get(otherUserId) || 'User',
+          targetAvatarUrl: profileMap.get(otherUserId)?.avatar_url || null,
           myInterest: isUser1 ? m.user1_interest : m.user2_interest,
           otherInterest: isUser1 ? m.user2_interest : m.user1_interest,
         };
@@ -91,26 +101,228 @@ export function useConnection(userId: string | null): UseConnectionResult {
       const requesterIds = requests.map((r: any) => r.requester_id);
       const { data: profiles } = await supabase
         .from('profiles')
-        .select('user_id, display_name')
+        .select('user_id, display_name, avatar_url')
         .in('user_id', requesterIds);
 
-      const profileMap = new Map((profiles || []).map((p: any) => [p.user_id, p.display_name]));
+      const profileMap = new Map((profiles || []).map((p: any) => [p.user_id, p]));
 
       setPendingRequests(
         requests.map((r: any) => ({
           id: r.id,
           requesterId: r.requester_id,
           requesterName: profileMap.get(r.requester_id) || 'Someone',
+          requesterAvatarUrl: profileMap.get(r.requester_id)?.avatar_url || null,
           message: r.message,
         }))
       );
     }
   }, [userId]);
 
+  const loadMatchedConnections = useCallback(async () => {
+    if (!userId) return;
+
+    const { data: matches } = await supabase
+      .from('matches')
+      .select('*')
+      .or(`user1_id.eq.${userId},user2_id.eq.${userId}`)
+      .eq('stage', 'matched')
+      .in('status', ['active', 'completed']);
+
+    if (!matches || matches.length === 0) {
+      setMatchedConnections([]);
+      return;
+    }
+
+    const otherUserIds = matches.map((m: any) =>
+      m.user1_id === userId ? m.user2_id : m.user1_id
+    );
+
+    const { data: profiles } = await supabase
+      .from('profiles')
+      .select('user_id, display_name, avatar_url')
+      .in('user_id', otherUserIds);
+
+    const profileMap = new Map((profiles || []).map((p: any) => [p.user_id, p]));
+
+    const connections: ActiveConnection[] = matches.map((m: any) => {
+      const isUser1 = m.user1_id === userId;
+      const otherUserId = isUser1 ? m.user2_id : m.user1_id;
+      const profile = profileMap.get(otherUserId);
+
+      return {
+        matchId: m.id,
+        targetUserId: otherUserId,
+        targetUserName: profile?.display_name || 'User',
+        targetAvatarUrl: profile?.avatar_url || null,
+        myInterest: isUser1 ? m.user1_interest : m.user2_interest,
+        otherInterest: isUser1 ? m.user2_interest : m.user1_interest,
+      };
+    });
+
+    setMatchedConnections(connections);
+  }, [userId]);
+
+  const loadLikesReceived = useCallback(async () => {
+    if (!userId) return;
+
+    // One-way interest: the OTHER user expressed interest, I have not
+    const { data: matches } = await supabase
+      .from('matches')
+      .select('*')
+      .or(`user1_id.eq.${userId},user2_id.eq.${userId}`)
+      .in('stage', ['getting_to_know', 'compatibility_check'])
+      .eq('status', 'active');
+
+    if (!matches || matches.length === 0) {
+      setLikesReceived([]);
+      return;
+    }
+
+    // Filter to one-way interest (they liked me, I have not liked back)
+    const oneWay = matches.filter((m: any) => {
+      const isUser1 = m.user1_id === userId;
+      const myInterest = isUser1 ? m.user1_interest : m.user2_interest;
+      const theirInterest = isUser1 ? m.user2_interest : m.user1_interest;
+      return theirInterest === true && myInterest === false;
+    });
+
+    if (oneWay.length === 0) {
+      setLikesReceived([]);
+      return;
+    }
+
+    const otherUserIds = oneWay.map((m: any) =>
+      m.user1_id === userId ? m.user2_id : m.user1_id
+    );
+
+    const { data: profiles } = await supabase
+      .from('profiles')
+      .select('user_id, display_name, avatar_url')
+      .in('user_id', otherUserIds);
+
+    const profileMap = new Map((profiles || []).map((p: any) => [p.user_id, p]));
+
+    const connections: ActiveConnection[] = oneWay.map((m: any) => {
+      const isUser1 = m.user1_id === userId;
+      const otherUserId = isUser1 ? m.user2_id : m.user1_id;
+      const profile = profileMap.get(otherUserId);
+
+  const unmatch = useCallback(async (matchId: string, otherUserId: string) => {
+    setLoading(true);
+    setError(null);
+
+    // Optimistic remove from matched list
+    const backup = matchedConnections;
+    setMatchedConnections((prev) => prev.filter((c) => c.targetUserId !== otherUserId));
+
+    try {
+      const { error: matchErr } = await supabase
+        .from('matches')
+        .update({
+          stage: 'rejected',
+          status: 'cancelled',
+          rejected_at: new Date().toISOString(),
+        })
+        .eq('id', matchId);
+
+      if (matchErr) throw matchErr;
+
+      // Close the conversation so neither user can message
+      await supabase
+        .from('conversations')
+        .update({ closed_at: new Date().toISOString() })
+        .eq('match_id', matchId);
+
+      // Cancel any pending requests so they can rematch later
+      await supabase
+        .from('match_requests')
+        .update({ status: 'cancelled', updated_at: new Date().toISOString() })
+        .or(
+          `and(requester_id.eq.${otherUserId},target_id.eq.${userId}),` +
+          `and(requester_id.eq.${userId},target_id.eq.${otherUserId})`
+        )
+        .in('status', ['pending', 'accepted']);
+
+      return true;
+    } catch (err: any) {
+      setMatchedConnections(backup);
+      setError(err.message || 'Failed to unmatch');
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  }, [matchedConnections, userId]);
+
+  const likeBack = useCallback(async (matchId: string) => {
+    setLoading(true);
+    setError(null);
+
+    // Optimistic remove from likes list
+    const backup = likesReceived;
+    setLikesReceived((prev) => prev.filter((c) => c.matchId !== matchId));
+
+    try {
+      const { error: rpcErr } = await supabase.rpc('express_interest', {
+        p_match_id: matchId,
+      });
+
+      if (rpcErr) throw rpcErr;
+
+      await loadActiveConnections();
+      await loadMatchedConnections();
+      return true;
+    } catch (err: any) {
+      setLikesReceived(backup);
+      setError(err.message || 'Failed to like back');
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  }, [likesReceived, loadActiveConnections, loadMatchedConnections]);
+
+  const skipLike = useCallback(async (matchId: string) => {
+    setLoading(true);
+    setError(null);
+
+    const backup = likesReceived;
+    setLikesReceived((prev) => prev.filter((c) => c.matchId !== matchId));
+
+    try {
+      const { error: updateErr } = await supabase
+        .from('matches')
+        .update({ stage: 'rejected', status: 'cancelled', rejected_at: new Date().toISOString() })
+        .eq('id', matchId);
+
+      if (updateErr) throw updateErr;
+      return true;
+    } catch (err: any) {
+      setLikesReceived(backup);
+      setError(err.message || 'Failed to skip');
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  }, [likesReceived]);
+
+      return {
+        matchId: m.id,
+        targetUserId: otherUserId,
+        targetUserName: profile?.display_name || 'User',
+        targetAvatarUrl: profile?.avatar_url || null,
+        myInterest: false,
+        otherInterest: true,
+      };
+    });
+
+    setLikesReceived(connections);
+  }, [userId]);
+
   useEffect(() => {
     loadPendingRequests();
     loadActiveConnections();
-  }, [loadPendingRequests, loadActiveConnections]);
+    loadMatchedConnections();
+    loadLikesReceived();
+  }, [loadPendingRequests, loadActiveConnections, loadMatchedConnections, loadLikesReceived]);
 
   const sendRequest = useCallback(async (targetId: string, message?: string) => {
     setLoading(true);
@@ -206,6 +418,103 @@ export function useConnection(userId: string | null): UseConnectionResult {
 
       if (data) {
         const result = data as any;
+  const unmatch = useCallback(async (matchId: string, otherUserId: string) => {
+    setLoading(true);
+    setError(null);
+
+    // Optimistic remove from matched list
+    const backup = matchedConnections;
+    setMatchedConnections((prev) => prev.filter((c) => c.targetUserId !== otherUserId));
+
+    try {
+      const { error: matchErr } = await supabase
+        .from('matches')
+        .update({
+          stage: 'rejected',
+          status: 'cancelled',
+          rejected_at: new Date().toISOString(),
+        })
+        .eq('id', matchId);
+
+      if (matchErr) throw matchErr;
+
+      // Close the conversation so neither user can message
+      await supabase
+        .from('conversations')
+        .update({ closed_at: new Date().toISOString() })
+        .eq('match_id', matchId);
+
+      // Cancel any pending requests so they can rematch later
+      await supabase
+        .from('match_requests')
+        .update({ status: 'cancelled', updated_at: new Date().toISOString() })
+        .or(
+          `and(requester_id.eq.${otherUserId},target_id.eq.${userId}),` +
+          `and(requester_id.eq.${userId},target_id.eq.${otherUserId})`
+        )
+        .in('status', ['pending', 'accepted']);
+
+      return true;
+    } catch (err: any) {
+      setMatchedConnections(backup);
+      setError(err.message || 'Failed to unmatch');
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  }, [matchedConnections, userId]);
+
+  const likeBack = useCallback(async (matchId: string) => {
+    setLoading(true);
+    setError(null);
+
+    // Optimistic remove from likes list
+    const backup = likesReceived;
+    setLikesReceived((prev) => prev.filter((c) => c.matchId !== matchId));
+
+    try {
+      const { error: rpcErr } = await supabase.rpc('express_interest', {
+        p_match_id: matchId,
+      });
+
+      if (rpcErr) throw rpcErr;
+
+      await loadActiveConnections();
+      await loadMatchedConnections();
+      return true;
+    } catch (err: any) {
+      setLikesReceived(backup);
+      setError(err.message || 'Failed to like back');
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  }, [likesReceived, loadActiveConnections, loadMatchedConnections]);
+
+  const skipLike = useCallback(async (matchId: string) => {
+    setLoading(true);
+    setError(null);
+
+    const backup = likesReceived;
+    setLikesReceived((prev) => prev.filter((c) => c.matchId !== matchId));
+
+    try {
+      const { error: updateErr } = await supabase
+        .from('matches')
+        .update({ stage: 'rejected', status: 'cancelled', rejected_at: new Date().toISOString() })
+        .eq('id', matchId);
+
+      if (updateErr) throw updateErr;
+      return true;
+    } catch (err: any) {
+      setLikesReceived(backup);
+      setError(err.message || 'Failed to skip');
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  }, [likesReceived]);
+
         return {
           connectionId: null,
           matchId: result.match_id,
@@ -268,9 +577,108 @@ export function useConnection(userId: string | null): UseConnectionResult {
     }
   }, []);
 
+  const unmatch = useCallback(async (matchId: string, otherUserId: string) => {
+    setLoading(true);
+    setError(null);
+
+    // Optimistic remove from matched list
+    const backup = matchedConnections;
+    setMatchedConnections((prev) => prev.filter((c) => c.targetUserId !== otherUserId));
+
+    try {
+      const { error: matchErr } = await supabase
+        .from('matches')
+        .update({
+          stage: 'rejected',
+          status: 'cancelled',
+          rejected_at: new Date().toISOString(),
+        })
+        .eq('id', matchId);
+
+      if (matchErr) throw matchErr;
+
+      // Close the conversation so neither user can message
+      await supabase
+        .from('conversations')
+        .update({ closed_at: new Date().toISOString() })
+        .eq('match_id', matchId);
+
+      // Cancel any pending requests so they can rematch later
+      await supabase
+        .from('match_requests')
+        .update({ status: 'cancelled', updated_at: new Date().toISOString() })
+        .or(
+          `and(requester_id.eq.${otherUserId},target_id.eq.${userId}),` +
+          `and(requester_id.eq.${userId},target_id.eq.${otherUserId})`
+        )
+        .in('status', ['pending', 'accepted']);
+
+      return true;
+    } catch (err: any) {
+      setMatchedConnections(backup);
+      setError(err.message || 'Failed to unmatch');
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  }, [matchedConnections, userId]);
+
+  const likeBack = useCallback(async (matchId: string) => {
+    setLoading(true);
+    setError(null);
+
+    // Optimistic remove from likes list
+    const backup = likesReceived;
+    setLikesReceived((prev) => prev.filter((c) => c.matchId !== matchId));
+
+    try {
+      const { error: rpcErr } = await supabase.rpc('express_interest', {
+        p_match_id: matchId,
+      });
+
+      if (rpcErr) throw rpcErr;
+
+      await loadActiveConnections();
+      await loadMatchedConnections();
+      return true;
+    } catch (err: any) {
+      setLikesReceived(backup);
+      setError(err.message || 'Failed to like back');
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  }, [likesReceived, loadActiveConnections, loadMatchedConnections]);
+
+  const skipLike = useCallback(async (matchId: string) => {
+    setLoading(true);
+    setError(null);
+
+    const backup = likesReceived;
+    setLikesReceived((prev) => prev.filter((c) => c.matchId !== matchId));
+
+    try {
+      const { error: updateErr } = await supabase
+        .from('matches')
+        .update({ stage: 'rejected', status: 'cancelled', rejected_at: new Date().toISOString() })
+        .eq('id', matchId);
+
+      if (updateErr) throw updateErr;
+      return true;
+    } catch (err: any) {
+      setLikesReceived(backup);
+      setError(err.message || 'Failed to skip');
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  }, [likesReceived]);
+
   return {
     connection,
     pendingRequests,
+    matchedConnections,
+    likesReceived,
     activeConnections,
     loading,
     error,
@@ -281,5 +689,8 @@ export function useConnection(userId: string | null): UseConnectionResult {
     expressInterest,
     getConnectionStatus,
     getOrCreateConversation,
+    unmatch,
+    likeBack,
+    skipLike,
   };
 }

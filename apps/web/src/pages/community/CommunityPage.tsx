@@ -94,12 +94,17 @@ export const CommunityPage: React.FC = () => {
   const {
     pendingRequests,
     activeConnections,
+    matchedConnections,
+    likesReceived,
     loading: connectionLoading,
     acceptRequest,
     declineRequest,
     sendRequest,
     expressInterest,
     getOrCreateConversation,
+    unmatch,
+    likeBack,
+    skipLike,
   } = useConnection(user?.id || null);
 
   // Load community member preview + allow_connections flag
@@ -340,6 +345,19 @@ export const CommunityPage: React.FC = () => {
         onExpressInterest={handleExpressInterest}
         onAccept={acceptRequest}
         onDecline={declineRequest}
+        matched={matchedConnections}
+        likes={likesReceived}
+        onUnmatch={unmatch}
+        onLikeBack={likeBack}
+        onSkipLike={skipLike}
+        onViewProfile={(userId) => navigate('/profile/' + userId)}
+        onOpenChat={async (matchId) => {
+          const convId = await getOrCreateConversation(matchId);
+          if (convId) {
+            setConnectionsModalOpen(false);
+            navigate('/chats/' + convId);
+          }
+        }}
         loading={connectionLoading}
       />
 
