@@ -3,6 +3,7 @@ import { Send, Plus, X, Gift, Video } from 'lucide-react';
 import { supabase } from '@/config/supabase.client';
 import { ChatMessage } from '../../types/chat.types';
 import styles from '../styles/MessageComposer.module.css';
+import { useSettings } from '@/hooks/useSettings';
 
 interface MessageComposerProps {
   conversationId: string;
@@ -30,6 +31,7 @@ export const MessageComposer: React.FC<MessageComposerProps> = ({
   disabled = false,
 }) => {
   const [content, setContent] = useState('');
+  const maxMessageLength = useSettings((s) => s.settings['general.max_message_length']) || 10000;
   const [sending, setSending] = useState(false);
   const [attachmentMenuOpen, setAttachmentMenuOpen] = useState(false);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -181,7 +183,7 @@ export const MessageComposer: React.FC<MessageComposerProps> = ({
           onKeyDown={handleKeyDown}
           placeholder="Type a message..."
           rows={1}
-          maxLength={10000}
+          maxLength={maxMessageLength}
           disabled={sending}
         />
 

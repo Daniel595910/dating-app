@@ -24,6 +24,7 @@ import { uploadService } from '@/services/upload.service';
 
 import { Pin, X, ChevronDown } from 'lucide-react';
 import styles from '../styles/ChatWindow.module.css';
+import { useSettings } from '@/hooks/useSettings';
 
 interface ChatWindowProps {
   conversationId: string;
@@ -45,6 +46,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
   readOnly = false,
 }) => {
   const { user } = useAuthStore();
+  const maxMessageLength = useSettings((s) => s.settings['general.max_message_length']) || 10000;
   const { startCall } = useCall();
   const navigate = useNavigate();
   
@@ -731,7 +733,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
               if (e.key === 'Escape') setEditingMessage(null);
             }}
             placeholder="Edit message..."
-            maxLength={10000}
+            maxLength={maxMessageLength}
           />
           <button onClick={() => setEditingMessage(null)}>Cancel</button>
           <button 
