@@ -299,37 +299,6 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
     };
   }, [conversationId, user, targetUserId]);
 
-  // Presence check
-  useEffect(() => {
-    if (!targetUserId) return;
-
-    const checkPresence = async () => {
-      try {
-        const { data, error } = await supabase
-          .from('presence')
-          .select('is_online')
-          .eq('user_id', targetUserId)
-          .maybeSingle();
-        
-        if (error) {
-          // Silently ignore network errors
-          return;
-        }
-        
-        if (data) setTargetOnline(data.is_online);
-      } catch (err) {
-        // Silently ignore network errors
-        console.debug('Presence check failed:', err);
-      }
-    };
-
-    checkPresence();
-    const interval = setInterval(checkPresence, 10000);
-
-    return () => {
-      clearInterval(interval);
-    };
-  }, [targetUserId]);
 
   // Message actions
   const handleSend = async (content: string) => {
