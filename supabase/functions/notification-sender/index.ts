@@ -96,6 +96,77 @@ serve(async (req: Request) => {
 
     const channels = payload.channels || (preferences?.channels as string[]) || ['in_app'];
 
+    // ============================================================
+    // Admin-level enforcement (platform settings)
+    // These checks are in ADDITION to the user-level notification_preferences
+    // check above. Any of them can block the push.
+    // ============================================================
+
+    // 1. Global kill switch
+    const { data: globalSettings } = await supabase
+      .from('notification_global_settings')
+      .select('push_master_enabled, quiet_hours_start, quiet_hours_end, rate_limit_per_hour')
+      .eq('id', 1)
+      .maybeSingle();
+
+    if (globalSettings && globalSettings.push_master_enabled === false) {
+      return new Response(
+        JSON.stringify({ success: true, skipped: 'push_master_disabled' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // 2. Per-type enablement (admin-level)
+    // If the admin has disabled push for this notification type, skip.
+    // No row = default enabled = allow.
+    const { data: typeSettings } = await supabase
+      .from('notification_type_settings')
+      .select('push_enabled')
+      .eq('type', payload.type)
+      .maybeSingle();
+
+    if (typeSettings && typeSettings.push_enabled === false) {
+      return new Response(
+        JSON.stringify({ success: true, skipped: 'type_disabled' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // 3. Quiet hours (UTC). If current hour is inside the quiet window, skip.
+    // Handles both same-day windows (start < end) and overnight (start > end).
+    if (globalSettings?.quiet_hours_start != null && globalSettings?.quiet_hours_end != null) {
+      const nowHour = new Date().getUTCHours();
+      const qStart = globalSettings.quiet_hours_start;
+      const qEnd = globalSettings.quiet_hours_end;
+      const inQuietHours = qStart <= qEnd
+        ? (nowHour >= qStart && nowHour < qEnd)
+        : (nowHour >= qStart || nowHour < qEnd);
+      if (inQuietHours) {
+        return new Response(
+          JSON.stringify({ success: true, skipped: 'quiet_hours' }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+    }
+
+    // 4. Rate limit: if user has received N pushes in the last hour, skip.
+    if (globalSettings?.rate_limit_per_hour && globalSettings.rate_limit_per_hour > 0) {
+      const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+      const { count: recentPushes } = await supabase
+        .from('notifications')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', payload.user_id)
+        .contains('channels', ['push'])
+        .gte('created_at', oneHourAgo);
+      if ((recentPushes || 0) >= globalSettings.rate_limit_per_hour) {
+        return new Response(
+          JSON.stringify({ success: true, skipped: 'rate_limited' }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+    }
+
+
     // NOTE: the notification row is already inserted by the caller.
     // This function only delivers the push. Inserting here would fire the
     // trigger again and create an infinite loop.
