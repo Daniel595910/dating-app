@@ -9,6 +9,7 @@ import styles from './WelcomePage.module.css';
 export const WelcomePage: React.FC = () => {
   const navigate = useNavigate();
   const appName = useSettings((s) => s.settings['general.app_name']) || 'Dating App';
+  const tagline = useSettings((s) => s.settings['general.tagline']) || 'Real connections with verified members in your area. No fakes. No games. Just people you will actually want to meet.';
   const logoUrl = useSettings((s) => s.settings['general.logo_url']) || null;
   const [exiting, setExiting] = useState(false);
 
@@ -51,7 +52,7 @@ export const WelcomePage: React.FC = () => {
             Find your <span className={styles.highlight}>person</span>
           </h1>
           <p className={styles.tagline}>
-            Real connections with verified members in your area. No fakes. No games. Just people you will actually want to meet.
+            {tagline}
           </p>
 
           <div className={styles.features}>

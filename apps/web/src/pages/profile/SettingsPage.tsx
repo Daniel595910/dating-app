@@ -805,8 +805,33 @@ export const SettingsPage: React.FC = () => {
                 <ChevronRight size={16} className={styles.rowChevron} />
               </button>
 
+              {/* Help & Support */}
+              <p style={{ fontSize: '0.75rem', fontWeight: 700, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.05em', margin: '1.5rem 0 0.5rem' }}>
+                Help & Support
+              </p>
+
+              <a
+                className={styles.row}
+                href={'mailto:' + supportEmail}
+                style={{ background: '#f9fafb', borderRadius: '1rem', textDecoration: 'none', marginBottom: '0.75rem' }}
+              >
+                <span className={styles.rowIcon}><Mail size={18} /></span>
+                <span className={styles.rowLabel}>Contact Support</span>
+                <ChevronRight size={16} className={styles.rowChevron} />
+              </a>
+
+              <a
+                className={styles.row}
+                href={'mailto:' + supportEmail + '?subject=Feedback%20for%20' + encodeURIComponent(appName)}
+                style={{ background: '#f9fafb', borderRadius: '1rem', textDecoration: 'none', marginBottom: '0.75rem' }}
+              >
+                <span className={styles.rowIcon}><MessageSquare size={18} /></span>
+                <span className={styles.rowLabel}>Send Feedback</span>
+                <ChevronRight size={16} className={styles.rowChevron} />
+              </a>
+
               <p style={{ textAlign: 'center', fontSize: '0.75rem', color: '#9ca3af', marginTop: '1.5rem' }}>
-                Â© 2026 Dating App. All rights reserved.
+                © {new Date().getFullYear()} {appName}. All rights reserved.
               </p>
             </div>
           </div>
