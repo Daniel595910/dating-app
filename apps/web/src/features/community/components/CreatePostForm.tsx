@@ -1,9 +1,10 @@
-﻿import React, { useState, useRef, useCallback } from 'react';
+import React, { useState, useRef, useCallback } from 'react';
 import { X, ArrowLeft, ArrowRight, Camera, Heart, MessageCircle, Sparkles, HelpCircle, Check, ImagePlus, Trash2, Mic, Square, Upload, Scissors, Play, Pause } from 'lucide-react';
 import { supabase } from '@/config/supabase.client';
 import { CommunityPostType, PostMedia } from '../../types/community.types';
 import { mediaService } from '../services/media.service';
 import styles from '../styles/CreatePostForm.module.css';
+import { useSettings } from '@/hooks/useSettings';
 
 interface CreatePostFormProps {
   open: boolean;
@@ -82,6 +83,7 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
   initialType,
   onPostCreated,
 }) => {
+  const maxPhotosPerPost = useSettings((s) => s.settings['general.max_photos_per_post']) || 10;
   const [step, setStep] = useState<'type' | 'compose' | 'preview'>('type');
   const [postType, setPostType] = useState<CommunityPostType | null>(initialType || null);
   const [content, setContent] = useState('');
@@ -212,7 +214,7 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
     setError(null);
 
     const selectedFiles = Array.from(files);
-    const maxFiles = 5;
+    const maxFiles = maxPhotosPerPost;
     const remainingSlots = maxFiles - media.length;
     const filesToUpload = selectedFiles.slice(0, remainingSlots);
 
@@ -434,9 +436,9 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
             <input ref={audioFileInputRef} type="file" accept="audio/*,.mp3,.wav,.webm,.ogg,.m4a" onChange={(e) => handleAudioFileSelect(e.target.files)} style={{ display: 'none' }} />
 
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 8 }}>
-              <button type="button" onClick={() => fileInputRef.current?.click()} disabled={uploading || media.length >= 5} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 14px', background: 'none', border: '1px solid #e5e7eb', borderRadius: 9999, cursor: 'pointer', fontSize: 13, fontWeight: 500, color: '#374151', minHeight: 38 }}>
+              <button type="button" onClick={() => fileInputRef.current?.click()} disabled={uploading || media.length >= maxPhotosPerPost} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 14px', background: 'none', border: '1px solid #e5e7eb', borderRadius: 9999, cursor: 'pointer', fontSize: 13, fontWeight: 500, color: '#374151', minHeight: 38 }}>
                 <ImagePlus size={16} />
-                <span>{uploading ? 'Uploading... ' + Math.round(uploadProgress) + '%' : media.length > 0 ? 'Add More Photos (' + media.length + '/5)' : 'Add Photos'}</span>
+                <span>{uploading ? 'Uploading... ' + Math.round(uploadProgress) + '%' : media.length > 0 ? 'Add More Photos (' + media.length + '/' + maxPhotosPerPost + ')' : 'Add Photos'}</span>
               </button>
             </div>
 
