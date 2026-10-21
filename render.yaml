@@ -1,0 +1,58 @@
+services:
+  - type: web
+    name: spensive-web
+    runtime: static
+    rootDir: .
+    buildCommand: pnpm install --frozen-lockfile && pnpm --filter @dating-app/web build
+    staticPublishPath: ./apps/web/dist
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    headers:
+      - path: /*
+        name: Strict-Transport-Security
+        value: max-age=31536000; includeSubDomains; preload
+      - path: /*
+        name: X-Content-Type-Options
+        value: nosniff
+      - path: /*
+        name: X-Frame-Options
+        value: DENY
+      - path: /*
+        name: Referrer-Policy
+        value: strict-origin-when-cross-origin
+      - path: /*
+        name: Permissions-Policy
+        value: camera=(self), microphone=(self), geolocation=(self)
+    envVars:
+      - key: VITE_SUPABASE_URL
+        value: https://bngrqxtxppuhtrtqmlli.supabase.co
+      - key: VITE_SUPABASE_ANON_KEY
+        sync: false
+
+  - type: web
+    name: spensive-admin
+    runtime: static
+    rootDir: .
+    buildCommand: pnpm install --frozen-lockfile && pnpm --filter @dating-app/admin build
+    staticPublishPath: ./apps/admin/dist
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    headers:
+      - path: /*
+        name: Strict-Transport-Security
+        value: max-age=31536000; includeSubDomains; preload
+      - path: /*
+        name: X-Content-Type-Options
+        value: nosniff
+      - path: /*
+        name: X-Frame-Options
+        value: DENY
+    envVars:
+      - key: VITE_SUPABASE_URL
+        value: https://bngrqxtxppuhtrtqmlli.supabase.co
+      - key: VITE_SUPABASE_ANON_KEY
+        sync: false
