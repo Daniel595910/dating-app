@@ -1,4 +1,4 @@
-﻿export const APP_NAME = 'StealGat Admin';
+export const APP_NAME = 'Spensive Admin';
 export const APP_VERSION = '1.0.0';
 
 export const ROUTES = {
