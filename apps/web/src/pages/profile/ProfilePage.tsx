@@ -867,10 +867,6 @@ export const ProfilePage: React.FC = () => {
         </div>
 
         <div className={styles.statsRow}>
-          <button className={styles.statButton} onClick={() => setStatsModal('posts')}>
-            <span className={styles.statValue}>{stats.posts}</span>
-            <span className={styles.statLabel}>Posts</span>
-          </button>
           <button className={styles.statButton} onClick={() => { setStatsModal('followers'); loadStatsLists('followers'); }}>
             <span className={styles.statValue}>{stats.followers}</span>
             <span className={styles.statLabel}>Followers</span>

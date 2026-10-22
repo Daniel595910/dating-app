@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '@/store/auth.store';
 import { supabase } from '@/config/supabase.client';
@@ -133,7 +133,7 @@ export const EditProfilePage: React.FC = () => {
       setSuccess(true);
       setTimeout(() => {
         setSuccess(false);
-        navigate('/profile');
+        navigate(-1);
       }, 1500);
     } catch (err: any) {
       setError(err.message || 'Failed to save');
@@ -161,7 +161,7 @@ export const EditProfilePage: React.FC = () => {
       )}
 
       <header className={styles.header}>
-        <button className={styles.headerButton} onClick={() => navigate('/profile')} aria-label="Back">
+        <button className={styles.headerButton} onClick={() => navigate(-1)} aria-label="Back">
           <ArrowLeft size={22} />
         </button>
         <h1 className={styles.headerTitle}>Edit Profile</h1>

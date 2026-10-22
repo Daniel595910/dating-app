@@ -4,7 +4,7 @@
  * Two ways to verify:
  *   1. User clicks the link in the email -> Supabase creates a session
  *      automatically. We detect it and route straight to completion.
- *   2. User is on another device and types the 6-digit code -> we call
+ *   2. User is on another device and types the 8-digit code -> we call
  *      authService.verifySignupOtp(email, code).
  *
  * On success we always end up at /register/complete so the profile
@@ -20,7 +20,7 @@ import { ROUTES } from '@/config/constants';
 import { Mail, ArrowLeft } from 'lucide-react';
 import styles from './ConfirmEmail.module.css';
 
-const CODE_LENGTH = 6;
+const CODE_LENGTH = 8;
 
 export const ConfirmEmail: React.FC = () => {
   const navigate = useNavigate();
@@ -176,7 +176,7 @@ export const ConfirmEmail: React.FC = () => {
 
         <h1 className={styles.title}>Confirm your email</h1>
         <p className={styles.subtitle}>
-          We sent a 6-digit code to{' '}
+          We sent a 8-digit code to{' '}
           <strong>{email || 'your email'}</strong>. Enter it below to finish setting up your account.
         </p>
 
