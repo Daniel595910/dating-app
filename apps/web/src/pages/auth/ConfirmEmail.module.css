@@ -78,10 +78,15 @@
   gap: 0.5rem;
   justify-content: center;
   margin: 1rem 0;
+  width: 100%;
+  max-width: 400px;
+  box-sizing: border-box;
 }
 
 .codeInput {
-  width: 48px;
+  flex: 1 1 0;
+  min-width: 0;
+  max-width: 48px;
   height: 56px;
   border-radius: 0.75rem;
   border: 1px solid var(--color-border, #e5e7eb);
@@ -166,8 +171,7 @@
 
 @media (max-width: 400px) {
   .codeInput {
-    width: 42px;
-    height: 52px;
+    height: 50px;
     font-size: 1.25rem;
   }
   .codeRow {
