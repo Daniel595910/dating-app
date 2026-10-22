@@ -1,19 +1,24 @@
 .communityPage {
-  min-height: 100dvh;
+  height: 100dvh;                    /* changed from min-height: was causing mobile scroll issues */
+  max-height: 100dvh;                /* prevent growth beyond viewport */
   background-color: #faf9f7;
   display: flex;
   flex-direction: column;
   max-width: 480px;
   margin: 0 auto;
   position: relative;
+  overflow: hidden;                  /* contain child scroll context */
 }
 
 .feedContainer {
   flex: 1;
+  min-height: 0;                     /* critical: allows flex child to scroll */
   overflow-y: auto;
+  overflow-x: hidden;
   padding: 0.75rem 0.75rem calc(6rem + env(safe-area-inset-bottom));
   -webkit-overflow-scrolling: touch;
   overscroll-behavior: contain;
+  touch-action: pan-y;               /* explicit vertical swipe */
 }
 
 .errorContainer {
