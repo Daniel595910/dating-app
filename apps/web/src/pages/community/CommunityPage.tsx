@@ -66,7 +66,7 @@ export const CommunityPage: React.FC = () => {
     }
   }, []);
 
-  const { 
+  const {
     community,
     loading: communityLoading,
     onlineCount,
@@ -107,21 +107,34 @@ export const CommunityPage: React.FC = () => {
     skipLike,
   } = useConnection(user?.id || null);
 
+  // Pull-to-refresh: after refresh completes, clear banner + scroll to top.
+  const pull = usePullToRefresh({
+    onRefresh: async () => {
+      await refresh();
+      setNewPostCount(0);
+      pull.containerRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
+    },
+    disabled: feedLoading,
+  });
+
+  const { isOffline, hasCachedFeed } = useOfflineFeed({
+    communityId: community?.id || null,
+  });
+
+  useCommunityRealtime({
+    communityId: community?.id || null,
+    onNewPost: () => setNewPostCount((prev) => prev + 1),
+    onPostDeleted: (postId) => removePost(postId),
+  });
+
   // Load community member preview + allow_connections flag
   useEffect(() => {
     if (!community?.id || !user?.id) return;
 
-    // Capture this run's community id so stale resolves are ignored
     const targetCommunityId = community.id;
     let cancelled = false;
 
-    // Tag the preview with the community id it belongs to. The header
-    // uses this to guard against rendering a previous community's avatars
-    // while a new fetch is in-flight.
     setMemberPreviewCommunityId(targetCommunityId);
-
-    // Clear previous community's data immediately so the header doesn't
-    // briefly show the wrong community's avatars during switch
     setMemberPreview([]);
 
     Promise.all([
@@ -137,7 +150,6 @@ export const CommunityPage: React.FC = () => {
           5
         );
 
-        // Abort if the community changed while this was in-flight
         if (cancelled) return;
 
         setConnectedIds(connected);
@@ -149,24 +161,11 @@ export const CommunityPage: React.FC = () => {
         setMemberPreview([]);
       });
 
-    // Cleanup: mark this run as stale when the effect re-runs
     return () => {
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [community?.id, user?.id]);
-
-  const pull = usePullToRefresh({ onRefresh: refresh, disabled: feedLoading });
-
-  const { isOffline, hasCachedFeed } = useOfflineFeed({
-    communityId: community?.id || null,
-  });
-
-  useCommunityRealtime({
-    communityId: community?.id || null,
-    onNewPost: () => setNewPostCount((prev) => prev + 1),
-    onPostDeleted: (postId) => removePost(postId),
-  });
 
   const handleLike = async (postId: string) => {
     const post = posts.find((p) => p.id === postId);
@@ -207,7 +206,7 @@ export const CommunityPage: React.FC = () => {
     if (conversationId) {
       setMatchUser(null);
       setMatchId(null);
-      navigate(`/chats/${conversationId}`);
+      navigate(/chats/);
     }
   };
 
@@ -266,7 +265,11 @@ export const CommunityPage: React.FC = () => {
       {newPostCount > 0 && (
         <button
           className={styles.newPostsIndicator}
-          onClick={() => { setNewPostCount(0); refresh(); }}
+          onClick={async () => {
+            setNewPostCount(0);
+            await refresh();
+            pull.containerRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
+          }}
         >
           {newPostCount} new posts
         </button>
@@ -288,7 +291,7 @@ export const CommunityPage: React.FC = () => {
             pointerEvents: 'none',
           }}
         >
-            {pull.refreshing ? 'Refreshing...' : `Pull to refresh (${Math.round(pull.pullDistance)}px)`}
+          {pull.refreshing ? 'Refreshing...' : `Pull to refresh (${Math.round(pull.pullDistance)}px)`}
         </div>
       )}
 
@@ -296,8 +299,6 @@ export const CommunityPage: React.FC = () => {
         ref={pull.containerRef as React.RefObject<HTMLElement>}
         className={styles.feedContainer}
       >
-        
-
         {filter === 'profiles' ? (
           <ProfileSwipeDeck userId={user?.id || ''} communityId={community.id} onGetToKnow={(id) => handleGetToKnow(id)} />
         ) : feedLoading && posts.length === 0 ? (
