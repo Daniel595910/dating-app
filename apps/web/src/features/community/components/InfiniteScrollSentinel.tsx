@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef } from 'react';
 
 interface InfiniteScrollSentinelProps {
   onLoadMore: () => void;
@@ -38,6 +38,14 @@ export const InfiniteScrollSentinel: React.FC<InfiniteScrollSentinelProps> = ({
       observer.disconnect();
     };
   }, [hasMore, loading, onLoadMore]);
+
+  if (!hasMore && !loading) {
+    return (
+      <div style={{ padding: '2rem 1rem', textAlign: 'center' }}>
+        <p style={{ color: '#9ca3af', fontSize: '0.875rem', margin: 0 }}>You're all caught up</p>
+      </div>
+    );
+  }
 
   if (!hasMore) return null;
 
