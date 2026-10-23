@@ -288,15 +288,13 @@ export const CommunityPage: React.FC = () => {
             pointerEvents: 'none',
           }}
         >
-            {pull.refreshing ? 'Refreshing...' : `Pull to refresh (px)`}
+            {pull.refreshing ? 'Refreshing...' : `Pull to refresh (${Math.round(pull.pullDistance)}px)`}
         </div>
       )}
 
       <main
+        ref={pull.containerRef as React.RefObject<HTMLElement>}
         className={styles.feedContainer}
-        onTouchStart={pull.handleTouchStart}
-        onTouchMove={pull.handleTouchMove}
-        onTouchEnd={pull.handleTouchEnd}
       >
         
 
