@@ -7,11 +7,12 @@ import { authService } from '@/services/auth.service';
 import {
   ArrowLeft, ChevronRight, User, Bell, Lock, MapPin, Ban,
   HelpCircle, Info, LogOut, Trash2, X, Shield, Eye, MessageSquare, Copy as CopyIcon,
-  Globe, FileText, Mail, Smartphone, Key, Calendar,
+  Globe, FileText, Mail, Smartphone, Key, Calendar, Share2,
 } from 'lucide-react';
 import styles from './SettingsPage.module.css';
 import { LocationSetupSheet } from '@/features/community/components/LocationSetupSheet';
 import { useThemeStore, ThemeMode } from '@/store/theme.store';
+import { useSettings } from '@/hooks/useSettings';
 
 type ModalType =
   | 'location'
@@ -42,6 +43,8 @@ export const SettingsPage: React.FC = () => {
   const { user, logout } = useAuthStore();
   const showToast = useUIStore((state) => state.showToast);
   const { theme, setTheme } = useThemeStore();
+  const appName = useSettings((s) => s.settings['general.app_name']) || 'Spensive';
+  const supportEmail = useSettings((s) => s.settings['general.support_email']) || 'support@spensive.me';
   const [modal, setModal] = useState<ModalType>(null);
   const [deleteConfirmText, setDeleteConfirmText] = useState('');
   const [deleting, setDeleting] = useState(false);
@@ -92,6 +95,25 @@ export const SettingsPage: React.FC = () => {
       .from('profiles')
       .update({ [key]: value })
       .eq('user_id', user.id);
+  };
+
+  const handleShareProfile = async () => {
+    if (!user) return;
+      const url = `${window.location.origin}/profile/${user.id}`;
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: `Find me on ${appName}`, url });
+        return;
+      } catch {
+        // user cancelled share, fall through to copy
+      }
+    }
+    try {
+      await navigator.clipboard.writeText(url);
+      showToast('Profile link copied', 'success');
+    } catch {
+      showToast(url, 'info');
+    }
   };
 
   const handleLogout = async () => {
@@ -200,6 +222,12 @@ export const SettingsPage: React.FC = () => {
         { icon: User, label: 'Edit Profile', action: () => navigate('/profile/edit') },
         { icon: User, label: 'Dating Preferences', action: () => navigate('/profile/preferences') },
         { icon: Shield, label: 'Verify Your Identity', action: () => navigate('/profile/verify') },
+      ],
+    },
+    {
+      title: 'Share',
+      items: [
+        { icon: Share2, label: 'Share your profile', action: handleShareProfile },
       ],
     },
     {
@@ -659,10 +687,10 @@ export const SettingsPage: React.FC = () => {
               <p style={{ marginBottom: '1rem' }}>
                 Email us directly at{' '}
                 <a
-                  href="mailto:surportdatingservice@gmail.com"
+                  href="mailto:support@spensive.me"
                   style={{ color: '#ef4444', fontWeight: 600, textDecoration: 'none' }}
                 >
-                  surportdatingservice@gmail.com
+                  support@spensive.me
                 </a>
                 {' '}â€” we usually reply within 24 hours. You can also check the
                 community guidelines for rules and safety tips.
@@ -679,7 +707,7 @@ export const SettingsPage: React.FC = () => {
               </button>
 
               <a
-                href="mailto:surportdatingservice@gmail.com?subject=Dating%20App%20Support%20Request&body=Hi%20team%2C%0A%0AI%20need%20help%20with%3A%0A%0A"
+                href="mailto:support@spensive.me?subject=Dating%20App%20Support%20Request&body=Hi%20team%2C%0A%0AI%20need%20help%20with%3A%0A%0A"
                 className={styles.row}
                 style={{ background: '#f9fafb', borderRadius: '1rem', marginBottom: '0.75rem', textDecoration: 'none' }}
               >
@@ -688,7 +716,7 @@ export const SettingsPage: React.FC = () => {
                   Email Support
                   <br />
                   <span style={{ fontSize: '0.75rem', color: '#6b7280', fontWeight: 400 }}>
-                    surportdatingservice@gmail.com
+                    support@spensive.me
                   </span>
                 </span>
                 <ChevronRight size={16} className={styles.rowChevron} />
@@ -698,10 +726,10 @@ export const SettingsPage: React.FC = () => {
                 className={styles.row}
                 onClick={async () => {
                   try {
-                    await navigator.clipboard.writeText('surportdatingservice@gmail.com');
+                    await navigator.clipboard.writeText('support@spensive.me');
                     showToast('Email copied to clipboard', 'success');
                   } catch {
-                    showToast('surportdatingservice@gmail.com', 'info');
+                    showToast('support@spensive.me', 'info');
                   }
                 }}
                 style={{ background: '#f9fafb', borderRadius: '1rem', marginBottom: '0.75rem' }}
@@ -777,7 +805,7 @@ export const SettingsPage: React.FC = () => {
 
               <button
                 className={styles.row}
-                onClick={() => window.open('https://datingapp.com/terms', '_blank', 'noopener')}
+                onClick={() => window.open('https://spensive.me/terms', '_blank', 'noopener')}
                 style={{ background: '#f9fafb', borderRadius: '1rem', marginBottom: '0.75rem' }}
               >
                 <span className={styles.rowIcon}><FileText size={18} /></span>
@@ -787,7 +815,7 @@ export const SettingsPage: React.FC = () => {
 
               <button
                 className={styles.row}
-                onClick={() => window.open('https://datingapp.com/privacy', '_blank', 'noopener')}
+                onClick={() => window.open('https://spensive.me/privacy', '_blank', 'noopener')}
                 style={{ background: '#f9fafb', borderRadius: '1rem', marginBottom: '0.75rem' }}
               >
                 <span className={styles.rowIcon}><Shield size={18} /></span>
@@ -797,7 +825,7 @@ export const SettingsPage: React.FC = () => {
 
               <button
                 className={styles.row}
-                onClick={() => window.open('https://datingapp.com/permissions', '_blank', 'noopener')}
+                onClick={() => window.open('https://spensive.me/permissions', '_blank', 'noopener')}
                 style={{ background: '#f9fafb', borderRadius: '1rem' }}
               >
                 <span className={styles.rowIcon}><Smartphone size={18} /></span>
