@@ -123,8 +123,24 @@ export const CommunityPage: React.FC = () => {
 
   useCommunityRealtime({
     communityId: community?.id || null,
-    onNewPost: () => setNewPostCount((prev) => prev + 1),
+    onNewPost: (post) => {
+      // Skip own posts — user just posted it, banner would be noise
+      if (post?.author_id !== user?.id) {
+        setNewPostCount((prev) => prev + 1);
+      }
+    },
     onPostDeleted: (postId) => removePost(postId),
+    onPostUpdated: (post) => {
+      // Triggers increment/decrement posts.like_count and posts.comment_count,
+      // which fires realtime UPDATE on posts. Sync those into the UI.
+      updatePost(post.id, {
+        stats: {
+          likes: post.like_count || 0,
+          comments: post.comment_count || 0,
+          shares: 0,
+        },
+      });
+    },
   });
 
   // Load community member preview + allow_connections flag
