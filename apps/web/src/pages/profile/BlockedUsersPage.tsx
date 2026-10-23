@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '@/store/auth.store';
 import { supabase } from '@/config/supabase.client';
@@ -87,7 +87,7 @@ export const BlockedUsersPage: React.FC = () => {
   return (
     <div className={styles.blockedPage}>
       <header className={styles.header}>
-        <button className={styles.headerButton} onClick={() => navigate('/settings')} aria-label="Back">
+        <button className={styles.headerButton} onClick={() => navigate(-1)} aria-label="Back">
           <ArrowLeft size={22} />
         </button>
         <h1 className={styles.headerTitle}>Blocked Users</h1>

@@ -158,7 +158,7 @@ export const VipPage: React.FC = () => {
   return (
     <div className={styles.vipPage}>
       <header className={styles.header}>
-        <button className={styles.headerButton} onClick={() => navigate('/profile')} aria-label="Back">
+        <button className={styles.headerButton} onClick={() => navigate(-1)} aria-label="Back">
           <ArrowLeft size={22} />
         </button>
         <h1 className={styles.headerTitle}>VIP & Credits</h1>

@@ -270,7 +270,7 @@ export const SettingsPage: React.FC = () => {
       <header className={styles.header}>
         <button
           className={styles.headerButton}
-          onClick={() => navigate('/profile')}
+          onClick={() => navigate(-1)}
           aria-label="Back"
         >
           <ArrowLeft size={22} />

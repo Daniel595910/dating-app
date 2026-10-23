@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '@/store/auth.store';
 import { supabase } from '@/config/supabase.client';
@@ -372,7 +372,7 @@ export const DiscoverPage: React.FC = () => {
   return (
     <div ref={containerRef} className={styles.discoverPage} onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} onTouchEnd={handleTouchEnd} style={{ touchAction: 'none', userSelect: 'none', WebkitUserSelect: 'none', overscrollBehavior: 'none' }}>
       <header className={styles.header}>
-        <button className={styles.backButton} onClick={() => navigate('/community')} aria-label="Back">
+        <button className={styles.backButton} onClick={() => navigate(-1)} aria-label="Back">
           <ArrowLeft size={20} />
         </button>
         <h1 className={styles.headerTitle}>Discover</h1>
