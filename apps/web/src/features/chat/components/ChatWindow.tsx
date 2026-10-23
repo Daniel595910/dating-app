@@ -344,6 +344,31 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
           chatService.updateMessageStatus(incoming.id, 'read').catch(() => {});
         }
       )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'messages',
+          filter: `conversation_id=eq.${conversationId}`,
+        },
+        (payload) => {
+          const row = payload.new as any;
+          // UPDATE covers: edits, deletes, read receipts
+          setMessages((prev) =>
+            prev.map((m) => {
+              if (m.id !== row.id) return m;
+              return {
+                ...m,
+                content: row.deleted_for_everyone ? '' : (row.content ?? m.content),
+                deleted_for_everyone: row.deleted_for_everyone ?? m.deleted_for_everyone,
+                edited_at: row.edited_at ?? m.edited_at,
+                status: (row.status || m.status) as 'sending' | 'sent' | 'delivered' | 'read' | 'failed',
+              };
+            })
+          );
+        }
+      )
       .subscribe();
 
     return () => {
