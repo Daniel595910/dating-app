@@ -1,4 +1,4 @@
-﻿import { supabase } from '@/config/supabase.client';
+import { supabase } from '@/config/supabase.client';
 import { generateUUID } from '../utils/uuid';
 import { Conversation, ChatMessage, MessageCursor } from '../types/chat.types';
 
@@ -61,10 +61,15 @@ class ChatService {
       .select('*')
       .eq('conversation_id', conversationId)
       .order('created_at', { ascending: false })
+      .order('id', { ascending: false })
       .limit(limit + 1);
 
     if (cursor) {
-      query = query.lt('created_at', cursor.createdAt);
+      // Compound cursor: strict less-than on (created_at, id) DESC.
+      // Prevents skipping messages that share the same created_at timestamp.
+      query = query.or(
+        `created_at.lt.${cursor.createdAt},and(created_at.eq.${cursor.createdAt},id.lt.${cursor.id})`
+      );
     }
 
     const { data: messages } = await query;
