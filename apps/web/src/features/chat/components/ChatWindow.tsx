@@ -301,6 +301,56 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
     };
   }, [conversationId, user, targetUserId]);
 
+  // Subscribe to new messages in this conversation.
+  // Skips own messages (already handled optimistically in handleSend).
+  useEffect(() => {
+    if (!user) return;
+
+    const channel = supabase
+      .channel(`messages:${conversationId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'messages',
+          filter: `conversation_id=eq.${conversationId}`,
+        },
+        (payload) => {
+          const row = payload.new as any;
+          // Skip own messages — already added by handleSend optimistic update
+          if (row.sender_id === user.id) return;
+
+          const incoming: ChatMessage = {
+            id: row.id,
+            conversationId: row.conversation_id,
+            senderId: row.sender_id,
+            senderName: targetUserName,
+            senderAvatar: targetUserAvatar,
+            type: (row.metadata && row.metadata.actualType) || row.type || 'text',
+            content: row.content || '',
+            metadata: row.metadata || undefined,
+            status: (row.status || 'sent') as 'sending' | 'sent' | 'delivered' | 'read' | 'failed',
+            createdAt: row.created_at,
+          };
+
+          setMessages((prev) => {
+            if (prev.some((m) => m.id === incoming.id)) return prev;
+            return [...prev, incoming];
+          });
+          scrollToBottom();
+
+          // Mark as read since user is viewing this conversation
+          chatService.updateMessageStatus(incoming.id, 'read').catch(() => {});
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [conversationId, user, targetUserName, targetUserAvatar, scrollToBottom]);
+
 
   // Message actions
   const handleSend = async (content: string) => {
