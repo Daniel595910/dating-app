@@ -102,6 +102,7 @@ class CommunityService {
       .neq('type', 'profile_share')
       .eq('status', 'published')
       .order('created_at', { ascending: false })
+      .order('id', { ascending: false })
       .limit(limit + 1);
 
     if (filter === 'looking') {
@@ -118,7 +119,11 @@ class CommunityService {
     }
 
     if (cursor) {
-      query = query.lt('created_at', cursor.createdAt);
+      // Compound cursor: strict greater-than on (created_at, id) DESC.
+      // Prevents skipping posts that share the same created_at timestamp.
+      query = query.or(
+        `created_at.lt.${cursor.createdAt},and(created_at.eq.${cursor.createdAt},id.lt.${cursor.id})`
+      );
     }
 
     const { data: posts, error } = await query;
