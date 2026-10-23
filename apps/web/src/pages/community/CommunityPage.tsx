@@ -156,7 +156,7 @@ export const CommunityPage: React.FC = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [community?.id, user?.id]);
 
-  usePullToRefresh({ onRefresh: refresh, disabled: feedLoading });
+  const pull = usePullToRefresh({ onRefresh: refresh, disabled: feedLoading });
 
   const { isOffline, hasCachedFeed } = useOfflineFeed({
     communityId: community?.id || null,
@@ -272,7 +272,32 @@ export const CommunityPage: React.FC = () => {
         </button>
       )}
 
-      <main className={styles.feedContainer}>
+      {(pull.pulling || pull.refreshing) && (
+        <div
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            padding: '0.5rem',
+            textAlign: 'center',
+            fontSize: '0.8125rem',
+            color: '#ef4444',
+            background: 'rgba(255,255,255,0.95)',
+            zIndex: 100,
+            pointerEvents: 'none',
+          }}
+        >
+            {pull.refreshing ? 'Refreshing...' : `Pull to refresh (px)`}
+        </div>
+      )}
+
+      <main
+        className={styles.feedContainer}
+        onTouchStart={pull.handleTouchStart}
+        onTouchMove={pull.handleTouchMove}
+        onTouchEnd={pull.handleTouchEnd}
+      >
         
 
         {filter === 'profiles' ? (

@@ -1,4 +1,4 @@
-﻿import { useCallback, useRef, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 
 interface PullToRefreshOptions {
   onRefresh: () => Promise<void>;
@@ -19,12 +19,12 @@ export function usePullToRefresh({ onRefresh, disabled = false }: PullToRefreshO
   });
 
   const startYRef = useRef<number | null>(null);
-  const thresholdRef = useRef(80); // pixels to pull before triggering refresh
+  const thresholdRef = useRef(80);
 
   const handleTouchStart = useCallback(
     (e: React.TouchEvent) => {
       if (disabled || state.refreshing) return;
-      if (window.scrollY > 0) return; // Only trigger at top
+      if (window.scrollY > 0) return;
       startYRef.current = e.touches[0]?.clientY ?? null;
     },
     [disabled, state.refreshing]
@@ -52,21 +52,18 @@ export function usePullToRefresh({ onRefresh, disabled = false }: PullToRefreshO
   );
 
   const handleTouchEnd = useCallback(async () => {
+    const finalPull = state.pullDistance;
     startYRef.current = null;
 
-    setState((prev) => {
-      if (prev.pullDistance >= thresholdRef.current) {
-        return { ...prev, pulling: false, refreshing: true, pullDistance: 0 };
-      }
-      return { ...prev, pulling: false, pullDistance: 0 };
-    });
-
-    if (state.pullDistance >= thresholdRef.current) {
+    if (finalPull >= thresholdRef.current) {
+      setState({ pulling: false, refreshing: true, pullDistance: 0 });
       try {
         await onRefresh();
       } finally {
-        setState((prev) => ({ ...prev, refreshing: false }));
+        setState({ pulling: false, refreshing: false, pullDistance: 0 });
       }
+    } else {
+      setState({ pulling: false, refreshing: false, pullDistance: 0 });
     }
   }, [onRefresh, state.pullDistance]);
 
