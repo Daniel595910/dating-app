@@ -132,10 +132,12 @@ export const ProfilePage: React.FC = () => {
       setLoading(true);
 
       try {
-        const profileData = await profileService.getProfileByUserId(targetUserId || '');
-        const profileStats = await profileService.getProfileStats(targetUserId || '');
-        const posts = await profileService.getUserPosts(targetUserId || '');
-        const photos = await profileService.getProfilePhotos(targetUserId || '');
+        const [profileData, profileStats, posts, photos] = await Promise.all([
+          profileService.getProfileByUserId(targetUserId || ''),
+          profileService.getProfileStats(targetUserId || ''),
+          profileService.getUserPosts(targetUserId || ''),
+          profileService.getProfilePhotos(targetUserId || ''),
+        ]);
 
         setProfile(profileData);
         setStats(profileStats);
