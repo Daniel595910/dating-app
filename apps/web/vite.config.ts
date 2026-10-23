@@ -65,7 +65,16 @@ export default defineConfig({
   build: {
     target: 'es2022',
     sourcemap: false,
-    outDir: 'dist'
+    outDir: 'dist',
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'react-vendor': ['react', 'react-dom', 'react-router-dom'],
+          'supabase': ['@supabase/supabase-js'],
+          'lucide': ['lucide-react'],
+        },
+      },
+    },
   }
 });
 
