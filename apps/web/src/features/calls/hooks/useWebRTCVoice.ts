@@ -1,8 +1,6 @@
 import { useRef, useCallback, useState } from 'react';
 import { callService } from '../services/call.service';
 
-// TURN servers from Metered.ca (free tier).
-// NOTE: static credentials committed for quick testing. Move to Edge Function for production security.
 const TURN_USERNAME = 'e41595455f30bb339bb9d950';
 const TURN_CREDENTIAL = '1QEmCRAQzA3dOLnr';
 
@@ -12,7 +10,6 @@ const ICE_CONFIG: RTCConfiguration = {
     {
       urls: [
         'turn:global.relay.metered.ca:80',
-        'turn:global.relay.metered.ca:80?transport=tcp',
         'turn:global.relay.metered.ca:443',
         'turns:global.relay.metered.ca:443?transport=tcp',
       ],
@@ -30,18 +27,17 @@ export function useWebRTCVoice(callId: string, userId: string) {
   const peerConnectionRef = useRef<RTCPeerConnection | null>(null);
   const localStreamRef = useRef<MediaStream | null>(null);
   const pendingIceCandidatesRef = useRef<RTCIceCandidate[]>([]);
+  const callIdRef = useRef<string>(callId);
+  const userIdRef = useRef<string>(userId);
+  callIdRef.current = callId;
+  userIdRef.current = userId;
 
   const getMicrophone = useCallback(async () => {
+    if (localStreamRef.current) return localStreamRef.current;
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
       setMicPermission('denied');
-      throw new Error(
-        'Microphone access requires HTTPS or localhost.\n\n' +
-        'Please use one of these URLs:\n' +
-        'http://localhost:3000\n' +
-        'http://127.0.0.1:3000'
-      );
+      throw new Error('Microphone access requires HTTPS or localhost.');
     }
-
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       localStreamRef.current = stream;
@@ -53,13 +49,13 @@ export function useWebRTCVoice(callId: string, userId: string) {
         throw new Error('Microphone access was denied. Please allow microphone access in your browser settings.');
       } else if (err.name === 'NotFoundError') {
         throw new Error('No microphone found. Please connect a microphone and try again.');
-      } else {
-        throw new Error('Failed to access microphone. Please check your browser settings.');
       }
+      throw new Error('Failed to access microphone. Please check your browser settings.');
     }
   }, []);
 
-  const createPeerConnection = useCallback(() => {
+  const ensurePeerConnection = useCallback(() => {
+    if (peerConnectionRef.current) return peerConnectionRef.current;
     const pc = new RTCPeerConnection(ICE_CONFIG);
     peerConnectionRef.current = pc;
 
@@ -68,13 +64,13 @@ export function useWebRTCVoice(callId: string, userId: string) {
     };
 
     pc.onicecandidate = (event) => {
-      if (event.candidate) {
-        callService.sendCallSignal(callId, {
+      if (event.candidate && callIdRef.current && userIdRef.current) {
+        callService.sendCallSignal(callIdRef.current, {
           type: 'ice_candidate',
-          callId,
-          senderId: userId,
+          callId: callIdRef.current,
+          senderId: userIdRef.current,
           payload: event.candidate,
-        }).catch((err) => console.error('sendCallSignal failed:', err));
+        }).catch((err) => console.error('sendCallSignal ice failed:', err));
       }
     };
 
@@ -85,50 +81,52 @@ export function useWebRTCVoice(callId: string, userId: string) {
     }
 
     return pc;
-  }, [callId, userId]);
+  }, []);
 
   const createOffer = useCallback(async () => {
-    const pc = peerConnectionRef.current;
-    if (!pc) return;
+    const pc = ensurePeerConnection();
     const offer = await pc.createOffer();
     await pc.setLocalDescription(offer);
-    callService.sendCallSignal(callId, {
+    await callService.sendCallSignal(callIdRef.current, {
       type: 'call_offer',
-      callId,
-      senderId: userId,
+      callId: callIdRef.current,
+      senderId: userIdRef.current,
       payload: offer,
-        }).catch((err) => console.error('sendCallSignal failed:', err));
-  }, [callId, userId]);
+    });
+  }, [ensurePeerConnection]);
 
   const handleOffer = useCallback(async (offer: RTCSessionDescriptionInit) => {
-    const pc = peerConnectionRef.current;
-    if (!pc) return;
+    const pc = ensurePeerConnection();
     await pc.setRemoteDescription(new RTCSessionDescription(offer));
     const answer = await pc.createAnswer();
     await pc.setLocalDescription(answer);
-    pendingIceCandidatesRef.current.forEach((candidate) => {
-      pc.addIceCandidate(candidate);
-    });
+    for (const candidate of pendingIceCandidatesRef.current) {
+      try { await pc.addIceCandidate(candidate); } catch (e) { console.error(e); }
+    }
     pendingIceCandidatesRef.current = [];
-    callService.sendCallSignal(callId, {
+    await callService.sendCallSignal(callIdRef.current, {
       type: 'call_answer',
-      callId,
-      senderId: userId,
+      callId: callIdRef.current,
+      senderId: userIdRef.current,
       payload: answer,
-        }).catch((err) => console.error('sendCallSignal failed:', err));
-  }, [callId, userId]);
+    });
+  }, [ensurePeerConnection]);
 
   const handleAnswer = useCallback(async (answer: RTCSessionDescriptionInit) => {
     const pc = peerConnectionRef.current;
     if (!pc) return;
     await pc.setRemoteDescription(new RTCSessionDescription(answer));
+    for (const candidate of pendingIceCandidatesRef.current) {
+      try { await pc.addIceCandidate(candidate); } catch (e) { console.error(e); }
+    }
+    pendingIceCandidatesRef.current = [];
   }, []);
 
   const handleIceCandidate = useCallback(async (candidate: RTCIceCandidateInit) => {
     const pc = peerConnectionRef.current;
-    if (!pc) return;
+    if (!pc) { pendingIceCandidatesRef.current.push(new RTCIceCandidate(candidate)); return; }
     if (pc.remoteDescription) {
-      await pc.addIceCandidate(new RTCIceCandidate(candidate));
+      try { await pc.addIceCandidate(new RTCIceCandidate(candidate)); } catch (e) { console.error(e); }
     } else {
       pendingIceCandidatesRef.current.push(new RTCIceCandidate(candidate));
     }
@@ -162,7 +160,7 @@ export function useWebRTCVoice(callId: string, userId: string) {
     isMuted,
     micPermission,
     getMicrophone,
-    createPeerConnection,
+    ensurePeerConnection,
     createOffer,
     handleOffer,
     handleAnswer,

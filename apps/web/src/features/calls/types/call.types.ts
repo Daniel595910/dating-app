@@ -1,4 +1,4 @@
-﻿export type CallStatus = 'calling' | 'ringing' | 'connecting' | 'connected' | 'ended' | 'declined' | 'missed' | 'cancelled' | 'failed' | 'busy';
+export type CallStatus = 'calling' | 'ringing' | 'connecting' | 'connected' | 'ended' | 'declined' | 'missed' | 'cancelled' | 'failed' | 'busy';
 
 export interface CallSession {
   id: string;
@@ -18,7 +18,7 @@ export interface CallSession {
 }
 
 export interface CallSignal {
-  type: 'call_offer' | 'call_answer' | 'ice_candidate' | 'call_cancelled' | 'call_declined' | 'call_ended';
+  type: 'callee_ready' | 'call_offer' | 'call_answer' | 'ice_candidate' | 'call_cancelled' | 'call_declined' | 'call_ended';
   callId: string;
   senderId: string;
   payload?: unknown;
