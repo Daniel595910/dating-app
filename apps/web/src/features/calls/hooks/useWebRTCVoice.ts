@@ -1,11 +1,26 @@
 import { useRef, useCallback, useState } from 'react';
 import { callService } from '../services/call.service';
 
-const ICE_CONFIG = {
+// TURN servers from Metered.ca (free tier).
+// NOTE: static credentials committed for quick testing. Move to Edge Function for production security.
+const TURN_USERNAME = 'e41595455f30bb339bb9d950';
+const TURN_CREDENTIAL = '1QEmCRAQzA3dOLnr';
+
+const ICE_CONFIG: RTCConfiguration = {
   iceServers: [
-    { urls: 'stun:stun.l.google.com:19302' },
-    { urls: 'stun:stun1.l.google.com:19302' },
+    { urls: 'stun:stun.relay.metered.ca:80' },
+    {
+      urls: [
+        'turn:global.relay.metered.ca:80',
+        'turn:global.relay.metered.ca:80?transport=tcp',
+        'turn:global.relay.metered.ca:443',
+        'turns:global.relay.metered.ca:443?transport=tcp',
+      ],
+      username: TURN_USERNAME,
+      credential: TURN_CREDENTIAL,
+    },
   ],
+  iceCandidatePoolSize: 10,
 };
 
 export function useWebRTCVoice(callId: string, userId: string) {
