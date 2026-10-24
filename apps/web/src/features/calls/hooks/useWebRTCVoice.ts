@@ -1,4 +1,4 @@
-﻿import { useRef, useCallback, useState } from 'react';
+import { useRef, useCallback, useState } from 'react';
 import { callService } from '../services/call.service';
 
 const ICE_CONFIG = {
@@ -59,7 +59,7 @@ export function useWebRTCVoice(callId: string, userId: string) {
           callId,
           senderId: userId,
           payload: event.candidate,
-        });
+        }).catch((err) => console.error('sendCallSignal failed:', err));
       }
     };
 
@@ -82,7 +82,7 @@ export function useWebRTCVoice(callId: string, userId: string) {
       callId,
       senderId: userId,
       payload: offer,
-    });
+        }).catch((err) => console.error('sendCallSignal failed:', err));
   }, [callId, userId]);
 
   const handleOffer = useCallback(async (offer: RTCSessionDescriptionInit) => {
@@ -100,7 +100,7 @@ export function useWebRTCVoice(callId: string, userId: string) {
       callId,
       senderId: userId,
       payload: answer,
-    });
+        }).catch((err) => console.error('sendCallSignal failed:', err));
   }, [callId, userId]);
 
   const handleAnswer = useCallback(async (answer: RTCSessionDescriptionInit) => {

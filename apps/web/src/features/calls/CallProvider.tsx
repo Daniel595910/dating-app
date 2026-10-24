@@ -33,46 +33,11 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     if (!user) return;
 
-    const checkIncomingCalls = async () => {
-      try {
-        const { data: incomingCalls, error } = await supabase
-          .from('call_sessions')
-          .select('*')
-          .eq('callee_id', user.id)
-          .eq('status', 'calling')
-          .gt('created_at', new Date(Date.now() - 30000).toISOString())
-          .order('created_at', { ascending: false })
-          .limit(1);
-
-        if (error) {
-          return;
-        }
-
-        if (incomingCalls && incomingCalls.length > 0) {
-          const call = incomingCalls[0];
-          setIncomingCall(call as CallSession);
-          setCallState('ringing');
-          if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
-          
-          if (ringTimeoutRef.current) clearTimeout(ringTimeoutRef.current);
-          ringTimeoutRef.current = setTimeout(() => {
-            setIncomingCall(null);
-            setCallState('idle');
-            callService.updateCallStatus(call.id, 'missed');
-          }, 30000);
-        }
-      } catch (err) {
-        console.debug('Incoming call check failed:', err);
-      }
-    };
-
-    // Realtime subscription covers this — no polling needed.
-    // The old 10s interval was causing 503s due to request pile-up.
     unsubscribeRef.current = callService.subscribeToIncomingCalls(user.id, (call) => {
       setIncomingCall(call);
       setCallState('ringing');
       if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
-      
+
       if (ringTimeoutRef.current) clearTimeout(ringTimeoutRef.current);
       ringTimeoutRef.current = setTimeout(() => {
         setIncomingCall(null);
@@ -90,39 +55,54 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     if (!activeCall?.id || !user) return;
 
-    const unsubscribe = callService.subscribeToCallSignals(activeCall.id, (signal: CallSignal) => {
-      if (signal.senderId === user.id) return;
+    let unsubscribe: (() => void) | null = null;
+    let cancelled = false;
 
-      switch (signal.type) {
-        case 'call_offer':
-          webRTC.createPeerConnection();
-          webRTC.handleOffer(signal.payload as RTCSessionDescriptionInit);
-          break;
-        case 'call_answer':
-          webRTC.handleAnswer(signal.payload as RTCSessionDescriptionInit);
-          setCallState('connecting');
-          break;
-        case 'ice_candidate':
-          webRTC.handleIceCandidate(signal.payload as RTCIceCandidateInit);
-          break;
-        case 'call_declined':
-          setActiveCall(null);
-          setCallState('declined');
-          webRTC.cleanup();
-          break;
-        case 'call_cancelled':
-          setIncomingCall(null);
-          setCallState('idle');
-          break;
-        case 'call_ended':
-          setActiveCall(null);
-          setCallState('ended');
-          webRTC.cleanup();
-          break;
-      }
-    });
+    callService
+      .subscribeToCallSignals(activeCall.id, (signal: CallSignal) => {
+        if (signal.senderId === user.id) return;
 
-    return () => unsubscribe();
+        switch (signal.type) {
+          case 'call_offer':
+            webRTC.createPeerConnection();
+            webRTC.handleOffer(signal.payload as RTCSessionDescriptionInit);
+            break;
+          case 'call_answer':
+            webRTC.handleAnswer(signal.payload as RTCSessionDescriptionInit);
+            setCallState('connecting');
+            break;
+          case 'ice_candidate':
+            webRTC.handleIceCandidate(signal.payload as RTCIceCandidateInit);
+            break;
+          case 'call_declined':
+            setActiveCall(null);
+            setCallState('declined');
+            webRTC.cleanup();
+            break;
+          case 'call_cancelled':
+            setIncomingCall(null);
+            setCallState('idle');
+            break;
+          case 'call_ended':
+            setActiveCall(null);
+            setCallState('ended');
+            webRTC.cleanup();
+            break;
+        }
+      })
+      .then((fn) => {
+        if (cancelled) {
+          fn();
+        } else {
+          unsubscribe = fn;
+        }
+      })
+      .catch((err) => console.error('Failed to subscribe to call signals:', err));
+
+    return () => {
+      cancelled = true;
+      unsubscribe?.();
+    };
   }, [activeCall?.id, user, webRTC]);
 
   useEffect(() => {
@@ -171,23 +151,26 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const declineCall = useCallback(async () => {
     if (!incomingCall) return;
     await callService.updateCallStatus(incomingCall.id, 'declined');
+    webRTC.cleanup();
+    callService.releaseCallChannel(incomingCall.id);
     setIncomingCall(null);
     setCallState('idle');
-  }, [incomingCall]);
+  }, [incomingCall, webRTC]);
 
   const endCall = useCallback(async () => {
     if (!activeCall) return;
-    
+
     if (callState === 'calling') {
       callService.sendCallSignal(activeCall.id, {
         type: 'call_cancelled',
         callId: activeCall.id,
         senderId: user?.id || '',
-      });
+      }).catch((err) => console.error('Failed to send call_cancelled signal:', err));
     }
-    
+
     await callService.endCall(activeCall.id, 'caller_ended');
     webRTC.cleanup();
+    callService.releaseCallChannel(activeCall.id);
     setActiveCall(null);
     setCallState('ended');
   }, [activeCall, webRTC, callState, user]);
