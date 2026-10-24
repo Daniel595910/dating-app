@@ -28,7 +28,8 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [showMicPrompt, setShowMicPrompt] = useState(false);
   const unsubscribeRef = useRef<(() => void) | null>(null);
   const ringTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const webRTC = useWebRTCVoice(activeCall?.id || '', user?.id || '');
+  const currentCallId = activeCall?.id || incomingCall?.id || null;
+  const webRTC = useWebRTCVoice(currentCallId || '', user?.id || '');
 
   useEffect(() => {
     if (!user) return;
@@ -53,13 +54,13 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, [user]);
 
   useEffect(() => {
-    if (!activeCall?.id || !user) return;
+    if (!currentCallId || !user) return;
 
     let unsubscribe: (() => void) | null = null;
     let cancelled = false;
 
     callService
-      .subscribeToCallSignals(activeCall.id, (signal: CallSignal) => {
+      .subscribeToCallSignals(currentCallId, (signal: CallSignal) => {
         if (signal.senderId === user.id) return;
 
         switch (signal.type) {
@@ -103,7 +104,7 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({ children
       cancelled = true;
       unsubscribe?.();
     };
-  }, [activeCall?.id, user, webRTC]);
+  }, [currentCallId, user, webRTC]);
 
   useEffect(() => {
     if (!activeCall?.id) return;
@@ -211,4 +212,5 @@ export const useCall = () => {
   }
   return context;
 };
+
 
