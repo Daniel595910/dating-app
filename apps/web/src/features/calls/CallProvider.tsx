@@ -106,12 +106,15 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, [activeCall?.id, user, webRTC]);
 
   useEffect(() => {
+    if (!activeCall?.id) return;
     if (webRTC.connectionState === 'connected') {
       setCallState('connected');
+      callService.updateCallStatus(activeCall.id, 'connected').catch(console.error);
     } else if (webRTC.connectionState === 'failed') {
       setCallState('failed');
+      callService.updateCallStatus(activeCall.id, 'failed').catch(console.error);
     }
-  }, [webRTC.connectionState]);
+  }, [webRTC.connectionState, activeCall?.id]);
 
   const startCall = useCallback(async (targetUserId: string) => {
     try {
@@ -132,6 +135,7 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const acceptCall = useCallback(async () => {
     if (!incomingCall) return;
+    if (ringTimeoutRef.current) { clearTimeout(ringTimeoutRef.current); ringTimeoutRef.current = null; }
 
     try {
       await webRTC.getMicrophone();
@@ -150,6 +154,7 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const declineCall = useCallback(async () => {
     if (!incomingCall) return;
+    if (ringTimeoutRef.current) { clearTimeout(ringTimeoutRef.current); ringTimeoutRef.current = null; }
     await callService.updateCallStatus(incomingCall.id, 'declined');
     webRTC.cleanup();
     callService.releaseCallChannel(incomingCall.id);
@@ -206,3 +211,4 @@ export const useCall = () => {
   }
   return context;
 };
+
