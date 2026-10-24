@@ -1,4 +1,4 @@
-﻿import { supabase } from '@/config/supabase.client';
+import { supabase } from '@/config/supabase.client';
 import type { ChatMessage, MessageReactionSummary } from '../types/chat.types';
 
 export const messageService = {
@@ -168,12 +168,13 @@ export const messageService = {
     return data;
   },
 
-  async setWallpaper(conversationId: string, wallpaperUrl: string | null, wallpaperColor: string) {
+  async setWallpaper(conversationId: string, wallpaperUrl: string | null, wallpaperColor: string, theme: 'light' | 'dark' = 'light') {
     const { data, error } = await supabase
       .rpc('set_chat_wallpaper', {
         p_conversation_id: conversationId,
         p_wallpaper_url: wallpaperUrl,
-        p_wallpaper_color: wallpaperColor
+        p_wallpaper_color: wallpaperColor,
+        p_theme: theme
       });
 
     if (error) throw error;

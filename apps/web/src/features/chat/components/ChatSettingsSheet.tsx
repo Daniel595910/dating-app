@@ -1,5 +1,5 @@
-﻿import React, { useState } from 'react';
-import { X, Image, Timer, Trash2, UserX, Flag, Bell, User } from 'lucide-react';
+import React, { useState } from 'react';
+import { X, Image, Timer, Trash2, UserX, Flag, Bell, User, Sparkles } from 'lucide-react';
 import styles from '../styles/ChatSettingsSheet.module.css';
 
 interface ChatSettingsSheetProps {
@@ -8,10 +8,12 @@ interface ChatSettingsSheetProps {
   onSetWallpaper: (color: string) => void;
   onClearWallpaper: () => void;
   onSetDisappearing: (enabled: boolean, durationHours: number) => void;
+  onSetTheme: (theme: 'light' | 'dark') => void;
   onBlockUser?: () => void;
   onReportUser?: () => void;
   onViewProfile?: () => void;
   currentWallpaper: string | null;
+  currentTheme?: 'light' | 'dark';
   disappearingEnabled: boolean;
   disappearingDuration: number;
 }
@@ -33,10 +35,12 @@ export const ChatSettingsSheet: React.FC<ChatSettingsSheetProps> = ({
   onSetWallpaper,
   onClearWallpaper,
   onSetDisappearing,
+  onSetTheme,
   onBlockUser,
   onReportUser,
   onViewProfile,
   currentWallpaper,
+  currentTheme = 'light',
   disappearingEnabled,
   disappearingDuration,
 }) => {
@@ -76,6 +80,27 @@ export const ChatSettingsSheet: React.FC<ChatSettingsSheetProps> = ({
                 onClick={() => setMuted(!muted)}
               >
                 <span className={styles.toggleThumb} />
+              </button>
+            </div>
+          </div>
+
+          {/* Theme */}
+          <div className={styles.section}>
+            <h3 className={styles.sectionTitle}>
+              <Sparkles size={16} /> Theme
+            </h3>
+            <div className={styles.durationOptions}>
+              <button
+                className={`${styles.durationOption} ${currentTheme === 'light' ? styles.durationOptionActive : ''}`}
+                onClick={() => onSetTheme('light')}
+              >
+                Light
+              </button>
+              <button
+                className={`${styles.durationOption} ${currentTheme === 'dark' ? styles.durationOptionActive : ''}`}
+                onClick={() => onSetTheme('dark')}
+              >
+                Dark
               </button>
             </div>
           </div>

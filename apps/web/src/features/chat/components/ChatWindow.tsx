@@ -77,7 +77,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
   const [reactionMap, setReactionMap] = useState<Map<string, MessageReactionSummary[]>>(new Map());
   const [pinnedMessageIds, setPinnedMessageIds] = useState<Set<string>>(new Set());
   const [pinnedMessages, setPinnedMessages] = useState<ChatMessage[]>([]);
-  const [chatWallpaper, setChatWallpaper] = useState<{ wallpaperUrl: string | null; wallpaperColor: string } | null>(null);
+  const [chatWallpaper, setChatWallpaper] = useState<{ wallpaperUrl: string | null; wallpaperColor: string; theme: 'light' | 'dark' } | null>(null);
   
   // Disappearing messages state
   const [disappearingEnabled, setDisappearingEnabled] = useState(false);
@@ -661,9 +661,17 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
     setForwardMessage(null);
   };
 
+  const handleSetTheme = async (theme: 'light' | 'dark') => {
+    const currentColor = chatWallpaper?.wallpaperColor || '#f0f2f5';
+    const currentUrl = chatWallpaper?.wallpaperUrl || null;
+    await messageService.setWallpaper(conversationId, currentUrl, currentColor, theme);
+    setChatWallpaper({ wallpaperUrl: currentUrl, wallpaperColor: currentColor, theme });
+  };
+
   const handleSetWallpaper = async (color: string) => {
-    await messageService.setWallpaper(conversationId, null, color);
-    setChatWallpaper({ wallpaperUrl: null, wallpaperColor: color });
+    const currentTheme = chatWallpaper?.theme || 'light';
+    await messageService.setWallpaper(conversationId, null, color, currentTheme);
+    setChatWallpaper({ wallpaperUrl: null, wallpaperColor: color, theme: currentTheme });
   };
 
   const handleClearWallpaper = async () => {
@@ -688,7 +696,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
   }
 
   return (
-    <div className={styles.chatWindow} style={chatWallpaper?.wallpaperColor ? { backgroundColor: chatWallpaper.wallpaperColor } : undefined}>
+    <div className={styles.chatWindow} data-theme={chatWallpaper?.theme || 'light'} style={chatWallpaper?.wallpaperColor ? { backgroundColor: chatWallpaper.wallpaperColor } : undefined}>
       <ChatHeader
         userName={targetUserName}
         userAvatar={targetUserAvatar}
@@ -878,6 +886,8 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
         onSetWallpaper={handleSetWallpaper}
         onClearWallpaper={handleClearWallpaper}
         onSetDisappearing={handleSetDisappearing}
+        onSetTheme={handleSetTheme}
+        currentTheme={chatWallpaper?.theme || 'light'}
         onBlockUser={() => {
           setSettingsOpen(false);
           setBlockSheetOpen(true);

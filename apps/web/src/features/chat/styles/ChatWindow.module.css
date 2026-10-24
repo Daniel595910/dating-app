@@ -382,3 +382,50 @@
   from { opacity: 0; transform: translateY(10px); }
   to { opacity: 1; transform: translateY(0); }
 }
+
+/* ============================================================ */
+/* Dark theme variants                                            */
+/* ============================================================ */
+[data-theme="dark"].chatWindow {
+  background-color: #0f172a;
+  color: #f1f5f9;
+}
+
+[data-theme="dark"] .messagesContainer {
+  background-color: transparent;
+}
+
+[data-theme="dark"] .emptyState {
+  color: #94a3b8;
+}
+
+[data-theme="dark"] .emptyState p {
+  color: #94a3b8;
+}
+
+[data-theme="dark"] .loading {
+  color: #94a3b8;
+}
+
+[data-theme="dark"] .pinnedBanner {
+  background: #1e293b;
+  border-bottom-color: #334155;
+}
+
+[data-theme="dark"] .pinnedBanner:hover {
+  background: #334155;
+}
+
+[data-theme="dark"] .pinnedBannerText {
+  color: #f1f5f9;
+}
+
+[data-theme="dark"] .pinnedBannerLabel {
+  color: #94a3b8;
+}
+
+[data-theme="dark"] .scrollDownButton {
+  background: #1e293b;
+  color: #f1f5f9;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+}
