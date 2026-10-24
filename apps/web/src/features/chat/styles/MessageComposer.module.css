@@ -302,3 +302,38 @@
 [data-theme="dark"] .cancelReplyButton:hover {
   color: #f5f5f7;
 }
+
+/* ============================================================ */
+/* Additional dark rules — classes missed in first pass          */
+/* ============================================================ */
+[data-theme="dark"] .replyIndicator {
+  background: #232326;
+  border-top-color: #2a2a2e;
+}
+
+[data-theme="dark"] .attachButton:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #f5f5f7;
+}
+
+[data-theme="dark"] .voiceButton:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #f5f5f7;
+}
+
+[data-theme="dark"] .attachmentOption {
+  background: #232326;
+  border-color: #2a2a2e;
+  color: #f5f5f7;
+}
+
+[data-theme="dark"] .attachmentOption:hover {
+  background: rgba(239, 68, 68, 0.15);
+  border-color: rgba(239, 68, 68, 0.3);
+  color: #f87171;
+}
+
+[data-theme="dark"] .sendButton:disabled {
+  background: #2a2a2e;
+  color: #4a4a50;
+}
