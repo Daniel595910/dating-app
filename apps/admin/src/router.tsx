@@ -21,6 +21,7 @@ import { VerificationsPage } from './pages/VerificationsPage';
 import { CommentsPage } from './pages/CommentsPage';
 import { DiscoverVideosPage } from './pages/DiscoverVideosPage';
 import { ConnectionsPage } from './pages/ConnectionsPage';
+import { StickersPage } from './pages/StickersPage';
 import { AdminGuard } from './components/layout/AdminGuard';
 
 export const AdminRouter: React.FC = () => {
@@ -46,6 +47,7 @@ export const AdminRouter: React.FC = () => {
       <Route path="/safety" element={<AdminGuard requiredPermissions={['USER_VIEW']}><SafetyPage /></AdminGuard>} />
       <Route path="/verifications" element={<AdminGuard requiredPermissions={['USER_VERIFY']}><VerificationsPage /></AdminGuard>} />
       <Route path="/comments" element={<AdminGuard requiredPermissions={['CONTENT_VIEW']}><CommentsPage /></AdminGuard>} />
+      <Route path="/stickers" element={<AdminGuard requiredPermissions={['CONTENT_VIEW']}><StickersPage /></AdminGuard>} />
       <Route path="/discover-videos" element={<AdminGuard requiredPermissions={['CONTENT_VIEW']}><DiscoverVideosPage /></AdminGuard>} />
       <Route path="/settings" element={<AdminGuard requiredPermissions={['SETTINGS_VIEW']}><SettingsPage /></AdminGuard>} />
 
@@ -53,8 +55,3 @@ export const AdminRouter: React.FC = () => {
     </Routes>
   );
 };
-
-
-
-
-
