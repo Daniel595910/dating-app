@@ -31,6 +31,26 @@ async function fetchProfile(userId: string): Promise<OtherUserProfile | null> {
   return { displayName: data.display_name || 'User', avatarUrl: data.avatar_url || null };
 }
 
+// Supabase RPC and postgres_changes return snake_case; our CallSession type uses camelCase.
+function normalizeCallSession(raw: any): CallSession {
+  return {
+    id: raw.id,
+    conversationId: raw.conversationId ?? raw.conversation_id ?? null,
+    callerId: raw.callerId ?? raw.caller_id,
+    calleeId: raw.calleeId ?? raw.callee_id,
+    callType: raw.callType ?? raw.call_type ?? 'voice',
+    status: raw.status,
+    createdAt: raw.createdAt ?? raw.created_at,
+    answeredAt: raw.answeredAt ?? raw.answered_at ?? null,
+    startedAt: raw.startedAt ?? raw.started_at ?? null,
+    endedAt: raw.endedAt ?? raw.ended_at ?? null,
+    durationSeconds: raw.durationSeconds ?? raw.duration_seconds ?? null,
+    endedBy: raw.endedBy ?? raw.ended_by ?? null,
+    endReason: raw.endReason ?? raw.end_reason ?? null,
+    expiresAt: raw.expiresAt ?? raw.expires_at ?? null,
+  };
+}
+
 export const CallProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user } = useAuthStore();
   const [activeCall, setActiveCall] = useState<CallSession | null>(null);
@@ -64,7 +84,8 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // Incoming call subscription
   useEffect(() => {
     if (!user) return;
-    unsubscribeRef.current = callService.subscribeToIncomingCalls(user.id, (call) => {
+    unsubscribeRef.current = callService.subscribeToIncomingCalls(user.id, (rawCall) => {
+      const call = normalizeCallSession(rawCall);
       setIncomingCall(call);
       setCallState('ringing');
       if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
@@ -142,8 +163,9 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const startCall = useCallback(async (targetUserId: string) => {
     try {
-      const call = await callService.startCall(targetUserId);
-      if (!call || !call.id) throw new Error('Failed to create call session');
+      const rawCall = await callService.startCall(targetUserId);
+      if (!rawCall || !rawCall.id) throw new Error('Failed to create call session');
+      const call = normalizeCallSession(rawCall);
       setActiveCall(call);
       setCallState('calling');
       await webRTC.getMicrophone();
@@ -215,4 +237,5 @@ export const useCall = () => {
   if (!context) throw new Error('useCall must be used within CallProvider');
   return context;
 };
+
 
