@@ -75,8 +75,7 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({
             <Video size={20} />
           </button>
         )}
-        {/* Voice call button temporarily hidden until calls are stable across networks */}
-        {false && onCallClick && (
+        {onCallClick && (
           <button className={styles.actionButton} onClick={onCallClick} aria-label="Voice call" title="Voice Call">
             <Phone size={20} />
           </button>
