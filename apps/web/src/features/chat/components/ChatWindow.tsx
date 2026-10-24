@@ -712,7 +712,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
         isOnline={targetOnline}
         lastSeen={targetLastSeen}
         isTyping={isTyping}
-        onBack={() => navigate('/chats')}
+        onBack={() => navigate(-1)}
         onProfileClick={() => navigate(`/profile/${targetUserId}`)}
         onMoreClick={() => setSettingsOpen(true)}
         onCallClick={async () => {
@@ -922,7 +922,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
         blockerId={user?.id || ''}
         targetUserId={targetUserId}
         targetUserName={targetUserName}
-        onBlocked={() => navigate('/chats')}
+        onBlocked={() => navigate('/chats', { replace: true })}
       />
 
       <ReportSheet
