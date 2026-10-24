@@ -241,7 +241,8 @@
 }
 
 [data-theme="dark"] .attachButton {
-  color: #a1a1a6;
+  background: rgba(255, 255, 255, 0.08);
+  color: #d1d5db;
 }
 
 [data-theme="dark"] .attachButton:hover {
@@ -250,7 +251,8 @@
 }
 
 [data-theme="dark"] .voiceButton {
-  color: #a1a1a6;
+  background: rgba(255, 255, 255, 0.08);
+  color: #d1d5db;
 }
 
 [data-theme="dark"] .voiceButton:hover {
@@ -304,7 +306,7 @@
 }
 
 /* ============================================================ */
-/* Additional dark rules — classes missed in first pass          */
+/* Additional dark rules ï¿½ classes missed in first pass          */
 /* ============================================================ */
 [data-theme="dark"] .replyIndicator {
   background: #232326;
