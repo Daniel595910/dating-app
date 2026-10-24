@@ -515,3 +515,17 @@
     font-size: 14px;
   }
 }
+
+/* Wallpaper group label (Light / Dark) */
+.wallpaperGroupLabel {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--color-text-secondary, #6b7280);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin: 0.75rem 0 0.5rem;
+}
+
+.wallpaperGroupLabel:first-of-type {
+  margin-top: 0;
+}

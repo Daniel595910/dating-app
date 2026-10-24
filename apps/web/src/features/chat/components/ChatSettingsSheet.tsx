@@ -18,9 +18,14 @@ interface ChatSettingsSheetProps {
   disappearingDuration: number;
 }
 
-const WALLPAPER_COLORS = [
+const WALLPAPER_COLORS_LIGHT = [
   '#f0f2f5', '#e8f5e9', '#fff3e0', '#fce4ec', '#e3f2fd',
   '#f3e5f5', '#e0f2f1', '#fff8e1', '#fbe9e7', '#eceff1',
+];
+
+const WALLPAPER_COLORS_DARK = [
+  '#0f172a', '#1e293b', '#334155', '#111827', '#1f2937',
+  '#2d3748', '#1a202c', '#0c4a6e', '#312e81', '#3f3f46',
 ];
 
 const DURATION_OPTIONS = [
@@ -110,8 +115,20 @@ export const ChatSettingsSheet: React.FC<ChatSettingsSheetProps> = ({
             <h3 className={styles.sectionTitle}>
               <Image size={16} /> Chat Wallpaper
             </h3>
+            <p className={styles.wallpaperGroupLabel}>Light</p>
             <div className={styles.wallpaperGrid}>
-              {WALLPAPER_COLORS.map((color) => (
+              {WALLPAPER_COLORS_LIGHT.map((color) => (
+                <button
+                  key={color}
+                  className={`${styles.colorOption} ${currentWallpaper === color ? styles.colorOptionActive : ''}`}
+                  style={{ backgroundColor: color }}
+                  onClick={() => onSetWallpaper(color)}
+                />
+              ))}
+            </div>
+            <p className={styles.wallpaperGroupLabel}>Dark</p>
+            <div className={styles.wallpaperGrid}>
+              {WALLPAPER_COLORS_DARK.map((color) => (
                 <button
                   key={color}
                   className={`${styles.colorOption} ${currentWallpaper === color ? styles.colorOptionActive : ''}`}
