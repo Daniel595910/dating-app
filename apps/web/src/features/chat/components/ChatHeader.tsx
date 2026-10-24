@@ -1,4 +1,4 @@
-﻿import React from 'react';
+import React from 'react';
 import { ArrowLeft, MoreVertical, BadgeCheck, Phone, Video, Search } from 'lucide-react';
 import styles from '../styles/ChatHeader.module.css';
 
@@ -75,7 +75,8 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({
             <Video size={20} />
           </button>
         )}
-        {onCallClick && (
+        {/* Voice call button temporarily hidden until calls are stable across networks */}
+        {false && onCallClick && (
           <button className={styles.actionButton} onClick={onCallClick} aria-label="Voice call" title="Voice Call">
             <Phone size={20} />
           </button>
