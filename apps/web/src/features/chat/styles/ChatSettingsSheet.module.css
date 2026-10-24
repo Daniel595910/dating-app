@@ -529,3 +529,123 @@
 .wallpaperGroupLabel:first-of-type {
   margin-top: 0;
 }
+
+/* ============================================================ */
+/* Dark theme variants (app-level data-theme attribute)          */
+/* Mirrors the prefers-color-scheme block above                  */
+/* ============================================================ */
+[data-theme="dark"] .sheet {
+  background: #1f2937;
+  box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.5);
+}
+
+[data-theme="dark"] .header {
+  border-bottom-color: #374151;
+  background: #1f2937;
+}
+
+[data-theme="dark"] .closeButton {
+  background: #374151;
+  color: #9ca3af;
+}
+
+[data-theme="dark"] .closeButton:hover {
+  background: #4b5563;
+  color: #f9fafb;
+}
+
+[data-theme="dark"] .title {
+  color: #f9fafb;
+}
+
+[data-theme="dark"] .quickAction {
+  background: #374151;
+  border-color: #4b5563;
+  color: #f9fafb;
+}
+
+[data-theme="dark"] .quickAction:hover {
+  background: #4b5563;
+  border-color: #6b7280;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+[data-theme="dark"] .section {
+  background: #374151;
+}
+
+[data-theme="dark"] .section:hover {
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.2);
+}
+
+[data-theme="dark"] .sectionTitle {
+  color: #9ca3af;
+}
+
+[data-theme="dark"] .toggleLabel {
+  color: #e5e7eb;
+}
+
+[data-theme="dark"] .toggle {
+  background: #4b5563;
+}
+
+[data-theme="dark"] .toggle:hover {
+  background: #6b7280;
+}
+
+[data-theme="dark"] .durationOption {
+  background: #1f2937;
+  border-color: #4b5563;
+  color: #e5e7eb;
+}
+
+[data-theme="dark"] .durationOption:hover {
+  border-color: #10b981;
+  background: #064e3b;
+  color: #6ee7b7;
+}
+
+[data-theme="dark"] .durationOptionActive {
+  background: #10b981;
+  border-color: #10b981;
+  color: #ffffff;
+}
+
+[data-theme="dark"] .dangerButton,
+[data-theme="dark"] .reportButton {
+  background: #1f2937;
+  border-color: #991b1b;
+  color: #f87171;
+}
+
+[data-theme="dark"] .dangerButton:hover,
+[data-theme="dark"] .reportButton:hover {
+  background: #7f1d1d;
+  border-color: #ef4444;
+}
+
+[data-theme="dark"] .clearButton {
+  background: #7f1d1d;
+  border-color: #991b1b;
+  color: #fca5a5;
+}
+
+[data-theme="dark"] .clearButton:hover {
+  background: #991b1b;
+  border-color: #ef4444;
+}
+
+[data-theme="dark"] .colorOption {
+  /* swatches show their own color, just add contrast border */
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] .colorOptionActive {
+  border-color: #ef4444;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.3);
+}
+
+[data-theme="dark"] .wallpaperGroupLabel {
+  color: #9ca3af;
+}
