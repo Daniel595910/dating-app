@@ -1,4 +1,4 @@
-﻿.wrapper {
+.wrapper {
   display: flex;
   margin-bottom: 0.25rem;
   position: relative;
@@ -283,13 +283,59 @@
   display: inline-flex;
   align-items: center;
   gap: 0.25rem;
-  background: none;
+  padding: 0.125rem 0.5rem;
+  border-radius: 9999px;
+  background: rgba(239, 68, 68, 0.1);
+  color: var(--color-primary, #ef4444);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  text-decoration: none;
   border: none;
   cursor: pointer;
-  color: #3b82f6;
-  font-size: inherit;
-  text-decoration: underline;
-  padding: 0;
+  transition: background-color 0.15s ease;
+  vertical-align: baseline;
+  max-width: 100%;
+  margin: 0.125rem 0;
+}
+
+.inlineLink:hover {
+  background: rgba(239, 68, 68, 0.18);
+}
+
+.inlineLink:active {
+  background: rgba(239, 68, 68, 0.25);
+}
+
+.inlineLink span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 220px;
+}
+
+/* Own bubble (white text on red) — invert link colors */
+.ownBubble .inlineLink {
+  background: rgba(255, 255, 255, 0.2);
+  color: #ffffff;
+}
+
+.ownBubble .inlineLink:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+/* Dark theme */
+[data-theme="dark"] .inlineLink {
+  background: rgba(239, 68, 68, 0.2);
+  color: #fca5a5;
+}
+
+[data-theme="dark"] .inlineLink:hover {
+  background: rgba(239, 68, 68, 0.3);
+}
+
+[data-theme="dark"] .ownBubble .inlineLink {
+  background: rgba(255, 255, 255, 0.25);
+  color: #ffffff;
 }
 
 .linkConfirmOverlay {

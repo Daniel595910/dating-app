@@ -1,4 +1,4 @@
-﻿import React, { useState, useRef, useCallback } from 'react';
+import React, { useState, useRef, useCallback } from 'react';
 import { Check, CheckCheck, AlertCircle, RotateCcw, Reply, Copy, Flag, ExternalLink, Play, Pause, Heart, Pencil, Trash2, Pin, Forward, Smile, X } from 'lucide-react';
 import { ChatMessage } from '../../types/chat.types';
 import { ImagePreviewModal } from '../../community/components/ImagePreviewModal';
@@ -191,7 +191,7 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
         parts.push(
           <button key={`link-${index}`} className={styles.inlineLink} onClick={() => setLinkConfirmUrl(url)}>
             <ExternalLink size={12} />
-            {url.length > 30 ? url.substring(0, 30) + '...' : url}
+            <span>{url.length > 30 ? url.replace(/^https?:\/\//, '').substring(0, 30) + '...' : url.replace(/^https?:\/\//, '')}</span>
           </button>
         );
         remaining = partsOfUrl[1] || '';
