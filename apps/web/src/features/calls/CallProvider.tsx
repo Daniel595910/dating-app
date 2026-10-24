@@ -25,7 +25,7 @@ async function fetchProfile(userId: string): Promise<OtherUserProfile | null> {
   const { data, error } = await supabase
     .from('profiles')
     .select('display_name, avatar_url')
-    .eq('id', userId)
+    .eq('user_id', userId)
     .maybeSingle();
   if (error || !data) return null;
   return { displayName: data.display_name || 'User', avatarUrl: data.avatar_url || null };
@@ -215,3 +215,4 @@ export const useCall = () => {
   if (!context) throw new Error('useCall must be used within CallProvider');
   return context;
 };
+
