@@ -1,4 +1,4 @@
-﻿import React, { useEffect } from 'react';
+import React, { useEffect } from 'react';
 import { BrowserRouter } from 'react-router-dom';
 import { AppRouter } from './app.router';
 import { AppShell } from './components/layout/AppShell';
@@ -11,32 +11,31 @@ import { ActiveCallScreen } from './features/calls/components/ActiveCallScreen';
 import { MicrophonePermissionModal } from './features/calls/components/MicrophonePermissionModal';
 
 const CallScreens: React.FC = () => {
-  const { incomingCall, activeCall, callState, acceptCall, declineCall, endCall, isMuted, toggleMute } = useCall();
+  const { incomingCall, activeCall, otherUserProfile, remoteStream, callState, acceptCall, declineCall, endCall, isMuted, toggleMute } = useCall();
   const { user } = useAuthStore();
 
-  // Incoming call
   if (incomingCall && user) {
     return (
       <IncomingCallScreen
         call={incomingCall}
-        callerName="Incoming Call"
-        callerAvatar={null}
+        callerName={otherUserProfile?.displayName || 'User'}
+        callerAvatar={otherUserProfile?.avatarUrl || null}
         onAccept={acceptCall}
         onDecline={declineCall}
       />
     );
   }
 
-  // Active call (calling, connecting, connected)
   if (activeCall) {
     return (
       <ActiveCallScreen
-        userName="Voice Call"
-        userAvatar={null}
+        userName={otherUserProfile?.displayName || 'User'}
+        userAvatar={otherUserProfile?.avatarUrl || null}
         isMuted={isMuted}
         onToggleMute={toggleMute}
         onEndCall={endCall}
         callState={callState}
+        remoteStream={remoteStream}
       />
     );
   }
@@ -83,6 +82,3 @@ const App: React.FC = () => {
 };
 
 export default App;
-
-
-

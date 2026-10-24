@@ -24,8 +24,16 @@ export interface CallSignal {
   payload?: unknown;
 }
 
+export interface OtherUserProfile {
+  displayName: string;
+  avatarUrl: string | null;
+}
+
 export interface CallContext {
   activeCall: CallSession | null;
+  incomingCall: CallSession | null;
+  otherUserProfile: OtherUserProfile | null;
+  remoteStream: MediaStream | null;
   callState: CallStatus;
   isMuted: boolean;
   startCall: (targetUserId: string) => Promise<void>;
@@ -34,3 +42,4 @@ export interface CallContext {
   endCall: () => Promise<void>;
   toggleMute: () => void;
 }
+

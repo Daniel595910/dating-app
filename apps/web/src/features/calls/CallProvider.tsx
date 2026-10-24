@@ -1,14 +1,17 @@
 import React, { createContext, useContext, useState, useCallback, useRef, useEffect } from 'react';
 import { useAuthStore } from '@/store/auth.store';
+import { supabase } from '@/config/supabase.client';
 import { callService } from './services/call.service';
-import { CallSession, CallStatus, CallSignal } from './types/call.types';
+import { CallSession, CallStatus, CallSignal, OtherUserProfile } from './types/call.types';
 import { useWebRTCVoice } from './hooks/useWebRTCVoice';
 
 interface CallContextType {
   activeCall: CallSession | null;
+  incomingCall: CallSession | null;
+  otherUserProfile: OtherUserProfile | null;
+  remoteStream: MediaStream | null;
   callState: CallStatus;
   isMuted: boolean;
-  incomingCall: CallSession | null;
   startCall: (targetUserId: string) => Promise<void>;
   acceptCall: () => Promise<void>;
   declineCall: () => Promise<void>;
@@ -18,10 +21,21 @@ interface CallContextType {
 
 const CallContext = createContext<CallContextType | null>(null);
 
+async function fetchProfile(userId: string): Promise<OtherUserProfile | null> {
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('display_name, avatar_url')
+    .eq('id', userId)
+    .maybeSingle();
+  if (error || !data) return null;
+  return { displayName: data.display_name || 'User', avatarUrl: data.avatar_url || null };
+}
+
 export const CallProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user } = useAuthStore();
   const [activeCall, setActiveCall] = useState<CallSession | null>(null);
   const [incomingCall, setIncomingCall] = useState<CallSession | null>(null);
+  const [otherUserProfile, setOtherUserProfile] = useState<OtherUserProfile | null>(null);
   const [callState, setCallState] = useState<CallStatus>('idle');
   const [isMuted, setIsMuted] = useState(false);
   const unsubscribeRef = useRef<(() => void) | null>(null);
@@ -29,7 +43,25 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const currentCallId = activeCall?.id || incomingCall?.id || null;
   const webRTC = useWebRTCVoice(currentCallId || '', user?.id || '');
 
-  // Subscribe to incoming call notifications (postgres_changes on call_sessions)
+  // Fetch the OTHER user's profile when a call starts
+  useEffect(() => {
+    if (!user || !currentCallId) { return; }
+    const call = activeCall || incomingCall;
+    if (!call) return;
+    const otherUserId = call.callerId === user.id ? call.calleeId : call.callerId;
+    let cancelled = false;
+    fetchProfile(otherUserId).then((profile) => {
+      if (!cancelled) setOtherUserProfile(profile);
+    }).catch((err) => console.error('fetchProfile failed:', err));
+    return () => { cancelled = true; };
+  }, [currentCallId, user]);
+
+  // Reset profile when call fully ends
+  useEffect(() => {
+    if (!currentCallId) setOtherUserProfile(null);
+  }, [currentCallId]);
+
+  // Incoming call subscription
   useEffect(() => {
     if (!user) return;
     unsubscribeRef.current = callService.subscribeToIncomingCalls(user.id, (call) => {
@@ -49,33 +81,24 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
   }, [user]);
 
-  // Subscribe to per-call signals (broadcast channel). Runs for BOTH caller and callee.
+  // Signal subscription
   useEffect(() => {
     if (!currentCallId || !user) return;
     let unsubscribe: (() => void) | null = null;
     let cancelled = false;
     const myUserId = user.id;
-
     callService
       .subscribeToCallSignals(currentCallId, (signal: CallSignal) => {
         if (signal.senderId === myUserId) return;
         switch (signal.type) {
           case 'callee_ready':
-            webRTC.createOffer().catch((err) => {
-              console.error('createOffer failed:', err);
-              setCallState('failed');
-            });
+            webRTC.createOffer().catch((err) => { console.error('createOffer failed:', err); setCallState('failed'); });
             break;
           case 'call_offer':
-            webRTC.handleOffer(signal.payload as RTCSessionDescriptionInit).catch((err) => {
-              console.error('handleOffer failed:', err);
-              setCallState('failed');
-            });
+            webRTC.handleOffer(signal.payload as RTCSessionDescriptionInit).catch((err) => { console.error('handleOffer failed:', err); setCallState('failed'); });
             break;
           case 'call_answer':
-            webRTC.handleAnswer(signal.payload as RTCSessionDescriptionInit).catch((err) => {
-              console.error('handleAnswer failed:', err);
-            });
+            webRTC.handleAnswer(signal.payload as RTCSessionDescriptionInit).catch((err) => { console.error('handleAnswer failed:', err); });
             setCallState('connecting');
             break;
           case 'ice_candidate':
@@ -100,19 +123,12 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({ children
             break;
         }
       })
-      .then((fn) => {
-        if (cancelled) fn();
-        else unsubscribe = fn;
-      })
+      .then((fn) => { if (cancelled) fn(); else unsubscribe = fn; })
       .catch((err) => console.error('Failed to subscribe to call signals:', err));
-
-    return () => {
-      cancelled = true;
-      unsubscribe?.();
-    };
+    return () => { cancelled = true; unsubscribe?.(); };
   }, [currentCallId, user, webRTC]);
 
-  // Mirror WebRTC connection state into DB + UI
+  // Mirror connection state to DB + UI
   useEffect(() => {
     if (!activeCall?.id) return;
     if (webRTC.connectionState === 'connected') {
@@ -132,11 +148,8 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setCallState('calling');
       await webRTC.getMicrophone();
       webRTC.ensurePeerConnection();
-      // NOTE: do NOT create offer here. Wait for 'callee_ready' signal.
     } catch (err: any) {
       setCallState('failed');
-      if (err.message?.includes('icrophone') || err.message?.includes('Microphone') || err.message?.includes('not supported')) {
-      }
       throw err;
     }
   }, [webRTC]);
@@ -152,11 +165,7 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setIncomingCall(null);
       setCallState('connecting');
       await callService.updateCallStatus(callToAccept.id, 'connecting');
-      await callService.sendCallSignal(callToAccept.id, {
-        type: 'callee_ready',
-        callId: callToAccept.id,
-        senderId: user?.id || '',
-      });
+      await callService.sendCallSignal(callToAccept.id, { type: 'callee_ready', callId: callToAccept.id, senderId: user?.id || '' });
     } catch (err: any) {
       console.error('Accept call error:', err);
       setCallState('failed');
@@ -169,13 +178,7 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (!incomingCall) return;
     if (ringTimeoutRef.current) { clearTimeout(ringTimeoutRef.current); ringTimeoutRef.current = null; }
     const callId = incomingCall.id;
-    try {
-      await callService.sendCallSignal(callId, {
-        type: 'call_declined',
-        callId,
-        senderId: user?.id || '',
-      });
-    } catch (e) { console.error(e); }
+    try { await callService.sendCallSignal(callId, { type: 'call_declined', callId, senderId: user?.id || '' }); } catch (e) { console.error(e); }
     await callService.updateCallStatus(callId, 'declined');
     webRTC.cleanup();
     callService.releaseCallChannel(callId);
@@ -187,13 +190,7 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (!activeCall) return;
     const callId = activeCall.id;
     const wasRinging = callState === 'calling';
-    try {
-      await callService.sendCallSignal(callId, {
-        type: wasRinging ? 'call_cancelled' : 'call_ended',
-        callId,
-        senderId: user?.id || '',
-      });
-    } catch (e) { console.error(e); }
+    try { await callService.sendCallSignal(callId, { type: wasRinging ? 'call_cancelled' : 'call_ended', callId, senderId: user?.id || '' }); } catch (e) { console.error(e); }
     await callService.endCall(callId, wasRinging ? 'caller_cancelled' : 'caller_ended');
     webRTC.cleanup();
     callService.releaseCallChannel(callId);
@@ -207,7 +204,7 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, [webRTC]);
 
   return (
-    <CallContext.Provider value={{ activeCall, callState, isMuted, incomingCall, startCall, acceptCall, declineCall, endCall, toggleMute }}>
+    <CallContext.Provider value={{ activeCall, incomingCall, otherUserProfile, remoteStream: webRTC.remoteStream, callState, isMuted, startCall, acceptCall, declineCall, endCall, toggleMute }}>
       {children}
     </CallContext.Provider>
   );
@@ -218,4 +215,3 @@ export const useCall = () => {
   if (!context) throw new Error('useCall must be used within CallProvider');
   return context;
 };
-

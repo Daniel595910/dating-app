@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { PhoneOff, Mic, MicOff } from 'lucide-react';
 import { CallStatus } from '../../types/call.types';
 import styles from '../styles/ActiveCallScreen.module.css';
@@ -10,6 +10,7 @@ interface ActiveCallScreenProps {
   onToggleMute: () => void;
   onEndCall: () => void;
   callState: CallStatus;
+  remoteStream: MediaStream | null;
 }
 
 export const ActiveCallScreen: React.FC<ActiveCallScreenProps> = ({
@@ -19,6 +20,7 @@ export const ActiveCallScreen: React.FC<ActiveCallScreenProps> = ({
   onToggleMute,
   onEndCall,
   callState,
+  remoteStream,
 }) => {
   const [duration, setDuration] = useState(0);
 
@@ -33,33 +35,34 @@ export const ActiveCallScreen: React.FC<ActiveCallScreenProps> = ({
   const formatDuration = (seconds: number): string => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
-    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    return mins.toString().padStart(2, '0') + ':' + secs.toString().padStart(2, '0');
   };
 
   const getStatusText = (): string => {
     switch (callState) {
-      case 'calling':
-        return 'Calling...';
-      case 'ringing':
-        return 'Ringing...';
-      case 'connecting':
-        return 'Connecting...';
-      case 'connected':
-        return 'Voice Call';
-      case 'ended':
-        return 'Call Ended';
-      case 'declined':
-        return 'Call Declined';
-      case 'failed':
-        return 'Call Failed';
-      default:
-        return 'Call';
+      case 'calling': return 'Calling...';
+      case 'ringing': return 'Ringing...';
+      case 'connecting': return 'Connecting...';
+      case 'connected': return 'Voice Call';
+      case 'ended': return 'Call Ended';
+      case 'declined': return 'Call Declined';
+      case 'failed': return 'Call Failed';
+      default: return 'Call';
     }
   };
 
   return (
     <div className={styles.overlay}>
       <div className={styles.content}>
+        {remoteStream && (
+          <audio
+            autoPlay
+            playsInline
+            ref={(el) => { if (el) { el.srcObject = remoteStream; el.play().catch((e) => console.warn('audio play failed:', e)); } }}
+            style={{ display: 'none' }}
+          />
+        )}
+
         <div className={styles.avatarContainer}>
           {userAvatar ? (
             <img src={userAvatar} alt={userName} className={styles.avatar} />

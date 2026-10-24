@@ -24,6 +24,8 @@ export function useWebRTCVoice(callId: string, userId: string) {
   const [connectionState, setConnectionState] = useState<string>('new');
   const [isMuted, setIsMuted] = useState(false);
   const [micPermission, setMicPermission] = useState<'unknown' | 'granted' | 'denied'>('unknown');
+  const [remoteStream, setRemoteStream] = useState<MediaStream | null>(null);
+  const remoteStreamRef = useRef<MediaStream | null>(null);
   const peerConnectionRef = useRef<RTCPeerConnection | null>(null);
   const localStreamRef = useRef<MediaStream | null>(null);
   const pendingIceCandidatesRef = useRef<RTCIceCandidate[]>([]);
@@ -72,6 +74,12 @@ export function useWebRTCVoice(callId: string, userId: string) {
           payload: event.candidate,
         }).catch((err) => console.error('sendCallSignal ice failed:', err));
       }
+    };
+
+    pc.ontrack = (event) => {
+      if (!remoteStreamRef.current) remoteStreamRef.current = new MediaStream();
+      remoteStreamRef.current.addTrack(event.track);
+      setRemoteStream(remoteStreamRef.current);
     };
 
     if (localStreamRef.current) {
@@ -151,6 +159,8 @@ export function useWebRTCVoice(callId: string, userId: string) {
       peerConnectionRef.current = null;
     }
     pendingIceCandidatesRef.current = [];
+    remoteStreamRef.current = null;
+    setRemoteStream(null);
     setConnectionState('closed');
     setIsMuted(false);
   }, []);
@@ -159,6 +169,7 @@ export function useWebRTCVoice(callId: string, userId: string) {
     connectionState,
     isMuted,
     micPermission,
+    remoteStream,
     getMicrophone,
     ensurePeerConnection,
     createOffer,
@@ -169,3 +180,4 @@ export function useWebRTCVoice(callId: string, userId: string) {
     cleanup,
   };
 }
+
