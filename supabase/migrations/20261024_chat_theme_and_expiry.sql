@@ -73,7 +73,7 @@ BEGIN
     FROM conversations WHERE id = NEW.conversation_id;
 
     IF v_enabled = true THEN
-        NEW.expires_at := NEW.created_at + ((COALESCE(v_hours, 24)) || ' hours')::interval;
+        NEW.expires_at := NOW() + ((COALESCE(v_hours, 24)) || ' hours')::interval;
     END IF;
 
     RETURN NEW;
