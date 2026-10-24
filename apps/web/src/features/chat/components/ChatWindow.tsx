@@ -320,6 +320,8 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
           const row = payload.new as any;
           // Skip own messages — already added by handleSend optimistic update
           if (row.sender_id === user.id) return;
+          // Skip already-expired messages (rare, but cron runs hourly)
+          if (row.expires_at && new Date(row.expires_at) < new Date()) return;
 
           const incoming: ChatMessage = {
             id: row.id,
