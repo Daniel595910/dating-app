@@ -155,7 +155,7 @@ export const messageService = {
   async getChatPreferences(conversationId: string, userId: string) {
     const { data, error } = await supabase
       .from('chat_preferences')
-      .select('wallpaper_url, wallpaper_color')
+      .select('wallpaper_url, wallpaper_color, theme')
       .eq('conversation_id', conversationId)
       .eq('user_id', userId)
       .maybeSingle();

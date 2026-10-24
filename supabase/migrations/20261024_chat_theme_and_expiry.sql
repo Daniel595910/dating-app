@@ -11,6 +11,8 @@
 -- PART 1 — Chat theme (light/dark)
 -- ============================================================
 
+DROP FUNCTION IF EXISTS public.set_chat_wallpaper(uuid, text, text);
+
 CREATE OR REPLACE FUNCTION public.set_chat_wallpaper(
     p_conversation_id uuid,
     p_wallpaper_url text DEFAULT NULL::text,

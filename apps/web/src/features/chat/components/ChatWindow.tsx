@@ -129,7 +129,13 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
   const loadWallpaper = useCallback(async () => {
     if (!user) return;
     const prefs = await messageService.getChatPreferences(conversationId, user.id);
-    if (prefs) setChatWallpaper(prefs);
+    if (prefs) {
+      setChatWallpaper({
+        wallpaperUrl: (prefs as any).wallpaper_url || null,
+        wallpaperColor: (prefs as any).wallpaper_color || '#f0f2f5',
+        theme: ((prefs as any).theme === 'dark' ? 'dark' : 'light') as 'light' | 'dark',
+      });
+    }
   }, [conversationId, user]);
 
   // Load disappearing messages settings
