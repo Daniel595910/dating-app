@@ -64,6 +64,10 @@ class ChatService {
       .order('id', { ascending: false })
       .limit(limit + 1);
 
+    // Exclude expired disappearing messages (query-level)
+    const nowIso = new Date().toISOString();
+    query = query.or(`expires_at.is.null,expires_at.gt.${nowIso}`);
+
     if (cursor) {
       // Compound cursor: strict less-than on (created_at, id) DESC.
       // Prevents skipping messages that share the same created_at timestamp.
@@ -78,8 +82,11 @@ class ChatService {
       return { messages: [], nextCursor: null, hasMore: false };
     }
 
-    const hasMore = messages.length > limit;
-    const feedMessages = hasMore ? messages.slice(0, limit) : messages;
+    // Exclude expired disappearing messages (defensive — cron runs hourly)
+    const nowIso2 = new Date().toISOString();
+    const notExpired = (messages as any[]).filter((m) => !m.expires_at || m.expires_at > nowIso2);
+    const hasMore = notExpired.length > limit;
+    const feedMessages = hasMore ? notExpired.slice(0, limit) : notExpired;
 
     const senderIds = [...new Set(feedMessages.map((m: any) => m.sender_id))];
     const { data: profiles } = await supabase
