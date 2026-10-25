@@ -1,4 +1,4 @@
-﻿export interface DiscoverCandidate {
+export interface DiscoverCandidate {
   userId: string;
   videoId: string;
   displayName: string;
@@ -14,6 +14,21 @@
   isVerified: boolean;
   verificationBadge: string;
   distanceKm: number;
+  hashtags: string[];
+  locationText: string | null;
+  allowComments: boolean;
+  allowDuet: boolean;
+}
+
+export type Visibility = 'public' | 'friends' | 'private';
+
+export interface PublishDetails {
+  caption: string;
+  hashtags: string[];
+  visibility: Visibility;
+  locationText: string | null;
+  allowComments: boolean;
+  allowDuet: boolean;
 }
 
 export type SwipeAction = 'like' | 'pass' | 'get_to_know';

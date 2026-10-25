@@ -1,5 +1,5 @@
-﻿import { supabase } from '@/config/supabase.client';
-import { DiscoverCandidate, SwipeAction, SwipeResult } from '../types/discover.types';
+import { supabase } from '@/config/supabase.client';
+import { DiscoverCandidate, PublishDetails, SwipeAction, SwipeResult } from '../types/discover.types';
 
 class DiscoverService {
   async getCandidates(limit: number = 10, category: string = 'new', offset: number = 0): Promise<DiscoverCandidate[]> {
@@ -30,6 +30,10 @@ class DiscoverService {
       isVerified: c.is_verified || false,
       verificationBadge: c.verification_badge || 'none',
       distanceKm: 0,
+      hashtags: c.hashtags || [],
+      locationText: c.location_text || null,
+      allowComments: c.allow_comments !== false,
+      allowDuet: c.allow_duet !== false,
     }));
   }
 
@@ -49,11 +53,21 @@ class DiscoverService {
     return data as SwipeResult;
   }
 
-  async submitVideo(videoUrl: string, caption?: string, thumbnailUrl?: string): Promise<boolean> {
+  async submitVideo(
+    videoUrl: string,
+    caption?: string,
+    thumbnailUrl?: string,
+    details?: PublishDetails,
+  ): Promise<boolean> {
     const { error } = await supabase.rpc('submit_discover_video', {
       p_video_url: videoUrl,
-      p_caption: caption || null,
+      p_caption: details ? details.caption : (caption || null),
       p_thumbnail_url: thumbnailUrl || null,
+      p_metadata: {},
+      p_hashtags: details ? details.hashtags : [],
+      p_location_text: details ? details.locationText : null,
+      p_allow_comments: details ? details.allowComments : true,
+      p_allow_duet: details ? details.allowDuet : true,
     });
 
     if (error) {

@@ -5,6 +5,8 @@ import { supabase } from '@/config/supabase.client';
 import { discoverService } from '../../features/discover/services/discover.service';
 import { mediaService } from '../../features/community/services/media.service';
 import { DiscoverCandidate } from '../../features/discover/types/discover.types';
+import { PublishDetails } from '../../features/discover/types/discover.types';
+import { PostDetailsModal } from '../../features/discover/components/PostDetailsModal';
 import { 
   BadgeCheck, MapPin, Heart, X, Play, Pause, Video, Upload, 
   Loader, ArrowLeft, Grid3x3, Plus, Clock, CheckCircle2, XCircle,
@@ -41,10 +43,11 @@ export const DiscoverPage: React.FC = () => {
     deltaY: 0,
   });
   const [swipeDirection, setSwipeDirection] = useState<string | null>(null);
-  const [showUpload, setShowUpload] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [uploadError, setUploadError] = useState<string | null>(null);
+  const [pendingVideo, setPendingVideo] = useState<{ file: File; previewUrl: string } | null>(null);
+  const [showPublishModal, setShowPublishModal] = useState(false);
   const [myVideos, setMyVideos] = useState<any[]>([]);
   const [showMyVideos, setShowMyVideos] = useState(false);
   const [previewVideo, setPreviewVideo] = useState<any>(null);
@@ -314,29 +317,45 @@ export const DiscoverPage: React.FC = () => {
 
   const handleVideoUpload = async (files: FileList | null) => {
     if (!files || files.length === 0 || !user) return;
+    const file = files[0]!;
+    setPendingVideo({ file, previewUrl: URL.createObjectURL(file) });
+    setShowPublishModal(true);
+    setError(null);
+    setUploadError(null);
+    if (videoInputRef.current) videoInputRef.current.value = '';
+  };
+
+  const handlePublish = async (details: PublishDetails) => {
+    if (!pendingVideo || !user) return;
     setUploading(true);
     setUploadProgress(0);
-    setError(null);
     try {
-      const result = await mediaService.uploadVideo(files[0]!, user.id, 'discover_video');
-      if (result.success && result.media) {
-        const submitted = await discoverService.submitVideo(result.media.url, 'Check out my video!', result.media.thumbnailUrl || null);
-        if (submitted) {
-          setShowUpload(false);
-          await loadMyVideos();
-          setError('Video submitted for review!');
-        } else {
-          setError('Failed to submit video.');
-        }
-      } else {
+      const result = await mediaService.uploadVideo(pendingVideo.file, user.id, 'discover_video');
+      if (!result.success || !result.media) {
         setUploadError(result.error || 'Failed to upload video');
+        setUploading(false);
+        return;
+      }
+      const submitted = await discoverService.submitVideo(
+        result.media.url,
+        details.caption,
+        result.media.thumbnailUrl || null,
+        details,
+      );
+      if (submitted) {
+        URL.revokeObjectURL(pendingVideo.previewUrl);
+        setPendingVideo(null);
+        setShowPublishModal(false);
+        await loadMyVideos();
+        setError('Video submitted for review!');
+      } else {
+        setUploadError('Failed to submit video.');
       }
     } catch (err: any) {
       setUploadError(err.message || 'Video upload failed');
     } finally {
       setUploading(false);
       setUploadProgress(0);
-      if (videoInputRef.current) videoInputRef.current.value = '';
     }
   };
 
@@ -380,7 +399,7 @@ export const DiscoverPage: React.FC = () => {
           <button className={styles.headerButton} onClick={(e) => { e.stopPropagation(); setShowMyVideos(true); }} aria-label="My Videos">
             <Grid3x3 size={20} />
           </button>
-          <button className={styles.headerButton} onClick={(e) => { e.stopPropagation(); setShowUpload(true); }} aria-label="Upload">
+          <button className={styles.headerButton} onClick={(e) => { e.stopPropagation(); videoInputRef.current?.click(); }} aria-label="Upload">
             <Upload size={20} />
           </button>
         </div>
@@ -416,7 +435,7 @@ export const DiscoverPage: React.FC = () => {
                 </button>
                 <h2 style={{ fontSize: 18, fontWeight: 700, margin: 0 }}>My Videos</h2>
               </div>
-              <button onClick={() => { setShowMyVideos(false); setShowUpload(true); }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ef4444' }}>
+              <button onClick={() => { setShowMyVideos(false); videoInputRef.current?.click(); }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ef4444' }}>
                 <Plus size={24} />
               </button>
             </div>
@@ -425,7 +444,7 @@ export const DiscoverPage: React.FC = () => {
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', gap: 16, padding: 24, textAlign: 'center' }}>
                   <Video size={48} style={{ color: '#d1d5db' }} />
                   <p style={{ fontSize: 16, fontWeight: 600, margin: 0 }}>No videos yet</p>
-                  <button onClick={() => { setShowMyVideos(false); setShowUpload(true); }} style={{ padding: '12px 24px', backgroundColor: '#ef4444', color: '#fff', border: 'none', borderRadius: 9999, cursor: 'pointer' }}>Upload Video</button>
+                  <button onClick={() => { setShowMyVideos(false); videoInputRef.current?.click(); }} style={{ padding: '12px 24px', backgroundColor: '#ef4444', color: '#fff', border: 'none', borderRadius: 9999, cursor: 'pointer' }}>Upload Video</button>
                 </div>
               ) : (
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 4 }}>
@@ -482,19 +501,15 @@ export const DiscoverPage: React.FC = () => {
         </div>
       )}
 
-      {showUpload && (
-        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.85)', zIndex: 999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }} onClick={() => !uploading && setShowUpload(false)}>
-          <div onClick={(e) => e.stopPropagation()} style={{ backgroundColor: '#fff', borderRadius: 24, padding: '32px 24px', maxWidth: 400, width: '100%', textAlign: 'center' }}>
-            <h2 style={{ fontSize: 20, fontWeight: 700, marginBottom: 8 }}>Upload Your Video</h2>
-            <p style={{ fontSize: 14, color: '#6b7280', marginBottom: 24 }}>Share a video introducing yourself.</p>
-            <input ref={videoInputRef} type="file" accept="video/*" onChange={(e) => handleVideoUpload(e.target.files)} style={{ display: 'none' }} />
-            <button onClick={() => videoInputRef.current?.click()} disabled={uploading} style={{ width: '100%', padding: 14, backgroundColor: '#ef4444', color: '#fff', border: 'none', borderRadius: 9999, cursor: 'pointer', fontSize: 16, fontWeight: 600, marginBottom: 8 }}>
-              {uploading ? 'Uploading... ' + Math.round(uploadProgress) + '%' : 'Choose Video'}
-            </button>
-            {uploading && <div style={{ width: '100%', height: 6, backgroundColor: '#f3f4f6', borderRadius: 9999, overflow: 'hidden', marginBottom: 8 }}><div style={{ width: uploadProgress + '%', height: '100%', backgroundColor: '#ef4444' }} /></div>}
-            <button onClick={() => !uploading && setShowUpload(false)} disabled={uploading} style={{ width: '100%', padding: 14, background: 'none', color: '#6b7280', border: '1px solid #e5e7eb', borderRadius: 9999, cursor: 'pointer' }}>Cancel</button>
-          </div>
-        </div>
+      {pendingVideo && (
+        <PostDetailsModal
+          open={showPublishModal}
+          videoUrl={pendingVideo.previewUrl}
+          onClose={() => { if (!uploading) { URL.revokeObjectURL(pendingVideo.previewUrl); setPendingVideo(null); setShowPublishModal(false); } }}
+          onPublish={handlePublish}
+          uploading={uploading}
+          uploadProgress={uploadProgress}
+        />
       )}
 
       {current && (
@@ -576,14 +591,13 @@ export const DiscoverPage: React.FC = () => {
           <Heart size={48} className={styles.emptyIcon} />
           <p className={styles.emptyTitle}>No profiles yet</p>
           <p className={styles.emptyText}>{error || 'Upload your video to start discovering!'}</p>
-          <button className={styles.refreshButton} onClick={() => setShowUpload(true)}>Upload Your Video</button>
+          <button className={styles.refreshButton} onClick={() => videoInputRef.current?.click()}>Upload Your Video</button>
         </div>
       )}
+      <input ref={videoInputRef} type="file" accept="video/*" onChange={(e) => handleVideoUpload(e.target.files)} style={{ display: none }} />
     </div>
   );
 };
-
-
 
 
 
