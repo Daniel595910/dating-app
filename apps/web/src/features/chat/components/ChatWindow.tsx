@@ -536,7 +536,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
   const handleSendSticker = async (url: string, name: string, isPremium: boolean) => {
     if (!user || readOnly) return;
 
-    const tempId = 	emp- + Date.now();
+    const tempId = `temp-${Date.now()}`;
 
     setMessages((prev) => [...prev, {
       id: tempId,
