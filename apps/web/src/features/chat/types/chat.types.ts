@@ -1,4 +1,4 @@
-﻿export interface Conversation {
+export interface Conversation {
   id: string;
   matchId: string;
   participantIds: string[];
@@ -32,6 +32,7 @@ export interface ChatMessage {
     replyToSenderName?: string;
     replyToContent?: string;
     replyToType?: string;
+    isSticker?: boolean;
   };
   status: 'sending' | 'sent' | 'delivered' | 'read' | 'failed';
   createdAt: string;

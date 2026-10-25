@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, Plus, X, Gift, Video } from 'lucide-react';
+import { Send, Plus, X, Gift, Video, Smile } from 'lucide-react';
 import { supabase } from '@/config/supabase.client';
 import { ChatMessage } from '../../types/chat.types';
 import styles from '../styles/MessageComposer.module.css';
@@ -15,6 +15,7 @@ interface MessageComposerProps {
   replyingTo?: ChatMessage | null;
   onCancelReply?: () => void;
   onOpenGift?: () => void;
+  onOpenStickerPicker?: () => void;
   disabled?: boolean;
 }
 
@@ -28,6 +29,7 @@ export const MessageComposer: React.FC<MessageComposerProps> = ({
   replyingTo,
   onCancelReply,
   onOpenGift,
+  onOpenStickerPicker,
   disabled = false,
 }) => {
   const [content, setContent] = useState('');
@@ -142,6 +144,10 @@ export const MessageComposer: React.FC<MessageComposerProps> = ({
           <button className={styles.attachmentOption} onClick={() => videoFileInputRef.current?.click()}>
             <Video size={18} />
             <span>Video</span>
+          </button>
+          <button className={styles.attachmentOption} onClick={onOpenStickerPicker}>
+            <Smile size={18} />
+            <span>Stickers</span>
           </button>
           <button className={styles.attachmentOption} onClick={onOpenGift}>
             <Gift size={18} />

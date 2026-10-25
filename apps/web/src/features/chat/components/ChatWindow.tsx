@@ -16,6 +16,7 @@ import { ChatSettingsSheet } from './ChatSettingsSheet';
 import { BlockConfirmSheet } from '../../community/components/BlockConfirmSheet';
 import { ReportSheet } from '../../community/components/ReportSheet';
 import { GiftPicker } from './GiftPicker';
+import { StickerPicker } from './StickerPicker';
 
 import { useCall } from '../../calls/CallProvider';
 import { usePresence } from '../hooks/usePresence';
@@ -69,6 +70,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
   const [forwardMessage, setForwardMessage] = useState<ChatMessage | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [giftPickerOpen, setGiftPickerOpen] = useState(false);
+  const [stickerPickerOpen, setStickerPickerOpen] = useState(false);
 
   const [blockSheetOpen, setBlockSheetOpen] = useState(false);
   const [reportSheetOpen, setReportSheetOpen] = useState(false);
@@ -531,6 +533,39 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
     }
   };
 
+  const handleSendSticker = async (url: string, name: string, isPremium: boolean) => {
+    if (!user || readOnly) return;
+
+    const tempId = 	emp- + Date.now();
+
+    setMessages((prev) => [...prev, {
+      id: tempId,
+      conversationId,
+      senderId: user.id,
+      senderName: 'You',
+      senderAvatar: null,
+      type: 'image',
+      content: name,
+      metadata: { imageUrl: url, isSticker: true },
+      status: 'sending',
+      createdAt: new Date().toISOString(),
+    }]);
+    scrollToBottom();
+
+    try {
+      const newMessage = await chatService.sendMessage(
+        conversationId, user.id, name, 'text', { imageUrl: url, actualType: 'image', isSticker: true }
+      );
+
+      if (newMessage) {
+        setMessages((prev) => prev.map((m) => (m.id === tempId ? { ...newMessage, metadata: { imageUrl: url, isSticker: true } } : m)));
+      }
+    } catch (err) {
+      console.error('Failed to send sticker:', err);
+      setMessages((prev) => prev.map((m) => (m.id === tempId ? { ...m, status: 'failed' as const } : m)));
+    }
+  };
+
   const handleSendVideo = async (file: File) => {
     if (!user || readOnly) return;
     
@@ -861,6 +896,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
           replyingTo={replyingTo}
           onCancelReply={() => setReplyingTo(null)}
           onOpenGift={() => setGiftPickerOpen(true)}
+          onOpenStickerPicker={() => setStickerPickerOpen(true)}
           disabled={readOnly}
         />
         </>
@@ -914,6 +950,12 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
       />
 
       <GiftPicker open={giftPickerOpen} onClose={() => setGiftPickerOpen(false)} onSelectGift={handleSendGift} />
+      <StickerPicker
+        open={stickerPickerOpen}
+        onClose={() => setStickerPickerOpen(false)}
+        onSelectSticker={handleSendSticker}
+        userIsVip={false}
+      />
 
 
       <BlockConfirmSheet
