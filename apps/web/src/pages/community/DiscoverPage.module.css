@@ -1,4 +1,4 @@
-﻿.discoverPage {
+.discoverPage {
   min-height: 100dvh;
   background-color: #000000;
   max-width: 480px;
@@ -404,3 +404,123 @@
 
 
 
+
+
+/* ============================================================
+   Feed redesign — vertical right actions, caption bottom-left
+   ============================================================ */
+
+.infoOverlay {
+  position: absolute;
+  bottom: 105px;
+  left: 12px;
+  right: 80px;
+  z-index: 8;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  pointer-events: none;
+}
+
+.infoNameRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.infoName {
+  font-size: 16px;
+  font-weight: 700;
+  color: #ffffff;
+  text-shadow: 0 1px 4px rgba(0,0,0,0.7);
+}
+
+.infoCaption {
+  font-size: 13px;
+  color: #ffffff;
+  line-height: 1.4;
+  text-shadow: 0 1px 4px rgba(0,0,0,0.7);
+  margin: 0;
+  word-break: break-word;
+}
+
+.infoHashtags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.infoHashtag {
+  font-size: 12px;
+  font-weight: 600;
+  color: #f97316;
+  text-shadow: 0 1px 4px rgba(0,0,0,0.7);
+}
+
+.infoLocation {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 11px;
+  color: rgba(255,255,255,0.85);
+  text-shadow: 0 1px 4px rgba(0,0,0,0.7);
+}
+
+.rightActions {
+  position: absolute;
+  right: 10px;
+  bottom: 105px;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+}
+
+.rightActionButton {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0,0,0,0.35);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  color: #f97316;
+  transition: transform 0.15s ease, background 0.15s ease;
+  padding: 0;
+}
+
+.rightActionButton:hover {
+  transform: scale(1.08);
+  background: rgba(0,0,0,0.5);
+}
+
+.rightActionButton:active {
+  transform: scale(0.95);
+}
+
+.rightAvatarButton {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  border: 2px solid #f97316;
+  cursor: pointer;
+  padding: 0;
+  overflow: hidden;
+  background: #000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  font-weight: 700;
+}
+
+.rightAvatarButton img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
