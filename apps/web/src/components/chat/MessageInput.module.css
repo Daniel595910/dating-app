@@ -78,3 +78,27 @@
     transform: rotate(360deg);
   }
 }
+
+.stickerButton {
+  background: transparent;
+  border: none;
+  color: var(--color-text-secondary, #6b7280);
+  cursor: pointer;
+  padding: 8px;
+  border-radius: var(--radius-sm, 8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s ease, color 0.15s ease;
+  flex-shrink: 0;
+}
+
+.stickerButton:hover {
+  background: var(--color-surface-hover, rgba(0, 0, 0, 0.05));
+  color: var(--color-text, #111827);
+}
+
+.stickerButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

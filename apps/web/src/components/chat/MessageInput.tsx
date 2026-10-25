@@ -7,6 +7,9 @@ import React, { useState } from 'react';
 import { supabase } from '@/config/supabase.client';
 import { APP_LIMITS } from '@/config/constants';
 import styles from './MessageInput.module.css';
+import { Smile } from 'lucide-react';
+import { StickerPicker } from '@/features/chat/components/StickerPicker';
+import { useUserVip } from '@/features/chat/hooks/useUserVip';
 
 interface MessageInputProps {
   conversationId: string;
@@ -17,6 +20,37 @@ export const MessageInput: React.FC < MessageInputProps > = ({ conversationId })
   const [sending, setSending] = useState(false);
   const [error, setError] = useState < string | null > (null);
   
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const userIsVip = useUserVip();
+
+  const handleSendSticker = async (url: string, name: string, isPremium: boolean) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Not authenticated');
+
+      const { error: sendError } = await supabase.from('messages').insert({
+        conversation_id: conversationId,
+        sender_id: user.id,
+        type: 'image',
+        content: name,
+        media_url: url,
+        status: 'sent',
+        metadata: { is_sticker: true, is_premium: isPremium },
+      });
+      if (sendError) throw sendError;
+
+      await supabase
+        .from('conversations')
+        .update({
+          last_message_at: new Date().toISOString(),
+          last_message_preview: '[Sticker] ' + name,
+        })
+        .eq('id', conversationId);
+    } catch (err: any) {
+      setError(err.message || 'Failed to send sticker');
+    }
+  };
+
   const handleSend = async () => {
     if (!content.trim() || sending) return;
     
@@ -76,6 +110,14 @@ export const MessageInput: React.FC < MessageInputProps > = ({ conversationId })
           disabled={sending}
         />
         <button
+          className={styles.stickerButton}
+          onClick={() => setPickerOpen(true)}
+          aria-label="Open stickers"
+          disabled={sending}
+        >
+          <Smile size={20} />
+        </button>
+        <button
           className={styles.sendButton}
           onClick={handleSend}
           disabled={!content.trim() || sending}
@@ -100,6 +142,12 @@ export const MessageInput: React.FC < MessageInputProps > = ({ conversationId })
           )}
         </button>
       </div>
+      <StickerPicker
+        open={pickerOpen}
+        onClose={() => setPickerOpen(false)}
+        onSelectSticker={handleSendSticker}
+        userIsVip={userIsVip}
+      />
     </div>
   );
 };
