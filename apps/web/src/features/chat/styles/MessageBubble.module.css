@@ -1,9 +1,13 @@
 .wrapper {
   display: flex;
-  margin-bottom: 0.25rem;
+  margin-bottom: 6px;
   position: relative;
   min-width: 0;
   max-width: 100%;
+}
+
+.wrapper.grouped {
+  margin-bottom: 2px;
 }
 
 .ownWrapper {
@@ -15,24 +19,33 @@
 }
 
 .bubble {
-  max-width: 75%;
-  padding: 0.625rem 0.875rem;
-  border-radius: 1rem;
+  max-width: 78%;
+  padding: 8px 12px;
+  border-radius: 18px;
   position: relative;
   min-width: 0;
   overflow: visible;
+  box-shadow: 0 1px 1px rgba(0, 0, 0, 0.04);
+  word-wrap: break-word;
+  overflow-wrap: anywhere;
 }
 
 .ownBubble {
   background-color: var(--color-primary, #ef4444);
   color: #ffffff;
-  border-bottom-right-radius: 0.25rem;
+  border-top-right-radius: 18px;
+  border-bottom-right-radius: 4px;
+  border-top-left-radius: 18px;
+  border-bottom-left-radius: 18px;
 }
 
 .otherBubble {
   background-color: var(--color-bg, #f3f4f6);
   color: var(--color-text, #111827);
-  border-bottom-left-radius: 0.25rem;
+  border-top-left-radius: 18px;
+  border-bottom-left-radius: 4px;
+  border-top-right-radius: 18px;
+  border-bottom-right-radius: 18px;
 }
 
 .failedBubble {
@@ -42,17 +55,24 @@
 
 .senderName {
   display: block;
-  font-size: var(--font-xs, 0.6875rem);
-  font-weight: 600;
-  color: var(--color-info, #3b82f6);
-  margin-bottom: 0.125rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--color-primary, #ef4444);
+  margin-bottom: 3px;
+  letter-spacing: 0.01em;
+}
+
+.ownBubble .senderName {
+  color: rgba(255, 255, 255, 0.9);
 }
 
 .content {
   margin: 0;
-  font-size: var(--font-md, 0.9375rem);
-  line-height: 1.4;
-  word-break: break-word;
+  font-size: 0.9375rem;
+  line-height: 1.5;
+  word-wrap: break-word;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
 }
 
 .meta {
@@ -64,8 +84,9 @@
 }
 
 .timestamp {
-  font-size: 0.625rem;
-  opacity: 0.7;
+  font-size: 0.6875rem;
+  opacity: 0.75;
+  white-space: nowrap;
 }
 
 .status {
