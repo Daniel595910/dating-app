@@ -19,6 +19,7 @@ interface MessageBubbleProps {
   onReact?: (message: ChatMessage, reaction: string) => void;
   reactions?: { reaction: string; count: number; reactedByMe: boolean }[];
   isPinned?: boolean;
+  isGrouped?: boolean;
   onOpenActionSheet?: (message: ChatMessage) => void;
 }
 
@@ -39,6 +40,7 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
   onReact,
   reactions = [],
   isPinned = false,
+  isGrouped = false,
   onOpenActionSheet,
 }) => {
   const [imagePreviewOpen, setImagePreviewOpen] = useState(false);
@@ -206,7 +208,7 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
   return (
     <div 
       id={id}
-      className={`${styles.wrapper} ${isOwn ? styles.ownWrapper : styles.otherWrapper}`}
+      className={`${styles.wrapper} ${isOwn ? styles.ownWrapper : styles.otherWrapper} ${isGrouped ? styles.grouped : ''}`}
     >
       {isPinned && (
         <div className={styles.pinnedBadge}><Pin size={10} /> Pinned</div>

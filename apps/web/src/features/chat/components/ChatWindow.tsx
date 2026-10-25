@@ -811,13 +811,22 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
             <p>Say hello to {targetUserName}!</p>
           </div>
         ) : (
-          messages.map((message) => (
+          messages.map((message, idx) => {
+            const prev = idx > 0 ? messages[idx - 1] : null;
+            const isGrouped = Boolean(
+              prev &&
+              prev.senderId === message.senderId &&
+              new Date(message.createdAt).getTime() - new Date(prev.createdAt).getTime() < 5 * 60 * 1000
+            );
+            const showSenderName = message.senderId !== user?.id && !isGrouped;
+            return (
             <MessageBubble
               key={message.id}
               message={message}
               id={`message-${message.id}`}
               isOwn={message.senderId === user?.id}
-              showSenderName={message.senderId !== user?.id}
+              showSenderName={showSenderName}
+              isGrouped={isGrouped}
               onReply={handleReply}
               onReact={handleReact}
               onEdit={handleEdit}
@@ -828,7 +837,8 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
               isPinned={pinnedMessageIds.has(message.id)}
               onOpenActionSheet={setActionSheetMessage}
             />
-          ))
+            );
+          })
         )}
 
         {isTyping && <TypingIndicator userName={targetUserName} />}
