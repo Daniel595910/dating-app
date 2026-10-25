@@ -11,6 +11,51 @@ interface PostDetailsModalProps {
   uploadProgress: number;
 }
 
+interface ToggleProps {
+  checked: boolean;
+  onChange: (next: boolean) => void;
+  disabled?: boolean;
+  label: string;
+}
+
+const Toggle: React.FC<ToggleProps> = ({ checked, onChange, disabled, label }) => (
+  <button
+    type="button"
+    role="switch"
+    aria-checked={checked}
+    aria-label={label}
+    disabled={disabled}
+    onClick={() => onChange(!checked)}
+    style={{
+      width: 44,
+      height: 24,
+      borderRadius: 9999,
+      backgroundColor: checked ? '#f97316' : '#d1d5db',
+      position: 'relative',
+      border: 'none',
+      cursor: disabled ? 'not-allowed' : 'pointer',
+      transition: 'background 0.2s ease',
+      flexShrink: 0,
+      padding: 0,
+      opacity: disabled ? 0.5 : 1,
+    }}
+  >
+    <span
+      style={{
+        position: 'absolute',
+        top: 2,
+        left: checked ? 22 : 2,
+        width: 20,
+        height: 20,
+        borderRadius: '50%',
+        backgroundColor: '#ffffff',
+        transition: 'left 0.2s ease',
+        boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
+      }}
+    />
+  </button>
+);
+
 const MAX_CAPTION = 2000;
 const MAX_HASHTAGS = 10;
 const MAX_HASHTAG_LEN = 30;
@@ -261,14 +306,14 @@ export const PostDetailsModal: React.FC<PostDetailsModalProps> = ({
             <label style={{ fontSize: 13, fontWeight: 600, color: '#6b7280', display: 'block', marginBottom: 8 }}>
               Advanced settings
             </label>
-            <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8, fontSize: 14, color: '#111827' }}>
-              <input type="checkbox" checked={allowComments} onChange={(e) => setAllowComments(e.target.checked)} disabled={uploading} />
-              Allow comments
-            </label>
-            <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 14, color: '#111827' }}>
-              <input type="checkbox" checked={allowDuet} onChange={(e) => setAllowDuet(e.target.checked)} disabled={uploading} />
-              Allow duet
-            </label>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12, fontSize: 14, color: '#111827' }}>
+              <span>Allow comments</span>
+              <Toggle checked={allowComments} onChange={setAllowComments} disabled={uploading} label="Allow comments" />
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: 14, color: '#111827' }}>
+              <span>Allow duet</span>
+              <Toggle checked={allowDuet} onChange={setAllowDuet} disabled={uploading} label="Allow duet" />
+            </div>
           </div>
 
           {errorMsg && (
