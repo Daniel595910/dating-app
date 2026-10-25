@@ -1,8 +1,8 @@
 import { useRef, useCallback, useState } from 'react';
 import { callService } from '../services/call.service';
 
-const TURN_USERNAME = '';
-const TURN_CREDENTIAL = '';
+const TURN_USERNAME = '5f1ac5e5476cf0f8a49af1a8';
+const TURN_CREDENTIAL = 'Z7XCgI1tRxey5m2p';
 
 const ICE_CONFIG: RTCConfiguration = {
   iceServers: [
