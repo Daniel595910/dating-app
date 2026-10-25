@@ -594,7 +594,7 @@ export const DiscoverPage: React.FC = () => {
           <button className={styles.refreshButton} onClick={() => videoInputRef.current?.click()}>Upload Your Video</button>
         </div>
       )}
-      <input ref={videoInputRef} type="file" accept="video/*" onChange={(e) => handleVideoUpload(e.target.files)} style={{ display: none }} />
+      <input ref={videoInputRef} type="file" accept="video/*" onChange={(e) => handleVideoUpload(e.target.files)} style={{ display: 'none' }} />
     </div>
   );
 };
