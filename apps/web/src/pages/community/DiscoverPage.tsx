@@ -10,7 +10,8 @@ import { PostDetailsModal } from '../../features/discover/components/PostDetails
 import { 
   BadgeCheck, MapPin, Heart, X, Play, Pause, Video, Upload, 
   Loader, ArrowLeft, Grid3x3, Plus, Clock, CheckCircle2, XCircle,
-  Trash2, Eye, EyeOff, Volume2, VolumeX, RotateCcw, Check
+  Trash2, Eye, EyeOff, Volume2, VolumeX, RotateCcw, Check,
+  MessageCircle, Share2
 } from 'lucide-react';
 import styles from './DiscoverPage.module.css';
 
@@ -525,19 +526,27 @@ export const DiscoverPage: React.FC = () => {
           <button onClick={handleRewind} style={{ position: 'absolute', top: 130, right: 16, background: 'rgba(0,0,0,0.5)', border: 'none', borderRadius: '50%', width: 40, height: 40, cursor: 'pointer', color: '#fff', zIndex: 15 }}>
             <RotateCcw size={18} />
           </button>
-          <div className={styles.profileOverlay}>
-
-            <div className={styles.profileNameRow}>
-              <span className={styles.profileName}>{current.displayName}{current.age ? ', ' + current.age : ''}</span>
-              {current.isVerified && <BadgeCheck size={18} />}
+          <div className={styles.infoOverlay}>
+            <div className={styles.infoNameRow}>
+              <span className={styles.infoName}>
+                {current.displayName}{current.age ? ', ' + current.age : ''}
+              </span>
+              {current.isVerified && <BadgeCheck size={16} style={{ color: '#3b82f6' }} />}
             </div>
-            {current.city && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '13px', color: '#ffffff', opacity: 0.8, marginBottom: '4px' }}>
-                <MapPin size={12} />
-                <span>{[current.city, current.state].filter(Boolean).join(', ')}</span>
+            {current.bio && <p className={styles.infoCaption}>{current.bio}</p>}
+            {current.hashtags && current.hashtags.length > 0 && (
+              <div className={styles.infoHashtags}>
+                {current.hashtags.map((tag) => (
+                  <span key={tag} className={styles.infoHashtag}>#{tag}</span>
+                ))}
               </div>
             )}
-            {current.bio && <p className={styles.profileBio}>{current.bio}</p>}
+            {(current.locationText || current.city) && (
+              <div className={styles.infoLocation}>
+                <MapPin size={11} />
+                <span>{current.locationText || [current.city, current.state].filter(Boolean).join(', ')}</span>
+              </div>
+            )}
           </div>
 
           <div 
@@ -561,12 +570,43 @@ export const DiscoverPage: React.FC = () => {
             </div>
           </div>
 
-          <div className={styles.actionButtons}>
-            <button className={styles.passButton} onClick={() => handleSwipeAction('pass')}><X size={24} /></button>
-            <button onClick={() => navigate('/profile/' + current.userId)} style={{ width: 56, height: 56, borderRadius: '50%', border: '3px solid #fff', cursor: 'pointer', padding: 0, overflow: 'hidden' }}>
-              {current.avatarUrl ? <img src={current.avatarUrl} alt={current.displayName} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <span>{current.displayName.charAt(0)}</span>}
+          <div className={styles.rightActions}>
+            <button
+              className={styles.rightAvatarButton}
+              onClick={() => navigate('/profile/' + current.userId)}
+              aria-label={'View ' + current.displayName + ' profile'}
+            >
+              {current.avatarUrl
+                ? <img src={current.avatarUrl} alt={current.displayName} />
+                : <span>{current.displayName.charAt(0)}</span>}
             </button>
-            <button className={styles.likeButton} onClick={() => handleSwipeAction('like')}><Heart size={24} /></button>
+            <button
+              className={styles.rightActionButton}
+              onClick={() => handleSwipeAction('like')}
+              aria-label="Like"
+            >
+              <Heart size={22} />
+            </button>
+            <button
+              className={styles.rightActionButton}
+              aria-label="Comment"
+            >
+              <MessageCircle size={22} />
+            </button>
+            <button
+              className={styles.rightActionButton}
+              onClick={() => {
+                const shareUrl = window.location.origin + '/profile/' + current.userId;
+                if (navigator.share) {
+                  navigator.share({ title: current.displayName, url: shareUrl }).catch(() => {});
+                } else {
+                  navigator.clipboard.writeText(shareUrl).catch(() => {});
+                }
+              }}
+              aria-label="Share"
+            >
+              <Share2 size={22} />
+            </button>
           </div>
         </div>
       )}
