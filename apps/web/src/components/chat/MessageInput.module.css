@@ -18,15 +18,15 @@
 
 .textarea {
   flex: 1;
-  padding: 0.625rem 0.875rem;
+  padding: 0.5rem 0.75rem;
   border: 1px solid #d1d5db;
-  border-radius: 1.25rem;
+  border-radius: 0.75rem;
   resize: none;
   font-size: 0.9375rem;
   font-family: inherit;
   outline: none;
   max-height: 120px;
-  min-height: 40px;
+  min-height: 36px;
   transition: border-color 0.2s ease;
 }
 
