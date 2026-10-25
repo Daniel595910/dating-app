@@ -29,7 +29,7 @@
 
 .replyPreview {
   display: block;
-  font-size: 12px;
+  font-size: 0.75rem;
   color: #6b7280;
   white-space: nowrap;
   overflow: hidden;
@@ -74,7 +74,7 @@
   border: 1px solid #e5e7eb;
   border-radius: 24px;
   resize: none;
-  font-size: 14px;
+  font-size: 0.875rem;
   font-family: inherit;
   outline: none;
   max-height: 120px;
@@ -193,7 +193,7 @@
   border: 1px solid #e5e7eb;
   border-radius: 9999px;
   cursor: pointer;
-  font-size: 13px;
+  font-size: 0.8125rem;
   font-weight: 600;
   color: #374151;
   min-height: 40px;
