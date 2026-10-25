@@ -20,6 +20,7 @@ export interface Message {
   deletedAt ? : string | null;
   createdAt: string;
   updatedAt: string;
+  metadata ? : Record<string, unknown> | null;
 }
 
 export interface CreateMessageInput {
