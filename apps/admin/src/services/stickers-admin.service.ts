@@ -12,6 +12,7 @@ export interface Sticker {
   height: number | null;
   is_animated: boolean;
   is_active: boolean;
+  is_premium: boolean;
   sort_order: number;
   created_at: string;
   pack?: { name: string } | null;
@@ -38,6 +39,7 @@ export interface Gif {
   width: number | null;
   height: number | null;
   is_active: boolean;
+  is_premium: boolean;
   created_at: string;
 }
 
@@ -134,6 +136,22 @@ class StickersAdminService {
     const { error } = await supabase
       .from('stickers')
       .update({ is_active: isActive })
+      .eq('id', id);
+    if (error) throw new Error(error.message);
+  }
+
+  async toggleStickerPremium(id: string, isPremium: boolean): Promise<void> {
+    const { error } = await supabase
+      .from('stickers')
+      .update({ is_premium: isPremium })
+      .eq('id', id);
+    if (error) throw new Error(error.message);
+  }
+
+  async toggleGifPremium(id: string, isPremium: boolean): Promise<void> {
+    const { error } = await supabase
+      .from('gifs')
+      .update({ is_premium: isPremium })
       .eq('id', id);
     if (error) throw new Error(error.message);
   }

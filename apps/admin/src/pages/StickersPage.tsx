@@ -6,6 +6,7 @@ import {
   Search,
   Trash2,
   Eye,
+  Crown,
   EyeOff,
   Plus,
   Loader2,
@@ -214,6 +215,25 @@ export const StickersPage: React.FC = () => {
       toast.error('Delete failed', err.message);
     }
   };
+  const handleToggleStickerPremium = async (s: Sticker) => {
+    try {
+      await stickersAdminService.toggleStickerPremium(s.id, !s.is_premium);
+      setStickers((prev) => prev.map((x) => (x.id === s.id ? { ...x, is_premium: !x.is_premium } : x)));
+      toast.success(s.is_premium ? 'Marked as free' : 'Marked as premium');
+    } catch (err: any) {
+      toast.error('Premium toggle failed', err.message);
+    }
+  };
+
+  const handleToggleGifPremium = async (g: Gif) => {
+    try {
+      await stickersAdminService.toggleGifPremium(g.id, !g.is_premium);
+      setGifs((prev) => prev.map((x) => (x.id === g.id ? { ...x, is_premium: !x.is_premium } : x)));
+      toast.success(g.is_premium ? 'Marked as free' : 'Marked as premium');
+    } catch (err: any) {
+      toast.error('Premium toggle failed', err.message);
+    }
+  };
 
   if (!canManage) {
     return (
@@ -367,6 +387,7 @@ export const StickersPage: React.FC = () => {
                 return (
                   <div key={g.id} className={styles.gridItem}>
                     <img src={g.preview_url} alt={g.title} className={styles.gridImage} loading='lazy' />
+                  {g.is_premium && <div className={styles.gridBadge + ' ' + styles.gridBadgePremium}>PREMIUM</div>}
                     <div className={styles.gridOverlay}>
                       <div className={styles.gridName}>{g.title || 'GIF'}</div>
                       <div className={styles.gridActions}>
@@ -401,6 +422,7 @@ export const StickersPage: React.FC = () => {
                 <div key={s.id} className={styles.gridItem + ' ' + (s.is_active ? '' : styles.gridItemInactive)}>
                   <img src={s.image_url} alt={s.name || 'sticker'} className={styles.gridImage} loading='lazy' />
                   {!s.is_active && <div className={styles.gridBadge}>DISABLED</div>}
+                  {s.is_premium && <div className={styles.gridBadge + ' ' + styles.gridBadgePremium}>PREMIUM</div>}
                   <div className={styles.gridOverlay}>
                     <div className={styles.gridName}>{s.name || 'Unnamed'}</div>
                     <div className={styles.gridActions}>
@@ -410,6 +432,13 @@ export const StickersPage: React.FC = () => {
                         title={s.is_active ? 'Disable' : 'Enable'}
                       >
                         {s.is_active ? <EyeOff size={12} /> : <Eye size={12} />}
+                      </button>
+                      <button
+                        className={styles.gridAction + ' ' + styles.gridActionPremium}
+                        onClick={() => handleToggleStickerPremium(s)}
+                        title={s.is_premium ? 'Mark as free' : 'Mark as premium'}
+                      >
+                        <Crown size={12} />
                       </button>
                       <button
                         className={styles.gridAction + ' ' + styles.gridActionDanger}
@@ -446,6 +475,13 @@ export const StickersPage: React.FC = () => {
                         title={g.is_active ? 'Disable' : 'Enable'}
                       >
                         {g.is_active ? <EyeOff size={12} /> : <Eye size={12} />}
+                      </button>
+                      <button
+                        className={styles.gridAction + ' ' + styles.gridActionPremium}
+                        onClick={() => handleToggleGifPremium(g)}
+                        title={g.is_premium ? 'Mark as free' : 'Mark as premium'}
+                      >
+                        <Crown size={12} />
                       </button>
                       <button
                         className={styles.gridAction + ' ' + styles.gridActionDanger}
