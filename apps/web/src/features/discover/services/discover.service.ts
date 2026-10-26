@@ -152,6 +152,7 @@ class DiscoverService {
     }
     const rows = data || [];
     if (rows.length === 0) return [];
+
     const authorIds = Array.from(new Set(rows.map((r: any) => r.author_id)));
     const { data: profiles } = await supabase
       .from('profiles')
@@ -159,9 +160,47 @@ class DiscoverService {
       .in('user_id', authorIds);
     const profileMap = new Map<string, any>();
     (profiles || []).forEach((p: any) => profileMap.set(p.user_id, p));
-    return rows.map((r: any) => {
+
+    const commentIds = rows.map((r: any) => r.id);
+    const { data: reactions } = await supabase
+      .from('discover_video_comment_reactions')
+      .select('comment_id, user_id')
+      .in('comment_id', commentIds);
+    const reactionMap = new Map<string, string[]>();
+    (reactions || []).forEach((r: any) => {
+      if (!reactionMap.has(r.comment_id)) reactionMap.set(r.comment_id, []);
+      reactionMap.get(r.comment_id)!.push(r.user_id);
+    });
+
+    const { data: { user } } = await supabase.auth.getUser();
+    const myId = user?.id || null;
+
+    type Node = {
+      id: string;
+      videoId: string;
+      authorId: string;
+      parentId: string | null;
+      rootId: string | null;
+      content: string;
+      contentType: string;
+      mediaUrl: string | null;
+      status: string;
+      createdAt: string;
+      authorName: string;
+      authorAvatarUrl: string | null;
+      authorVerified: boolean;
+      reactionCount: number;
+      userReacted: boolean;
+      children: any[];
+      replyCount: number;
+      replyingToName: string | null;
+    };
+
+    const nodeMap = new Map<string, Node>();
+    rows.forEach((r: any) => {
       const p = profileMap.get(r.author_id) || {};
-      return {
+      const users = reactionMap.get(r.id) || [];
+      nodeMap.set(r.id, {
         id: r.id,
         videoId: r.video_id,
         authorId: r.author_id,
@@ -175,8 +214,33 @@ class DiscoverService {
         authorName: p.display_name || 'User',
         authorAvatarUrl: p.avatar_url || null,
         authorVerified: p.is_verified || false,
-      };
+        reactionCount: users.length,
+        userReacted: myId ? users.includes(myId) : false,
+        children: [],
+        replyCount: 0,
+        replyingToName: null,
+      });
     });
+
+    rows.forEach((r: any) => {
+      const node = nodeMap.get(r.id)!;
+      if (r.parent_id && nodeMap.has(r.parent_id)) {
+        node.replyingToName = nodeMap.get(r.parent_id)!.authorName;
+      }
+    });
+
+    const roots: Node[] = [];
+    rows.forEach((r: any) => {
+      const node = nodeMap.get(r.id)!;
+      if (r.parent_id && nodeMap.has(r.parent_id)) {
+        nodeMap.get(r.parent_id)!.children.push(node);
+        nodeMap.get(r.parent_id)!.replyCount++;
+      } else if (!r.parent_id) {
+        roots.push(node);
+      }
+    });
+
+    return roots;
   }
 
   async addVideoComment(videoId: string, content: string, parentId: string | null = null): Promise<any | null> {
@@ -221,6 +285,28 @@ class DiscoverService {
       return false;
     }
     return true;
+  }
+  async toggleCommentReaction(commentId: string): Promise<boolean | null> {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return null;
+    const { data: existing } = await supabase
+      .from('discover_video_comment_reactions')
+      .select('id')
+      .eq('comment_id', commentId)
+      .eq('user_id', user.id)
+      .maybeSingle();
+    if (existing) {
+      const { error } = await supabase
+        .from('discover_video_comment_reactions')
+        .delete()
+        .eq('id', existing.id);
+      return error ? null : false;
+    } else {
+      const { error } = await supabase
+        .from('discover_video_comment_reactions')
+        .insert({ comment_id: commentId, user_id: user.id, reaction_type: 'like' });
+      return error ? null : true;
+    }
   }
 
   async getMyVideos(): Promise<any[]> {
