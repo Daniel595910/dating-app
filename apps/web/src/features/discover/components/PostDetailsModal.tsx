@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { ArrowLeft, X, Lock, Users, Globe } from 'lucide-react';
+import { ArrowLeft, X, Lock, Users, Globe, Volume2, VolumeX } from 'lucide-react';
 import { PublishDetails, Visibility } from '../types/discover.types';
 import { discoverService } from '../services/discover.service';
 import { SUPPORTED_COUNTRIES } from '@/utils/ipGeolocation';
@@ -78,6 +78,7 @@ export const PostDetailsModal: React.FC<PostDetailsModalProps> = ({
   const [allowComments, setAllowComments] = useState(true);
   const [allowDuet, setAllowDuet] = useState(true);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [isMuted, setIsMuted] = useState(true);
   const [suggestions, setSuggestions] = useState<Array<{ hashtag: string; usageCount: number }>>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [activeSuggestion, setActiveSuggestion] = useState(0);
@@ -237,9 +238,23 @@ export const PostDetailsModal: React.FC<PostDetailsModalProps> = ({
               autoPlay
               loop
               playsInline
-              muted
+              muted={isMuted}
               style={{ width: '100%', height: '100%', objectFit: 'contain' }}
             />
+            <button
+              onClick={() => setIsMuted((v) => !v)}
+              aria-label={isMuted ? 'Unmute video' : 'Mute video'}
+              style={{
+                position: 'absolute', top: 10, right: 10,
+                background: 'rgba(0,0,0,0.6)', border: 'none',
+                borderRadius: '50%', width: 40, height: 40,
+                cursor: 'pointer', color: '#fff',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                zIndex: 5,
+              }}
+            >
+              {isMuted ? <VolumeX size={18} /> : <Volume2 size={18} />}
+            </button>
           </div>
 
           {/* Caption */}
