@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { X, Send, Trash2, Heart, Loader } from 'lucide-react';
+import { X, Send, Trash2, Heart, Loader, MessageCircle } from 'lucide-react';
 import { discoverService } from '../services/discover.service';
 
 interface DiscoverCommentsSheetProps {
@@ -161,7 +161,7 @@ export const DiscoverCommentsSheet: React.FC<DiscoverCommentsSheetProps> = ({
             </div>
           ) : comments.length === 0 ? (
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', gap: 8, textAlign: 'center', color: '#6b7280' }}>
-              <div style={{ fontSize: 48 }}>💬</div>
+              <MessageCircle size={48} style={{ color: '#d1d5db' }} />
               <p style={{ fontSize: 14, fontWeight: 600, margin: 0, color: '#111827' }}>No comments yet</p>
               <p style={{ fontSize: 13, margin: 0 }}>Be the first to comment!</p>
             </div>

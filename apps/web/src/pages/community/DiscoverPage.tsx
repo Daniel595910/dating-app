@@ -7,6 +7,7 @@ import { mediaService } from '../../features/community/services/media.service';
 import { DiscoverCandidate } from '../../features/discover/types/discover.types';
 import { PublishDetails } from '../../features/discover/types/discover.types';
 import { PostDetailsModal } from '../../features/discover/components/PostDetailsModal';
+import { DiscoverCommentsSheet } from '../../features/discover/components/DiscoverCommentsSheet';
 import { 
   BadgeCheck, MapPin, Heart, X, Play, Pause, Video, Upload, 
   Loader, ArrowLeft, Grid3x3, Plus, Clock, CheckCircle2, XCircle,
@@ -64,6 +65,8 @@ export const DiscoverPage: React.FC = () => {
   const [likedIds, setLikedIds] = useState<Set<string>>(new Set());
   const [showHeartPop, setShowHeartPop] = useState(false);
   const [likeCounts, setLikeCounts] = useState<Record<string, number>>({});
+  const [commentsOpen, setCommentsOpen] = useState(false);
+  const [commentsVideoId, setCommentsVideoId] = useState<string | null>(null);
   
   const videoRef = useRef<HTMLVideoElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -664,13 +667,13 @@ export const DiscoverPage: React.FC = () => {
               {formatCount(likeCounts[current.videoId] || 0)}
             </div>
             <button
-              onClick={(e) => e.stopPropagation()}
+              onClick={(e) => { e.stopPropagation(); setCommentsVideoId(current.videoId); setCommentsOpen(true); }}
               className={styles.rightActionButton}
               aria-label="Comment"
             >
               <MessageCircle size={22} />
             </button>
-            {current.commentCount > 0 && (
+            {current.commentCount >= 0 && (
               <div className={styles.likeCount}>
                 {formatCount(current.commentCount)}
               </div>
@@ -693,6 +696,13 @@ export const DiscoverPage: React.FC = () => {
           </div>
         </div>
       )}
+
+      <DiscoverCommentsSheet
+        open={commentsOpen}
+        videoId={commentsVideoId}
+        currentUserId={user?.id || null}
+        onClose={() => { setCommentsOpen(false); setCommentsVideoId(null); }}
+      />
 
       {uploadError && (
         <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.85)', zIndex: 1001, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }} onClick={() => setUploadError(null)}>
