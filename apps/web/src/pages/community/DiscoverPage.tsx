@@ -62,6 +62,7 @@ export const DiscoverPage: React.FC = () => {
   const [dailyLimit] = useState(50);
   const [showLikeAnimation, setShowLikeAnimation] = useState(false);
       const [lastTapTime, setLastTapTime] = useState(0);
+  const [expandedCaptions, setExpandedCaptions] = useState<Set<string>>(new Set());
   const [likedIds, setLikedIds] = useState<Set<string>>(new Set());
   const [showHeartPop, setShowHeartPop] = useState(false);
   const [likeCounts, setLikeCounts] = useState<Record<string, number>>({});
@@ -611,7 +612,34 @@ export const DiscoverPage: React.FC = () => {
               </span>
               {current.isVerified && <BadgeCheck size={16} style={{ color: '#3b82f6' }} />}
             </div>
-            {current.bio && <p className={styles.infoCaption}>{current.bio}</p>}
+            {current.bio && (() => {
+              const expanded = expandedCaptions.has(current.videoId);
+              const isLong = (current.bio || "").length > 80;
+              const toggle = () => {
+                if (!isLong) return;
+                setExpandedCaptions((prev) => {
+                  const next = new Set(prev);
+                  if (next.has(current.videoId)) next.delete(current.videoId);
+                  else next.add(current.videoId);
+                  return next;
+                });
+              };
+              return (
+                <>
+                  <p
+                    className={styles.infoCaption + (isLong && !expanded ? " " + styles.infoCaptionCollapsed : "")}
+                    onClick={toggle}
+                  >
+                    {current.bio}
+                  </p>
+                  {isLong && (
+                    <span className={styles.infoCaptionExpandHint} onClick={toggle}>
+                      {expanded ? "Show less" : "Read more"}
+                    </span>
+                  )}
+                </>
+              );
+            })()}
             {current.hashtags && current.hashtags.length > 0 && (
               <div className={styles.infoHashtags}>
                 {current.hashtags.map((tag) => (
