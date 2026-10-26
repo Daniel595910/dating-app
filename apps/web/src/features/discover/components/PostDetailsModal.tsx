@@ -3,6 +3,7 @@ import { ArrowLeft, X, Lock, Users, Globe, Volume2, VolumeX } from 'lucide-react
 import { PublishDetails, Visibility } from '../types/discover.types';
 import { discoverService } from '../services/discover.service';
 import { SUPPORTED_COUNTRIES } from '@/utils/ipGeolocation';
+import styles from './PostDetailsModal.module.css';
 
 interface PostDetailsModalProps {
   open: boolean;
@@ -267,12 +268,8 @@ export const PostDetailsModal: React.FC<PostDetailsModalProps> = ({
               onChange={(e) => setCaption(e.target.value.slice(0, MAX_CAPTION))}
               placeholder="Say something about your video..."
               disabled={uploading}
-              rows={3}
-              style={{
-                width: '100%', padding: 12, fontSize: 15,
-                border: '1px solid var(--color-border-strong)', borderRadius: 12, resize: 'vertical',
-                fontFamily: 'inherit', boxSizing: 'border-box',
-              }}
+              rows={4}
+              className={styles.textarea}
             />
             <div style={{ fontSize: 11, color: 'var(--color-text-muted)', textAlign: 'right', marginTop: 4 }}>
               {caption.length} / {MAX_CAPTION}
@@ -316,28 +313,10 @@ export const PostDetailsModal: React.FC<PostDetailsModalProps> = ({
                 }}
                 placeholder="Add hashtag + Enter"
                 disabled={uploading || hashtags.length >= MAX_HASHTAGS}
-                style={{
-                  width: '100%', padding: 12, fontSize: 15,
-                  border: '1px solid var(--color-border-strong)', borderRadius: 12, boxSizing: 'border-box',
-                }}
+                className={styles.inputBase}
               />
               {showSuggestions && suggestions.length > 0 && (
-                <div
-                  style={{
-                    position: 'absolute',
-                    top: '100%',
-                    left: 0,
-                    right: 0,
-                    marginTop: 4,
-                    backgroundColor: 'var(--color-surface)',
-                    border: '1px solid var(--color-border-strong)',
-                    borderRadius: 12,
-                    boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
-                    zIndex: 50,
-                    maxHeight: 200,
-                    overflowY: 'auto',
-                  }}
-                >
+                <div className={styles.suggestionsContainer}>
                   {suggestions.map((s, idx) => (
                     <button
                       key={s.hashtag}
@@ -347,19 +326,7 @@ export const PostDetailsModal: React.FC<PostDetailsModalProps> = ({
                         addHashtag(s.hashtag);
                         setShowSuggestions(false);
                       }}
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        width: '100%',
-                        padding: '10px 12px',
-                        border: 'none',
-                        backgroundColor: idx === activeSuggestion ? '#fef2f2' : '#ffffff',
-                        cursor: 'pointer',
-                        textAlign: 'left',
-                        fontSize: 14,
-                        color: 'var(--color-text)',
-                      }}
+                      className={styles.suggestionItem + (idx === activeSuggestion ? " " + styles.suggestionItemActive : "")}
                     >
                       <span>#{s.hashtag}</span>
                       <span style={{ fontSize: 12, color: 'var(--color-text-muted)' }}>{s.usageCount}</span>
@@ -413,11 +380,7 @@ export const PostDetailsModal: React.FC<PostDetailsModalProps> = ({
               value={locationText}
               onChange={(e) => setLocationText(e.target.value)}
               disabled={uploading}
-              style={{
-                width: '100%', padding: 12, fontSize: 15,
-                border: '1px solid var(--color-border-strong)', borderRadius: 12, boxSizing: 'border-box',
-                backgroundColor: 'var(--color-surface)',
-              }}
+              className={styles.select}
             >
               <option value="">Select country (optional)</option>
               {SUPPORTED_COUNTRIES.map((c) => (
