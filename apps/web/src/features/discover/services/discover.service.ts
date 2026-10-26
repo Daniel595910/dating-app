@@ -36,6 +36,7 @@ class DiscoverService {
       allowDuet: c.allow_duet !== false,
       likeCount: c.like_count || 0,
       userLiked: false,
+      commentCount: c.comment_count || 0,
     }));
   }
 
@@ -124,6 +125,18 @@ class DiscoverService {
       return new Set();
     }
     return new Set((data || []).map((r: any) => r.video_id));
+  }
+
+  async searchHashtags(query: string, limit: number = 10): Promise<Array<{ hashtag: string; usageCount: number }>> {
+    const { data, error } = await supabase.rpc('search_hashtags', {
+      p_query: query,
+      p_limit: limit,
+    });
+    if (error) {
+      console.error('searchHashtags failed:', error);
+      return [];
+    }
+    return (data || []).map((r: any) => ({ hashtag: r.hashtag, usageCount: r.usage_count || 0 }));
   }
 
   async getMyVideos(): Promise<any[]> {
