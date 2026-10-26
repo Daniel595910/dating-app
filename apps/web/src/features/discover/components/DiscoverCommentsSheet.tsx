@@ -304,9 +304,9 @@ export const DiscoverCommentsSheet: React.FC<DiscoverCommentsSheetProps> = ({
           <div
             style={{
               width: 36, height: 36, borderRadius: '50%', flexShrink: 0,
-              backgroundColor: '#f3f4f6', overflow: 'hidden',
+              backgroundColor: 'var(--color-border)', overflow: 'hidden',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontWeight: 700, color: '#6b7280', fontSize: 14,
+              fontWeight: 700, color: 'var(--color-text-secondary)', fontSize: 14,
             }}
           >
             {comment.authorAvatarUrl
@@ -315,8 +315,8 @@ export const DiscoverCommentsSheet: React.FC<DiscoverCommentsSheetProps> = ({
           </div>
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2 }}>
-              <span style={{ fontWeight: 600, fontSize: 13, color: '#111827' }}>{comment.authorName}</span>
-              <span style={{ fontSize: 11, color: '#9ca3af' }}>{timeAgo(comment.createdAt)}</span>
+              <span style={{ fontWeight: 600, fontSize: 13, color: 'var(--color-text)' }}>{comment.authorName}</span>
+              <span style={{ fontSize: 11, color: 'var(--color-text-muted)' }}>{timeAgo(comment.createdAt)}</span>
             </div>
             {comment.replyingToName && (
               <div style={{ fontSize: 11, color: '#ef4444', marginBottom: 2 }}>Replying to @{comment.replyingToName}</div>
@@ -324,7 +324,7 @@ export const DiscoverCommentsSheet: React.FC<DiscoverCommentsSheetProps> = ({
             {(comment.contentType === 'sticker' || comment.contentType === 'gif') && comment.mediaUrl ? (
               <img src={comment.mediaUrl} alt={comment.content} style={{ width: 120, height: 120, objectFit: 'contain' }} />
             ) : (
-              <p style={{ margin: 0, fontSize: 14, color: '#111827', lineHeight: 1.4, wordBreak: 'break-word' }}>{comment.content}</p>
+              <p style={{ margin: 0, fontSize: 14, color: 'var(--color-text)', lineHeight: 1.4, wordBreak: 'break-word' }}>{comment.content}</p>
             )}
             <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 6 }}>
               <button
@@ -340,14 +340,14 @@ export const DiscoverCommentsSheet: React.FC<DiscoverCommentsSheetProps> = ({
               </button>
               <button
                 onClick={() => { setReplyingTo(comment); inputRef.current?.focus(); }}
-                style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, color: '#9ca3af', fontSize: 12, fontWeight: 600 }}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, color: 'var(--color-text-muted)', fontSize: 12, fontWeight: 600 }}
               >
                 Reply
               </button>
               {comment.replyCount > 0 && (
                 <button
                   onClick={() => toggleThread(comment.id)}
-                  style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, color: '#6b7280', fontSize: 12, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 2 }}
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, color: 'var(--color-text-secondary)', fontSize: 12, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 2 }}
                 >
                   {isExpanded ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
                   {isExpanded ? 'Hide' : comment.replyCount + ' ' + (comment.replyCount === 1 ? 'reply' : 'replies')}
@@ -356,7 +356,7 @@ export const DiscoverCommentsSheet: React.FC<DiscoverCommentsSheetProps> = ({
               {currentUserId === comment.authorId && (
                 <button
                   onClick={() => setConfirmDelete(comment.id)}
-                  style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, color: '#9ca3af', display: 'flex' }}
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, color: 'var(--color-text-muted)', display: 'flex' }}
                   aria-label="Delete comment"
                 >
                   <Trash2 size={12} />
@@ -366,15 +366,15 @@ export const DiscoverCommentsSheet: React.FC<DiscoverCommentsSheetProps> = ({
           </div>
         </div>
         {isExpanded && visibleReplies.length > 0 && (
-          <div style={{ marginLeft: 46, display: 'flex', flexDirection: 'column', gap: 10, borderLeft: '2px solid #f3f4f6', paddingLeft: 12 }}>
+          <div style={{ marginLeft: 46, display: 'flex', flexDirection: 'column', gap: 10, borderLeft: '2px solid var(--color-border)', paddingLeft: 12 }}>
             {visibleReplies.map((r) => (
               <div key={r.id} style={{ display: 'flex', gap: 10 }}>
                 <div
                   style={{
                     width: 28, height: 28, borderRadius: '50%', flexShrink: 0,
-                    backgroundColor: '#f3f4f6', overflow: 'hidden',
+                    backgroundColor: 'var(--color-border)', overflow: 'hidden',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    fontWeight: 700, color: '#6b7280', fontSize: 12,
+                    fontWeight: 700, color: 'var(--color-text-secondary)', fontSize: 12,
                   }}
                 >
                   {r.authorAvatarUrl
@@ -383,14 +383,14 @@ export const DiscoverCommentsSheet: React.FC<DiscoverCommentsSheetProps> = ({
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2 }}>
-                    <span style={{ fontWeight: 600, fontSize: 12, color: '#111827' }}>{r.authorName}</span>
-                    <span style={{ fontSize: 10, color: '#9ca3af' }}>{timeAgo(r.createdAt)}</span>
+                    <span style={{ fontWeight: 600, fontSize: 12, color: 'var(--color-text)' }}>{r.authorName}</span>
+                    <span style={{ fontSize: 10, color: 'var(--color-text-muted)' }}>{timeAgo(r.createdAt)}</span>
                   </div>
                   {r.replyingToName && <div style={{ fontSize: 10, color: '#ef4444', marginBottom: 2 }}>Replying to @{r.replyingToName}</div>}
                   {(r.contentType === 'sticker' || r.contentType === 'gif') && r.mediaUrl ? (
                     <img src={r.mediaUrl} alt={r.content} style={{ width: 80, height: 80, objectFit: 'contain' }} />
                   ) : (
-                    <p style={{ margin: 0, fontSize: 13, color: '#111827', lineHeight: 1.4, wordBreak: 'break-word' }}>{r.content}</p>
+                    <p style={{ margin: 0, fontSize: 13, color: 'var(--color-text)', lineHeight: 1.4, wordBreak: 'break-word' }}>{r.content}</p>
                   )}
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 4 }}>
                     <button
@@ -406,14 +406,14 @@ export const DiscoverCommentsSheet: React.FC<DiscoverCommentsSheetProps> = ({
                     </button>
                     <button
                       onClick={() => { setReplyingTo(comment); inputRef.current?.focus(); }}
-                      style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, color: '#9ca3af', fontSize: 11, fontWeight: 600 }}
+                      style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, color: 'var(--color-text-muted)', fontSize: 11, fontWeight: 600 }}
                     >
                       Reply
                     </button>
                     {currentUserId === r.authorId && (
                       <button
                         onClick={() => setConfirmDelete(r.id)}
-                        style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, color: '#9ca3af', display: 'flex' }}
+                        style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, color: 'var(--color-text-muted)', display: 'flex' }}
                       >
                         <Trash2 size={11} />
                       </button>
@@ -425,7 +425,7 @@ export const DiscoverCommentsSheet: React.FC<DiscoverCommentsSheetProps> = ({
             {hasMore && (
               <button
                 onClick={() => setReplyPages((prev) => { const m = new Map(prev); m.set(comment.id, page + 1); return m; })}
-                style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px 0', color: '#6b7280', fontSize: 12, fontWeight: 600, textAlign: 'left' }}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px 0', color: 'var(--color-text-secondary)', fontSize: 12, fontWeight: 600, textAlign: 'left' }}
               >
                 View {allReplies.length - page * REPLIES_PER_PAGE} more {allReplies.length - page * REPLIES_PER_PAGE === 1 ? 'reply' : 'replies'}
               </button>
@@ -448,18 +448,18 @@ export const DiscoverCommentsSheet: React.FC<DiscoverCommentsSheetProps> = ({
         onClick={(e) => e.stopPropagation()}
         style={{
           width: '100%', maxWidth: 480, height: '80dvh',
-          backgroundColor: '#ffffff', borderRadius: '24px 24px 0 0',
+          backgroundColor: 'var(--color-surface)', borderRadius: '24px 24px 0 0',
           display: 'flex', flexDirection: 'column', overflow: 'hidden',
           boxShadow: '0 -8px 32px rgba(0,0,0,0.2)',
         }}
       >
-        <div style={{ position: 'relative', padding: 16, borderBottom: '1px solid #e5e7eb', flexShrink: 0 }}>
+        <div style={{ position: 'relative', padding: 16, borderBottom: '1px solid var(--color-border-strong)', flexShrink: 0 }}>
           <div style={{ width: 40, height: 4, backgroundColor: '#e5e7eb', borderRadius: 9999, position: 'absolute', left: '50%', transform: 'translateX(-50%)', top: 6 }} />
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 6 }}>
-            <h2 style={{ fontSize: 16, fontWeight: 700, margin: 0, color: '#111827' }}>
+            <h2 style={{ fontSize: 16, fontWeight: 700, margin: 0, color: 'var(--color-text)' }}>
               Comments ({totalCount(comments)})
             </h2>
-            <button onClick={onClose} aria-label="Close" style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#6b7280', padding: 4 }}>
+            <button onClick={onClose} aria-label="Close" style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-text-secondary)', padding: 4 }}>
               <X size={20} />
             </button>
           </div>
@@ -467,13 +467,13 @@ export const DiscoverCommentsSheet: React.FC<DiscoverCommentsSheetProps> = ({
 
         <div style={{ flex: 1, overflowY: 'auto', padding: 16 }}>
           {loading ? (
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: '#6b7280' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: 'var(--color-text-secondary)' }}>
               <Loader size={24} style={{ animation: 'spin 1s linear infinite' }} />
             </div>
           ) : comments.length === 0 ? (
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', gap: 8, textAlign: 'center', color: '#6b7280' }}>
-              <MessageCircle size={48} style={{ color: '#d1d5db' }} />
-              <p style={{ fontSize: 14, fontWeight: 600, margin: 0, color: '#111827' }}>No comments yet</p>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', gap: 8, textAlign: 'center', color: 'var(--color-text-secondary)' }}>
+              <MessageCircle size={48} style={{ color: 'var(--color-text-disabled)' }} />
+              <p style={{ fontSize: 14, fontWeight: 600, margin: 0, color: 'var(--color-text)' }}>No comments yet</p>
               <p style={{ fontSize: 13, margin: 0 }}>Be the first to comment!</p>
             </div>
           ) : (
@@ -483,20 +483,20 @@ export const DiscoverCommentsSheet: React.FC<DiscoverCommentsSheetProps> = ({
           )}
         </div>
 
-        {error && <div style={{ padding: '0 16px 8px', color: '#b91c1c', fontSize: 12 }}>{error}</div>}
+        {error && <div style={{ padding: '0 16px 8px', color: 'var(--color-danger)', fontSize: 12 }}>{error}</div>}
 
         {replyingTo && (
-          <div style={{ padding: '6px 16px', backgroundColor: '#fef2f2', color: '#b91c1c', fontSize: 12, display: 'flex', alignItems: 'center', gap: 6, borderTop: '1px solid #fee2e2' }}>
+          <div style={{ padding: '6px 16px', backgroundColor: 'var(--color-primary-soft)', color: 'var(--color-danger)', fontSize: 12, display: 'flex', alignItems: 'center', gap: 6, borderTop: '1px solid #fee2e2' }}>
             <CornerDownRight size={12} />
             <span style={{ flex: 1 }}>Replying to <strong>@{replyingTo.authorName}</strong></span>
-            <button onClick={() => setReplyingTo(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#b91c1c', display: 'flex', padding: 0 }}>
+            <button onClick={() => setReplyingTo(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-danger)', display: 'flex', padding: 0 }}>
               <X size={14} />
             </button>
           </div>
         )}
 
         {showEmoji && (
-          <div style={{ padding: '8px 16px', borderTop: '1px solid #e5e7eb', display: 'flex', flexWrap: 'wrap', gap: 6, maxHeight: 120, overflowY: 'auto' }}>
+          <div style={{ padding: '8px 16px', borderTop: '1px solid var(--color-border-strong)', display: 'flex', flexWrap: 'wrap', gap: 6, maxHeight: 120, overflowY: 'auto' }}>
             {EMOJIS.map((em) => (
               <button
                 key={em}
@@ -510,7 +510,7 @@ export const DiscoverCommentsSheet: React.FC<DiscoverCommentsSheetProps> = ({
         )}
 
         {showStickers && (
-          <div style={{ borderTop: '1px solid #e5e7eb', padding: '8px 16px' }}>
+          <div style={{ borderTop: '1px solid var(--color-border-strong)', padding: '8px 16px' }}>
             <div style={{ display: 'flex', gap: 6, marginBottom: 8 }}>
               <button
                 onClick={() => setStickerTab('stickers')}
@@ -528,7 +528,7 @@ export const DiscoverCommentsSheet: React.FC<DiscoverCommentsSheetProps> = ({
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 6, maxHeight: 160, overflowY: 'auto' }}>
               {stickerTab === 'stickers' ? (
                 stickers.length === 0 ? (
-                  <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: 16, color: '#9ca3af', fontSize: 13 }}>No stickers available</div>
+                  <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: 16, color: 'var(--color-text-muted)', fontSize: 13 }}>No stickers available</div>
                 ) : (
                   stickers.map((st) => (
                     <button
@@ -542,7 +542,7 @@ export const DiscoverCommentsSheet: React.FC<DiscoverCommentsSheetProps> = ({
                 )
               ) : (
                 gifs.length === 0 ? (
-                  <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: 16, color: '#9ca3af', fontSize: 13 }}>No GIFs available</div>
+                  <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: 16, color: 'var(--color-text-muted)', fontSize: 13 }}>No GIFs available</div>
                 ) : (
                   gifs.map((gf) => (
                     <button
@@ -559,7 +559,7 @@ export const DiscoverCommentsSheet: React.FC<DiscoverCommentsSheetProps> = ({
           </div>
         )}
 
-        <div style={{ padding: '8px 16px 16px', borderTop: '1px solid #e5e7eb', flexShrink: 0, display: 'flex', gap: 8, alignItems: 'flex-end' }}>
+        <div style={{ padding: '8px 16px 16px', borderTop: '1px solid var(--color-border-strong)', flexShrink: 0, display: 'flex', gap: 8, alignItems: 'flex-end' }}>
           <button
             onClick={handleEmojiClick}
             aria-label="Emoji"
@@ -594,7 +594,7 @@ export const DiscoverCommentsSheet: React.FC<DiscoverCommentsSheetProps> = ({
             rows={1}
             style={{
               flex: 1, padding: '10px 12px', fontSize: 14,
-              border: '1px solid #e5e7eb', borderRadius: 20, resize: 'none',
+              border: '1px solid var(--color-border-strong)', borderRadius: 20, resize: 'none',
               fontFamily: 'inherit', boxSizing: 'border-box', maxHeight: 80,
             }}
           />
@@ -619,12 +619,12 @@ export const DiscoverCommentsSheet: React.FC<DiscoverCommentsSheetProps> = ({
           onClick={() => setConfirmDelete(null)}
           style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.8)', zIndex: 1003, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}
         >
-          <div onClick={(e) => e.stopPropagation()} style={{ backgroundColor: '#ffffff', borderRadius: 16, padding: 24, maxWidth: 320, width: '100%', textAlign: 'center' }}>
+          <div onClick={(e) => e.stopPropagation()} style={{ backgroundColor: 'var(--color-surface)', borderRadius: 16, padding: 24, maxWidth: 320, width: '100%', textAlign: 'center' }}>
             <Trash2 size={32} style={{ color: '#ef4444', marginBottom: 12 }} />
-            <h3 style={{ fontSize: 16, fontWeight: 700, margin: '0 0 8px', color: '#111827' }}>Delete comment?</h3>
-            <p style={{ fontSize: 13, color: '#6b7280', margin: '0 0 20px' }}>This cannot be undone.</p>
+            <h3 style={{ fontSize: 16, fontWeight: 700, margin: '0 0 8px', color: 'var(--color-text)' }}>Delete comment?</h3>
+            <p style={{ fontSize: 13, color: 'var(--color-text-secondary)', margin: '0 0 20px' }}>This cannot be undone.</p>
             <div style={{ display: 'flex', gap: 8 }}>
-              <button onClick={() => setConfirmDelete(null)} style={{ flex: 1, padding: '10px 16px', backgroundColor: '#f3f4f6', color: '#111827', border: 'none', borderRadius: 8, cursor: 'pointer', fontSize: 14, fontWeight: 600 }}>
+              <button onClick={() => setConfirmDelete(null)} style={{ flex: 1, padding: '10px 16px', backgroundColor: 'var(--color-border)', color: 'var(--color-text)', border: 'none', borderRadius: 8, cursor: 'pointer', fontSize: 14, fontWeight: 600 }}>
                 Cancel
               </button>
               <button onClick={() => handleDelete(confirmDelete)} style={{ flex: 1, padding: '10px 16px', backgroundColor: '#ef4444', color: '#ffffff', border: 'none', borderRadius: 8, cursor: 'pointer', fontSize: 14, fontWeight: 600 }}>
