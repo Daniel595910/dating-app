@@ -140,6 +140,28 @@ export const PostDetailsModal: React.FC<PostDetailsModalProps> = ({
   };
 
   const handleHashtagKey = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (showSuggestions && suggestions.length > 0) {
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        setActiveSuggestion((prev) => Math.min(prev + 1, suggestions.length - 1));
+        return;
+      }
+      if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        setActiveSuggestion((prev) => Math.max(prev - 1, 0));
+        return;
+      }
+      if (e.key === 'Enter' || e.key === 'Tab') {
+        e.preventDefault();
+        addHashtag(suggestions[activeSuggestion].hashtag);
+        setShowSuggestions(false);
+        return;
+      }
+      if (e.key === 'Escape') {
+        setShowSuggestions(false);
+        return;
+      }
+    }
     if (e.key === 'Enter' || e.key === ' ' || e.key === ',') {
       e.preventDefault();
       addHashtag(hashtagInput);
@@ -264,19 +286,69 @@ export const PostDetailsModal: React.FC<PostDetailsModalProps> = ({
                 </span>
               ))}
             </div>
-            <input
-              type="text"
-              value={hashtagInput}
-              onChange={(e) => setHashtagInput(e.target.value)}
-              onKeyDown={handleHashtagKey}
-              onBlur={() => hashtagInput && addHashtag(hashtagInput)}
-              placeholder="Add hashtag + Enter"
-              disabled={uploading || hashtags.length >= MAX_HASHTAGS}
-              style={{
-                width: '100%', padding: 10, fontSize: 14,
-                border: '1px solid #e5e7eb', borderRadius: 8, boxSizing: 'border-box',
-              }}
-            />
+            <div style={{ position: 'relative' }}>
+              <input
+                type="text"
+                value={hashtagInput}
+                onChange={(e) => setHashtagInput(e.target.value)}
+                onKeyDown={handleHashtagKey}
+                onBlur={() => {
+                  setTimeout(() => setShowSuggestions(false), 150);
+                }}
+                placeholder="Add hashtag + Enter"
+                disabled={uploading || hashtags.length >= MAX_HASHTAGS}
+                style={{
+                  width: '100%', padding: 10, fontSize: 14,
+                  border: '1px solid #e5e7eb', borderRadius: 8, boxSizing: 'border-box',
+                }}
+              />
+              {showSuggestions && suggestions.length > 0 && (
+                <div
+                  style={{
+                    position: 'absolute',
+                    top: '100%',
+                    left: 0,
+                    right: 0,
+                    marginTop: 4,
+                    backgroundColor: '#ffffff',
+                    border: '1px solid #e5e7eb',
+                    borderRadius: 8,
+                    boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+                    zIndex: 50,
+                    maxHeight: 200,
+                    overflowY: 'auto',
+                  }}
+                >
+                  {suggestions.map((s, idx) => (
+                    <button
+                      key={s.hashtag}
+                      type="button"
+                      onMouseDown={(e) => {
+                        e.preventDefault();
+                        addHashtag(s.hashtag);
+                        setShowSuggestions(false);
+                      }}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        width: '100%',
+                        padding: '10px 12px',
+                        border: 'none',
+                        backgroundColor: idx === activeSuggestion ? '#fef2f2' : '#ffffff',
+                        cursor: 'pointer',
+                        textAlign: 'left',
+                        fontSize: 14,
+                        color: '#111827',
+                      }}
+                    >
+                      <span>#{s.hashtag}</span>
+                      <span style={{ fontSize: 12, color: '#9ca3af' }}>{s.usageCount}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Visibility */}
