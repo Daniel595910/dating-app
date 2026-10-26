@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { X, Send, Trash2, Heart, Loader, MessageCircle, CornerDownRight, ChevronDown, ChevronUp, Smile } from 'lucide-react';
+import { X, Send, Trash2, Heart, Loader, MessageCircle, CornerDownRight, ChevronDown, ChevronUp, Smile, Sticker } from 'lucide-react';
 import { discoverService } from '../services/discover.service';
 
 interface DiscoverCommentsSheetProps {
@@ -66,6 +66,8 @@ export const DiscoverCommentsSheet: React.FC<DiscoverCommentsSheetProps> = ({
   const [replyPages, setReplyPages] = useState<Map<string, number>>(new Map());
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
   const [showEmoji, setShowEmoji] = useState(false);
+  const [showStickers, setShowStickers] = useState(false);
+  const [stickers, setStickers] = useState<any[]>([]);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
   const totalCount = (nodes: CommentNode[]): number => {
@@ -111,6 +113,19 @@ export const DiscoverCommentsSheet: React.FC<DiscoverCommentsSheetProps> = ({
   }, [open, videoId, loadComments]);
 
   useEffect(() => {
+    (async () => {
+      const { supabase } = await import('@/config/supabase.client');
+      const { data } = await supabase
+        .from('stickers')
+        .select('id, name, image_url, thumbnail_url, is_animated, is_premium')
+        .eq('is_active', true)
+        .order('sort_order', { ascending: true })
+        .limit(50);
+      setStickers(data || []);
+    })();
+  }, []);
+
+  useEffect(() => {
     if (!open || !videoId) return;
     let cancelled = false;
     (async () => {
@@ -130,14 +145,14 @@ export const DiscoverCommentsSheet: React.FC<DiscoverCommentsSheetProps> = ({
 
   if (!open || !videoId) return null;
 
-  const handleSend = async () => {
-    const text = input.trim();
+  const handleSend = async (contentType: string = 'text', mediaUrl: string | null = null, overrideContent: string | null = null) => {
+    const text = overrideContent !== null ? overrideContent : input.trim();
     if (!text || sending) return;
     setSending(true);
     setError(null);
     try {
       const parentId = replyingTo?.id || null;
-      const result = await discoverService.addVideoComment(videoId, text, parentId);
+      const result = await discoverService.addVideoComment(videoId, text, parentId, contentType, mediaUrl);
       if (!result) {
         setError('Failed to post comment');
         return;
@@ -152,6 +167,7 @@ export const DiscoverCommentsSheet: React.FC<DiscoverCommentsSheetProps> = ({
       setInput('');
       setReplyingTo(null);
       setShowEmoji(false);
+      setShowStickers(false);
       await loadComments(videoId);
       onCommentAdded?.();
       await refreshCount(videoId);
@@ -250,7 +266,11 @@ export const DiscoverCommentsSheet: React.FC<DiscoverCommentsSheetProps> = ({
             {comment.replyingToName && (
               <div style={{ fontSize: 11, color: '#ef4444', marginBottom: 2 }}>Replying to @{comment.replyingToName}</div>
             )}
-            <p style={{ margin: 0, fontSize: 14, color: '#111827', lineHeight: 1.4, wordBreak: 'break-word' }}>{comment.content}</p>
+            {comment.contentType === 'sticker' && comment.mediaUrl ? (
+              <img src={comment.mediaUrl} alt={comment.content} style={{ width: 120, height: 120, objectFit: 'contain' }} />
+            ) : (
+              <p style={{ margin: 0, fontSize: 14, color: '#111827', lineHeight: 1.4, wordBreak: 'break-word' }}>{comment.content}</p>
+            )}
             <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 6 }}>
               <button
                 onClick={() => handleReact(comment.id)}
@@ -427,9 +447,27 @@ export const DiscoverCommentsSheet: React.FC<DiscoverCommentsSheetProps> = ({
           </div>
         )}
 
+        {showStickers && (
+          <div style={{ padding: '8px 16px', borderTop: '1px solid #e5e7eb', display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 6, maxHeight: 160, overflowY: 'auto' }}>
+            {stickers.length === 0 ? (
+              <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: 16, color: '#9ca3af', fontSize: 13 }}>No stickers available</div>
+            ) : (
+              stickers.map((st) => (
+                <button
+                  key={st.id}
+                  onClick={() => handleSend('sticker', st.image_url, st.name || 'Sticker')}
+                  style={{ background: '#f9fafb', border: 'none', borderRadius: 8, cursor: 'pointer', padding: 4, aspectRatio: '1' }}
+                >
+                  <img src={st.thumbnail_url || st.image_url} alt={st.name || 'Sticker'} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+                </button>
+              ))
+            )}
+          </div>
+        )}
+
         <div style={{ padding: '8px 16px 16px', borderTop: '1px solid #e5e7eb', flexShrink: 0, display: 'flex', gap: 8, alignItems: 'flex-end' }}>
           <button
-            onClick={() => setShowEmoji((v) => !v)}
+            onClick={() => { setShowEmoji((v) => !v); setShowStickers(false); }}
             aria-label="Toggle emoji picker"
             style={{
               width: 40, height: 40, borderRadius: '50%',
@@ -439,6 +477,18 @@ export const DiscoverCommentsSheet: React.FC<DiscoverCommentsSheetProps> = ({
             }}
           >
             <Smile size={18} />
+          </button>
+          <button
+            onClick={() => { setShowStickers((v) => !v); setShowEmoji(false); }}
+            aria-label="Toggle sticker picker"
+            style={{
+              width: 40, height: 40, borderRadius: '50%',
+              backgroundColor: showStickers ? '#fef2f2' : '#f3f4f6',
+              color: showStickers ? '#ef4444' : '#6b7280',
+              border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+            }}
+          >
+            <Sticker size={18} />
           </button>
           <textarea
             ref={inputRef}

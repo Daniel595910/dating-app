@@ -243,7 +243,7 @@ class DiscoverService {
     return roots;
   }
 
-  async addVideoComment(videoId: string, content: string, parentId: string | null = null): Promise<any | null> {
+  async addVideoComment(videoId: string, content: string, parentId: string | null = null, contentType: string = 'text', mediaUrl: string | null = null): Promise<any | null> {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return null;
     let rootId: string | null = null;
@@ -263,7 +263,8 @@ class DiscoverService {
         parent_id: parentId,
         root_id: rootId,
         content: content.trim(),
-        content_type: 'text',
+        content_type: contentType,
+        media_url: mediaUrl,
         status: 'published',
       })
       .select()
