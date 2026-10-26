@@ -258,8 +258,8 @@ export const PostDetailsModal: React.FC<PostDetailsModalProps> = ({
           </div>
 
           {/* Caption */}
-          <div style={{ padding: 16, borderBottom: '1px solid var(--color-border)' }}>
-            <label style={{ fontSize: 13, fontWeight: 600, color: 'var(--color-text-secondary)', display: 'block', marginBottom: 8 }}>
+          <div style={{ padding: 20, borderBottom: '1px solid var(--color-border)' }}>
+            <label style={{ fontSize: 13, fontWeight: 600, color: 'var(--color-text-secondary)', display: 'block', marginBottom: 10 }}>
               Caption
             </label>
             <textarea
@@ -269,8 +269,8 @@ export const PostDetailsModal: React.FC<PostDetailsModalProps> = ({
               disabled={uploading}
               rows={3}
               style={{
-                width: '100%', padding: 10, fontSize: 14,
-                border: '1px solid var(--color-border-strong)', borderRadius: 8, resize: 'vertical',
+                width: '100%', padding: 12, fontSize: 15,
+                border: '1px solid var(--color-border-strong)', borderRadius: 12, resize: 'vertical',
                 fontFamily: 'inherit', boxSizing: 'border-box',
               }}
             />
@@ -280,8 +280,8 @@ export const PostDetailsModal: React.FC<PostDetailsModalProps> = ({
           </div>
 
           {/* Hashtags */}
-          <div style={{ padding: 16, borderBottom: '1px solid var(--color-border)' }}>
-            <label style={{ fontSize: 13, fontWeight: 600, color: 'var(--color-text-secondary)', display: 'block', marginBottom: 8 }}>
+          <div style={{ padding: 20, borderBottom: '1px solid var(--color-border)' }}>
+            <label style={{ fontSize: 13, fontWeight: 600, color: 'var(--color-text-secondary)', display: 'block', marginBottom: 10 }}>
               Hashtags ({hashtags.length}/{MAX_HASHTAGS})
             </label>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 8 }}>
@@ -317,8 +317,8 @@ export const PostDetailsModal: React.FC<PostDetailsModalProps> = ({
                 placeholder="Add hashtag + Enter"
                 disabled={uploading || hashtags.length >= MAX_HASHTAGS}
                 style={{
-                  width: '100%', padding: 10, fontSize: 14,
-                  border: '1px solid var(--color-border-strong)', borderRadius: 8, boxSizing: 'border-box',
+                  width: '100%', padding: 12, fontSize: 15,
+                  border: '1px solid var(--color-border-strong)', borderRadius: 12, boxSizing: 'border-box',
                 }}
               />
               {showSuggestions && suggestions.length > 0 && (
@@ -329,9 +329,9 @@ export const PostDetailsModal: React.FC<PostDetailsModalProps> = ({
                     left: 0,
                     right: 0,
                     marginTop: 4,
-                    backgroundColor: '#ffffff',
+                    backgroundColor: 'var(--color-surface)',
                     border: '1px solid var(--color-border-strong)',
-                    borderRadius: 8,
+                    borderRadius: 12,
                     boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
                     zIndex: 50,
                     maxHeight: 200,
@@ -371,8 +371,8 @@ export const PostDetailsModal: React.FC<PostDetailsModalProps> = ({
           </div>
 
           {/* Visibility */}
-          <div style={{ padding: 16, borderBottom: '1px solid var(--color-border)' }}>
-            <label style={{ fontSize: 13, fontWeight: 600, color: 'var(--color-text-secondary)', display: 'block', marginBottom: 8 }}>
+          <div style={{ padding: 20, borderBottom: '1px solid var(--color-border)' }}>
+            <label style={{ fontSize: 13, fontWeight: 600, color: 'var(--color-text-secondary)', display: 'block', marginBottom: 10 }}>
               Who can see
             </label>
             <div style={{ display: 'flex', gap: 8 }}>
@@ -405,8 +405,8 @@ export const PostDetailsModal: React.FC<PostDetailsModalProps> = ({
           </div>
 
           {/* Location */}
-          <div style={{ padding: 16, borderBottom: '1px solid var(--color-border)' }}>
-            <label style={{ fontSize: 13, fontWeight: 600, color: 'var(--color-text-secondary)', display: 'block', marginBottom: 8 }}>
+          <div style={{ padding: 20, borderBottom: '1px solid var(--color-border)' }}>
+            <label style={{ fontSize: 13, fontWeight: 600, color: 'var(--color-text-secondary)', display: 'block', marginBottom: 10 }}>
               Location (optional)
             </label>
             <select
@@ -414,9 +414,9 @@ export const PostDetailsModal: React.FC<PostDetailsModalProps> = ({
               onChange={(e) => setLocationText(e.target.value)}
               disabled={uploading}
               style={{
-                width: '100%', padding: 10, fontSize: 14,
-                border: '1px solid var(--color-border-strong)', borderRadius: 8, boxSizing: 'border-box',
-                backgroundColor: '#ffffff',
+                width: '100%', padding: 12, fontSize: 15,
+                border: '1px solid var(--color-border-strong)', borderRadius: 12, boxSizing: 'border-box',
+                backgroundColor: 'var(--color-surface)',
               }}
             >
               <option value="">Select country (optional)</option>
@@ -427,8 +427,8 @@ export const PostDetailsModal: React.FC<PostDetailsModalProps> = ({
           </div>
 
           {/* Advanced */}
-          <div style={{ padding: 16 }}>
-            <label style={{ fontSize: 13, fontWeight: 600, color: 'var(--color-text-secondary)', display: 'block', marginBottom: 8 }}>
+          <div style={{ padding: 20 }}>
+            <label style={{ fontSize: 13, fontWeight: 600, color: 'var(--color-text-secondary)', display: 'block', marginBottom: 10 }}>
               Advanced settings
             </label>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12, fontSize: 14, color: 'var(--color-text)' }}>
