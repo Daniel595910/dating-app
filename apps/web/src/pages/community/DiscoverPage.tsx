@@ -670,11 +670,9 @@ export const DiscoverPage: React.FC = () => {
             >
               <MessageCircle size={22} />
             </button>
-            {current.commentCount > 0 && (
-              <div className={styles.likeCount}>
-                {formatCount(current.commentCount)}
-              </div>
-            )}
+            <div className={styles.likeCount}>
+              {formatCount(current.commentCount || 0)}
+            </div>
             <button
               className={styles.rightActionButton}
               onClick={(e) => {
