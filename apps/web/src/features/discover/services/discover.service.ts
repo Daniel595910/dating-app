@@ -71,6 +71,7 @@ class DiscoverService {
       p_location_text: details ? details.locationText : null,
       p_allow_comments: details ? details.allowComments : true,
       p_allow_duet: details ? details.allowDuet : true,
+        p_visibility: details ? details.visibility : 'public',
     });
 
     if (error) {
