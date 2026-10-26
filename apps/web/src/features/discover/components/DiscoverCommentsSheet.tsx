@@ -514,13 +514,13 @@ export const DiscoverCommentsSheet: React.FC<DiscoverCommentsSheetProps> = ({
             <div style={{ display: 'flex', gap: 6, marginBottom: 8 }}>
               <button
                 onClick={() => setStickerTab('stickers')}
-                style={{ padding: '6px 14px', borderRadius: 9999, border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 600, backgroundColor: stickerTab === 'stickers' ? '#fef2f2' : '#f3f4f6', color: stickerTab === 'stickers' ? '#ef4444' : '#6b7280' }}
+                style={{ padding: '6px 14px', borderRadius: 9999, border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 600, backgroundColor: stickerTab === 'stickers' ? 'var(--color-primary-soft)' : 'var(--color-surface-alt)', color: stickerTab === 'stickers' ? 'var(--color-primary)' : 'var(--color-text-secondary)' }}
               >
                 Stickers
               </button>
               <button
                 onClick={() => setStickerTab('gifs')}
-                style={{ padding: '6px 14px', borderRadius: 9999, border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 600, backgroundColor: stickerTab === 'gifs' ? '#fef2f2' : '#f3f4f6', color: stickerTab === 'gifs' ? '#ef4444' : '#6b7280' }}
+                style={{ padding: '6px 14px', borderRadius: 9999, border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 600, backgroundColor: stickerTab === 'gifs' ? 'var(--color-primary-soft)' : 'var(--color-surface-alt)', color: stickerTab === 'gifs' ? 'var(--color-primary)' : 'var(--color-text-secondary)' }}
               >
                 GIFs
               </button>
@@ -534,7 +534,7 @@ export const DiscoverCommentsSheet: React.FC<DiscoverCommentsSheetProps> = ({
                     <button
                       key={st.id}
                       onClick={() => handleSend('sticker', st.image_url, st.name || 'Sticker')}
-                      style={{ background: '#f9fafb', border: 'none', borderRadius: 8, cursor: 'pointer', padding: 4, aspectRatio: '1' }}
+                      style={{ background: 'var(--color-surface-alt)', border: 'none', borderRadius: 10, cursor: 'pointer', padding: 6, aspectRatio: '1' }}
                     >
                       <img src={st.thumbnail_url || st.image_url} alt={st.name || 'Sticker'} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
                     </button>
@@ -548,7 +548,7 @@ export const DiscoverCommentsSheet: React.FC<DiscoverCommentsSheetProps> = ({
                     <button
                       key={gf.id}
                       onClick={() => handleSend('gif', gf.gif_url, gf.title || 'GIF')}
-                      style={{ background: '#f9fafb', border: 'none', borderRadius: 8, cursor: 'pointer', padding: 4, aspectRatio: '1' }}
+                      style={{ background: 'var(--color-surface-alt)', border: 'none', borderRadius: 10, cursor: 'pointer', padding: 6, aspectRatio: '1' }}
                     >
                       <img src={gf.preview_url || gf.gif_url} alt={gf.title || 'GIF'} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                     </button>
@@ -564,9 +564,9 @@ export const DiscoverCommentsSheet: React.FC<DiscoverCommentsSheetProps> = ({
             onClick={handleEmojiClick}
             aria-label="Emoji"
             style={{
-              width: 40, height: 40, borderRadius: '50%',
-              backgroundColor: showEmoji ? '#fef2f2' : '#f3f4f6',
-              color: showEmoji ? '#ef4444' : '#6b7280',
+              width: 44, height: 44, borderRadius: '50%',
+              backgroundColor: showEmoji ? 'var(--color-primary-soft)' : 'var(--color-surface-alt)',
+              color: showEmoji ? 'var(--color-primary)' : 'var(--color-text-secondary)',
               border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
             }}
           >
@@ -576,9 +576,9 @@ export const DiscoverCommentsSheet: React.FC<DiscoverCommentsSheetProps> = ({
             onClick={() => { setShowStickers((v) => !v); setShowEmoji(false); }}
             aria-label="Toggle sticker picker"
             style={{
-              width: 40, height: 40, borderRadius: '50%',
-              backgroundColor: showStickers ? '#fef2f2' : '#f3f4f6',
-              color: showStickers ? '#ef4444' : '#6b7280',
+              width: 44, height: 44, borderRadius: '50%',
+              backgroundColor: showStickers ? 'var(--color-primary-soft)' : 'var(--color-surface-alt)',
+              color: showStickers ? 'var(--color-primary)' : 'var(--color-text-secondary)',
               border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
             }}
           >
@@ -593,8 +593,8 @@ export const DiscoverCommentsSheet: React.FC<DiscoverCommentsSheetProps> = ({
             disabled={sending}
             rows={1}
             style={{
-              flex: 1, padding: '10px 12px', fontSize: 14,
-              border: '1px solid var(--color-border-strong)', borderRadius: 20, resize: 'none',
+              flex: 1, padding: '12px 14px', fontSize: 15,
+              border: '1px solid var(--color-border-strong)', borderRadius: 22, resize: 'none',
               fontFamily: 'inherit', boxSizing: 'border-box', maxHeight: 80,
             }}
           />
@@ -603,8 +603,8 @@ export const DiscoverCommentsSheet: React.FC<DiscoverCommentsSheetProps> = ({
             disabled={!input.trim() || sending}
             aria-label="Send comment"
             style={{
-              width: 40, height: 40, borderRadius: '50%',
-              backgroundColor: input.trim() && !sending ? '#ef4444' : '#e5e7eb',
+              width: 44, height: 44, borderRadius: '50%',
+              backgroundColor: input.trim() && !sending ? 'var(--color-primary)' : 'var(--color-border)',
               color: '#ffffff', border: 'none', cursor: input.trim() && !sending ? 'pointer' : 'not-allowed',
               display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
             }}
