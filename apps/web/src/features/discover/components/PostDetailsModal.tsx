@@ -248,7 +248,7 @@ export const PostDetailsModal: React.FC<PostDetailsModalProps> = ({
                 position: 'absolute', top: 10, right: 10,
                 background: 'rgba(0,0,0,0.6)', border: 'none',
                 borderRadius: '50%', width: 40, height: 40,
-                cursor: 'pointer', color: '#fff',
+                cursor: 'pointer', color: 'var(--color-text)',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 zIndex: 5,
               }}
