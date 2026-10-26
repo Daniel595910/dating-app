@@ -456,7 +456,7 @@ export const DiscoverPage: React.FC = () => {
 
 
   return (
-    <div ref={containerRef} className={styles.discoverPage} onTouchStart={(e) => { if (!commentsOpen) handleTouchStart(e); }} onTouchMove={(e) => { if (!commentsOpen) handleTouchMove(e); }} onTouchEnd={(e) => { if (!commentsOpen) handleTouchEnd(e); }} style={{ touchAction: 'none', userSelect: 'none', WebkitUserSelect: 'none', overscrollBehavior: 'none' }}>
+    <div ref={containerRef} className={styles.discoverPage} onTouchStart={(e) => { if (!commentsOpen && !showPublishModal) handleTouchStart(e); }} onTouchMove={(e) => { if (!commentsOpen && !showPublishModal) handleTouchMove(e); }} onTouchEnd={(e) => { if (!commentsOpen && !showPublishModal) handleTouchEnd(e); }} style={{ touchAction: 'none', userSelect: 'none', WebkitUserSelect: 'none', overscrollBehavior: 'none' }}>
       <header className={styles.header}>
         <button className={styles.backButton} onClick={() => navigate(-1)} aria-label="Back">
           <ArrowLeft size={20} />

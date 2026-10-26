@@ -199,6 +199,9 @@ export const PostDetailsModal: React.FC<PostDetailsModalProps> = ({
         zIndex: 1001, display: 'flex', flexDirection: 'column',
       }}
       onClick={() => !uploading && onClose()}
+      onTouchStart={(e) => e.stopPropagation()}
+      onTouchMove={(e) => e.stopPropagation()}
+      onTouchEnd={(e) => e.stopPropagation()}
     >
       <div
         onClick={(e) => e.stopPropagation()}
