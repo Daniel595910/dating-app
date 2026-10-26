@@ -496,7 +496,7 @@ export const DiscoverPage: React.FC = () => {
       <div className={styles.categoryTabs}>
         <button className={`${styles.categoryTab} ${activeCategory === 'new' ? styles.categoryTabActive : ''}`} onClick={() => setActiveCategory('new')}>New</button>
         <button className={`${styles.categoryTab} ${activeCategory === 'popular' ? styles.categoryTabActive : ''}`} onClick={() => setActiveCategory('popular')}>Popular</button>
-        <button className={`${styles.categoryTab} ${activeCategory === 'nearby' ? styles.categoryTabActive : ''}`} onClick={() => setActiveCategory('nearby')}>Nearby</button>
+
       </div>
 
       {/* Double-tap Like Animation */}
