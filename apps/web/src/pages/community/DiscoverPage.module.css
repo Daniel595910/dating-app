@@ -104,7 +104,7 @@
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  background: rgba(0, 0, 0, 0.55);
+  background: rgba(0, 0, 0, 0.28);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
   border: none;
@@ -209,7 +209,7 @@
 
 .rightActionButton:hover {
   transform: scale(1.08);
-  background: rgba(0, 0, 0, 0.55);
+  background: rgba(0, 0, 0, 0.28);
 }
 
 .rightActionButton:active {
@@ -317,7 +317,7 @@
   z-index: 15;
   display: flex;
   gap: 4px;
-  background: rgba(0, 0, 0, 0.55);
+  background: rgba(0, 0, 0, 0.28);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
   border-radius: 9999px;
@@ -335,6 +335,7 @@
   color: rgba(255, 255, 255, 0.72);
   transition: background 0.15s, color 0.15s;
 }
+
 
 .categoryTab:hover {
   color: #ffffff;
