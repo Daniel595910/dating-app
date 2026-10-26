@@ -139,6 +139,90 @@ class DiscoverService {
     return (data || []).map((r: any) => ({ hashtag: r.hashtag, usageCount: r.usage_count || 0 }));
   }
 
+  async fetchVideoComments(videoId: string): Promise<any[]> {
+    const { data, error } = await supabase
+      .from('discover_video_comments')
+      .select('id, video_id, author_id, parent_id, root_id, content, content_type, media_url, status, created_at')
+      .eq('video_id', videoId)
+      .eq('status', 'published')
+      .order('created_at', { ascending: true });
+    if (error) {
+      console.error('fetchVideoComments failed:', error);
+      return [];
+    }
+    const rows = data || [];
+    if (rows.length === 0) return [];
+    const authorIds = Array.from(new Set(rows.map((r: any) => r.author_id)));
+    const { data: profiles } = await supabase
+      .from('profiles')
+      .select('user_id, display_name, avatar_url, is_verified')
+      .in('user_id', authorIds);
+    const profileMap = new Map<string, any>();
+    (profiles || []).forEach((p: any) => profileMap.set(p.user_id, p));
+    return rows.map((r: any) => {
+      const p = profileMap.get(r.author_id) || {};
+      return {
+        id: r.id,
+        videoId: r.video_id,
+        authorId: r.author_id,
+        parentId: r.parent_id,
+        rootId: r.root_id,
+        content: r.content,
+        contentType: r.content_type,
+        mediaUrl: r.media_url,
+        status: r.status,
+        createdAt: r.created_at,
+        authorName: p.display_name || 'User',
+        authorAvatarUrl: p.avatar_url || null,
+        authorVerified: p.is_verified || false,
+      };
+    });
+  }
+
+  async addVideoComment(videoId: string, content: string, parentId: string | null = null): Promise<any | null> {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return null;
+    let rootId: string | null = null;
+    if (parentId) {
+      const { data: parent } = await supabase
+        .from('discover_video_comments')
+        .select('root_id, id')
+        .eq('id', parentId)
+        .maybeSingle();
+      rootId = parent?.root_id || parent?.id || parentId;
+    }
+    const { data, error } = await supabase
+      .from('discover_video_comments')
+      .insert({
+        video_id: videoId,
+        author_id: user.id,
+        parent_id: parentId,
+        root_id: rootId,
+        content: content.trim(),
+        content_type: 'text',
+        status: 'published',
+      })
+      .select()
+      .single();
+    if (error) {
+      console.error('addVideoComment failed:', error);
+      return null;
+    }
+    return data;
+  }
+
+  async deleteVideoComment(commentId: string): Promise<boolean> {
+    const { error } = await supabase
+      .from('discover_video_comments')
+      .delete()
+      .eq('id', commentId);
+    if (error) {
+      console.error('deleteVideoComment failed:', error);
+      return false;
+    }
+    return true;
+  }
+
   async getMyVideos(): Promise<any[]> {
     const { data, error } = await supabase.rpc('get_my_discover_videos');
 
