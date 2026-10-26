@@ -629,7 +629,7 @@ export const DiscoverPage: React.FC = () => {
 
           <div 
             ref={progressBarRef}
-            style={{ position: 'absolute', bottom: 65, left: 0, right: 0, padding: '0 16px', zIndex: 20, cursor: 'pointer' }}
+            style={{ position: 'absolute', bottom: 45, left: 0, right: 0, padding: '0 16px', zIndex: 20, cursor: 'pointer' }}
             onMouseDown={handleSeekStart}
             onMouseMove={handleSeekMove}
             onMouseUp={handleSeekEnd}
