@@ -18,6 +18,8 @@ export interface DiscoverCandidate {
   locationText: string | null;
   allowComments: boolean;
   allowDuet: boolean;
+  likeCount: number;
+  userLiked: boolean;
 }
 
 export type Visibility = 'public' | 'friends' | 'private';
@@ -29,6 +31,8 @@ export interface PublishDetails {
   locationText: string | null;
   allowComments: boolean;
   allowDuet: boolean;
+  likeCount: number;
+  userLiked: boolean;
 }
 
 export type SwipeAction = 'like' | 'pass' | 'get_to_know';

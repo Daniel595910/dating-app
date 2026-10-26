@@ -61,6 +61,9 @@ export const DiscoverPage: React.FC = () => {
   const [dailyLimit] = useState(50);
   const [showLikeAnimation, setShowLikeAnimation] = useState(false);
       const [lastTapTime, setLastTapTime] = useState(0);
+  const [likedIds, setLikedIds] = useState<Set<string>>(new Set());
+  const [showHeartPop, setShowHeartPop] = useState(false);
+  const [likeCounts, setLikeCounts] = useState<Record<string, number>>({});
   
   const videoRef = useRef<HTMLVideoElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -111,6 +114,16 @@ export const DiscoverPage: React.FC = () => {
     setLoading(true);
     setError(null);
     const result = await discoverService.getCandidates(10, activeCategory);
+    if (result.length > 0) {
+      const ids = await discoverService.getLikedVideoIds(result.map((c) => c.videoId));
+      setLikedIds(ids);
+      const counts: Record<string, number> = {};
+      result.forEach((c) => { counts[c.videoId] = c.likeCount || 0; });
+      setLikeCounts(counts);
+    } else {
+      setLikedIds(new Set());
+      setLikeCounts({});
+    }
     setCandidates(result);
     setLoading(false);
     if (result.length === 0) {
@@ -143,6 +156,49 @@ export const DiscoverPage: React.FC = () => {
     localStorage.setItem('discoverSwipeCount', newCount.toString());
     
     skipToNextPerson(currentUserId);
+  };
+
+  const handleLikeButtonTap = async (videoId: string, currentlyLiked: boolean) => {
+    // Optimistic heart toggle (visual feedback immediate)
+    setLikedIds((prev) => {
+      const next = new Set(prev);
+      if (currentlyLiked) next.delete(videoId);
+      else next.add(videoId);
+      return next;
+    });
+
+    // Pop animation on like only
+    if (!currentlyLiked) {
+      setShowHeartPop(true);
+      setTimeout(() => setShowHeartPop(false), 700);
+    }
+
+    // Persist to DB
+    const ok = currentlyLiked
+      ? await discoverService.unlikeVideo(videoId)
+      : await discoverService.likeVideo(videoId);
+
+    if (!ok) {
+      // Rollback heart on failure
+      setLikedIds((prev) => {
+        const next = new Set(prev);
+        if (currentlyLiked) next.add(videoId);
+        else next.delete(videoId);
+        return next;
+      });
+      return;
+    }
+
+    // Refetch authoritative like_count from DB (trigger already updated it)
+    const { data } = await supabase
+      .from('discover_videos')
+      .select('like_count')
+      .eq('id', videoId)
+      .maybeSingle();
+
+    if (data) {
+      setLikeCounts((prev) => ({ ...prev, [videoId]: data.like_count || 0 }));
+    }
   };
 
   const handleDoubleTapLike = (e: React.MouseEvent) => {
@@ -375,6 +431,12 @@ export const DiscoverPage: React.FC = () => {
 
 
 
+  const formatCount = (n: number): string => {
+    if (n < 1000) return n.toString();
+    if (n < 1000000) return (n / 1000).toFixed(1).replace(/\.0$/, '') + 'k';
+    return (n / 1000000).toFixed(1).replace(/\.0$/, '') + 'M';
+  };
+
   if (loading) {
     return (
       <div className={styles.loadingContainer}>
@@ -516,6 +578,7 @@ export const DiscoverPage: React.FC = () => {
       {current && (
         <div className={styles.videoCard} style={{ transform: 'translateX(' + swipe.deltaX + 'px) translateY(' + swipe.deltaY + 'px)', transition: swipe.isDragging ? 'none' : 'transform 0.3s ease' }} onClick={handleDoubleTapLike}>
           <video ref={videoRef} src={current.videoUrl} loop playsInline autoPlay preload="auto" onPlay={() => setIsPlaying(true)} onPause={() => setIsPlaying(false)} onTimeUpdate={handleTimeUpdate} className={styles.video} onClick={togglePlay} />
+          {showHeartPop && <Heart size={120} className={styles.heartPop} fill="#f97316" />}
           {!isPlaying && <button className={styles.playOverlay} onClick={togglePlay}><Play size={48} /></button>}
           
 
@@ -573,7 +636,7 @@ export const DiscoverPage: React.FC = () => {
           <div className={styles.rightActions}>
             <button
               className={styles.rightAvatarButton}
-              onClick={() => navigate('/profile/' + current.userId)}
+              onClick={(e) => { e.stopPropagation(); navigate('/profile/' + current.userId); }}
               aria-label={'View ' + current.displayName + ' profile'}
             >
               {current.avatarUrl
@@ -581,13 +644,27 @@ export const DiscoverPage: React.FC = () => {
                 : <span>{current.displayName.charAt(0)}</span>}
             </button>
             <button
-              className={styles.rightActionButton}
-              onClick={() => handleSwipeAction('like')}
-              aria-label="Like"
+              className={styles.rightActionButton + (likedIds.has(current.videoId) ? ' ' + styles.liked : '')}
+              onClick={(e) => {
+                e.stopPropagation();
+                const now = Date.now();
+                if (now - lastTapTime < 300) {
+                  setLastTapTime(0);
+                  handleSwipeAction('like');
+                } else {
+                  setLastTapTime(now);
+                  handleLikeButtonTap(current.videoId, likedIds.has(current.videoId));
+                }
+              }}
+              aria-label={likedIds.has(current.videoId) ? 'Unlike' : 'Like'}
             >
-              <Heart size={22} />
+              <Heart size={22} fill={likedIds.has(current.videoId) ? '#f97316' : 'none'} />
             </button>
+            <div className={styles.likeCount}>
+              {formatCount(likeCounts[current.videoId] || 0)}
+            </div>
             <button
+              onClick={(e) => e.stopPropagation()}
               className={styles.rightActionButton}
               aria-label="Comment"
             >
@@ -595,7 +672,8 @@ export const DiscoverPage: React.FC = () => {
             </button>
             <button
               className={styles.rightActionButton}
-              onClick={() => {
+              onClick={(e) => {
+                e.stopPropagation();
                 const shareUrl = window.location.origin + '/profile/' + current.userId;
                 if (navigator.share) {
                   navigator.share({ title: current.displayName, url: shareUrl }).catch(() => {});

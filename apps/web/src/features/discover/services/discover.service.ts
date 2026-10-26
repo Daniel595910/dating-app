@@ -34,6 +34,8 @@ class DiscoverService {
       locationText: c.location_text || null,
       allowComments: c.allow_comments !== false,
       allowDuet: c.allow_duet !== false,
+      likeCount: c.like_count || 0,
+      userLiked: false,
     }));
   }
 
@@ -76,6 +78,52 @@ class DiscoverService {
     }
 
     return true;
+  }
+
+  async likeVideo(videoId: string): Promise<boolean> {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return false;
+    const { error } = await supabase
+      .from('discover_video_likes')
+      .insert({ video_id: videoId, user_id: user.id });
+    if (error) {
+      // Duplicate insert (already liked) — treat as success
+      if (error.code === '23505') return true;
+      console.error('likeVideo failed:', error);
+      return false;
+    }
+    return true;
+  }
+
+  async unlikeVideo(videoId: string): Promise<boolean> {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return false;
+    const { error } = await supabase
+      .from('discover_video_likes')
+      .delete()
+      .eq('video_id', videoId)
+      .eq('user_id', user.id);
+    if (error) {
+      console.error('unlikeVideo failed:', error);
+      return false;
+    }
+    return true;
+  }
+
+  async getLikedVideoIds(videoIds: string[]): Promise<Set<string>> {
+    if (videoIds.length === 0) return new Set();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return new Set();
+    const { data, error } = await supabase
+      .from('discover_video_likes')
+      .select('video_id')
+      .eq('user_id', user.id)
+      .in('video_id', videoIds);
+    if (error) {
+      console.error('getLikedVideoIds failed:', error);
+      return new Set();
+    }
+    return new Set((data || []).map((r: any) => r.video_id));
   }
 
   async getMyVideos(): Promise<any[]> {
