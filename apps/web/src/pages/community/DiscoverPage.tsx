@@ -65,7 +65,6 @@ export const DiscoverPage: React.FC = () => {
   const [likedIds, setLikedIds] = useState<Set<string>>(new Set());
   const [showHeartPop, setShowHeartPop] = useState(false);
   const [likeCounts, setLikeCounts] = useState<Record<string, number>>({});
-  const [commentCounts, setCommentCounts] = useState<Record<string, number>>({});
   const [commentsOpen, setCommentsOpen] = useState(false);
   const [commentsVideoId, setCommentsVideoId] = useState<string | null>(null);
   
@@ -674,9 +673,11 @@ export const DiscoverPage: React.FC = () => {
             >
               <MessageCircle size={22} />
             </button>
-            <div className={styles.likeCount}>
-              {formatCount(commentCounts[current.videoId] !== undefined ? commentCounts[current.videoId] : (current.commentCount || 0))}
-            </div>
+            {current.commentCount >= 0 && (
+              <div className={styles.likeCount}>
+                {formatCount(current.commentCount)}
+              </div>
+            )}
             <button
               className={styles.rightActionButton}
               onClick={(e) => {
@@ -701,34 +702,6 @@ export const DiscoverPage: React.FC = () => {
         videoId={commentsVideoId}
         currentUserId={user?.id || null}
         onClose={() => { setCommentsOpen(false); setCommentsVideoId(null); }}
-        onCommentAdded={() => {
-          const vId = commentsVideoId;
-          if (!vId) return;
-          supabase
-            .from('discover_videos')
-            .select('comment_count')
-            .eq('id', vId)
-            .maybeSingle()
-            .then(({ data }) => {
-              if (data) {
-                setCommentCounts((prev) => ({ ...prev, [vId]: data.comment_count || 0 }));
-              }
-            });
-        }}
-        onCommentDeleted={() => {
-          const vId = commentsVideoId;
-          if (!vId) return;
-          supabase
-            .from('discover_videos')
-            .select('comment_count')
-            .eq('id', vId)
-            .maybeSingle()
-            .then(({ data }) => {
-              if (data) {
-                setCommentCounts((prev) => ({ ...prev, [vId]: data.comment_count || 0 }));
-              }
-            });
-        }}
       />
 
       {uploadError && (
