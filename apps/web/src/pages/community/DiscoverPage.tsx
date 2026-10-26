@@ -456,7 +456,7 @@ export const DiscoverPage: React.FC = () => {
 
 
   return (
-    <div ref={containerRef} className={styles.discoverPage} onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} onTouchEnd={handleTouchEnd} style={{ touchAction: 'none', userSelect: 'none', WebkitUserSelect: 'none', overscrollBehavior: 'none' }}>
+    <div ref={containerRef} className={styles.discoverPage} onTouchStart={(e) => { if (!commentsOpen) handleTouchStart(e); }} onTouchMove={(e) => { if (!commentsOpen) handleTouchMove(e); }} onTouchEnd={(e) => { if (!commentsOpen) handleTouchEnd(e); }} style={{ touchAction: 'none', userSelect: 'none', WebkitUserSelect: 'none', overscrollBehavior: 'none' }}>
       <header className={styles.header}>
         <button className={styles.backButton} onClick={() => navigate(-1)} aria-label="Back">
           <ArrowLeft size={20} />
@@ -667,16 +667,20 @@ export const DiscoverPage: React.FC = () => {
             <div className={styles.likeCount}>
               {formatCount(likeCounts[current.videoId] || 0)}
             </div>
-            <button
-              onClick={(e) => { e.stopPropagation(); setCommentsVideoId(current.videoId); setCommentsOpen(true); }}
-              className={styles.rightActionButton}
-              aria-label="Comment"
-            >
-              <MessageCircle size={22} />
-            </button>
-            <div className={styles.likeCount}>
-              {formatCount(commentCounts[current.videoId] !== undefined ? commentCounts[current.videoId] : (current.commentCount || 0))}
-            </div>
+            {current.allowComments && (
+              <>
+              <button
+                onClick={(e) => { e.stopPropagation(); setCommentsVideoId(current.videoId); setCommentsOpen(true); }}
+                className={styles.rightActionButton}
+                aria-label="Comment"
+              >
+                <MessageCircle size={22} />
+              </button>
+              <div className={styles.likeCount}>
+                {formatCount(commentCounts[current.videoId] !== undefined ? commentCounts[current.videoId] : (current.commentCount || 0))}
+              </div>
+              </>
+            )}
             <button
               className={styles.rightActionButton}
               onClick={(e) => {

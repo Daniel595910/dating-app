@@ -439,6 +439,9 @@ export const DiscoverCommentsSheet: React.FC<DiscoverCommentsSheetProps> = ({
   return (
     <div
       onClick={onClose}
+      onTouchStart={(e) => e.stopPropagation()}
+      onTouchMove={(e) => e.stopPropagation()}
+      onTouchEnd={(e) => e.stopPropagation()}
       style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.6)', zIndex: 1002, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}
     >
       <div
