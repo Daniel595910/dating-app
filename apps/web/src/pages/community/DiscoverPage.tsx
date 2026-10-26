@@ -69,6 +69,7 @@ export const DiscoverPage: React.FC = () => {
   const [commentCounts, setCommentCounts] = useState<Record<string, number>>({});
   const [commentsOpen, setCommentsOpen] = useState(false);
   const [commentsVideoId, setCommentsVideoId] = useState<string | null>(null);
+  const [showPostedToast, setShowPostedToast] = useState(false);
   
   const videoRef = useRef<HTMLVideoElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -420,7 +421,8 @@ export const DiscoverPage: React.FC = () => {
         setPendingVideo(null);
         setShowPublishModal(false);
         await loadMyVideos();
-        setError('Video submitted for review!');
+        setShowPostedToast(true);
+        setTimeout(() => setShowPostedToast(false), 3500);
       } else {
         setUploadError('Failed to submit video.');
       }
@@ -773,6 +775,29 @@ export const DiscoverPage: React.FC = () => {
             });
         }}
       />
+
+      {showPostedToast && (
+        <div style={{
+          position: 'fixed',
+          bottom: 'calc(1.5rem + env(safe-area-inset-bottom))',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          backgroundColor: 'var(--color-text)',
+          color: 'var(--color-surface)',
+          padding: '12px 20px',
+          borderRadius: 9999,
+          fontSize: 14,
+          fontWeight: 600,
+          zIndex: 2000,
+          boxShadow: '0 8px 24px rgba(0,0,0,0.3)',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 8,
+        }}>
+          <CheckCircle2 size={18} />
+          Video posted for review
+        </div>
+      )}
 
       {uploadError && (
         <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.85)', zIndex: 1001, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }} onClick={() => setUploadError(null)}>
