@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { ArrowLeft, X, Lock, Users, Globe } from 'lucide-react';
 import { PublishDetails, Visibility } from '../types/discover.types';
+import { discoverService } from '../services/discover.service';
 
 interface PostDetailsModalProps {
   open: boolean;
@@ -76,6 +77,10 @@ export const PostDetailsModal: React.FC<PostDetailsModalProps> = ({
   const [allowComments, setAllowComments] = useState(true);
   const [allowDuet, setAllowDuet] = useState(true);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [suggestions, setSuggestions] = useState<Array<{ hashtag: string; usageCount: number }>>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [activeSuggestion, setActiveSuggestion] = useState(0);
+  const suggestionsTimeoutRef = useRef<any>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
 
   useEffect(() => {
@@ -91,10 +96,35 @@ export const PostDetailsModal: React.FC<PostDetailsModalProps> = ({
     }
   }, [open]);
 
+  // Debounced hashtag search
+  useEffect(() => {
+    if (suggestionsTimeoutRef.current) {
+      clearTimeout(suggestionsTimeoutRef.current);
+    }
+    const q = hashtagInput.trim().toLowerCase();
+    if (!q || hashtags.length >= MAX_HASHTAGS) {
+      setSuggestions([]);
+      setShowSuggestions(false);
+      return;
+    }
+    suggestionsTimeoutRef.current = setTimeout(async () => {
+      const results = await discoverService.searchHashtags(q, 8);
+      const filtered = results.filter((r) => !hashtags.includes(r.hashtag));
+      setSuggestions(filtered);
+      setShowSuggestions(filtered.length > 0);
+      setActiveSuggestion(0);
+    }, 200);
+    return () => {
+      if (suggestionsTimeoutRef.current) {
+        clearTimeout(suggestionsTimeoutRef.current);
+      }
+    };
+  }, [hashtagInput, hashtags]);
+
   if (!open || !videoUrl) return null;
 
   const addHashtag = (raw: string) => {
-    const cleaned = raw.replace(/^#+/, '').replace(/\s+/g, '').slice(0, MAX_HASHTAG_LEN);
+    const cleaned = raw.replace(/^#+/, '').replace(/\s+/g, '').slice(0, MAX_HASHTAG_LEN).toLowerCase();
     if (!cleaned) return;
     if (hashtags.length >= MAX_HASHTAGS) {
       setErrorMsg('You can add up to ' + MAX_HASHTAGS + ' hashtags.');
