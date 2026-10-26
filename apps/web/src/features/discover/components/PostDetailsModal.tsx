@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { ArrowLeft, X, Lock, Users, Globe } from 'lucide-react';
 import { PublishDetails, Visibility } from '../types/discover.types';
 import { discoverService } from '../services/discover.service';
+import { SUPPORTED_COUNTRIES } from '@/utils/ipGeolocation';
 
 interface PostDetailsModalProps {
   open: boolean;
@@ -390,17 +391,21 @@ export const PostDetailsModal: React.FC<PostDetailsModalProps> = ({
             <label style={{ fontSize: 13, fontWeight: 600, color: '#6b7280', display: 'block', marginBottom: 8 }}>
               Location (optional)
             </label>
-            <input
-              type="text"
+            <select
               value={locationText}
-              onChange={(e) => setLocationText(e.target.value.slice(0, 100))}
-              placeholder="City, Country"
+              onChange={(e) => setLocationText(e.target.value)}
               disabled={uploading}
               style={{
                 width: '100%', padding: 10, fontSize: 14,
                 border: '1px solid #e5e7eb', borderRadius: 8, boxSizing: 'border-box',
+                backgroundColor: '#ffffff',
               }}
-            />
+            >
+              <option value="">Select country (optional)</option>
+              {SUPPORTED_COUNTRIES.map((c) => (
+                <option key={c.code} value={c.name}>{c.name}</option>
+              ))}
+            </select>
           </div>
 
           {/* Advanced */}
