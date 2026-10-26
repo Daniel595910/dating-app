@@ -35,6 +35,15 @@ interface CommentNode {
 const EMOJIS = ['😀','😂','😍','😭','😡','👍','🙏','🔥','❤️','💯','🎉','🌹','🎁','🥰','😮','😢','✨','💋','🦋','🌈','⭐','💎','👑','🤔','👀'];
 const REPLIES_PER_PAGE = 3;
 
+const isTouchDevice = (): boolean => {
+  if (typeof window === 'undefined') return false;
+  try {
+    return window.matchMedia('(pointer: coarse)').matches;
+  } catch {
+    return false;
+  }
+};
+
 const timeAgo = (dateStr: string): string => {
   const s = Math.floor((Date.now() - new Date(dateStr).getTime()) / 1000);
   if (s < 60) return 'Just now';
@@ -68,7 +77,10 @@ export const DiscoverCommentsSheet: React.FC<DiscoverCommentsSheetProps> = ({
   const [showEmoji, setShowEmoji] = useState(false);
   const [showStickers, setShowStickers] = useState(false);
   const [stickers, setStickers] = useState<any[]>([]);
+  const [gifs, setGifs] = useState<any[]>([]);
+  const [stickerTab, setStickerTab] = useState<'stickers' | 'gifs'>('stickers');
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const channelRef = useRef<any>(null);
 
   const totalCount = (nodes: CommentNode[]): number => {
     let n = nodes.length;
@@ -100,6 +112,7 @@ export const DiscoverCommentsSheet: React.FC<DiscoverCommentsSheetProps> = ({
     onCommentCountChange(vId, data?.comment_count || 0);
   }, [onCommentCountChange]);
 
+  // Load comments when sheet opens
   useEffect(() => {
     if (open && videoId) {
       loadComments(videoId);
@@ -109,9 +122,11 @@ export const DiscoverCommentsSheet: React.FC<DiscoverCommentsSheetProps> = ({
       setReplyingTo(null);
       setInput('');
       setShowEmoji(false);
+      setShowStickers(false);
     }
   }, [open, videoId, loadComments]);
 
+  // Load stickers + gifs once
   useEffect(() => {
     (async () => {
       const { supabase } = await import('@/config/supabase.client');
@@ -121,26 +136,56 @@ export const DiscoverCommentsSheet: React.FC<DiscoverCommentsSheetProps> = ({
         .eq('is_active', true)
         .order('sort_order', { ascending: true })
         .limit(50);
+      const { data: gifData } = await supabase
+        .from('gifs')
+        .select('id, title, preview_url, gif_url, is_premium')
+        .eq('is_active', true)
+        .order('created_at', { ascending: false })
+        .limit(100);
+      setGifs(gifData || []);
       setStickers(data || []);
     })();
   }, []);
 
+  // Realtime — properly unsubscribe before re-subscribing
   useEffect(() => {
     if (!open || !videoId) return;
     let cancelled = false;
+
     (async () => {
       const { supabase } = await import('@/config/supabase.client');
+
+      // Clean up any previous channel first
+      if (channelRef.current) {
+        try { await supabase.removeChannel(channelRef.current); } catch {}
+        channelRef.current = null;
+      }
+
+      const channelName = 'comments:' + videoId + ':' + Date.now();
       const channel = supabase
-        .channel('comments:' + videoId)
+        .channel(channelName)
         .on(
           'postgres_changes',
           { event: '*', schema: 'public', table: 'discover_video_comments', filter: 'video_id=eq.' + videoId },
           () => { if (!cancelled) loadComments(videoId); }
         )
         .subscribe();
-      return () => { supabase.removeChannel(channel); };
+
+      channelRef.current = channel;
     })();
-    return () => { cancelled = true; };
+
+    return () => {
+      cancelled = true;
+      (async () => {
+        if (channelRef.current) {
+          try {
+            const { supabase } = await import('@/config/supabase.client');
+            await supabase.removeChannel(channelRef.current);
+          } catch {}
+          channelRef.current = null;
+        }
+      })();
+    };
   }, [open, videoId, loadComments]);
 
   if (!open || !videoId) return null;
@@ -228,6 +273,16 @@ export const DiscoverCommentsSheet: React.FC<DiscoverCommentsSheetProps> = ({
     }
   };
 
+  // Emoji button: mobile focuses input (native keyboard), desktop toggles grid
+  const handleEmojiClick = () => {
+    if (isTouchDevice()) {
+      inputRef.current?.focus();
+      return;
+    }
+    setShowEmoji((v) => !v);
+    setShowStickers(false);
+  };
+
   const flattenReplies = (comment: CommentNode, result: CommentNode[] = []): CommentNode[] => {
     comment.children.forEach((child) => {
       result.push(child);
@@ -236,7 +291,7 @@ export const DiscoverCommentsSheet: React.FC<DiscoverCommentsSheetProps> = ({
     return result;
   };
 
-  const renderComment = (comment: CommentNode, isReply = false) => {
+  const renderComment = (comment: CommentNode) => {
     const isExpanded = expandedThreads.has(comment.id);
     const allReplies = isExpanded ? flattenReplies(comment) : [];
     const page = replyPages.get(comment.id) || 1;
@@ -266,7 +321,7 @@ export const DiscoverCommentsSheet: React.FC<DiscoverCommentsSheetProps> = ({
             {comment.replyingToName && (
               <div style={{ fontSize: 11, color: '#ef4444', marginBottom: 2 }}>Replying to @{comment.replyingToName}</div>
             )}
-            {comment.contentType === 'sticker' && comment.mediaUrl ? (
+            {(comment.contentType === 'sticker' || comment.contentType === 'gif') && comment.mediaUrl ? (
               <img src={comment.mediaUrl} alt={comment.content} style={{ width: 120, height: 120, objectFit: 'contain' }} />
             ) : (
               <p style={{ margin: 0, fontSize: 14, color: '#111827', lineHeight: 1.4, wordBreak: 'break-word' }}>{comment.content}</p>
@@ -332,7 +387,11 @@ export const DiscoverCommentsSheet: React.FC<DiscoverCommentsSheetProps> = ({
                     <span style={{ fontSize: 10, color: '#9ca3af' }}>{timeAgo(r.createdAt)}</span>
                   </div>
                   {r.replyingToName && <div style={{ fontSize: 10, color: '#ef4444', marginBottom: 2 }}>Replying to @{r.replyingToName}</div>}
-                  <p style={{ margin: 0, fontSize: 13, color: '#111827', lineHeight: 1.4, wordBreak: 'break-word' }}>{r.content}</p>
+                  {(r.contentType === 'sticker' || r.contentType === 'gif') && r.mediaUrl ? (
+                    <img src={r.mediaUrl} alt={r.content} style={{ width: 80, height: 80, objectFit: 'contain' }} />
+                  ) : (
+                    <p style={{ margin: 0, fontSize: 13, color: '#111827', lineHeight: 1.4, wordBreak: 'break-word' }}>{r.content}</p>
+                  )}
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 4 }}>
                     <button
                       onClick={() => handleReact(r.id)}
@@ -448,27 +507,59 @@ export const DiscoverCommentsSheet: React.FC<DiscoverCommentsSheetProps> = ({
         )}
 
         {showStickers && (
-          <div style={{ padding: '8px 16px', borderTop: '1px solid #e5e7eb', display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 6, maxHeight: 160, overflowY: 'auto' }}>
-            {stickers.length === 0 ? (
-              <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: 16, color: '#9ca3af', fontSize: 13 }}>No stickers available</div>
-            ) : (
-              stickers.map((st) => (
-                <button
-                  key={st.id}
-                  onClick={() => handleSend('sticker', st.image_url, st.name || 'Sticker')}
-                  style={{ background: '#f9fafb', border: 'none', borderRadius: 8, cursor: 'pointer', padding: 4, aspectRatio: '1' }}
-                >
-                  <img src={st.thumbnail_url || st.image_url} alt={st.name || 'Sticker'} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
-                </button>
-              ))
-            )}
+          <div style={{ borderTop: '1px solid #e5e7eb', padding: '8px 16px' }}>
+            <div style={{ display: 'flex', gap: 6, marginBottom: 8 }}>
+              <button
+                onClick={() => setStickerTab('stickers')}
+                style={{ padding: '6px 14px', borderRadius: 9999, border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 600, backgroundColor: stickerTab === 'stickers' ? '#fef2f2' : '#f3f4f6', color: stickerTab === 'stickers' ? '#ef4444' : '#6b7280' }}
+              >
+                Stickers
+              </button>
+              <button
+                onClick={() => setStickerTab('gifs')}
+                style={{ padding: '6px 14px', borderRadius: 9999, border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 600, backgroundColor: stickerTab === 'gifs' ? '#fef2f2' : '#f3f4f6', color: stickerTab === 'gifs' ? '#ef4444' : '#6b7280' }}
+              >
+                GIFs
+              </button>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 6, maxHeight: 160, overflowY: 'auto' }}>
+              {stickerTab === 'stickers' ? (
+                stickers.length === 0 ? (
+                  <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: 16, color: '#9ca3af', fontSize: 13 }}>No stickers available</div>
+                ) : (
+                  stickers.map((st) => (
+                    <button
+                      key={st.id}
+                      onClick={() => handleSend('sticker', st.image_url, st.name || 'Sticker')}
+                      style={{ background: '#f9fafb', border: 'none', borderRadius: 8, cursor: 'pointer', padding: 4, aspectRatio: '1' }}
+                    >
+                      <img src={st.thumbnail_url || st.image_url} alt={st.name || 'Sticker'} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+                    </button>
+                  ))
+                )
+              ) : (
+                gifs.length === 0 ? (
+                  <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: 16, color: '#9ca3af', fontSize: 13 }}>No GIFs available</div>
+                ) : (
+                  gifs.map((gf) => (
+                    <button
+                      key={gf.id}
+                      onClick={() => handleSend('gif', gf.gif_url, gf.title || 'GIF')}
+                      style={{ background: '#f9fafb', border: 'none', borderRadius: 8, cursor: 'pointer', padding: 4, aspectRatio: '1' }}
+                    >
+                      <img src={gf.preview_url || gf.gif_url} alt={gf.title || 'GIF'} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    </button>
+                  ))
+                )
+              )}
+            </div>
           </div>
         )}
 
         <div style={{ padding: '8px 16px 16px', borderTop: '1px solid #e5e7eb', flexShrink: 0, display: 'flex', gap: 8, alignItems: 'flex-end' }}>
           <button
-            onClick={() => { setShowEmoji((v) => !v); setShowStickers(false); }}
-            aria-label="Toggle emoji picker"
+            onClick={handleEmojiClick}
+            aria-label="Emoji"
             style={{
               width: 40, height: 40, borderRadius: '50%',
               backgroundColor: showEmoji ? '#fef2f2' : '#f3f4f6',
@@ -505,7 +596,7 @@ export const DiscoverCommentsSheet: React.FC<DiscoverCommentsSheetProps> = ({
             }}
           />
           <button
-            onClick={handleSend}
+            onClick={() => handleSend()}
             disabled={!input.trim() || sending}
             aria-label="Send comment"
             style={{
