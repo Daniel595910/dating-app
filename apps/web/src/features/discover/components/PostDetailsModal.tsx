@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { ArrowLeft, X, Lock, Users, Globe, Volume2, VolumeX } from 'lucide-react';
+import { ArrowLeft, X, Lock, Globe, Volume2, VolumeX } from 'lucide-react';
 import { PublishDetails, Visibility } from '../types/discover.types';
 import { discoverService } from '../services/discover.service';
 import { SUPPORTED_COUNTRIES } from '@/utils/ipGeolocation';
@@ -345,7 +345,6 @@ export const PostDetailsModal: React.FC<PostDetailsModalProps> = ({
             <div style={{ display: 'flex', gap: 8 }}>
               {([
                 { value: 'public' as Visibility, label: 'Public', icon: Globe },
-                { value: 'friends' as Visibility, label: 'Friends', icon: Users },
                 { value: 'private' as Visibility, label: 'Private', icon: Lock },
               ]).map(({ value, label, icon: Icon }) => {
                 const active = visibility === value;
