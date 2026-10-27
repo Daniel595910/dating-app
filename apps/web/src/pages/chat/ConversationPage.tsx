@@ -122,11 +122,11 @@ export const ConversationPage: React.FC = () => {
   }, [otherUser?.id]);
 
   if (loading) {
-    return <div style={{ textAlign: 'center', padding: '2rem', color: '#9ca3af' }}>Loading...</div>;
+    return <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--color-text-muted)' }}>Loading...</div>;
   }
 
   if (!conversationId || !otherUser) {
-    return <div style={{ textAlign: 'center', padding: '2rem', color: '#9ca3af' }}>Conversation not found</div>;
+    return <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--color-text-muted)' }}>Conversation not found</div>;
   }
 
   return (

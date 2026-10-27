@@ -1,43 +1,43 @@
-﻿.container { min-height: 100dvh; background: #fff; max-width: 480px; margin: 0 auto; display: flex; flex-direction: column; }
-.headerRow { display: flex; align-items: center; gap: 10px; padding: 12px 16px; border-bottom: 1px solid #f3f4f6; }
-.backButton { background: none; border: none; cursor: pointer; color: #111827; padding: 8px; border-radius: 50%; display: flex; align-items: center; justify-content: center; min-width: 36px; min-height: 36px; }
-.title { font-size: 20px; font-weight: 700; color: #111827; margin: 0; }
+.container { min-height: 100dvh; background: var(--color-surface); max-width: 480px; margin: 0 auto; display: flex; flex-direction: column; }
+.headerRow { display: flex; align-items: center; gap: 10px; padding: 12px 16px; border-bottom: 1px solid var(--color-border); }
+.backButton { background: none; border: none; cursor: pointer; color: var(--color-text); padding: 8px; border-radius: 50%; display: flex; align-items: center; justify-content: center; min-width: 36px; min-height: 36px; }
+.title { font-size: 20px; font-weight: 700; color: var(--color-text); margin: 0; }
 .searchContainer { padding: 8px 16px; }
-.searchBar { display: flex; align-items: center; gap: 8px; background: #f3f4f6; border-radius: 9999px; padding: 0 14px; min-height: 40px; }
-.searchIcon { color: #9ca3af; flex-shrink: 0; }
-.searchInput { flex: 1; border: none; background: none; outline: none; font-size: 14px; color: #111827; }
-.clearSearch { background: none; border: none; cursor: pointer; color: #9ca3af; padding: 4px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
-.onlineSection { padding: 12px 16px; border-bottom: 1px solid #f3f4f6; }
+.searchBar { display: flex; align-items: center; gap: 8px; background: var(--color-surface-alt); border-radius: 9999px; padding: 0 14px; min-height: 40px; }
+.searchIcon { color: var(--color-text-muted); flex-shrink: 0; }
+.searchInput { flex: 1; border: none; background: none; outline: none; font-size: 14px; color: var(--color-text); }
+.clearSearch { background: none; border: none; cursor: pointer; color: var(--color-text-muted); padding: 4px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+.onlineSection { padding: 12px 16px; border-bottom: 1px solid var(--color-border); }
 .onlineScroll { display: flex; gap: 16px; overflow-x: auto; scrollbar-width: none; -ms-overflow-style: none; }
 .onlineScroll::-webkit-scrollbar { display: none; }
 .onlineUserItem { display: flex; flex-direction: column; align-items: center; gap: 4px; background: none; border: none; cursor: pointer; padding: 0; flex-shrink: 0; width: 60px; }
 .onlineAvatarWrapper { position: relative; }
-.onlineAvatar { width: 50px; height: 50px; border-radius: 50%; background: linear-gradient(135deg, #10b981, #059669); display: flex; align-items: center; justify-content: center; font-weight: 700; color: #fff; font-size: 20px; overflow: hidden; border: 3px solid #fff; box-shadow: 0 2px 6px rgba(0,0,0,0.1); }
+.onlineAvatar { width: 50px; height: 50px; border-radius: 50%; background: linear-gradient(135deg, #10b981, #059669); display: flex; align-items: center; justify-content: center; font-weight: 700; color: var(--color-surface); font-size: 20px; overflow: hidden; border: 3px solid var(--color-surface); box-shadow: 0 2px 6px rgba(0,0,0,0.1); }
 .onlineAvatar img { width: 100%; height: 100%; object-fit: cover; }
-.onlineName { font-size: 10px; font-weight: 600; color: #374151; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 55px; }
-.onlineDot { position: absolute; bottom: 0; right: 0; width: 12px; height: 12px; border-radius: 50%; background: #22c55e; border: 2px solid #fff; }
+.onlineName { font-size: 10px; font-weight: 600; color: var(--color-text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 55px; }
+.onlineDot { position: absolute; bottom: 0; right: 0; width: 12px; height: 12px; border-radius: 50%; background: #22c55e; border: 2px solid var(--color-surface); }
 .conversationList { flex: 1; overflow-y: auto; }
 .conversationItem { display: flex; gap: 12px; width: 100%; padding: 14px 16px; background: none; border: none; cursor: pointer; text-align: left; transition: background 0.15s; }
-.conversationItem:hover { background: #f9fafb; }
-.unreadItem { background: #fef2f2; }
+.conversationItem:hover { background: var(--color-bg); }
+.unreadItem { background: var(--color-primary-soft); }
 .avatarWrapper { position: relative; flex-shrink: 0; }
-.avatar { width: 48px; height: 48px; border-radius: 50%; background: linear-gradient(135deg, #fecaca, #f87171); display: flex; align-items: center; justify-content: center; font-weight: 700; color: #fff; font-size: 18px; overflow: hidden; border: 2px solid #fff; }
+.avatar { width: 48px; height: 48px; border-radius: 50%; background: linear-gradient(135deg, var(--color-primary-soft-border), #f87171); display: flex; align-items: center; justify-content: center; font-weight: 700; color: var(--color-surface); font-size: 18px; overflow: hidden; border: 2px solid var(--color-surface); }
 .avatar img { width: 100%; height: 100%; object-fit: cover; }
 .conversationInfo { flex: 1; min-width: 0; }
 .conversationHeader { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
-.conversationName { font-size: 15px; font-weight: 700; color: #111827; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.timestamp { font-size: 11px; color: #9ca3af; flex-shrink: 0; }
+.conversationName { font-size: 15px; font-weight: 700; color: var(--color-text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.timestamp { font-size: 11px; color: var(--color-text-muted); flex-shrink: 0; }
 .lastMessageRow { display: flex; align-items: center; gap: 8px; margin-top: 4px; }
-.lastMessage { flex: 1; font-size: 13px; color: #6b7280; margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.unreadMessage { color: #111827; font-weight: 500; }
-.unreadBadge { min-width: 20px; height: 20px; border-radius: 9999px; background: #ef4444; color: #fff; font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center; padding: 0 6px; flex-shrink: 0; }
+.lastMessage { flex: 1; font-size: 13px; color: var(--color-text-secondary); margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.unreadMessage { color: var(--color-text); font-weight: 500; }
+.unreadBadge { min-width: 20px; height: 20px; border-radius: 9999px; background: #ef4444; color: var(--color-surface); font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center; padding: 0 6px; flex-shrink: 0; }
 .loading { display: flex; align-items: center; justify-content: center; min-height: 100dvh; }
-.spinner { width: 28px; height: 28px; border: 3px solid #f3f4f6; border-top-color: #ef4444; border-radius: 50%; animation: spin 0.6s linear infinite; }
+.spinner { width: 28px; height: 28px; border: 3px solid var(--color-surface-alt); border-top-color: var(--color-primary); border-radius: 50%; animation: spin 0.6s linear infinite; }
 .emptyState { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; padding: 40px 24px; text-align: center; }
 .emptyIcon { color: #d1d5db; }
-.emptyTitle { font-size: 18px; font-weight: 700; color: #111827; margin: 0; }
-.emptyText { font-size: 14px; color: #6b7280; margin: 0; }
-.exploreButton { display: flex; align-items: center; gap: 8px; padding: 12px 20px; background: #ef4444; color: #fff; border: none; border-radius: 9999px; cursor: pointer; font-size: 14px; font-weight: 600; }
+.emptyTitle { font-size: 18px; font-weight: 700; color: var(--color-text); margin: 0; }
+.emptyText { font-size: 14px; color: var(--color-text-secondary); margin: 0; }
+.exploreButton { display: flex; align-items: center; gap: 8px; padding: 12px 20px; background: #ef4444; color: var(--color-surface); border: none; border-radius: 9999px; cursor: pointer; font-size: 14px; font-weight: 600; }
 @keyframes spin { to { transform: rotate(360deg); } }
 
 
@@ -139,12 +139,12 @@
 
 [data-theme="dark"] .unreadBadge {
   background: #ef4444;
-  color: #ffffff;
+  color: var(--color-surface)fff;
 }
 
 [data-theme="dark"] .spinner {
   border-color: #2a2a2e;
-  border-top-color: #ef4444;
+  border-top-color: var(--color-primary);
 }
 
 [data-theme="dark"] .emptyIcon {
@@ -161,7 +161,7 @@
 
 [data-theme="dark"] .exploreButton {
   background: #ef4444;
-  color: #ffffff;
+  color: var(--color-surface)fff;
 }
 
 [data-theme="dark"] .exploreButton:hover {
