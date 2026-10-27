@@ -59,6 +59,7 @@ export const DiscoverPage: React.FC = () => {
   const [videoDuration, setVideoDuration] = useState(0);
   const [isSeeking, setIsSeeking] = useState(false);
   const [activeCategory, setActiveCategory] = useState<'new' | 'popular' | 'nearby'>('new');
+  const [userLocation, setUserLocation] = useState<string | null>(null);
   const [swipeCount, setSwipeCount] = useState(0);
   const [dailyLimit] = useState(50);
   const [showLikeAnimation, setShowLikeAnimation] = useState(false);
@@ -87,6 +88,15 @@ export const DiscoverPage: React.FC = () => {
 
 
   useEffect(() => {
+    // Fetch user location for Nearby tab
+    if (user?.id && !userLocation) {
+      supabase.from('profiles').select('location').eq('user_id', user.id).maybeSingle().then(({ data }) => {
+        if (data?.location) {
+          const loc = data.location as any;
+          setUserLocation(loc.country || null);
+        }
+      });
+    }
     loadCandidates();
     loadMyVideos();
     const savedCount = localStorage.getItem('discoverSwipeCount');
@@ -132,7 +142,7 @@ export const DiscoverPage: React.FC = () => {
     if (!user) return;
     setLoading(true);
     setError(null);
-    const result = await discoverService.getCandidates(10, activeCategory);
+    const result = await discoverService.getCandidates(10, activeCategory, 0, userLocation);
     if (result.length > 0) {
       const ids = await discoverService.getLikedVideoIds(result.map((c) => c.videoId));
       setLikedIds(ids);
@@ -736,6 +746,7 @@ export const DiscoverPage: React.FC = () => {
             <div className={styles.categoryTabs}>
               <button className={`${styles.categoryTab} ${activeCategory === 'new' ? styles.categoryTabActive : ''}`} onClick={() => setActiveCategory('new')}>New</button>
               <button className={`${styles.categoryTab} ${activeCategory === 'popular' ? styles.categoryTabActive : ''}`} onClick={() => setSearchModalOpen(true)}>Pop</button>
+              <button className={`${styles.categoryTab} ${activeCategory === 'nearby' ? styles.categoryTabActive : ''}`} onClick={() => setActiveCategory('nearby')}>Nearby</button>
             </div>
           </div>
         </div>

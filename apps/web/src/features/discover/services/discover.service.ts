@@ -2,11 +2,12 @@ import { supabase } from '@/config/supabase.client';
 import { DiscoverCandidate, PublishDetails, SwipeAction, SwipeResult } from '../types/discover.types';
 
 class DiscoverService {
-  async getCandidates(limit: number = 10, category: string = 'new', offset: number = 0): Promise<DiscoverCandidate[]> {
-    const { data, error } = await supabase.rpc('get_discover_feed', {
+  async getCandidates(limit: number = 10, category: string = 'new', offset: number = 0, location: string | null = null): Promise<DiscoverCandidate[]> {
+    const { data, error } = await supabase.rpc('get_discover_feed_v2', {
       p_category: category,
       p_limit: limit,
       p_offset: offset,
+      p_location: location,
     });
 
     if (error) {
