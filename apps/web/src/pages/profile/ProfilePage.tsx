@@ -1155,8 +1155,8 @@ export const ProfilePage: React.FC = () => {
       )}
     {showUnshareConfirm && (
         <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.6)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }} onClick={() => setShowUnshareConfirm(false)}>
-          <div style={{ backgroundColor: '#fff', borderRadius: 20, padding: '28px 24px', maxWidth: 360, width: '100%', textAlign: 'center' }} onClick={(e) => e.stopPropagation()}>
-            <div style={{ width: 56, height: 56, borderRadius: '50%', backgroundColor: '#fef2f2', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 12px' }}>
+          <div style={{ backgroundColor: 'var(--color-surface)', borderRadius: 20, padding: '28px 24px', maxWidth: 360, width: '100%', textAlign: 'center' }} onClick={(e) => e.stopPropagation()}>
+            <div style={{ width: 56, height: 56, borderRadius: '50%', backgroundColor: 'var(--color-primary-soft)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 12px' }}>
               <Share2 size={24} style={{ color: '#ef4444' }} />
             </div>
             <h3 style={{ fontSize: 17, fontWeight: 700, margin: '0 0 8px', color: '#111827' }}>Remove Profile Share?</h3>

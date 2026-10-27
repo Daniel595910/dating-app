@@ -29,7 +29,7 @@
   background-color: rgba(255, 255, 255, 0.92);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  border-bottom: 1px solid #f3f4f6;
+  border-bottom: 1px solid var(--color-border);
   position: relative;
   z-index: 100;
   isolation: isolate;
@@ -39,7 +39,7 @@
   background: none;
   border: none;
   cursor: pointer;
-  color: #111827;
+  color: var(--color-text);
   padding: 0.5rem;
   border-radius: 9999px;
   display: flex;
@@ -51,20 +51,20 @@
 }
 
 .headerButton:hover {
-  background-color: #f3f4f6;
+  background-color: var(--color-surface-alt);
 }
 
 .headerTitle {
   font-size: 1rem;
   font-weight: 700;
-  color: #111827;
+  color: var(--color-text);
 }
 
 /* ==================== HERO ==================== */
 .hero {
-  background-color: #ffffff;
+  background-color: var(--color-surface);
   padding: 0.875rem 1rem 0.875rem;
-  border-bottom: 1px solid #f3f4f6;
+  border-bottom: 1px solid var(--color-border);
 }
 
 .avatarContainer {
@@ -79,7 +79,7 @@
   height: 100%;
   border-radius: 50%;
   object-fit: cover;
-  border: 3px solid #ffffff;
+  border: 3px solid var(--color-surface);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
@@ -101,7 +101,7 @@
   bottom: 0;
   right: 0;
   color: #3b82f6;
-  background-color: #ffffff;
+  background-color: var(--color-surface);
   border-radius: 50%;
 }
 
@@ -111,7 +111,7 @@
   justify-content: space-around;
   margin-bottom: 0.75rem;
   padding-bottom: 0.75rem;
-  border-bottom: 1px solid #f3f4f6;
+  border-bottom: 1px solid var(--color-border);
 }
 
 .statItem {
@@ -124,13 +124,13 @@
 .statValue {
   font-size: 1rem;
   font-weight: 700;
-  color: #111827;
+  color: var(--color-text);
   line-height: 1.2;
 }
 
 .statLabel {
   font-size: 0.6875rem;
-  color: #6b7280;
+  color: var(--color-text-secondary);
   font-weight: 500;
 }
 
@@ -151,7 +151,7 @@
 }
 
 .statButton:hover {
-  background-color: #f3f4f6;
+  background-color: var(--color-surface-alt);
 }
 
 .statButton:focus-visible {
@@ -168,7 +168,7 @@
 .displayName {
   font-size: 1.375rem;
   font-weight: 700;
-  color: #111827;
+  color: var(--color-text);
   margin: 0 0 0.25rem;
   letter-spacing: -0.01em;
   line-height: 1.2;
@@ -180,13 +180,13 @@
   justify-content: center;
   gap: 0.25rem;
   font-size: 0.8125rem;
-  color: #6b7280;
+  color: var(--color-text-secondary);
 }
 
 .bio {
   text-align: center;
   font-size: 0.875rem;
-  color: #374151;
+  color: var(--color-text);
   line-height: 1.5;
   margin: 0 0 0.875rem;
 }
@@ -202,7 +202,7 @@
   flex: 2;
   min-width: 0;
   padding: 0.625rem;
-  background-color: #ef4444;
+  background-color: var(--color-primary);
   color: #ffffff;
   border: none;
   border-radius: 9999px;
@@ -234,8 +234,8 @@
   gap: 0.25rem;
   padding: 0.625rem;
   background: none;
-  color: #111827;
-  border: 1px solid #e5e7eb;
+  color: var(--color-text);
+  border: 1px solid var(--color-border-strong);
   border-radius: 9999px;
   cursor: pointer;
   font-size: 0.875rem;
@@ -245,14 +245,14 @@
 }
 
 .secondaryAction:hover {
-  background-color: #f9fafb;
+  background-color: var(--color-bg);
 }
 
 /* ==================== TABS ==================== */
 .tabs {
   display: flex;
-  background-color: #ffffff;
-  border-bottom: 1px solid #f3f4f6;
+  background-color: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
 }
 
 .tab {
@@ -267,36 +267,36 @@
   cursor: pointer;
   font-size: 0.8125rem;
   font-weight: 500;
-  color: #9ca3af;
+  color: var(--color-text-muted);
   border-bottom: 2px solid transparent;
   transition: all 0.15s ease;
   min-height: 44px;
 }
 
 .tab:hover {
-  color: #374151;
+  color: var(--color-text);
 }
 
 .tabActive {
-  color: #ef4444;
-  border-bottom-color: #ef4444;
+  color: var(--color-primary);
+  border-bottom-color: var(--color-primary);
 }
 
 /* ==================== GALLERY GRID ==================== */
 .galleryGrid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 2px;
-  padding: 2px;
+  gap: 4px;
+  padding: 16px;
 }
 
 .galleryItem {
   position: relative;
-  border-radius: 8px;
+  border-radius: 12px;
   overflow: hidden;
   aspect-ratio: 1;
   cursor: pointer;
-  background-color: #f3f4f6;
+  background-color: var(--color-surface-alt);
 }
 
 .galleryImage {
@@ -366,7 +366,7 @@
   cursor: pointer;
   font-size: 12px;
   font-weight: 500;
-  color: #ef4444;
+  color: var(--color-primary);
   border-radius: 6px;
 }
 
@@ -378,7 +378,7 @@
   grid-column: 1 / -1;
   text-align: center;
   padding: 3rem 1rem;
-  color: #9ca3af;
+  color: var(--color-text-muted);
 }
 
 .emptySubtext {
@@ -395,13 +395,13 @@
 .aboutTitle {
   font-size: 1rem;
   font-weight: 700;
-  color: #111827;
+  color: var(--color-text);
   margin: 0 0 0.75rem;
 }
 
 .aboutText {
   font-size: 0.875rem;
-  color: #374151;
+  color: var(--color-text);
   line-height: 1.5;
   margin: 0;
 }
@@ -413,7 +413,7 @@
 .aboutLabel {
   font-size: 0.8125rem;
   font-weight: 600;
-  color: #6b7280;
+  color: var(--color-text-secondary);
   margin: 0 0 0.25rem;
 }
 
@@ -425,10 +425,11 @@
 
 .interestTag {
   padding: 0.375rem 0.75rem;
-  background-color: #f3f4f6;
+  background-color: var(--color-primary-soft);
   border-radius: 9999px;
   font-size: 0.8125rem;
-  color: #374151;
+  font-weight: 600;
+  color: var(--color-primary);
 }
 
 /* ==================== LOADING + ERROR ==================== */
@@ -439,14 +440,14 @@
   align-items: center;
   justify-content: center;
   gap: 12px;
-  background: #ffffff;
+  background: var(--color-surface);
 }
 
 .loadingSpinner {
   width: 32px;
   height: 32px;
   border: 3px solid #f3f4f6;
-  border-top-color: #ef4444;
+  border-top-color: var(--color-primary);
   border-radius: 50%;
   animation: spin 0.6s linear infinite;
   flex-shrink: 0;
@@ -459,12 +460,12 @@
   gap: 1rem;
   padding: 3rem 1rem;
   text-align: center;
-  color: #ef4444;
+  color: var(--color-primary);
 }
 
 .errorButton {
   padding: 0.625rem 1.25rem;
-  background-color: #ef4444;
+  background-color: var(--color-primary);
   color: #ffffff;
   border: none;
   border-radius: 9999px;
@@ -561,7 +562,7 @@
 }
 
 .statsModal {
-  background-color: #ffffff;
+  background-color: var(--color-surface);
   border-radius: 1.5rem 1.5rem 0 0;
   width: 100%;
   max-width: 480px;
@@ -577,14 +578,14 @@
   align-items: center;
   justify-content: space-between;
   padding: 1rem 1.25rem;
-  border-bottom: 1px solid #f3f4f6;
+  border-bottom: 1px solid var(--color-border);
   flex-shrink: 0;
 }
 
 .statsModalTitle {
   font-size: 1.125rem;
   font-weight: 700;
-  color: #111827;
+  color: var(--color-text);
   margin: 0;
   text-transform: capitalize;
 }
@@ -593,7 +594,7 @@
   background: none;
   border: none;
   cursor: pointer;
-  color: #6b7280;
+  color: var(--color-text-secondary);
   padding: 0.5rem;
   border-radius: 9999px;
   min-width: 44px;
@@ -615,19 +616,19 @@
 
 .statsModalItemText {
   font-size: 0.8125rem;
-  color: #374151;
+  color: var(--color-text);
   margin: 0 0 0.25rem;
 }
 
 .statsModalItemMeta {
   font-size: 0.6875rem;
-  color: #9ca3af;
+  color: var(--color-text-muted);
 }
 
 .statsModalEmpty {
   text-align: center;
   padding: 2rem;
-  color: #9ca3af;
+  color: var(--color-text-muted);
   font-size: 0.875rem;
 }
 
@@ -645,7 +646,7 @@
 }
 
 .statsModalUser:hover {
-  background-color: #f9fafb;
+  background-color: var(--color-bg);
 }
 
 .statsModalAvatar {
@@ -672,7 +673,7 @@
 .statsModalName {
   font-size: 0.875rem;
   font-weight: 500;
-  color: #111827;
+  color: var(--color-text);
 }
 
 /* ==================== SHARE TOAST ==================== */
@@ -691,7 +692,7 @@
   left: 50%;
   transform: translateX(-50%);
   z-index: 9999;
-  background: #ffffff;
+  background: var(--color-surface);
   border-radius: 16px;
   padding: 14px 18px;
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
@@ -724,13 +725,13 @@
 .shareSuccessTitle {
   font-size: 14px;
   font-weight: 700;
-  color: #111827;
+  color: var(--color-text);
   margin: 0;
 }
 
 .shareSuccessText {
   font-size: 12px;
-  color: #6b7280;
+  color: var(--color-text-secondary);
   margin: 2px 0 0;
 }
 
@@ -848,7 +849,7 @@
   cursor: pointer;
   font-size: 12px;
   font-weight: 500;
-  color: #374151;
+  color: var(--color-text);
   text-align: left;
   border-radius: 6px;
 }
