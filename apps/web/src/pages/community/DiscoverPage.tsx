@@ -12,7 +12,7 @@ import {
   BadgeCheck, MapPin, Heart, X, Play, Pause, Video, Upload, 
   Loader, ArrowLeft, Grid3x3, Plus, Clock, CheckCircle2, XCircle,
   Trash2, Eye, EyeOff, Volume2, VolumeX, RotateCcw, Check,
-  MessageCircle, Share2
+  MessageSquare, Send
 } from 'lucide-react';
 import styles from './DiscoverPage.module.css';
 
@@ -492,12 +492,6 @@ export const DiscoverPage: React.FC = () => {
         <span className={styles.swipeRemaining}>{swipesRemaining} remaining</span>
       </div>
 
-      {/* Category Tabs */}
-      <div className={styles.categoryTabs}>
-        <button className={`${styles.categoryTab} ${activeCategory === 'new' ? styles.categoryTabActive : ''}`} onClick={() => setActiveCategory('new')}>New</button>
-        <button className={`${styles.categoryTab} ${activeCategory === 'popular' ? styles.categoryTabActive : ''}`} onClick={() => setActiveCategory('popular')}>Popular</button>
-
-      </div>
 
       {/* Double-tap Like Animation */}
       {showLikeAnimation && (
@@ -659,7 +653,7 @@ export const DiscoverPage: React.FC = () => {
 
           <div 
             ref={progressBarRef}
-            style={{ position: 'absolute', bottom: 45, left: 0, right: 0, padding: '0 16px', zIndex: 20, cursor: 'pointer' }}
+            style={{ position: 'absolute', bottom: 35, left: 0, right: 0, padding: '0 16px', zIndex: 20, cursor: 'pointer' }}
             onMouseDown={handleSeekStart}
             onMouseMove={handleSeekMove}
             onMouseUp={handleSeekEnd}
@@ -715,7 +709,7 @@ export const DiscoverPage: React.FC = () => {
                 className={styles.rightActionButton}
                 aria-label="Comment"
               >
-                <MessageCircle size={22} />
+                <MessageSquare size={22} />
               </button>
               <div className={styles.likeCount}>
                 {formatCount(commentCounts[current.videoId] !== undefined ? commentCounts[current.videoId] : (current.commentCount || 0))}
@@ -735,8 +729,12 @@ export const DiscoverPage: React.FC = () => {
               }}
               aria-label="Share"
             >
-              <Share2 size={22} />
+              <Send size={22} />
             </button>
+            <div className={styles.categoryTabs}>
+              <button className={`${styles.categoryTab} ${activeCategory === 'new' ? styles.categoryTabActive : ''}`} onClick={() => setActiveCategory('new')}>New</button>
+              <button className={`${styles.categoryTab} ${activeCategory === 'popular' ? styles.categoryTabActive : ''}`} onClick={() => setActiveCategory('popular')}>Pop</button>
+            </div>
           </div>
         </div>
       )}
