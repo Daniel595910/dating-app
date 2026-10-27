@@ -311,6 +311,19 @@ class DiscoverService {
     }
   }
 
+  async searchVideos(query: string = '', limit: number = 30, offset: number = 0): Promise<any[]> {
+    const { data, error } = await supabase.rpc('search_discover_videos', {
+      p_query: query,
+      p_limit: limit,
+      p_offset: offset,
+    });
+    if (error) {
+      console.error('searchVideos failed:', error);
+      return [];
+    }
+    return data || [];
+  }
+
   async getMyVideos(): Promise<any[]> {
     const { data, error } = await supabase.rpc('get_my_discover_videos');
 
