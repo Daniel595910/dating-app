@@ -1,0 +1,82 @@
+.composerInput {
+  flex: 1;
+  padding: 12px 16px;
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--color-text);
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border-strong);
+  border-radius: 22px;
+  resize: none;
+  font-family: inherit;
+  box-sizing: border-box;
+  max-height: 100px;
+  min-height: 44px;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.composerInput:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px var(--color-primary-soft);
+}
+
+.composerInput:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.composerInput::placeholder {
+  color: var(--color-text-muted);
+}
+
+.toolButton {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  background-color: var(--color-surface-alt);
+  color: var(--color-text-secondary);
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.toolButton:hover {
+  background-color: var(--color-border);
+}
+
+.toolButtonActive {
+  background-color: var(--color-primary-soft);
+  color: var(--color-primary);
+}
+
+.sendButton {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  background-color: var(--color-border);
+  color: #ffffff;
+  transition: background-color 0.15s ease;
+}
+
+.sendButtonActive {
+  background-color: var(--color-primary);
+}
+
+.sendButtonActive:hover {
+  background-color: var(--color-primary-hover);
+}
+
+.sendButton:disabled {
+  cursor: not-allowed;
+}

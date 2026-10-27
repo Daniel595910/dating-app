@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { X, Send, Trash2, Heart, Loader, MessageCircle, CornerDownRight, ChevronDown, ChevronUp, Smile, Sticker } from 'lucide-react';
 import { discoverService } from '../services/discover.service';
+import styles from './DiscoverCommentsSheet.module.css';
 
 interface DiscoverCommentsSheetProps {
   open: boolean;
@@ -563,26 +564,16 @@ export const DiscoverCommentsSheet: React.FC<DiscoverCommentsSheetProps> = ({
           <button
             onClick={handleEmojiClick}
             aria-label="Emoji"
-            style={{
-              width: 44, height: 44, borderRadius: '50%',
-              backgroundColor: showEmoji ? 'var(--color-primary-soft)' : 'var(--color-surface-alt)',
-              color: showEmoji ? 'var(--color-primary)' : 'var(--color-text-secondary)',
-              border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-            }}
+            className={styles.toolButton + (showEmoji ? ' ' + styles.toolButtonActive : '')}
           >
-            <Smile size={18} />
+            <Smile size={20} />
           </button>
           <button
             onClick={() => { setShowStickers((v) => !v); setShowEmoji(false); }}
             aria-label="Toggle sticker picker"
-            style={{
-              width: 44, height: 44, borderRadius: '50%',
-              backgroundColor: showStickers ? 'var(--color-primary-soft)' : 'var(--color-surface-alt)',
-              color: showStickers ? 'var(--color-primary)' : 'var(--color-text-secondary)',
-              border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-            }}
+            className={styles.toolButton + (showStickers ? ' ' + styles.toolButtonActive : '')}
           >
-            <Sticker size={18} />
+            <Sticker size={20} />
           </button>
           <textarea
             ref={inputRef}
@@ -592,24 +583,15 @@ export const DiscoverCommentsSheet: React.FC<DiscoverCommentsSheetProps> = ({
             placeholder={replyingTo ? 'Reply to @' + replyingTo.authorName + '...' : 'Add a comment...'}
             disabled={sending}
             rows={1}
-            style={{
-              flex: 1, padding: '12px 14px', fontSize: 15,
-              border: '1px solid var(--color-border-strong)', borderRadius: 22, resize: 'none',
-              fontFamily: 'inherit', boxSizing: 'border-box', maxHeight: 80,
-            }}
+            className={styles.composerInput}
           />
           <button
             onClick={() => handleSend()}
             disabled={!input.trim() || sending}
             aria-label="Send comment"
-            style={{
-              width: 44, height: 44, borderRadius: '50%',
-              backgroundColor: input.trim() && !sending ? 'var(--color-primary)' : 'var(--color-border)',
-              color: '#ffffff', border: 'none', cursor: input.trim() && !sending ? 'pointer' : 'not-allowed',
-              display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-            }}
+            className={styles.sendButton + (input.trim() && !sending ? ' ' + styles.sendButtonActive : '')}
           >
-            {sending ? <Loader size={16} /> : <Send size={16} />}
+            {sending ? <Loader size={18} /> : <Send size={18} />}
           </button>
         </div>
       </div>
