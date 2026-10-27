@@ -148,6 +148,27 @@ export const DiscoverCommentsSheet: React.FC<DiscoverCommentsSheetProps> = ({
     })();
   }, []);
 
+  // Load stickers and gifs
+  useEffect(() => {
+    (async () => {
+      const { supabase } = await import('@/config/supabase.client');
+      const { data: stickersData } = await supabase
+        .from('stickers')
+        .select('id, name, image_url, thumbnail_url, is_premium')
+        .eq('is_active', true)
+        .order('sort_order', { ascending: true })
+        .limit(50);
+      const { data: gifsData } = await supabase
+        .from('gifs')
+        .select('id, title, preview_url, gif_url, is_premium')
+        .eq('is_active', true)
+        .order('created_at', { ascending: false })
+        .limit(50);
+      setStickers(stickersData || []);
+      setGifs(gifsData || []);
+    })();
+  }, []);
+
   // Realtime — properly unsubscribe before re-subscribing
   useEffect(() => {
     if (!open || !videoId) return;
