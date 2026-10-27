@@ -160,3 +160,43 @@
   font-size: 13px;
   font-weight: 500;
 }
+
+
+.commentBubble {
+  display: inline-block;
+  max-width: 100%;
+  padding: 10px 14px;
+  border-radius: 18px;
+  background-color: var(--color-surface-alt);
+  font-size: 14px;
+  line-height: 1.45;
+  color: var(--color-text);
+  word-break: break-word;
+  margin-top: 2px;
+}
+
+.commentBubbleOwn {
+  background-color: var(--color-primary-soft);
+}
+
+.replyBubble {
+  display: inline-block;
+  max-width: 100%;
+  padding: 8px 12px;
+  border-radius: 16px;
+  background-color: var(--color-surface-alt);
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--color-text);
+  word-break: break-word;
+  margin-top: 2px;
+}
+
+.replyBubbleOwn {
+  background-color: var(--color-primary-soft);
+}
+
+.stickerBubble {
+  display: inline-block;
+  margin-top: 2px;
+}

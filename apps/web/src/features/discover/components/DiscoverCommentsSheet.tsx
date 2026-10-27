@@ -325,7 +325,9 @@ export const DiscoverCommentsSheet: React.FC<DiscoverCommentsSheetProps> = ({
             {(comment.contentType === 'sticker' || comment.contentType === 'gif') && comment.mediaUrl ? (
               <img src={comment.mediaUrl} alt={comment.content} style={{ width: 120, height: 120, objectFit: 'contain' }} />
             ) : (
-              <p style={{ margin: 0, fontSize: 14, color: 'var(--color-text)', lineHeight: 1.4, wordBreak: 'break-word' }}>{comment.content}</p>
+              <div className={styles.commentBubble + (currentUserId === comment.authorId ? ' ' + styles.commentBubbleOwn : '')}>
+                {comment.content}
+              </div>
             )}
             <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 6 }}>
               <button
@@ -391,7 +393,9 @@ export const DiscoverCommentsSheet: React.FC<DiscoverCommentsSheetProps> = ({
                   {(r.contentType === 'sticker' || r.contentType === 'gif') && r.mediaUrl ? (
                     <img src={r.mediaUrl} alt={r.content} style={{ width: 80, height: 80, objectFit: 'contain' }} />
                   ) : (
-                    <p style={{ margin: 0, fontSize: 13, color: 'var(--color-text)', lineHeight: 1.4, wordBreak: 'break-word' }}>{r.content}</p>
+                    <div className={styles.replyBubble + (currentUserId === r.authorId ? ' ' + styles.replyBubbleOwn : '')}>
+                      {r.content}
+                    </div>
                   )}
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 4 }}>
                     <button
