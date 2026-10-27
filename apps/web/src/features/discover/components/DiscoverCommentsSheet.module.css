@@ -119,6 +119,12 @@
   gap: 8px;
   max-height: 170px;
   overflow-y: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.stickerGrid::-webkit-scrollbar {
+  display: none;
 }
 
 .stickerCell {
