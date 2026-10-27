@@ -78,6 +78,59 @@
   padding: 0;
 }
 
+/* Filter Row */
+.filterRow {
+  display: flex;
+  gap: 8px;
+  padding: 12px 16px;
+  overflow-x: auto;
+  background-color: var(--color-surface);
+  border-bottom: 1px solid var(--color-border-strong);
+}
+
+.filterPill {
+  display: flex;
+  align-items: center;
+  background-color: var(--color-surface-alt);
+  border: 1px solid var(--color-border-strong);
+  border-radius: 9999px;
+  padding: 0 12px;
+  height: 32px;
+  flex-shrink: 0;
+}
+
+.filterIcon {
+  color: var(--color-text-secondary);
+  margin-right: 6px;
+}
+
+.hashSymbol {
+  color: var(--color-text-secondary);
+  margin-right: 6px;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.filterSelect,
+.filterInput {
+  border: none;
+  background: transparent;
+  font-size: 13px;
+  color: var(--color-text);
+  outline: none;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.filterInput {
+  width: 80px;
+  cursor: text;
+}
+
+.filterInput::placeholder {
+  color: var(--color-text-muted);
+}
+
 .scrollArea {
   flex: 1;
   overflow-y: auto;

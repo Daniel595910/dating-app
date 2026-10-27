@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Search, X, Heart, Play } from 'lucide-react';
+import { Search, X, Heart, Play, MapPin } from 'lucide-react';
 import { discoverService } from '../services/discover.service';
 import styles from './DiscoverSearchModal.module.css';
 
@@ -35,6 +35,8 @@ export const DiscoverSearchModal: React.FC<DiscoverSearchModalProps> = ({
   onVideoSelect,
 }) => {
   const [query, setQuery] = useState('');
+  const [location, setLocation] = useState('');
+  const [hashtag, setHashtag] = useState('');
   const [results, setResults] = useState<SearchResult[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -43,10 +45,11 @@ export const DiscoverSearchModal: React.FC<DiscoverSearchModalProps> = ({
   useEffect(() => {
     if (open) {
       setTimeout(() => inputRef.current?.focus(), 300);
-      performSearch('');
     }
     if (!open) {
       setQuery('');
+      setLocation('');
+      setHashtag('');
       setResults([]);
     }
   }, [open]);
@@ -54,16 +57,22 @@ export const DiscoverSearchModal: React.FC<DiscoverSearchModalProps> = ({
   useEffect(() => {
     if (!open) return;
     const timer = setTimeout(() => {
-      performSearch(query);
+      performSearch();
     }, 300);
     return () => clearTimeout(timer);
-  }, [query]);
+  }, [query, location, hashtag, open]);
 
-  const performSearch = async (q: string) => {
+  const performSearch = async () => {
     setLoading(true);
     setError(null);
     try {
-      const data = await discoverService.searchVideos(q, 30);
+      const data = await discoverService.searchVideos(
+        query,
+        30,
+        0,
+        location || null,
+        hashtag || null
+      );
       setResults(data as SearchResult[]);
     } catch (err: any) {
       setError('Failed to load videos');
@@ -77,6 +86,7 @@ export const DiscoverSearchModal: React.FC<DiscoverSearchModalProps> = ({
   return (
     <div className={styles.overlay} onClick={onClose}>
       <div className={styles.container} onClick={(e) => e.stopPropagation()}>
+        
         {/* Header / Search Bar */}
         <div className={styles.header}>
           <div className={styles.searchWrapper}>
@@ -85,7 +95,7 @@ export const DiscoverSearchModal: React.FC<DiscoverSearchModalProps> = ({
               ref={inputRef}
               type="text"
               className={styles.searchInput}
-              placeholder="Search videos, hashtags, or people..."
+              placeholder="Search videos..."
               value={query}
               onChange={(e) => setQuery(e.target.value)}
             />
@@ -100,6 +110,36 @@ export const DiscoverSearchModal: React.FC<DiscoverSearchModalProps> = ({
           </button>
         </div>
 
+        {/* Filter Row */}
+        <div className={styles.filterRow}>
+          <div className={styles.filterPill}>
+            <MapPin size={14} className={styles.filterIcon} />
+            <select
+              value={location}
+              onChange={(e) => setLocation(e.target.value)}
+              className={styles.filterSelect}
+            >
+              <option value="">Any Location</option>
+              <option value="Nigeria">Nigeria</option>
+              <option value="Ghana">Ghana</option>
+              <option value="South Africa">South Africa</option>
+              <option value="United Kingdom">United Kingdom</option>
+              <option value="United States">United States</option>
+            </select>
+          </div>
+          
+          <div className={styles.filterPill}>
+            <span className={styles.hashSymbol}>#</span>
+            <input
+              type="text"
+              placeholder="Hashtag"
+              value={hashtag}
+              onChange={(e) => setHashtag(e.target.value.replace(/^#/, ''))}
+              className={styles.filterInput}
+            />
+          </div>
+        </div>
+
         {/* Results Grid */}
         <div className={styles.scrollArea}>
           {error && <div className={styles.error}>{error}</div>}
@@ -112,7 +152,7 @@ export const DiscoverSearchModal: React.FC<DiscoverSearchModalProps> = ({
             <div className={styles.emptyState}>
               <Search size={48} className={styles.emptyIcon} />
               <p>No videos found</p>
-              <span>Try searching for something else</span>
+              <span>Try adjusting your search or filters</span>
             </div>
           ) : (
             <div className={styles.grid}>
@@ -125,7 +165,6 @@ export const DiscoverSearchModal: React.FC<DiscoverSearchModalProps> = ({
                     onClose();
                   }}
                 >
-                  {/* Thumbnail / Video Fallback */}
                   <div className={styles.thumbnailWrapper}>
                     {item.thumbnail_url ? (
                       <img 
@@ -148,9 +187,8 @@ export const DiscoverSearchModal: React.FC<DiscoverSearchModalProps> = ({
                     </div>
                   </div>
 
-                  {/* Info */}
                   <div className={styles.info}>
-                    <p className={styles.caption} dangerouslySetInnerHTML={{__html: item.caption || 'Untitled video'}} />
+                    <p className={styles.caption}>{item.caption || 'Untitled video'}</p>
                     
                     <div className={styles.authorRow}>
                       <div className={styles.authorAvatar}>

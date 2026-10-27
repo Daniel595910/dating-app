@@ -72,7 +72,7 @@ class DiscoverService {
       p_location_text: details ? details.locationText : null,
       p_allow_comments: details ? details.allowComments : true,
       p_allow_duet: details ? details.allowDuet : true,
-        p_visibility: details ? details.visibility : 'public',
+      p_visibility: details ? details.visibility : 'public',
     });
 
     if (error) {
@@ -90,7 +90,6 @@ class DiscoverService {
       .from('discover_video_likes')
       .insert({ video_id: videoId, user_id: user.id });
     if (error) {
-      // Duplicate insert (already liked) — treat as success
       if (error.code === '23505') return true;
       console.error('likeVideo failed:', error);
       return false;
@@ -141,6 +140,27 @@ class DiscoverService {
     return (data || []).map((r: any) => ({ hashtag: r.hashtag, usageCount: r.usage_count || 0 }));
   }
 
+  async searchVideos(
+    query: string = '',
+    limit: number = 30,
+    offset: number = 0,
+    location: string | null = null,
+    hashtag: string | null = null
+  ): Promise<any[]> {
+    const { data, error } = await supabase.rpc('search_discover_videos', {
+      p_query: query,
+      p_limit: limit,
+      p_offset: offset,
+      p_location: location,
+      p_hashtag: hashtag,
+    });
+    if (error) {
+      console.error('searchVideos failed:', error);
+      return [];
+    }
+    return data || [];
+  }
+
   async fetchVideoComments(videoId: string): Promise<any[]> {
     const { data, error } = await supabase
       .from('discover_video_comments')
@@ -177,28 +197,7 @@ class DiscoverService {
     const { data: { user } } = await supabase.auth.getUser();
     const myId = user?.id || null;
 
-    type Node = {
-      id: string;
-      videoId: string;
-      authorId: string;
-      parentId: string | null;
-      rootId: string | null;
-      content: string;
-      contentType: string;
-      mediaUrl: string | null;
-      status: string;
-      createdAt: string;
-      authorName: string;
-      authorAvatarUrl: string | null;
-      authorVerified: boolean;
-      reactionCount: number;
-      userReacted: boolean;
-      children: any[];
-      replyCount: number;
-      replyingToName: string | null;
-    };
-
-    const nodeMap = new Map<string, Node>();
+    const nodeMap = new Map<string, any>();
     rows.forEach((r: any) => {
       const p = profileMap.get(r.author_id) || {};
       const users = reactionMap.get(r.id) || [];
@@ -218,25 +217,25 @@ class DiscoverService {
         authorVerified: p.is_verified || false,
         reactionCount: users.length,
         userReacted: myId ? users.includes(myId) : false,
-        children: [],
+        children: [] as any[],
         replyCount: 0,
-        replyingToName: null,
+        replyingToName: null as string | null,
       });
     });
 
     rows.forEach((r: any) => {
-      const node = nodeMap.get(r.id)!;
+      const node = nodeMap.get(r.id);
       if (r.parent_id && nodeMap.has(r.parent_id)) {
-        node.replyingToName = nodeMap.get(r.parent_id)!.authorName;
+        node.replyingToName = nodeMap.get(r.parent_id).authorName;
       }
     });
 
-    const roots: Node[] = [];
+    const roots: any[] = [];
     rows.forEach((r: any) => {
-      const node = nodeMap.get(r.id)!;
+      const node = nodeMap.get(r.id);
       if (r.parent_id && nodeMap.has(r.parent_id)) {
-        nodeMap.get(r.parent_id)!.children.push(node);
-        nodeMap.get(r.parent_id)!.replyCount++;
+        nodeMap.get(r.parent_id).children.push(node);
+        nodeMap.get(r.parent_id).replyCount++;
       } else if (!r.parent_id) {
         roots.push(node);
       }
@@ -245,7 +244,13 @@ class DiscoverService {
     return roots;
   }
 
-  async addVideoComment(videoId: string, content: string, parentId: string | null = null, contentType: string = 'text', mediaUrl: string | null = null): Promise<any | null> {
+  async addVideoComment(
+    videoId: string,
+    content: string,
+    parentId: string | null = null,
+    contentType: string = 'text',
+    mediaUrl: string | null = null
+  ): Promise<any | null> {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return null;
     let rootId: string | null = null;
@@ -289,6 +294,7 @@ class DiscoverService {
     }
     return true;
   }
+
   async toggleCommentReaction(commentId: string): Promise<boolean | null> {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return null;
@@ -310,19 +316,6 @@ class DiscoverService {
         .insert({ comment_id: commentId, user_id: user.id, reaction_type: 'like' });
       return error ? null : true;
     }
-  }
-
-  async searchVideos(query: string = '', limit: number = 30, offset: number = 0): Promise<any[]> {
-    const { data, error } = await supabase.rpc('search_discover_videos', {
-      p_query: query,
-      p_limit: limit,
-      p_offset: offset,
-    });
-    if (error) {
-      console.error('searchVideos failed:', error);
-      return [];
-    }
-    return data || [];
   }
 
   async getMyVideos(): Promise<any[]> {
