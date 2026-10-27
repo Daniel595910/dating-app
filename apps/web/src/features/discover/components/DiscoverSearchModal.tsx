@@ -125,14 +125,23 @@ export const DiscoverSearchModal: React.FC<DiscoverSearchModalProps> = ({
                     onClose();
                   }}
                 >
-                  {/* Thumbnail */}
+                  {/* Thumbnail / Video Fallback */}
                   <div className={styles.thumbnailWrapper}>
                     {item.thumbnail_url ? (
-                      <img src={item.thumbnail_url} alt="" className={styles.thumbnail} loading="lazy" />
+                      <img 
+                        src={item.thumbnail_url} 
+                        alt="" 
+                        className={styles.thumbnail} 
+                        loading="lazy" 
+                      />
                     ) : (
-                      <div className={styles.noThumbnail}>
-                        <Play size={24} />
-                      </div>
+                      <video 
+                        src={item.video_url + "#t=0.1"} 
+                        className={styles.thumbnail} 
+                        preload="metadata" 
+                        playsInline 
+                        muted 
+                      />
                     )}
                     <div className={styles.playBadge}>
                       <Play size={10} fill="#fff" />
