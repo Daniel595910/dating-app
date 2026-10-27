@@ -478,7 +478,13 @@ export const DiscoverPage: React.FC = () => {
         <button className={styles.backButton} onClick={() => navigate(-1)} aria-label="Back">
           <ArrowLeft size={20} />
         </button>
-        <h1 className={styles.headerTitle}>Discover</h1>
+        <div style={{ display: 'flex', flexDirection: 'column', flex: 1, textAlign: 'center' }}>
+          <h1 className={styles.headerTitle} style={{ margin: 0 }}>Discover</h1>
+          <div style={{ display: 'flex', gap: 6, fontSize: 10, color: 'rgba(255,255,255,0.8)', justifyContent: 'center', marginTop: 2 }}>
+            <span>{swipeCount}/{dailyLimit} swipes</span>
+            <span style={{ color: '#34d399' }}>{swipesRemaining} remaining</span>
+          </div>
+        </div>
         <div style={{ display: 'flex', gap: 8 }}>
           <button className={styles.headerButton} onClick={(e) => { e.stopPropagation(); setShowMyVideos(true); }} aria-label="My Videos">
             <Grid3x3 size={20} />
@@ -489,11 +495,6 @@ export const DiscoverPage: React.FC = () => {
         </div>
       </header>
 
-      {/* Swipe Counter */}
-      <div className={styles.swipeCounter}>
-        <span>{swipeCount}/{dailyLimit} swipes</span>
-        <span className={styles.swipeRemaining}>{swipesRemaining} remaining</span>
-      </div>
 
 
       {/* Double-tap Like Animation */}
