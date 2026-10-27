@@ -511,47 +511,47 @@ export const DiscoverCommentsSheet: React.FC<DiscoverCommentsSheetProps> = ({
         )}
 
         {showStickers && (
-          <div style={{ borderTop: '1px solid var(--color-border-strong)', padding: '8px 16px' }}>
-            <div style={{ display: 'flex', gap: 6, marginBottom: 8 }}>
+          <div className={styles.stickerPanel}>
+            <div className={styles.stickerTabs}>
               <button
                 onClick={() => setStickerTab('stickers')}
-                style={{ padding: '6px 14px', borderRadius: 9999, border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 600, backgroundColor: stickerTab === 'stickers' ? 'var(--color-primary-soft)' : 'var(--color-surface-alt)', color: stickerTab === 'stickers' ? 'var(--color-primary)' : 'var(--color-text-secondary)' }}
+                className={styles.stickerTab + (stickerTab === 'stickers' ? ' ' + styles.stickerTabActive : '')}
               >
                 Stickers
               </button>
               <button
                 onClick={() => setStickerTab('gifs')}
-                style={{ padding: '6px 14px', borderRadius: 9999, border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 600, backgroundColor: stickerTab === 'gifs' ? 'var(--color-primary-soft)' : 'var(--color-surface-alt)', color: stickerTab === 'gifs' ? 'var(--color-primary)' : 'var(--color-text-secondary)' }}
+                className={styles.stickerTab + (stickerTab === 'gifs' ? ' ' + styles.stickerTabActive : '')}
               >
                 GIFs
               </button>
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 6, maxHeight: 160, overflowY: 'auto' }}>
+            <div className={styles.stickerGrid}>
               {stickerTab === 'stickers' ? (
                 stickers.length === 0 ? (
-                  <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: 16, color: 'var(--color-text-muted)', fontSize: 13 }}>No stickers available</div>
+                  <div className={styles.stickerEmpty}>No stickers available</div>
                 ) : (
                   stickers.map((st) => (
                     <button
                       key={st.id}
                       onClick={() => handleSend('sticker', st.image_url, st.name || 'Sticker')}
-                      style={{ background: 'var(--color-surface-alt)', border: 'none', borderRadius: 10, cursor: 'pointer', padding: 6, aspectRatio: '1' }}
+                      className={styles.stickerCell}
                     >
-                      <img src={st.thumbnail_url || st.image_url} alt={st.name || 'Sticker'} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+                      <img src={st.thumbnail_url || st.image_url} alt={st.name || 'Sticker'} className={styles.stickerCellImage} />
                     </button>
                   ))
                 )
               ) : (
                 gifs.length === 0 ? (
-                  <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: 16, color: 'var(--color-text-muted)', fontSize: 13 }}>No GIFs available</div>
+                  <div className={styles.stickerEmpty}>No GIFs available</div>
                 ) : (
                   gifs.map((gf) => (
                     <button
                       key={gf.id}
                       onClick={() => handleSend('gif', gf.gif_url, gf.title || 'GIF')}
-                      style={{ background: 'var(--color-surface-alt)', border: 'none', borderRadius: 10, cursor: 'pointer', padding: 6, aspectRatio: '1' }}
+                      className={styles.stickerCell}
                     >
-                      <img src={gf.preview_url || gf.gif_url} alt={gf.title || 'GIF'} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      <img src={gf.preview_url || gf.gif_url} alt={gf.title || 'GIF'} className={styles.stickerCellImage} />
                     </button>
                   ))
                 )
