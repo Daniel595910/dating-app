@@ -8,6 +8,7 @@ import { DiscoverCandidate } from '../../features/discover/types/discover.types'
 import { PublishDetails } from '../../features/discover/types/discover.types';
 import { PostDetailsModal } from '../../features/discover/components/PostDetailsModal';
 import { DiscoverCommentsSheet } from '../../features/discover/components/DiscoverCommentsSheet';
+import { DiscoverSearchModal } from '../../features/discover/components/DiscoverSearchModal';
 import { 
   BadgeCheck, MapPin, Heart, X, Play, Pause, Video, Upload, 
   Loader, ArrowLeft, Grid3x3, Plus, Clock, CheckCircle2, XCircle,
@@ -70,6 +71,7 @@ export const DiscoverPage: React.FC = () => {
   const [commentsOpen, setCommentsOpen] = useState(false);
   const [commentsVideoId, setCommentsVideoId] = useState<string | null>(null);
   const [showPostedToast, setShowPostedToast] = useState(false);
+  const [searchModalOpen, setSearchModalOpen] = useState(false);
   
   const videoRef = useRef<HTMLVideoElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -733,7 +735,7 @@ export const DiscoverPage: React.FC = () => {
             </button>
             <div className={styles.categoryTabs}>
               <button className={`${styles.categoryTab} ${activeCategory === 'new' ? styles.categoryTabActive : ''}`} onClick={() => setActiveCategory('new')}>New</button>
-              <button className={`${styles.categoryTab} ${activeCategory === 'popular' ? styles.categoryTabActive : ''}`} onClick={() => setActiveCategory('popular')}>Pop</button>
+              <button className={`${styles.categoryTab} ${activeCategory === 'popular' ? styles.categoryTabActive : ''}`} onClick={() => setSearchModalOpen(true)}>Pop</button>
             </div>
           </div>
         </div>
@@ -796,6 +798,17 @@ export const DiscoverPage: React.FC = () => {
           Video posted for review
         </div>
       )}
+
+      <DiscoverSearchModal
+        open={searchModalOpen}
+        onClose={() => setSearchModalOpen(false)}
+        onVideoSelect={(videoId) => {
+          const idx = candidates.findIndex(c => c.videoId === videoId);
+          if (idx >= 0) {
+            setCurrentIndex(idx);
+          }
+        }}
+      />
 
       {uploadError && (
         <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.85)', zIndex: 1001, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }} onClick={() => setUploadError(null)}>
