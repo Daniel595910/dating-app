@@ -56,7 +56,8 @@ class MediaService {
   async uploadVideo(
     file: File,
     userId: string,
-    purpose: 'post_video' | 'discover_video'
+    purpose: 'post_video' | 'discover_video',
+    onProgress?: (percent: number) => void
   ): Promise<UploadResult> {
     try {
       const allowedTypes = ['video/mp4', 'video/webm', 'video/quicktime'];
@@ -76,19 +77,56 @@ class MediaService {
       const randomSuffix = Math.random().toString(36).substring(2, 8);
       const filePath = `${purpose}/${userId}/${timestamp}-${randomSuffix}.${extension || 'mp4'}`;
 
-      // 1. Upload the video file
-      const { error: uploadError } = await supabase.storage
-        .from('media')
-        .upload(filePath, file, { cacheControl: '3600', upsert: false, contentType: file.type || 'video/mp4' });
+      // 1. Get Supabase session for Authorization header
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        return { success: false, error: 'Not authenticated' };
+      }
 
-      if (uploadError) {
-        return { success: false, error: 'Failed to upload video' };
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+      const uploadUrl = `${supabaseUrl}/storage/v1/object/media/${filePath}`;
+
+      // 2. Upload via XMLHttpRequest for progress tracking
+      const uploadPromise = new Promise<void>((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        xhr.open('POST', uploadUrl, true);
+        xhr.setRequestHeader('Authorization', `Bearer ${session.access_token}`);
+        xhr.setRequestHeader('apikey', anonKey);
+        xhr.setRequestHeader('x-upsert', 'false');
+        xhr.setRequestHeader('Content-Type', file.type || 'video/mp4');
+
+        if (onProgress) {
+          xhr.upload.onprogress = (event) => {
+            if (event.lengthComputable) {
+              const percent = Math.round((event.loaded / event.total) * 100);
+              onProgress(percent);
+            }
+          };
+        }
+
+        xhr.onload = () => {
+          if (xhr.status >= 200 && xhr.status < 300) {
+            resolve();
+          } else {
+            reject(new Error(`Upload failed with status ${xhr.status}`));
+          }
+        };
+
+        xhr.onerror = () => reject(new Error('Network error during upload'));
+        xhr.send(file);
+      });
+
+      try {
+        await uploadPromise;
+      } catch (err: any) {
+        return { success: false, error: err.message || 'Failed to upload video' };
       }
 
       const { data: publicUrlData } = supabase.storage.from('media').getPublicUrl(filePath);
       let thumbnailUrl: string | null = null;
 
-      // 2. Generate and upload thumbnail
+      // 3. Generate and upload thumbnail
       try {
         const video = document.createElement('video');
         video.src = URL.createObjectURL(file);

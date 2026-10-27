@@ -406,7 +406,7 @@ export const DiscoverPage: React.FC = () => {
     setUploading(true);
     setUploadProgress(0);
     try {
-      const result = await mediaService.uploadVideo(pendingVideo.file, user.id, 'discover_video');
+      const result = await mediaService.uploadVideo(pendingVideo.file, user.id, 'discover_video', setUploadProgress);
       if (!result.success || !result.media) {
         setUploadError(result.error || 'Failed to upload video');
         setUploading(false);
