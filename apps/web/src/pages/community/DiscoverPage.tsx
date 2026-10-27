@@ -116,14 +116,14 @@ export const DiscoverPage: React.FC = () => {
 
   // Pause feed video when any modal is open
   useEffect(() => {
-    const modalOpen = showPublishModal || showMyVideos || Boolean(previewVideo) || commentsOpen;
+    const modalOpen = showPublishModal || showMyVideos || Boolean(previewVideo) || commentsOpen || searchModalOpen;
     const v = videoRef.current;
     if (!v) return;
     if (modalOpen && !v.paused) {
       v.pause();
       setIsPlaying(false);
     }
-  }, [showPublishModal, showMyVideos, previewVideo, commentsOpen]);
+  }, [showPublishModal, showMyVideos, previewVideo, commentsOpen, searchModalOpen]);
 
 
 

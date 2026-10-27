@@ -84,7 +84,13 @@ export const DiscoverSearchModal: React.FC<DiscoverSearchModalProps> = ({
   if (!open) return null;
 
   return (
-    <div className={styles.overlay} onClick={onClose}>
+    <div
+      className={styles.overlay}
+      onClick={onClose}
+      onTouchStart={(e) => e.stopPropagation()}
+      onTouchMove={(e) => e.stopPropagation()}
+      onTouchEnd={(e) => e.stopPropagation()}
+    >
       <div className={styles.container} onClick={(e) => e.stopPropagation()}>
         
         {/* Header / Search Bar */}
