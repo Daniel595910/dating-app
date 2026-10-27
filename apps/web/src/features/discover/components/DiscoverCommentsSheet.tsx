@@ -455,7 +455,7 @@ export const DiscoverCommentsSheet: React.FC<DiscoverCommentsSheetProps> = ({
         }}
       >
         <div style={{ position: 'relative', padding: 16, borderBottom: '1px solid var(--color-border-strong)', flexShrink: 0 }}>
-          <div style={{ width: 40, height: 4, backgroundColor: '#e5e7eb', borderRadius: 9999, position: 'absolute', left: '50%', transform: 'translateX(-50%)', top: 6 }} />
+          <div style={{ width: 40, height: 4, backgroundColor: 'var(--color-border-strong)', borderRadius: 9999, position: 'absolute', left: '50%', transform: 'translateX(-50%)', top: 6 }} />
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 6 }}>
             <h2 style={{ fontSize: 16, fontWeight: 700, margin: 0, color: 'var(--color-text)' }}>
               Comments ({totalCount(comments)})
