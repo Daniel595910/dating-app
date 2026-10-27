@@ -449,7 +449,7 @@ export const DiscoverCommentsSheet: React.FC<DiscoverCommentsSheetProps> = ({
         onClick={(e) => e.stopPropagation()}
         style={{
           width: '100%', maxWidth: 480, height: '80dvh',
-          backgroundColor: 'var(--color-surface)', borderRadius: '24px 24px 0 0',
+          backgroundColor: 'var(--color-surface)', borderRadius: '32px 32px 0 0',
           display: 'flex', flexDirection: 'column', overflow: 'hidden',
           boxShadow: '0 -8px 32px rgba(0,0,0,0.2)',
         }}
