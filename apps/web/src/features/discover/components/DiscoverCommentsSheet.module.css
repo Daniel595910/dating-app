@@ -294,7 +294,7 @@
   flex: 1;
   min-height: 40px;
   max-height: 120px;
-  padding: 10px 44px 10px 14px;
+  padding: 10px 84px 10px 14px;
   background: #f3f4f6;
   border: none;
   border-radius: 20px;
@@ -411,7 +411,7 @@
 /* Inline sticker button inside the pill */
 .inlineStickerButton {
   position: absolute;
-  right: 8px;
+  right: 44px;
   top: 50%;
   transform: translateY(-50%);
   background: none;
@@ -448,4 +448,47 @@
 [data-theme="dark"] .inlineStickerButtonActive {
   color: #ef4444;
   background: rgba(239, 68, 68, 0.15);
+}
+
+.inlineSendButton {
+  position: absolute;
+  right: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 32px;
+  height: 32px;
+  background: #e5e7eb;
+  color: #9ca3af;
+  border: none;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: default;
+  transition: all 0.15s ease;
+  padding: 0;
+}
+
+.inlineSendButtonActive {
+  background: #ef4444;
+  color: #ffffff;
+  cursor: pointer;
+}
+
+.inlineSendButtonActive:hover {
+  background: #dc2626;
+}
+
+.inlineSendButtonActive:active {
+  transform: translateY(-50%) scale(0.94);
+}
+
+[data-theme="dark"] .inlineSendButton {
+  background: #2a2a2e;
+  color: #6b6b70;
+}
+
+[data-theme="dark"] .inlineSendButtonActive {
+  background: #ef4444;
+  color: #ffffff;
 }

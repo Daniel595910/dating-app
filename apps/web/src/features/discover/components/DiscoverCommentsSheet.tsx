@@ -670,31 +670,16 @@ export const DiscoverCommentsSheet: React.FC<DiscoverCommentsSheetProps> = ({
               >
                 <Sticker size={20} />
               </button>
-            </div>
-          </div>
-
-          {/* Toolbar: send + emoji (desktop) */}
-          <div className={styles.composerToolbar}>
-            {!isTouchDevice() && (
               <button
                 type="button"
-                onClick={handleEmojiClick}
-                aria-label="Emoji"
-                className={styles.composerToolButton + (showEmoji ? ' ' + styles.composerToolButtonActive : '')}
+                onClick={() => handleSend()}
+                disabled={!input.trim() || sending}
+                aria-label="Send comment"
+                className={styles.inlineSendButton + (input.trim() && !sending ? ' ' + styles.inlineSendButtonActive : '')}
               >
-                <Smile size={22} />
+                {sending ? <Loader size={16} /> : <Send size={16} />}
               </button>
-            )}
-            <div style={{ flex: 1 }} />
-            <button
-              type="button"
-              onClick={() => handleSend()}
-              disabled={!input.trim() || sending}
-              aria-label="Send comment"
-              className={styles.sendButtonPill + (input.trim() && !sending ? ' ' + styles.sendButtonPillActive : '')}
-            >
-              {sending ? <Loader size={18} /> : <Send size={18} />}
-            </button>
+            </div>
           </div>
         </div>
       </div>
