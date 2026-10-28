@@ -540,24 +540,33 @@ export function useConnection(userId: string | null): UseConnectionResult {
       .from('matches')
       .select('*')
       .or(`and(user1_id.eq.${userId},user2_id.eq.${targetUserId}),and(user1_id.eq.${targetUserId},user2_id.eq.${userId})`)
-      .single();
+      .maybeSingle();
 
     if (match) {
-      if (match.stage === 'matched') return 'matched';
-      if (match.user1_interest && match.user2_interest) return 'mutual_interest';
-      return 'accepted';
+      // Treat rejected/expired/cancelled matches as ''none'' so users can rematch
+      if (match.stage === 'rejected' || match.stage === 'expired' || match.status === 'cancelled') {
+        // Fall through to check match_requests — an active pending/accepted request may still exist
+      } else {
+        if (match.stage === 'matched') return 'matched';
+        if (match.user1_interest && match.user2_interest) return 'mutual_interest';
+        return 'accepted';
+      }
     }
 
     const { data: request } = await supabase
       .from('match_requests')
       .select('*')
       .or(`and(requester_id.eq.${userId},target_id.eq.${targetUserId}),and(requester_id.eq.${targetUserId},target_id.eq.${userId})`)
-      .single();
+      .maybeSingle();
 
     if (request) {
       if (request.status === 'pending') return 'pending';
-      if (request.status === 'declined') return 'declined';
-      if (request.status === 'cancelled') return 'cancelled';
+      if (request.status === 'accepted') {
+        // Accepted request on a rejected match — likely stale; treat as ''none'' to allow rematch
+        return 'none';
+      }
+      if (request.status === 'declined') return 'none';
+      if (request.status === 'cancelled') return 'none';
     }
 
     return 'none';
