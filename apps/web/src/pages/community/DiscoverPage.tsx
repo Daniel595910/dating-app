@@ -358,7 +358,7 @@ export const DiscoverPage: React.FC = () => {
       videoCardRef.current.style.transform = `translate3d(${appliedX}px, ${appliedY}px, 0)`;
     }
 
-    if (drag.direction !== null && e.cancelable) e.preventDefault();
+    // No preventDefault — .discoverPage has touch-action: none which handles this
   }, []);
 
   const handleTouchEnd = useCallback(() => {
