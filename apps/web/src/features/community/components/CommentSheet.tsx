@@ -38,7 +38,6 @@ interface CommentNode {
 
 const EMOJIS = ['😀', '😂', '😍', '😭', '😡', '👍', '🙏', '🔥', '❤️', '💯', '🎉', '🌹', '💐', '🎁', '💝', '🥰', '😮', '😢', '✨', '💋', '🦋', '🌈', '⭐', '💎', '👑'];
 
-// Exact match from Discover
 const QUICK_REACTIONS: string[][] = [
   ['😄','😂','😄'],
   ['🌹','🌹','🌹'],
@@ -61,15 +60,16 @@ export const CommentSheet: React.FC<CommentSheetProps> = ({ open, onClose, postI
   const [replyPages, setReplyPages] = useState<Map<string, number>>(new Map());
   const [commentToDelete, setCommentToDelete] = useState<string | null>(null);
   
-  // Discover Style state
-  const [showEmoji, setShowEmoji] = useState(false);
-  const [currentUserAvatar, setCurrentUserAvatar] = useState<string | null>(null);
+  // Composer State
+  const [composerOpen, setComposerOpen] = useState(false);
   const [keyboardOpen, setKeyboardOpen] = useState(false);
-  
-  // Sticker & Gift state
+  const [showEmoji, setShowEmoji] = useState(false);
   const [showSticker, setShowSticker] = useState(false);
-  const [showGift, setShowGift] = useState(false);
+  const [stickerTab, setStickerTab] = useState<'stickers' | 'gifs' | 'gifts'>('stickers');
+  
+  const [currentUserAvatar, setCurrentUserAvatar] = useState<string | null>(null);
   const [stickers, setStickers] = useState<any[]>([]);
+  const [gifs, setGifs] = useState<any[]>([]);
   const [gifts, setGifts] = useState<any[]>([]);
 
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -228,12 +228,11 @@ export const CommentSheet: React.FC<CommentSheetProps> = ({ open, onClose, postI
   useEffect(() => {
     if (open) {
       fetchComments();
-      setTimeout(() => inputRef.current?.focus(), 300);
     }
     if (!open) {
       setShowEmoji(false);
       setShowSticker(false);
-      setShowGift(false);
+      setComposerOpen(false);
     }
   }, [open, fetchComments]);
 
@@ -248,29 +247,24 @@ export const CommentSheet: React.FC<CommentSheetProps> = ({ open, onClose, postI
     return () => { channel.unsubscribe(); };
   }, [open, postId, fetchComments]);
 
-  // Discover Style: Fetch current user avatar
   useEffect(() => {
-    if (!open || !userId) return;
+    if (!userId) return;
     (async () => {
-      const { data } = await supabase
-        .from('profiles')
-        .select('avatar_url')
-        .eq('user_id', userId)
-        .maybeSingle();
+      const { data } = await supabase.from('profiles').select('avatar_url').eq('user_id', userId).maybeSingle();
       setCurrentUserAvatar(data?.avatar_url || null);
     })();
-  }, [open, userId]);
+  }, [userId]);
 
-  // Load stickers and gifts
   useEffect(() => {
     if (!open) return;
     supabase.from('stickers').select('*').eq('is_active', true).limit(50).then(({ data }) => setStickers(data || []));
+    supabase.from('gifs').select('*').eq('is_active', true).limit(50).then(({ data }) => setGifs(data || []));
     supabase.from('gifts').select('*').eq('is_active', true).order('sort_order').then(({ data }) => setGifts(data || []));
   }, [open]);
 
-  // Discover Style: Keyboard-aware shift
+  // Visual Viewport for Keyboard Tracking
   useEffect(() => {
-    if (!open || !window.visualViewport) return;
+    if (!composerOpen || !window.visualViewport) return;
     const vv = window.visualViewport;
     const update = () => {
       const kb = window.innerHeight - vv.height - vv.offsetTop;
@@ -286,7 +280,7 @@ export const CommentSheet: React.FC<CommentSheetProps> = ({ open, onClose, postI
       vv.removeEventListener('scroll', update);
       document.documentElement.style.removeProperty('--spensive-kb-height');
     };
-  }, [open]);
+  }, [composerOpen]);
 
   const handleSend = async (contentType: string = 'text', mediaUrl: string | null = null, content?: string) => {
     const finalContent = content || newComment.trim();
@@ -330,7 +324,7 @@ export const CommentSheet: React.FC<CommentSheetProps> = ({ open, onClose, postI
       setReplyingTo(null);
       setShowEmoji(false);
       setShowSticker(false);
-      setShowGift(false);
+      setComposerOpen(false); // Close the composer modal after send
       if (inputRef.current) inputRef.current.style.height = 'auto';
 
       if (parentId) {
@@ -348,13 +342,12 @@ export const CommentSheet: React.FC<CommentSheetProps> = ({ open, onClose, postI
       setError(err.message || 'Failed to send');
     } finally {
       setSending(false);
-      inputRef.current?.focus();
     }
   };
 
   const handleReply = (comment: CommentNode) => {
     setReplyingTo(comment);
-    inputRef.current?.focus();
+    setComposerOpen(true);
   };
 
   const handleDelete = async (commentId: string) => {
@@ -416,7 +409,7 @@ export const CommentSheet: React.FC<CommentSheetProps> = ({ open, onClose, postI
       e.stopPropagation();
       handleSend('text', null);
     }
-    if (e.key === 'Escape') onClose();
+    if (e.key === 'Escape') setComposerOpen(false);
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -552,15 +545,7 @@ export const CommentSheet: React.FC<CommentSheetProps> = ({ open, onClose, postI
 
   return (
     <div className={styles.overlay} onClick={onClose}>
-      <div
-        className={styles.sheet}
-        style={{
-          bottom: keyboardOpen ? 'var(--spensive-kb-height)' : 0,
-          transition: 'bottom 0.15s ease',
-          position: 'relative',
-        }}
-        onClick={(e) => e.stopPropagation()}
-      >
+      <div className={styles.sheet} onClick={(e) => e.stopPropagation()}>
         <div className={styles.dragHandle} />
 
         <div className={styles.header}>
@@ -582,147 +567,140 @@ export const CommentSheet: React.FC<CommentSheetProps> = ({ open, onClose, postI
           )}
         </div>
 
-        {replyingTo && (
-          <div className={styles.replyIndicator}>
-            <CornerDownRight size={14} />
-            <span>Replying to <strong>@{replyingTo.author.name}</strong></span>
-            <button onClick={() => setReplyingTo(null)}><X size={14} /></button>
-          </div>
-        )}
-
-        {showEmoji && (
-          <div className={styles.panel}>
-            <div className={styles.emojiGrid}>
-              {EMOJIS.map((emoji) => (
-                <button key={emoji} className={styles.emojiOption} onClick={() => setNewComment((prev) => prev + emoji)}>{emoji}</button>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {showSticker && (
-          <div className={styles.panel}>
-            <div className={styles.emojiGrid}>
-              {stickers.length === 0 ? (
-                <div style={{ gridColumn: '1 / -1', padding: 12, textAlign: 'center', color: 'var(--comment-text-tertiary)', fontSize: 13 }}>No stickers available</div>
-              ) : (
-                stickers.map((st) => (
-                  <button key={st.id} className={styles.emojiOption} onClick={() => handleSend('sticker', st.image_url, 'Sticker')}>
-                    <img src={st.thumbnail_url || st.image_url} alt="Sticker" style={{ width: '48px', height: '48px', objectFit: 'contain' }} />
-                  </button>
-                ))
-              )}
-            </div>
-          </div>
-        )}
-
-        {showGift && (
-          <div className={styles.panel}>
-            <div className={styles.emojiGrid}>
-              {gifts.length === 0 ? (
-                <div style={{ gridColumn: '1 / -1', padding: 12, textAlign: 'center', color: 'var(--comment-text-tertiary)', fontSize: 13 }}>No gifts available</div>
-              ) : (
-                gifts.map((gf) => (
-                  <button key={gf.id} className={styles.emojiOption} onClick={() => handleSend('gift', gf.icon_url, gf.name)}>
-                    <span style={{ fontSize: '28px' }}>{gf.icon_url}</span>
-                    <span style={{ fontSize: '9px', fontWeight: 600 }}>{gf.name}</span>
-                  </button>
-                ))
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* DISCOVER STYLE COMPOSER */}
-        <div className={styles.composerSheet}>
-          {/* Quick reactions row */}
-          <div className={styles.reactionScroll}>
-            {QUICK_REACTIONS.map((group, i) => (
-              <button
-                key={i}
-                type="button"
-                className={styles.reactionChip}
-                onClick={() => setNewComment((prev) => prev + group.join(''))}
-                aria-label={`React with ${group.join('')}`}
-              >
-                {group.join('')}
-              </button>
-            ))}
-          </div>
-
-          {/* Input row: avatar + pill with inline tools + send */}
-          <div className={styles.inputRow}>
-            <div className={styles.composerAvatar}>
+        {/* Fake bottom bar to trigger composer modal */}
+        <div className={styles.fakeComposerBar} onClick={() => setComposerOpen(true)}>
+           <div className={styles.composerAvatar}>
               {currentUserAvatar ? <img src={currentUserAvatar} alt="" /> : <span>?</span>}
             </div>
-            <div className={styles.inputPillWrapper}>
-              <textarea
-                ref={inputRef}
-                className={styles.commentInputPill}
-                value={newComment}
-                onChange={handleInputChange}
-                onKeyDown={handleKeyDown}
-                placeholder={replyingTo ? `Reply to @${replyingTo.author.name}...` : 'Add comment...'}
-                rows={1}
-                disabled={sending}
-                enterKeyHint="send"
-                onFocus={() => setKeyboardOpen(true)}
-              />
-              
-              {/* Inline tools (Emoji, Sticker, Gift + Send) */}
-              <div className={styles.pillIcons}>
-                <button
-                  type="button"
-                  onClick={() => { setShowEmoji((v) => !v); setShowSticker(false); setShowGift(false); }}
-                  className={styles.pillIconBtn + (showEmoji ? ' ' + styles.pillIconBtnActive : '')}
-                  aria-label="Emoji"
-                >
-                  <Smile size={18} />
+            <div className={styles.fakeInput}>Add a comment...</div>
+        </div>
+      </div>
+
+      {/* COMPOSER MODAL (Slides up from bottom, sits above keyboard) */}
+      {composerOpen && (
+        <div 
+          className={styles.composerOverlay} 
+          onClick={() => setComposerOpen(false)}
+          style={{
+            bottom: keyboardOpen ? 'var(--spensive-kb-height)' : 0,
+            transition: 'bottom 0.15s ease',
+          }}
+        >
+          <div className={styles.composerSheet} onClick={(e) => e.stopPropagation()}>
+            
+            {replyingTo && (
+              <div className={styles.replyIndicator}>
+                <CornerDownRight size={14} />
+                <span>Replying to <strong>@{replyingTo.author.name}</strong></span>
+                <button onClick={() => setReplyingTo(null)}><X size={14} /></button>
+              </div>
+            )}
+
+            {showEmoji && (
+              <div className={styles.panel}>
+                <div className={styles.emojiGrid}>
+                  {EMOJIS.map((emoji) => (
+                    <button key={emoji} className={styles.emojiOption} onClick={() => setNewComment((prev) => prev + emoji)}>{emoji}</button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {showSticker && (
+              <div className={styles.stickerPanel}>
+                <div className={styles.stickerTabs}>
+                  <button onClick={() => setStickerTab('stickers')} className={styles.stickerTab + (stickerTab === 'stickers' ? ' ' + styles.stickerTabActive : '')}>Stickers</button>
+                  <button onClick={() => setStickerTab('gifs')} className={styles.stickerTab + (stickerTab === 'gifs' ? ' ' + styles.stickerTabActive : '')}>GIFs</button>
+                  <button onClick={() => setStickerTab('gifts')} className={styles.stickerTab + (stickerTab === 'gifts' ? ' ' + styles.stickerTabActive : '')}>Gifts</button>
+                </div>
+                
+                <div className={styles.stickerGrid}>
+                  {stickerTab === 'stickers' ? (
+                    stickers.length === 0 ? ( <div className={styles.stickerEmpty}>No stickers available</div> ) : (
+                      stickers.map((st) => (
+                        <button key={st.id} onClick={() => handleSend('sticker', st.image_url, st.name || 'Sticker')} className={styles.stickerCell}>
+                          <img src={st.thumbnail_url || st.image_url} alt={st.name} className={styles.stickerCellImage} />
+                        </button>
+                      ))
+                    )
+                  ) : stickerTab === 'gifs' ? (
+                    gifs.length === 0 ? ( <div className={styles.stickerEmpty}>No GIFs available</div> ) : (
+                      gifs.map((gf) => (
+                        <button key={gf.id} onClick={() => handleSend('gif', gf.gif_url, gf.title || 'GIF')} className={styles.stickerCell}>
+                          <img src={gf.preview_url || gf.gif_url} alt={gf.title} className={styles.stickerCellImage} />
+                        </button>
+                      ))
+                    )
+                  ) : (
+                    gifts.length === 0 ? ( <div className={styles.stickerEmpty}>No gifts available</div> ) : (
+                      gifts.map((gf) => (
+                        <button key={gf.id} onClick={() => handleSend('gift', gf.icon_url, gf.name)} className={styles.stickerCell}>
+                          <span style={{ fontSize: '28px' }}>{gf.icon_url}</span>
+                          <span style={{ fontSize: '10px', fontWeight: 600 }}>{gf.name}</span>
+                        </button>
+                      ))
+                    )
+                  )}
+                </div>
+              </div>
+            )}
+
+            <div className={styles.reactionScroll}>
+              {QUICK_REACTIONS.map((group, i) => (
+                <button key={i} type="button" className={styles.reactionChip} onClick={() => setNewComment((prev) => prev + group.join(''))}>
+                  {group.join('')}
                 </button>
-                <button
-                  type="button"
-                  onClick={() => { setShowSticker((v) => !v); setShowEmoji(false); setShowGift(false); }}
-                  className={styles.pillIconBtn + (showSticker ? ' ' + styles.pillIconBtnActive : '')}
-                  aria-label="Stickers"
-                >
-                  <Sticker size={18} />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => { setShowGift((v) => !v); setShowEmoji(false); setShowSticker(false); }}
-                  className={styles.pillIconBtn + (showGift ? ' ' + styles.pillIconBtnActive : '')}
-                  aria-label="Gifts"
-                >
-                  <Gift size={18} />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleSend('text', null)}
-                  disabled={!newComment.trim() || sending}
-                  className={styles.inlineSendButton + (newComment.trim() && !sending ? ' ' + styles.inlineSendButtonActive : '')}
-                  aria-label="Send comment"
-                >
-                  {sending ? <Loader size={16} className={styles.spinner} /> : <Send size={16} />}
-                </button>
+              ))}
+            </div>
+
+            <div className={styles.inputRow}>
+              <div className={styles.composerAvatar}>
+                {currentUserAvatar ? <img src={currentUserAvatar} alt="" /> : <span>?</span>}
+              </div>
+              <div className={styles.inputPillWrapper}>
+                <textarea
+                  ref={inputRef}
+                  className={styles.commentInputPill}
+                  value={newComment}
+                  onChange={handleInputChange}
+                  onKeyDown={handleKeyDown}
+                  placeholder={replyingTo ? `Reply to @${replyingTo.author.name}...` : 'Add comment...'}
+                  rows={1}
+                  disabled={sending}
+                  enterKeyHint="send"
+                  autoFocus
+                />
+                
+                <div className={styles.pillIcons}>
+                  <button type="button" onClick={() => { setShowEmoji((v) => !v); setShowSticker(false); }} className={styles.pillIconBtn + (showEmoji ? ' ' + styles.pillIconBtnActive : '')}>
+                    <Smile size={18} />
+                  </button>
+                  <button type="button" onClick={() => { setShowSticker((v) => !v); setShowEmoji(false); }} className={styles.pillIconBtn + (showSticker ? ' ' + styles.pillIconBtnActive : '')}>
+                    <Sticker size={18} />
+                  </button>
+                  <button type="button" onClick={() => handleSend('text', null)} disabled={!newComment.trim() || sending} className={styles.inlineSendButton + (newComment.trim() && !sending ? ' ' + styles.inlineSendButtonActive : '')}>
+                    {sending ? <Loader size={16} className={styles.spinner} /> : <Send size={16} />}
+                  </button>
+                </div>
               </div>
             </div>
           </div>
         </div>
+      )}
 
-        {commentToDelete && (
-          <div className={styles.deleteConfirmOverlay} onClick={() => setCommentToDelete(null)}>
-            <div className={styles.deleteConfirmDialog} onClick={(e) => e.stopPropagation()}>
-              <Trash2 size={32} className={styles.deleteConfirmIcon} />
-              <h3>Delete comment?</h3>
-              <p>This action cannot be undone.</p>
-              <div className={styles.deleteConfirmActions}>
-                <button className={styles.cancelDelete} onClick={() => setCommentToDelete(null)}>Cancel</button>
-                <button className={styles.confirmDelete} onClick={() => handleDelete(commentToDelete)}>Delete</button>
-              </div>
+      {commentToDelete && (
+        <div className={styles.deleteConfirmOverlay} onClick={() => setCommentToDelete(null)}>
+          <div className={styles.deleteConfirmDialog} onClick={(e) => e.stopPropagation()}>
+            <Trash2 size={32} className={styles.deleteConfirmIcon} />
+            <h3>Delete comment?</h3>
+            <p>This action cannot be undone.</p>
+            <div className={styles.deleteConfirmActions}>
+              <button className={styles.cancelDelete} onClick={() => setCommentToDelete(null)}>Cancel</button>
+              <button className={styles.confirmDelete} onClick={() => handleDelete(commentToDelete)}>Delete</button>
             </div>
           </div>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 };

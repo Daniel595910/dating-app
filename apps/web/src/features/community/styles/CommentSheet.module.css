@@ -1,43 +1,44 @@
 ﻿/* =========================================================
-   Comment Sheet - Complete Styles (Discover Composer Match)
+   Comment Sheet - Complete Modern Styles (Dark/Light Mode)
    ========================================================= */
 
 :root {
   --comment-text: #111827;
   --comment-text-secondary: #6b7280;
   --comment-text-tertiary: #9ca3af;
-  --comment-surface: #f9fafb;
-  --comment-surface-hover: #f3f4f6;
+  --comment-surface: #f3f4f6; /* Slightly darker for better contrast against white */
+  --comment-surface-hover: #e5e7eb;
   --comment-border: #e5e7eb;
   --comment-thread-line: #d1d5db;
   --comment-accent: #ef4444;
   --comment-danger: #ef4444;
   --comment-bg: #ffffff;
+  --comment-overlay: rgba(0, 0, 0, 0.5);
 }
 
 [data-theme="dark"] {
   --comment-text: #f9fafb;
   --comment-text-secondary: #9ca3af;
   --comment-text-tertiary: #6b7280;
-  --comment-surface: #1f2937;
+  --comment-surface: #1f2937; /* Darker bubble */
   --comment-surface-hover: #374151;
   --comment-border: #374151;
   --comment-thread-line: #4b5563;
   --comment-accent: #ef4444;
   --comment-danger: #ef4444;
   --comment-bg: #111827;
+  --comment-overlay: rgba(0, 0, 0, 0.75);
 }
 
 /* Overlay & Sheet */
 .overlay {
   position: fixed;
   inset: 0;
-  background-color: rgba(0, 0, 0, 0.55);
+  background-color: var(--comment-overlay);
   z-index: 1000;
   display: flex;
   align-items: flex-end;
   justify-content: center;
-  animation: overlayFade 0.2s ease;
   backdrop-filter: blur(4px);
   -webkit-backdrop-filter: blur(4px);
 }
@@ -53,9 +54,10 @@
   flex-direction: column;
   overflow: hidden;
   box-sizing: border-box;
-  animation: sheetSlideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.1);
 }
 
+/* Header */
 .dragHandle {
   width: 36px;
   height: 4px;
@@ -65,7 +67,6 @@
   flex-shrink: 0;
 }
 
-/* Header */
 .header {
   display: flex;
   align-items: center;
@@ -76,7 +77,7 @@
 }
 
 .title {
-  font-size: 15px;
+  font-size: 16px;
   font-weight: 700;
   margin: 0;
   display: flex;
@@ -104,13 +105,12 @@
   align-items: center;
   justify-content: center;
   color: var(--comment-text-secondary);
-  transition: background-color 0.15s;
-  min-width: 40px;
-  min-height: 40px;
+  min-width: 36px;
+  min-height: 36px;
 }
 
 .closeButton:hover {
-  background: var(--comment-surface-hover);
+  background: var(--comment-surface);
 }
 
 /* Comments List */
@@ -120,13 +120,10 @@
   overflow-y: auto;
   overflow-x: hidden;
   overscroll-behavior: contain;
-  -webkit-overflow-scrolling: touch;
   padding: 14px 16px;
   display: flex;
   flex-direction: column;
   gap: 16px;
-  width: 100%;
-  box-sizing: border-box;
 }
 
 /* Threads & Comments */
@@ -134,8 +131,6 @@
   display: flex;
   flex-direction: column;
   gap: 2px;
-  min-width: 0;
-  max-width: 100%;
   width: 100%;
 }
 
@@ -144,10 +139,6 @@
   grid-template-columns: 32px minmax(0, 1fr);
   column-gap: 8px;
   width: 100%;
-  min-width: 0;
-  max-width: 100%;
-  box-sizing: border-box;
-  animation: commentIn 0.2s ease;
 }
 
 .commentAvatar {
@@ -174,19 +165,17 @@
 .commentBody {
   min-width: 0;
   max-width: 100%;
-  box-sizing: border-box;
 }
 
 .commentBubble {
   display: inline-block;
   max-width: 100%;
   padding: 8px 12px;
-  border-radius: 14px;
+  border-radius: 16px;
   background: var(--comment-surface);
   min-width: 0;
   overflow-wrap: anywhere;
   word-break: break-word;
-  box-sizing: border-box;
 }
 
 .commentHeaderRow {
@@ -203,7 +192,7 @@
 }
 
 .commentTime {
-  font-size: 10px;
+  font-size: 11px;
   color: var(--comment-text-tertiary);
 }
 
@@ -218,9 +207,7 @@
 .commentGif {
   display: block;
   max-width: 180px;
-  width: auto;
-  height: auto;
-  border-radius: 10px;
+  border-radius: 12px;
 }
 
 .commentSticker {
@@ -252,7 +239,6 @@
 }
 
 .commentAction {
-  min-height: 30px;
   padding: 4px 6px;
   border: 0;
   background: none;
@@ -263,21 +249,15 @@
   display: flex;
   align-items: center;
   gap: 4px;
-  transition: color 0.15s;
   border-radius: 6px;
 }
 
 .commentAction:hover {
-  color: var(--comment-text);
-  background: var(--comment-surface-hover);
+  background: var(--comment-surface);
 }
 
 .commentActionLiked {
   color: var(--comment-accent);
-}
-
-.commentActionDelete:hover {
-  color: var(--comment-danger);
 }
 
 /* Reply Rail */
@@ -288,9 +268,7 @@
   display: flex;
   flex-direction: column;
   gap: 10px;
-  min-width: 0;
-  max-width: 100%;
-  overflow: hidden;
+  margin-top: 8px;
 }
 
 .replyRail .commentItem {
@@ -298,13 +276,6 @@
   padding-left: 0;
 }
 
-.replyRail .replyRail {
-  margin-left: 0;
-  padding-left: 0;
-  border-left: none;
-}
-
-/* Pagination */
 .loadMoreReplies {
   background: none;
   border: none;
@@ -314,97 +285,93 @@
   font-weight: 600;
   padding: 6px 8px;
   border-radius: 6px;
-  transition: all 0.15s;
   align-self: flex-start;
-  min-height: 32px;
 }
 
-.loadMoreReplies:hover {
-  background: var(--comment-surface-hover);
-  color: var(--comment-text);
+.replyingToLabel {
+  display: block;
+  font-size: 11px;
+  color: var(--comment-text-tertiary);
+  margin-bottom: 2px;
+  font-weight: 500;
 }
 
-/* Reply Indicator */
+/* =========================================================
+   Fake Composer Bar (At bottom of main sheet)
+   ========================================================= */
+.fakeComposerBar {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 16px calc(10px + env(safe-area-inset-bottom));
+  background: var(--comment-bg);
+  border-top: 1px solid var(--comment-border);
+  cursor: text;
+}
+
+.fakeInput {
+  flex: 1;
+  background: var(--comment-surface);
+  color: var(--comment-text-tertiary);
+  border-radius: 22px;
+  padding: 10px 16px;
+  font-size: 14px;
+}
+
+/* =========================================================
+   Composer Modal Overlay (Slides up from bottom)
+   ========================================================= */
+.composerOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 2000; /* Above the sheet */
+  background: transparent;
+}
+
+.composerSheet {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100%;
+  background: var(--comment-bg);
+  border-radius: 20px 20px 0 0;
+  padding: 12px 12px calc(12px + env(safe-area-inset-bottom));
+  box-shadow: 0 -4px 30px rgba(0, 0, 0, 0.15);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  animation: slideUp 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes slideUp {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+
+/* Reply Indicator inside modal */
 .replyIndicator {
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 8px 16px;
+  padding: 8px 12px;
   background: rgba(239, 68, 68, 0.05);
-  border-top: 1px solid rgba(239, 68, 68, 0.15);
+  border-radius: 8px;
   font-size: 13px;
   color: var(--comment-text);
-  flex-shrink: 0;
 }
 
 [data-theme="dark"] .replyIndicator {
   background: rgba(239, 68, 68, 0.1);
-  border-top-color: rgba(239, 68, 68, 0.2);
 }
 
 .replyIndicator button {
   background: none;
   border: none;
   cursor: pointer;
-  padding: 4px;
   color: var(--comment-text-secondary);
   margin-left: auto;
-  min-width: 30px;
-  min-height: 30px;
-  border-radius: 50%;
-}
-
-/* Panels */
-.panel {
-  padding: 8px 12px;
-  border-top: 1px solid var(--comment-border);
-  max-height: 160px;
-  overflow-y: auto;
-  overflow-x: hidden;
-  flex-shrink: 0;
-}
-
-.emojiGrid {
-  display: grid;
-  grid-template-columns: repeat(8, 1fr);
-  gap: 2px;
-}
-
-.emojiOption {
-  background: none;
-  border: none;
-  cursor: pointer;
-  font-size: 20px;
-  padding: 6px;
-  border-radius: 8px;
-  transition: all 0.15s;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 2px;
-  min-height: 40px;
-  color: var(--comment-text);
-}
-
-.emojiOption:hover {
-  background: var(--comment-surface-hover);
-  transform: scale(1.1);
-}
-
-/* =========================================================
-   DISCOVER STYLE COMPOSER (Matches exactly)
-   ========================================================= */
-
-.composerSheet {
-  flex: 0 0 auto;
-  width: 100%;
-  padding: 10px 12px calc(10px + env(safe-area-inset-bottom));
-  background: var(--comment-bg);
-  border-top: 1px solid var(--comment-border);
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  box-sizing: border-box;
 }
 
 /* Quick Reactions */
@@ -412,11 +379,8 @@
   display: flex;
   gap: 8px;
   overflow-x: auto;
-  overflow-y: hidden;
-  padding-bottom: 4px;
   scrollbar-width: none;
-  -ms-overflow-style: none;
-  -webkit-overflow-scrolling: touch;
+  padding-bottom: 4px;
 }
 
 .reactionScroll::-webkit-scrollbar {
@@ -425,22 +389,17 @@
 
 .reactionChip {
   flex-shrink: 0;
-  background: var(--comment-surface-hover);
+  background: var(--comment-surface);
   border: none;
   border-radius: 9999px;
   padding: 6px 12px;
   font-size: 18px;
   line-height: 1;
   cursor: pointer;
-  transition: transform 0.12s ease, background 0.12s ease;
 }
 
 .reactionChip:hover {
-  background: var(--comment-border);
-}
-
-.reactionChip:active {
-  transform: scale(0.94);
+  background: var(--comment-surface-hover);
 }
 
 /* Input Row */
@@ -461,7 +420,6 @@
   justify-content: center;
   flex-shrink: 0;
   font-weight: 700;
-  font-size: 13px;
   color: var(--comment-text-secondary);
 }
 
@@ -471,7 +429,6 @@
   object-fit: cover;
 }
 
-/* Pill Wrapper */
 .inputPillWrapper {
   flex: 1;
   position: relative;
@@ -496,14 +453,12 @@
   max-height: 100px;
   font-family: inherit;
   line-height: 1.4;
-  box-sizing: border-box;
 }
 
 .commentInputPill::placeholder {
   color: var(--comment-text-tertiary);
 }
 
-/* Inline Icons inside Pill */
 .pillIcons {
   display: flex;
   align-items: center;
@@ -518,15 +473,10 @@
   color: var(--comment-text-secondary);
   padding: 6px;
   border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: background 0.15s, color 0.15s;
 }
 
 .pillIconBtn:hover {
   background: var(--comment-border);
-  color: var(--comment-text);
 }
 
 .pillIconBtnActive {
@@ -534,11 +484,6 @@
   background: rgba(239, 68, 68, 0.1);
 }
 
-[data-theme="dark"] .pillIconBtnActive {
-  background: rgba(239, 68, 68, 0.2);
-}
-
-/* Inline Send Button */
 .inlineSendButton {
   width: 32px;
   height: 32px;
@@ -550,8 +495,6 @@
   align-items: center;
   justify-content: center;
   cursor: not-allowed;
-  transition: all 0.15s ease;
-  padding: 0;
   margin-left: 4px;
 }
 
@@ -565,31 +508,115 @@
   background: #dc2626;
 }
 
-.inlineSendButtonActive:active {
-  transform: scale(0.94);
+/* Panels */
+.panel {
+  padding: 8px 12px;
+  border-top: 1px solid var(--comment-border);
+  max-height: 160px;
+  overflow-y: auto;
+  flex-shrink: 0;
 }
 
-/* =========================================================
-   States & Animations
-   ========================================================= */
+.emojiGrid {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  gap: 2px;
+}
 
-.loading {
+.emojiOption {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 20px;
+  padding: 6px;
+  border-radius: 8px;
+}
+
+.emojiOption:hover {
+  background: var(--comment-surface);
+}
+
+/* Sticker/GIF/Gift Tabs */
+.stickerPanel {
+  border-top: 1px solid var(--comment-border);
+  max-height: 220px;
+  display: flex;
+  flex-direction: column;
+}
+
+.stickerTabs {
+  display: flex;
+  padding: 0 12px;
+  border-bottom: 1px solid var(--comment-border);
+}
+
+.stickerTab {
+  background: none;
+  border: none;
+  padding: 10px 12px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--comment-text-secondary);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+}
+
+.stickerTabActive {
+  color: var(--comment-accent);
+  border-bottom-color: var(--comment-accent);
+}
+
+.stickerGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  padding: 12px;
+  overflow-y: auto;
+}
+
+.stickerCell {
+  background: var(--comment-surface);
+  border: none;
+  border-radius: 8px;
+  padding: 8px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 10px;
+  gap: 4px;
+  cursor: pointer;
+  aspect-ratio: 1;
+}
+
+.stickerCell:hover {
+  background: var(--comment-surface-hover);
+}
+
+.stickerCellImage {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.stickerEmpty {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 20px;
+  font-size: 13px;
+  color: var(--comment-text-tertiary);
+}
+
+/* States */
+.loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
   padding: 30px;
   color: var(--comment-text-secondary);
 }
 
 .spinner {
-  width: 20px;
-  height: 20px;
-  border: 2px solid var(--comment-surface);
-  border-top-color: var(--comment-accent);
-  border-radius: 50%;
-  animation: spin 0.6s linear infinite;
+  animation: spin 1s linear infinite;
 }
 
 .empty {
@@ -597,34 +624,34 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 6px;
   padding: 30px;
   text-align: center;
+  color: var(--comment-text-secondary);
 }
 
 .emptyIcon {
   color: var(--comment-thread-line);
-  margin-bottom: 6px;
+  margin-bottom: 12px;
 }
 
 .emptyTitle {
   font-size: 15px;
   font-weight: 700;
   color: var(--comment-text);
-  margin: 0;
+  margin: 0 0 4px;
 }
 
 .emptyText {
   font-size: 13px;
-  color: var(--comment-text-secondary);
   margin: 0;
 }
 
+/* Delete Confirm */
 .deleteConfirmOverlay {
   position: fixed;
   inset: 0;
-  background-color: rgba(0, 0, 0, 0.6);
-  z-index: 1001;
+  background-color: var(--comment-overlay);
+  z-index: 3000; /* Highest */
   display: flex;
   align-items: center;
   justify-content: center;
@@ -635,15 +662,14 @@
   background: var(--comment-bg);
   border-radius: 16px;
   padding: 24px 20px;
-  max-width: 300px;
+  max-width: 320px;
   width: 100%;
   text-align: center;
-  border: 1px solid var(--comment-border);
 }
 
 .deleteConfirmIcon {
   color: var(--comment-danger);
-  margin-bottom: 10px;
+  margin-bottom: 12px;
 }
 
 .deleteConfirmDialog h3 {
@@ -656,7 +682,7 @@
 .deleteConfirmDialog p {
   font-size: 13px;
   color: var(--comment-text-secondary);
-  margin: 0 0 18px;
+  margin: 0 0 20px;
 }
 
 .deleteConfirmActions {
@@ -667,13 +693,13 @@
 .cancelDelete {
   flex: 1;
   padding: 10px;
-  background: none;
-  border: 1px solid var(--comment-border);
+  background: var(--comment-surface);
+  border: none;
   border-radius: 9999px;
   cursor: pointer;
   font-size: 13px;
-  font-weight: 500;
-  color: var(--comment-text-secondary);
+  font-weight: 600;
+  color: var(--comment-text);
 }
 
 .confirmDelete {
@@ -686,29 +712,6 @@
   font-size: 13px;
   font-weight: 600;
   color: #ffffff;
-}
-
-.replyingToLabel {
-  display: block;
-  font-size: 11px;
-  color: var(--comment-text-tertiary);
-  margin-bottom: 2px;
-  font-weight: 500;
-}
-
-@keyframes overlayFade {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-
-@keyframes sheetSlideUp {
-  from { transform: translateY(100%); }
-  to { transform: translateY(0); }
-}
-
-@keyframes commentIn {
-  from { opacity: 0; transform: translateY(4px); }
-  to { opacity: 1; transform: translateY(0); }
 }
 
 @keyframes spin {
