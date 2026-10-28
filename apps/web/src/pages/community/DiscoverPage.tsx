@@ -646,7 +646,7 @@ export const DiscoverPage: React.FC = () => {
           
 
 
-          <button onClick={toggleMute} style={{ position: 'absolute', top: 80, right: 16, background: 'rgba(0,0,0,0.2)', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)', border: 'none', borderRadius: '50%', width: 36, height: 36, cursor: 'pointer', color: '#fff', zIndex: 15 }}>
+          <button onClick={toggleMute} className={styles.volumeButton}>
             {isMuted ? <VolumeX size={16} /> : <Volume2 size={16} />}
           </button>
           <div className={styles.infoOverlay}>
@@ -701,7 +701,7 @@ export const DiscoverPage: React.FC = () => {
 
           <div 
             ref={progressBarRef}
-            style={{ position: 'absolute', bottom: 35, left: 0, right: 0, padding: '0 16px', zIndex: 20, cursor: 'pointer' }}
+            className={styles.progressBarWrapper}
             onMouseDown={handleSeekStart}
             onMouseMove={handleSeekMove}
             onMouseUp={handleSeekEnd}

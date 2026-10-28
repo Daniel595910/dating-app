@@ -4,6 +4,7 @@
 
 .discoverPage {
   min-height: 100dvh;
+  height: 100dvh;
   background-color: #000000;
   max-width: 480px;
   margin: 0 auto;
@@ -69,7 +70,7 @@
 .videoCard {
   position: relative;
   width: 100%;
-  height: 100dvh;
+  height: 100%;
   overflow: hidden;
   will-change: transform;
   cursor: grab;
@@ -77,6 +78,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  padding-bottom: env(safe-area-inset-bottom);
 }
 
 .videoCard:active {
@@ -114,14 +116,15 @@
 
 .infoOverlay {
   position: absolute;
-  bottom: 60px;
+  bottom: calc(60px + env(safe-area-inset-bottom));
   left: 14px;
-  right: 82px;
+  right: clamp(70px, 18vw, 92px);
   z-index: 8;
   display: flex;
   flex-direction: column;
   gap: 8px;
   pointer-events: none;
+  max-width: calc(100vw - 28px - clamp(70px, 18vw, 92px));
 }
 
 .infoNameRow {
@@ -173,18 +176,18 @@
 
 .rightActions {
   position: absolute;
-  right: 12px;
-  bottom: 75px;
+  right: max(10px, env(safe-area-inset-right));
+  bottom: calc(75px + env(safe-area-inset-bottom));
   z-index: 10;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 20px;
+  gap: clamp(12px, 3vh, 20px);
 }
 
 .rightActionButton {
-  width: 52px;
-  height: 52px;
+  width: clamp(40px, 12vw, 52px);
+  height: clamp(40px, 12vw, 52px);
   border-radius: 50%;
   border: none;
   cursor: pointer;
@@ -197,6 +200,7 @@
   color: #f97316;
   transition: transform 0.15s ease, background 0.15s ease;
   padding: 0;
+  flex-shrink: 0;
 }
 
 .rightActionButton:hover {
@@ -217,8 +221,8 @@
 }
 
 .rightAvatarButton {
-  width: 52px;
-  height: 52px;
+  width: clamp(40px, 12vw, 52px);
+  height: clamp(40px, 12vw, 52px);
   border-radius: 50%;
   border: 2.5px solid #f97316;
   cursor: pointer;
@@ -232,6 +236,7 @@
   font-weight: 700;
   font-size: 15px;
   transition: transform 0.15s ease;
+  flex-shrink: 0;
 }
 
 .rightAvatarButton:hover {
@@ -253,7 +258,7 @@
   text-shadow: 0 1px 4px rgba(0,0,0,0.75);
   margin-top: -14px;
   text-align: center;
-  min-width: 52px;
+  min-width: clamp(40px, 12vw, 52px);
   pointer-events: none;
   letter-spacing: 0.02em;
 }
@@ -431,4 +436,49 @@
 .swipeRemaining {
   color: #34d399;
   font-weight: 600;
+}
+
+.volumeButton {
+  position: absolute;
+  top: calc(80px + env(safe-area-inset-top));
+  right: max(12px, env(safe-area-inset-right));
+  width: clamp(32px, 9vw, 36px);
+  height: clamp(32px, 9vw, 36px);
+  background: rgba(0,0,0,0.2);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  color: #fff;
+  z-index: 15;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+
+.progressBarWrapper {
+  position: absolute;
+  bottom: calc(35px + env(safe-area-inset-bottom));
+  left: 0;
+  right: 0;
+  padding: 0 max(12px, env(safe-area-inset-left)) 0 max(12px, env(safe-area-inset-right));
+  z-index: 20;
+  cursor: pointer;
+}
+
+@media (max-width: 375px) {
+  .rightActionButton,
+  .rightAvatarButton {
+    width: 38px;
+    height: 38px;
+  }
+  .infoOverlay {
+    right: 60px;
+    font-size: 13px;
+  }
+  .rightActions {
+    gap: 10px;
+  }
 }
