@@ -34,6 +34,15 @@ interface CommentNode {
 }
 
 const EMOJIS = ['😀','😂','😍','😭','😡','👍','🙏','🔥','❤️','💯','🎉','🌹','🎁','🥰','😮','😢','✨','💋','🦋','🌈','⭐','💎','👑','🤔','👀'];
+
+const QUICK_REACTIONS: string[][] = [
+  ['😄','😂','😄'],
+  ['🌹','🌹','🌹'],
+  ['🥰','😍','🥰'],
+  ['😄','😂'],
+  ['🔥','💯','🔥'],
+  ['😮','😢','😮'],
+];
 const REPLIES_PER_PAGE = 3;
 
 const isTouchDevice = (): boolean => {
@@ -81,6 +90,8 @@ export const DiscoverCommentsSheet: React.FC<DiscoverCommentsSheetProps> = ({
   const [gifs, setGifs] = useState<any[]>([]);
   const [stickerTab, setStickerTab] = useState<'stickers' | 'gifs'>('stickers');
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const [currentUserAvatar, setCurrentUserAvatar] = useState<string | null>(null);
+  const [keyboardOpen, setKeyboardOpen] = useState(false);
   const channelRef = useRef<any>(null);
 
   const totalCount = (nodes: CommentNode[]): number => {
@@ -101,6 +112,36 @@ export const DiscoverCommentsSheet: React.FC<DiscoverCommentsSheetProps> = ({
       setLoading(false);
     }
   }, []);
+
+  // Fetch current user avatar for composer
+  useEffect(() => {
+    if (!open || !currentUserId) return;
+    (async () => {
+      const { supabase } = await import('@/config/supabase.client');
+      const { data } = await supabase.from('profiles').select('avatar_url').eq('user_id', currentUserId).maybeSingle();
+      setCurrentUserAvatar(data?.avatar_url || null);
+    })();
+  }, [open, currentUserId]);
+
+  // Keyboard-aware sheet shift
+  useEffect(() => {
+    if (!open || !window.visualViewport) return;
+    const vv = window.visualViewport;
+    const update = () => {
+      const kb = window.innerHeight - vv.height - vv.offsetTop;
+      const kbHeight = Math.max(0, kb);
+      setKeyboardOpen(kbHeight > 80);
+      document.documentElement.style.setProperty('--spensive-kb-height', String(kbHeight) + 'px');
+    };
+    vv.addEventListener('resize', update);
+    vv.addEventListener('scroll', update);
+    update();
+    return () => {
+      vv.removeEventListener('resize', update);
+      vv.removeEventListener('scroll', update);
+      document.documentElement.style.removeProperty('--spensive-kb-height');
+    };
+  }, [open]);
 
   const refreshCount = useCallback(async (vId: string) => {
     if (!onCommentCountChange) return;
@@ -473,7 +514,7 @@ export const DiscoverCommentsSheet: React.FC<DiscoverCommentsSheetProps> = ({
       <div
         onClick={(e) => e.stopPropagation()}
         style={{
-          width: '100%', maxWidth: 480, height: '80dvh',
+          width: '100%', maxWidth: 480, height: '80dvh', bottom: keyboardOpen ? 'var(--spensive-kb-height)' : 0, transition: 'bottom 0.15s ease',
           backgroundColor: 'var(--color-surface)', borderRadius: '32px 32px 0 0',
           display: 'flex', flexDirection: 'column', overflow: 'hidden',
           boxShadow: '0 -8px 32px rgba(0,0,0,0.2)',
@@ -585,39 +626,72 @@ export const DiscoverCommentsSheet: React.FC<DiscoverCommentsSheetProps> = ({
           </div>
         )}
 
-        <div style={{ padding: '8px 16px 16px', borderTop: '1px solid var(--color-border-strong)', flexShrink: 0, display: 'flex', gap: 8, alignItems: 'flex-end' }}>
-          <button
-            onClick={handleEmojiClick}
-            aria-label="Emoji"
-            className={styles.toolButton + (showEmoji ? ' ' + styles.toolButtonActive : '')}
-          >
-            <Smile size={20} />
-          </button>
-          <button
-            onClick={() => { setShowStickers((v) => !v); setShowEmoji(false); }}
-            aria-label="Toggle sticker picker"
-            className={styles.toolButton + (showStickers ? ' ' + styles.toolButtonActive : '')}
-          >
-            <Sticker size={20} />
-          </button>
-          <textarea
-            ref={inputRef}
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder={replyingTo ? 'Reply to @' + replyingTo.authorName + '...' : 'Add a comment...'}
-            disabled={sending}
-            rows={1}
-            className={styles.composerInput}
-          />
-          <button
-            onClick={() => handleSend()}
-            disabled={!input.trim() || sending}
-            aria-label="Send comment"
-            className={styles.sendButton + (input.trim() && !sending ? ' ' + styles.sendButtonActive : '')}
-          >
-            {sending ? <Loader size={18} /> : <Send size={18} />}
-          </button>
+        {/* New composer: reactions row + avatar input + toolbar */}
+        <div className={styles.composerSheet}>
+          {/* Quick reactions — horizontally scrollable chips */}
+          <div className={styles.reactionScroll}>
+            {QUICK_REACTIONS.map((group, i) => (
+              <button
+                key={i}
+                type="button"
+                className={styles.reactionChip}
+                onClick={() => setInput((prev) => prev + group.join(''))}
+                aria-label={`React with ${group.join('')}`}
+              >
+                {group.join('')}
+              </button>
+            ))}
+          </div>
+
+          {/* Input row: avatar + textarea pill */}
+          <div className={styles.inputRow}>
+            <div className={styles.composerAvatar}>
+              {currentUserAvatar
+                ? <img src={currentUserAvatar} alt="" />
+                : <span>?</span>}
+            </div>
+            <textarea
+              ref={inputRef}
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={handleKeyDown}
+              onFocus={() => setKeyboardOpen(true)}
+              placeholder={replyingTo ? 'Reply to @' + replyingTo.authorName + '...' : 'Add comment...'}
+              disabled={sending}
+              rows={1}
+              className={styles.commentInputPill}
+            />
+          </div>
+
+          {/* Toolbar: emoji + sticker + send */}
+          <div className={styles.composerToolbar}>
+            <button
+              type="button"
+              onClick={handleEmojiClick}
+              aria-label="Emoji"
+              className={styles.composerToolButton + (showEmoji ? ' ' + styles.composerToolButtonActive : '')}
+            >
+              <Smile size={22} />
+            </button>
+            <button
+              type="button"
+              onClick={() => { setShowStickers((v) => !v); setShowEmoji(false); }}
+              aria-label="Stickers"
+              className={styles.composerToolButton + (showStickers ? ' ' + styles.composerToolButtonActive : '')}
+            >
+              <Sticker size={22} />
+            </button>
+            <div style={{ flex: 1 }} />
+            <button
+              type="button"
+              onClick={() => handleSend()}
+              disabled={!input.trim() || sending}
+              aria-label="Send comment"
+              className={styles.sendButtonPill + (input.trim() && !sending ? ' ' + styles.sendButtonPillActive : '')}
+            >
+              {sending ? <Loader size={18} /> : <Send size={18} />}
+            </button>
+          </div>
         </div>
       </div>
 

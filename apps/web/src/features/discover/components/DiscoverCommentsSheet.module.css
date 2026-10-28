@@ -202,3 +202,250 @@
   display: inline-block;
   margin-top: 2px;
 }
+
+/* ===== New composer (bottom sheet style) ===== */
+
+.composerSheet {
+  padding: 10px 12px calc(10px + env(safe-area-inset-bottom));
+  border-top: 1px solid var(--color-border-strong, #e5e7eb);
+  background: var(--color-surface, #ffffff);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+[data-theme="dark"] .composerSheet {
+  background: #1a1a1c;
+  border-top-color: #2a2a2e;
+}
+
+.reactionScroll {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding-bottom: 4px;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+.reactionScroll::-webkit-scrollbar {
+  display: none;
+}
+
+.reactionChip {
+  flex-shrink: 0;
+  background: rgba(0, 0, 0, 0.05);
+  border: none;
+  border-radius: 9999px;
+  padding: 6px 12px;
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  transition: transform 0.12s ease, background 0.12s ease;
+}
+
+.reactionChip:hover {
+  background: rgba(0, 0, 0, 0.08);
+}
+
+.reactionChip:active {
+  transform: scale(0.94);
+}
+
+[data-theme="dark"] .reactionChip {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+[data-theme="dark"] .reactionChip:hover {
+  background: rgba(255, 255, 255, 0.14);
+}
+
+.inputRow {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+}
+
+.composerAvatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--color-border, #e5e7eb);
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-weight: 700;
+  font-size: 13px;
+  color: var(--color-text-secondary, #6b7280);
+}
+
+.composerAvatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.commentInputPill {
+  flex: 1;
+  min-height: 40px;
+  max-height: 120px;
+  padding: 10px 44px 10px 14px;
+  background: #f3f4f6;
+  border: none;
+  border-radius: 20px;
+  font-size: 14px;
+  color: var(--color-text, #111827);
+  font-family: inherit;
+  resize: none;
+  outline: none;
+  line-height: 1.4;
+}
+
+.commentInputPill::placeholder {
+  color: var(--color-text-muted, #9ca3af);
+}
+
+[data-theme="dark"] .commentInputPill {
+  background: #2a2a2e;
+  color: #f5f5f7;
+}
+
+[data-theme="dark"] .commentInputPill::placeholder {
+  color: #6b6b70;
+}
+
+.composerToolbar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 2px;
+}
+
+.composerToolButton {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--color-text-secondary, #6b7280);
+  padding: 8px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.12s ease, color 0.12s ease;
+}
+
+.composerToolButton:hover {
+  background: rgba(0, 0, 0, 0.05);
+  color: var(--color-text, #111827);
+}
+
+.composerToolButtonActive {
+  color: #ef4444;
+  background: rgba(239, 68, 68, 0.08);
+}
+
+[data-theme="dark"] .composerToolButton {
+  color: #a1a1a6;
+}
+
+[data-theme="dark"] .composerToolButton:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: #f5f5f7;
+}
+
+[data-theme="dark"] .composerToolButtonActive {
+  color: #ef4444;
+  background: rgba(239, 68, 68, 0.15);
+}
+
+.sendButtonPill {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: none;
+  background: #f3f4f6;
+  color: #9ca3af;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease, transform 0.1s ease;
+}
+
+.sendButtonPillActive {
+  background: #ef4444;
+  color: #ffffff;
+}
+
+.sendButtonPillActive:hover {
+  background: #dc2626;
+}
+
+.sendButtonPillActive:active {
+  transform: scale(0.94);
+}
+
+[data-theme="dark"] .sendButtonPill {
+  background: #2a2a2e;
+  color: #6b6b70;
+}
+
+[data-theme="dark"] .sendButtonPillActive {
+  background: #ef4444;
+  color: #ffffff;
+}
+
+/* Wrapper for textarea + inline sticker button */
+.inputPillWrapper {
+  flex: 1;
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+/* Inline sticker button inside the pill */
+.inlineStickerButton {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: var(--color-text-secondary, #6b7280);
+  cursor: pointer;
+  padding: 6px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.12s ease, color 0.12s ease;
+}
+
+.inlineStickerButton:hover {
+  background: rgba(0, 0, 0, 0.05);
+  color: var(--color-text, #111827);
+}
+
+.inlineStickerButtonActive {
+  color: #ef4444;
+  background: rgba(239, 68, 68, 0.08);
+}
+
+[data-theme="dark"] .inlineStickerButton {
+  color: #a1a1a6;
+}
+
+[data-theme="dark"] .inlineStickerButton:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: #f5f5f7;
+}
+
+[data-theme="dark"] .inlineStickerButtonActive {
+  color: #ef4444;
+  background: rgba(239, 68, 68, 0.15);
+}
