@@ -250,7 +250,7 @@ export const DiscoverPage: React.FC = () => {
 
   const skipToNextPerson = useCallback((currentUserId: string) => {
     // Simple next - let users see multiple videos from same person
-    setCurrentIndex((prev) => Math.min(prev + 1, candidates.length));
+    setCurrentIndex((prev) => Math.min(prev + 1, Math.max(0, candidates.length - 1)));
     setIsPlaying(false);
     setVideoProgress(0);
     setSwipe({ isDragging: false, startX: 0, startY: 0, currentX: 0, currentY: 0, deltaX: 0, deltaY: 0 });
@@ -260,7 +260,7 @@ export const DiscoverPage: React.FC = () => {
   const advanceVideo = useCallback((direction: 'next' | 'prev') => {
     setCurrentIndex((prev) =>
       direction === 'next'
-        ? Math.min(prev + 1, candidates.length)
+        ? Math.min(prev + 1, Math.max(0, candidates.length - 1))
         : Math.max(prev - 1, 0)
     );
     setIsPlaying(false);
@@ -317,7 +317,7 @@ export const DiscoverPage: React.FC = () => {
       videoCardRef.current.style.transform = `translate3d(${appliedX}px, ${appliedY}px, 0)`;
     }
 
-    if (e.cancelable) e.preventDefault();
+    if (drag.direction !== null && e.cancelable) e.preventDefault();
   }, []);
 
   const handleTouchEnd = useCallback(() => {
@@ -709,7 +709,7 @@ export const DiscoverPage: React.FC = () => {
         <div ref={videoCardRef} className={styles.videoCard} onClick={handleDoubleTapLike}>
           <video ref={videoRef} src={current.videoUrl} loop playsInline autoPlay preload="auto" onPlay={() => setIsPlaying(true)} onPause={() => setIsPlaying(false)} onTimeUpdate={handleTimeUpdate} className={styles.video} onClick={togglePlay} />
           {showHeartPop && <Heart size={120} className={styles.heartPop} fill="#f97316" />}
-          {!isPlaying && <button className={styles.playOverlay} onClick={togglePlay}><Play size={48} /></button>}
+          {!isPlaying && <button className={styles.playOverlay} onClick={togglePlay}><Play size={32} /></button>}
           
 
 
