@@ -1,5 +1,5 @@
-﻿import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { X, Send, Trash2, Heart, ChevronDown, ChevronUp, Smile, Reply, CornerDownRight, MessageCircle, Gift, Sticker, Loader, ArrowLeft } from 'lucide-react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { X, Send, Trash2, Heart, ChevronDown, ChevronUp, Smile, Reply, CornerDownRight, MessageCircle, Loader, Sticker, Gift } from 'lucide-react';
 import { supabase } from '@/config/supabase.client';
 import styles from '../styles/CommentSheet.module.css';
 
@@ -37,6 +37,17 @@ interface CommentNode {
 }
 
 const EMOJIS = ['😀', '😂', '😍', '😭', '😡', '👍', '🙏', '🔥', '❤️', '💯', '🎉', '🌹', '💐', '🎁', '💝', '🥰', '😮', '😢', '✨', '💋', '🦋', '🌈', '⭐', '💎', '👑'];
+
+// Exact match from Discover
+const QUICK_REACTIONS: string[][] = [
+  ['😄','😂','😄'],
+  ['🌹','🌹','🌹'],
+  ['🥰','😍','🥰'],
+  ['😄','😂'],
+  ['🔥','💯','🔥'],
+  ['😮','😢','😮'],
+];
+
 const REPLIES_PER_PAGE = 3;
 
 export const CommentSheet: React.FC<CommentSheetProps> = ({ open, onClose, postId, userId, onCommentAdded }) => {
@@ -49,10 +60,18 @@ export const CommentSheet: React.FC<CommentSheetProps> = ({ open, onClose, postI
   const [expandedThreads, setExpandedThreads] = useState<Set<string>>(new Set());
   const [replyPages, setReplyPages] = useState<Map<string, number>>(new Map());
   const [commentToDelete, setCommentToDelete] = useState<string | null>(null);
-  const [activePanel, setActivePanel] = useState<'emoji' | 'sticker' | 'gift' | null>(null);
+  
+  // Discover Style state
+  const [showEmoji, setShowEmoji] = useState(false);
+  const [currentUserAvatar, setCurrentUserAvatar] = useState<string | null>(null);
+  const [keyboardOpen, setKeyboardOpen] = useState(false);
+  
+  // Sticker & Gift state
+  const [showSticker, setShowSticker] = useState(false);
+  const [showGift, setShowGift] = useState(false);
   const [stickers, setStickers] = useState<any[]>([]);
   const [gifts, setGifts] = useState<any[]>([]);
-  
+
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const profileCacheRef = useRef<Map<string, CommentAuthor>>(new Map());
 
@@ -113,7 +132,6 @@ export const CommentSheet: React.FC<CommentSheetProps> = ({ open, onClose, postI
       });
     });
 
-    // Set replyingToName
     flatComments.forEach((c: any) => {
       const node = nodeMap.get(c.id)!;
       if (c.parent_id && nodeMap.has(c.parent_id)) {
@@ -122,7 +140,6 @@ export const CommentSheet: React.FC<CommentSheetProps> = ({ open, onClose, postI
       }
     });
 
-    // Build tree - only top-level become roots
     flatComments.forEach((c: any) => {
       const node = nodeMap.get(c.id)!;
       if (c.parent_id && nodeMap.has(c.parent_id)) {
@@ -213,6 +230,11 @@ export const CommentSheet: React.FC<CommentSheetProps> = ({ open, onClose, postI
       fetchComments();
       setTimeout(() => inputRef.current?.focus(), 300);
     }
+    if (!open) {
+      setShowEmoji(false);
+      setShowSticker(false);
+      setShowGift(false);
+    }
   }, [open, fetchComments]);
 
   useEffect(() => {
@@ -226,20 +248,45 @@ export const CommentSheet: React.FC<CommentSheetProps> = ({ open, onClose, postI
     return () => { channel.unsubscribe(); };
   }, [open, postId, fetchComments]);
 
-  const loadStickers = useCallback(async () => {
-    const { data } = await supabase.from('stickers').select('*').eq('is_active', true).limit(50);
-    setStickers(data || []);
-  }, []);
-
-  const loadGifts = useCallback(async () => {
-    const { data } = await supabase.from('gifts').select('*').eq('is_active', true).order('sort_order');
-    setGifts(data || []);
-  }, []);
-
+  // Discover Style: Fetch current user avatar
   useEffect(() => {
-    loadStickers();
-    loadGifts();
-  }, [loadStickers, loadGifts]);
+    if (!open || !userId) return;
+    (async () => {
+      const { data } = await supabase
+        .from('profiles')
+        .select('avatar_url')
+        .eq('user_id', userId)
+        .maybeSingle();
+      setCurrentUserAvatar(data?.avatar_url || null);
+    })();
+  }, [open, userId]);
+
+  // Load stickers and gifts
+  useEffect(() => {
+    if (!open) return;
+    supabase.from('stickers').select('*').eq('is_active', true).limit(50).then(({ data }) => setStickers(data || []));
+    supabase.from('gifts').select('*').eq('is_active', true).order('sort_order').then(({ data }) => setGifts(data || []));
+  }, [open]);
+
+  // Discover Style: Keyboard-aware shift
+  useEffect(() => {
+    if (!open || !window.visualViewport) return;
+    const vv = window.visualViewport;
+    const update = () => {
+      const kb = window.innerHeight - vv.height - vv.offsetTop;
+      const kbHeight = Math.max(0, kb);
+      setKeyboardOpen(kbHeight > 80);
+      document.documentElement.style.setProperty('--spensive-kb-height', kbHeight + 'px');
+    };
+    vv.addEventListener('resize', update);
+    vv.addEventListener('scroll', update);
+    update();
+    return () => {
+      vv.removeEventListener('resize', update);
+      vv.removeEventListener('scroll', update);
+      document.documentElement.style.removeProperty('--spensive-kb-height');
+    };
+  }, [open]);
 
   const handleSend = async (contentType: string = 'text', mediaUrl: string | null = null, content?: string) => {
     const finalContent = content || newComment.trim();
@@ -281,7 +328,9 @@ export const CommentSheet: React.FC<CommentSheetProps> = ({ open, onClose, postI
 
       setNewComment('');
       setReplyingTo(null);
-      setActivePanel(null);
+      setShowEmoji(false);
+      setShowSticker(false);
+      setShowGift(false);
       if (inputRef.current) inputRef.current.style.height = 'auto';
 
       if (parentId) {
@@ -386,7 +435,6 @@ export const CommentSheet: React.FC<CommentSheetProps> = ({ open, onClose, postI
     }
   };
 
-  // Flatten all descendants into a single list for stable rail display
   const flattenReplies = (comment: CommentNode, result: CommentNode[] = []): CommentNode[] => {
     comment.children.forEach((child) => {
       result.push(child);
@@ -401,7 +449,6 @@ export const CommentSheet: React.FC<CommentSheetProps> = ({ open, onClose, postI
     const isExpanded = expandedThreads.has(comment.id);
     const showChildren = isExpanded && comment.children.length > 0;
     
-    // Flatten ALL descendants into one list (no nesting)
     const allReplies = showChildren ? flattenReplies(comment) : [];
     const page = replyPages.get(comment.id) || 1;
     const visibleReplies = allReplies.slice(0, page * REPLIES_PER_PAGE);
@@ -505,7 +552,15 @@ export const CommentSheet: React.FC<CommentSheetProps> = ({ open, onClose, postI
 
   return (
     <div className={styles.overlay} onClick={onClose}>
-      <div className={styles.sheet} onClick={(e) => e.stopPropagation()}>
+      <div
+        className={styles.sheet}
+        style={{
+          bottom: keyboardOpen ? 'var(--spensive-kb-height)' : 0,
+          transition: 'bottom 0.15s ease',
+          position: 'relative',
+        }}
+        onClick={(e) => e.stopPropagation()}
+      >
         <div className={styles.dragHandle} />
 
         <div className={styles.header}>
@@ -535,19 +590,7 @@ export const CommentSheet: React.FC<CommentSheetProps> = ({ open, onClose, postI
           </div>
         )}
 
-        <div className={styles.toolbar}>
-          <button className={`${styles.toolbarButton} ${activePanel === 'emoji' ? styles.toolbarButtonActive : ''}`} onClick={() => setActivePanel(activePanel === 'emoji' ? null : 'emoji')}>
-            <Smile size={20} />
-          </button>
-          <button className={`${styles.toolbarButton} ${activePanel === 'sticker' ? styles.toolbarButtonActive : ''}`} onClick={() => setActivePanel(activePanel === 'sticker' ? null : 'sticker')}>
-            <Sticker size={20} />
-          </button>
-          <button className={`${styles.toolbarButton} ${activePanel === 'gift' ? styles.toolbarButtonActive : ''}`} onClick={() => setActivePanel(activePanel === 'gift' ? null : 'gift')}>
-            <Gift size={20} />
-          </button>
-        </div>
-
-        {activePanel === 'emoji' && (
+        {showEmoji && (
           <div className={styles.panel}>
             <div className={styles.emojiGrid}>
               {EMOJIS.map((emoji) => (
@@ -557,47 +600,112 @@ export const CommentSheet: React.FC<CommentSheetProps> = ({ open, onClose, postI
           </div>
         )}
 
-        {activePanel === 'sticker' && (
+        {showSticker && (
           <div className={styles.panel}>
             <div className={styles.emojiGrid}>
-              {stickers.map((sticker) => (
-                <button key={sticker.id} className={styles.emojiOption} onClick={() => handleSend('sticker', sticker.image_url, 'Sticker')}>
-                  <img src={sticker.image_url || sticker.thumbnail_url} alt="Sticker" style={{ width: '48px', height: '48px', objectFit: 'contain' }} />
-                </button>
-              ))}
+              {stickers.length === 0 ? (
+                <div style={{ gridColumn: '1 / -1', padding: 12, textAlign: 'center', color: 'var(--comment-text-tertiary)', fontSize: 13 }}>No stickers available</div>
+              ) : (
+                stickers.map((st) => (
+                  <button key={st.id} className={styles.emojiOption} onClick={() => handleSend('sticker', st.image_url, 'Sticker')}>
+                    <img src={st.thumbnail_url || st.image_url} alt="Sticker" style={{ width: '48px', height: '48px', objectFit: 'contain' }} />
+                  </button>
+                ))
+              )}
             </div>
           </div>
         )}
 
-        {activePanel === 'gift' && (
+        {showGift && (
           <div className={styles.panel}>
             <div className={styles.emojiGrid}>
-              {gifts.map((gift) => (
-                <button key={gift.id} className={styles.emojiOption} onClick={() => handleSend('gift', gift.icon_url, gift.name)}>
-                  <span style={{ fontSize: '28px' }}>{gift.icon_url}</span>
-                  <span style={{ fontSize: '9px', fontWeight: 600 }}>{gift.name}</span>
-                </button>
-              ))}
+              {gifts.length === 0 ? (
+                <div style={{ gridColumn: '1 / -1', padding: 12, textAlign: 'center', color: 'var(--comment-text-tertiary)', fontSize: 13 }}>No gifts available</div>
+              ) : (
+                gifts.map((gf) => (
+                  <button key={gf.id} className={styles.emojiOption} onClick={() => handleSend('gift', gf.icon_url, gf.name)}>
+                    <span style={{ fontSize: '28px' }}>{gf.icon_url}</span>
+                    <span style={{ fontSize: '9px', fontWeight: 600 }}>{gf.name}</span>
+                  </button>
+                ))
+              )}
             </div>
           </div>
         )}
 
-        <div className={styles.composer}>
-          <div className={styles.composerInner}>
-            <textarea
-              ref={inputRef}
-              className={styles.composerInput}
-              value={newComment}
-              onChange={handleInputChange}
-              onKeyDown={handleKeyDown}
-              placeholder={replyingTo ? `Reply to @${replyingTo.author.name}...` : 'Add a comment...'}
-              rows={1}
-              disabled={sending}
-              enterKeyHint="send"
-            />
-            <button className={styles.sendButton} onClick={() => handleSend('text', null)} disabled={!newComment.trim() || sending}>
-              {sending ? <Loader size={16} className={styles.spinner} /> : <Send size={16} />}
-            </button>
+        {/* DISCOVER STYLE COMPOSER */}
+        <div className={styles.composerSheet}>
+          {/* Quick reactions row */}
+          <div className={styles.reactionScroll}>
+            {QUICK_REACTIONS.map((group, i) => (
+              <button
+                key={i}
+                type="button"
+                className={styles.reactionChip}
+                onClick={() => setNewComment((prev) => prev + group.join(''))}
+                aria-label={`React with ${group.join('')}`}
+              >
+                {group.join('')}
+              </button>
+            ))}
+          </div>
+
+          {/* Input row: avatar + pill with inline tools + send */}
+          <div className={styles.inputRow}>
+            <div className={styles.composerAvatar}>
+              {currentUserAvatar ? <img src={currentUserAvatar} alt="" /> : <span>?</span>}
+            </div>
+            <div className={styles.inputPillWrapper}>
+              <textarea
+                ref={inputRef}
+                className={styles.commentInputPill}
+                value={newComment}
+                onChange={handleInputChange}
+                onKeyDown={handleKeyDown}
+                placeholder={replyingTo ? `Reply to @${replyingTo.author.name}...` : 'Add comment...'}
+                rows={1}
+                disabled={sending}
+                enterKeyHint="send"
+                onFocus={() => setKeyboardOpen(true)}
+              />
+              
+              {/* Inline tools (Emoji, Sticker, Gift + Send) */}
+              <div className={styles.pillIcons}>
+                <button
+                  type="button"
+                  onClick={() => { setShowEmoji((v) => !v); setShowSticker(false); setShowGift(false); }}
+                  className={styles.pillIconBtn + (showEmoji ? ' ' + styles.pillIconBtnActive : '')}
+                  aria-label="Emoji"
+                >
+                  <Smile size={18} />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setShowSticker((v) => !v); setShowEmoji(false); setShowGift(false); }}
+                  className={styles.pillIconBtn + (showSticker ? ' ' + styles.pillIconBtnActive : '')}
+                  aria-label="Stickers"
+                >
+                  <Sticker size={18} />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setShowGift((v) => !v); setShowEmoji(false); setShowSticker(false); }}
+                  className={styles.pillIconBtn + (showGift ? ' ' + styles.pillIconBtnActive : '')}
+                  aria-label="Gifts"
+                >
+                  <Gift size={18} />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleSend('text', null)}
+                  disabled={!newComment.trim() || sending}
+                  className={styles.inlineSendButton + (newComment.trim() && !sending ? ' ' + styles.inlineSendButtonActive : '')}
+                  aria-label="Send comment"
+                >
+                  {sending ? <Loader size={16} className={styles.spinner} /> : <Send size={16} />}
+                </button>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -618,4 +726,3 @@ export const CommentSheet: React.FC<CommentSheetProps> = ({ open, onClose, postI
     </div>
   );
 };
-

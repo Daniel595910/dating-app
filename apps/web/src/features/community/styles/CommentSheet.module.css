@@ -1,5 +1,5 @@
 ﻿/* =========================================================
-   Comment Sheet - Complete Styles
+   Comment Sheet - Complete Styles (Discover Composer Match)
    ========================================================= */
 
 :root {
@@ -15,10 +15,20 @@
   --comment-bg: #ffffff;
 }
 
-/* =========================================================
-   Overlay & Sheet
-   ========================================================= */
+[data-theme="dark"] {
+  --comment-text: #f9fafb;
+  --comment-text-secondary: #9ca3af;
+  --comment-text-tertiary: #6b7280;
+  --comment-surface: #1f2937;
+  --comment-surface-hover: #374151;
+  --comment-border: #374151;
+  --comment-thread-line: #4b5563;
+  --comment-accent: #ef4444;
+  --comment-danger: #ef4444;
+  --comment-bg: #111827;
+}
 
+/* Overlay & Sheet */
 .overlay {
   position: fixed;
   inset: 0;
@@ -55,10 +65,7 @@
   flex-shrink: 0;
 }
 
-/* =========================================================
-   Header
-   ========================================================= */
-
+/* Header */
 .header {
   display: flex;
   align-items: center;
@@ -106,10 +113,7 @@
   background: var(--comment-surface-hover);
 }
 
-/* =========================================================
-   Comments List - Scrollable area
-   ========================================================= */
-
+/* Comments List */
 .commentsList {
   flex: 1 1 auto;
   min-height: 0;
@@ -125,10 +129,7 @@
   box-sizing: border-box;
 }
 
-/* =========================================================
-   Thread & Comment
-   ========================================================= */
-
+/* Threads & Comments */
 .thread {
   display: flex;
   flex-direction: column;
@@ -213,10 +214,7 @@
   line-height: 1.4;
 }
 
-/* =========================================================
-   Media
-   ========================================================= */
-
+/* Media */
 .commentGif {
   display: block;
   max-width: 180px;
@@ -243,10 +241,7 @@
   gap: 6px;
 }
 
-/* =========================================================
-   Actions
-   ========================================================= */
-
+/* Actions */
 .commentActions {
   display: flex;
   align-items: center;
@@ -285,10 +280,7 @@
   color: var(--comment-danger);
 }
 
-/* =========================================================
-   Reply Rail - Single stable rail
-   ========================================================= */
-
+/* Reply Rail */
 .replyRail {
   margin-left: 16px;
   padding-left: 12px;
@@ -312,10 +304,7 @@
   border-left: none;
 }
 
-/* =========================================================
-   Pagination
-   ========================================================= */
-
+/* Pagination */
 .loadMoreReplies {
   background: none;
   border: none;
@@ -335,10 +324,7 @@
   color: var(--comment-text);
 }
 
-/* =========================================================
-   Reply Indicator
-   ========================================================= */
-
+/* Reply Indicator */
 .replyIndicator {
   display: flex;
   align-items: center;
@@ -349,6 +335,11 @@
   font-size: 13px;
   color: var(--comment-text);
   flex-shrink: 0;
+}
+
+[data-theme="dark"] .replyIndicator {
+  background: rgba(239, 68, 68, 0.1);
+  border-top-color: rgba(239, 68, 68, 0.2);
 }
 
 .replyIndicator button {
@@ -363,48 +354,7 @@
   border-radius: 50%;
 }
 
-/* =========================================================
-   Toolbar
-   ========================================================= */
-
-.toolbar {
-  display: flex;
-  align-items: center;
-  gap: 2px;
-  padding: 6px 12px;
-  border-top: 1px solid var(--comment-border);
-  flex-shrink: 0;
-}
-
-.toolbarButton {
-  background: none;
-  border: none;
-  cursor: pointer;
-  padding: 8px;
-  border-radius: 50%;
-  color: var(--comment-text-secondary);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.15s;
-  min-width: 38px;
-  min-height: 38px;
-}
-
-.toolbarButton:hover {
-  background: var(--comment-surface-hover);
-  color: var(--comment-text);
-}
-
-.toolbarButtonActive {
-  background: rgba(239, 68, 68, 0.1);
-  color: var(--comment-accent);
-}
-
-/* =========================================================
-   Panels - Scrollable
-   ========================================================= */
-
+/* Panels */
 .panel {
   padding: 8px 12px;
   border-top: 1px solid var(--comment-border);
@@ -433,6 +383,7 @@
   align-items: center;
   gap: 2px;
   min-height: 40px;
+  color: var(--comment-text);
 }
 
 .emojiOption:hover {
@@ -441,28 +392,98 @@
 }
 
 /* =========================================================
-   Composer
+   DISCOVER STYLE COMPOSER (Matches exactly)
    ========================================================= */
 
-.composer {
+.composerSheet {
   flex: 0 0 auto;
   width: 100%;
-  padding: 8px 12px calc(8px + env(safe-area-inset-bottom));
+  padding: 10px 12px calc(10px + env(safe-area-inset-bottom));
   background: var(--comment-bg);
   border-top: 1px solid var(--comment-border);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
   box-sizing: border-box;
 }
 
-.composerInner {
+/* Quick Reactions */
+.reactionScroll {
   display: flex;
-  align-items: flex-end;
-  gap: 6px;
-  background: var(--comment-surface);
-  border-radius: 22px;
-  padding: 6px 10px;
+  gap: 8px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding-bottom: 4px;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  -webkit-overflow-scrolling: touch;
 }
 
-.composerInput {
+.reactionScroll::-webkit-scrollbar {
+  display: none;
+}
+
+.reactionChip {
+  flex-shrink: 0;
+  background: var(--comment-surface-hover);
+  border: none;
+  border-radius: 9999px;
+  padding: 6px 12px;
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  transition: transform 0.12s ease, background 0.12s ease;
+}
+
+.reactionChip:hover {
+  background: var(--comment-border);
+}
+
+.reactionChip:active {
+  transform: scale(0.94);
+}
+
+/* Input Row */
+.inputRow {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+}
+
+.composerAvatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--comment-surface);
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-weight: 700;
+  font-size: 13px;
+  color: var(--comment-text-secondary);
+}
+
+.composerAvatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Pill Wrapper */
+.inputPillWrapper {
+  flex: 1;
+  position: relative;
+  display: flex;
+  align-items: center;
+  background: var(--comment-surface);
+  border-radius: 22px;
+  padding: 4px 6px 4px 14px;
+  min-height: 44px;
+}
+
+.commentInputPill {
   flex: 1;
   min-width: 0;
   border: none;
@@ -471,39 +492,85 @@
   resize: none;
   font-size: 14px;
   color: var(--comment-text);
-  padding: 4px 0;
-  max-height: 80px;
+  padding: 8px 0;
+  max-height: 100px;
   font-family: inherit;
   line-height: 1.4;
+  box-sizing: border-box;
 }
 
-.composerInput::placeholder {
+.commentInputPill::placeholder {
   color: var(--comment-text-tertiary);
 }
 
-.sendButton {
-  background: var(--comment-accent);
+/* Inline Icons inside Pill */
+.pillIcons {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex-shrink: 0;
+}
+
+.pillIconBtn {
+  background: none;
   border: none;
   cursor: pointer;
-  color: #ffffff;
-  width: 32px;
-  height: 32px;
+  color: var(--comment-text-secondary);
+  padding: 6px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  flex-shrink: 0;
-  transition: all 0.15s;
+  transition: background 0.15s, color 0.15s;
 }
 
-.sendButton:disabled {
+.pillIconBtn:hover {
+  background: var(--comment-border);
+  color: var(--comment-text);
+}
+
+.pillIconBtnActive {
+  color: var(--comment-accent);
+  background: rgba(239, 68, 68, 0.1);
+}
+
+[data-theme="dark"] .pillIconBtnActive {
+  background: rgba(239, 68, 68, 0.2);
+}
+
+/* Inline Send Button */
+.inlineSendButton {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: none;
   background: var(--comment-surface-hover);
   color: var(--comment-text-tertiary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
   cursor: not-allowed;
+  transition: all 0.15s ease;
+  padding: 0;
+  margin-left: 4px;
+}
+
+.inlineSendButtonActive {
+  background: var(--comment-accent);
+  color: #ffffff;
+  cursor: pointer;
+}
+
+.inlineSendButtonActive:hover {
+  background: #dc2626;
+}
+
+.inlineSendButtonActive:active {
+  transform: scale(0.94);
 }
 
 /* =========================================================
-   States
+   States & Animations
    ========================================================= */
 
 .loading {
@@ -553,14 +620,10 @@
   margin: 0;
 }
 
-/* =========================================================
-   Delete Dialog
-   ========================================================= */
-
 .deleteConfirmOverlay {
   position: fixed;
   inset: 0;
-  background-color: rgba(0, 0, 0, 0.5);
+  background-color: rgba(0, 0, 0, 0.6);
   z-index: 1001;
   display: flex;
   align-items: center;
@@ -575,6 +638,7 @@
   max-width: 300px;
   width: 100%;
   text-align: center;
+  border: 1px solid var(--comment-border);
 }
 
 .deleteConfirmIcon {
@@ -624,9 +688,13 @@
   color: #ffffff;
 }
 
-/* =========================================================
-   Animations
-   ========================================================= */
+.replyingToLabel {
+  display: block;
+  font-size: 11px;
+  color: var(--comment-text-tertiary);
+  margin-bottom: 2px;
+  font-weight: 500;
+}
 
 @keyframes overlayFade {
   from { opacity: 0; }
@@ -645,12 +713,4 @@
 
 @keyframes spin {
   to { transform: rotate(360deg); }
-}
-
-.replyingToLabel {
-  display: block;
-  font-size: 11px;
-  color: var(--comment-text-tertiary);
-  margin-bottom: 2px;
-  font-weight: 500;
 }
