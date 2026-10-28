@@ -226,6 +226,14 @@ export const CommunityPage: React.FC = () => {
     }
   };
 
+  const handleAcceptRequest = async (requestId: string) => {
+    const result = await acceptRequest(requestId);
+    if (result) {
+      setMatchId(result.matchId);
+      setMatchUser(result.otherUserName);
+    }
+  };
+
   const handleSwitchCommunity = (communityId: string) => {
     setSwitcherOpen(false);
     setSelectedCommunity(communityId);
@@ -383,7 +391,7 @@ export const CommunityPage: React.FC = () => {
         outgoing={activeConnections}
         incoming={pendingRequests}
         onExpressInterest={handleExpressInterest}
-        onAccept={acceptRequest}
+        onAccept={handleAcceptRequest}
         onDecline={declineRequest}
         matched={matchedConnections}
         likes={likesReceived}

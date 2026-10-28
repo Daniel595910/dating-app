@@ -343,11 +343,15 @@ export function useConnection(userId: string | null): UseConnectionResult {
     }
   }, []);
 
-  const acceptRequest = useCallback(async (requestId: string) => {
+  const acceptRequest = useCallback(async (requestId: string): Promise<{
+    matchId: string;
+    otherUserId: string;
+    otherUserName: string;
+  } | null> => {
     setLoading(true);
     setError(null);
     try {
-      const { error: rpcError } = await supabase.rpc('accept_connection_request', {
+      const { data, error: rpcError } = await supabase.rpc('accept_connection_request', {
         p_request_id: requestId,
       });
 
@@ -355,15 +359,25 @@ export function useConnection(userId: string | null): UseConnectionResult {
 
       setPendingRequests((prev) => prev.filter((r) => r.id !== requestId));
       await loadActiveConnections();
-      return true;
+      await loadMatchedConnections();
+
+      if (data && typeof data === 'object') {
+        const result = data as any;
+        return {
+          matchId: result.match_id,
+          otherUserId: result.other_user_id,
+          otherUserName: result.other_user_name || 'Someone',
+        };
+      }
+      return null;
     } catch (err: any) {
       setError(err.message || 'Failed to accept request');
-      return false;
+      return null;
     } finally {
       setLoading(false);
       loadPendingRequests();
     }
-  }, [loadActiveConnections, loadPendingRequests]);
+  }, [loadActiveConnections, loadMatchedConnections, loadPendingRequests]);
 
   const declineRequest = useCallback(async (requestId: string) => {
     setLoading(true);
