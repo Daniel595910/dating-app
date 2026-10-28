@@ -128,3 +128,41 @@
 [data-theme="dark"] .navBadge {
   border-color: #1a1a1c;
 }
+
+/* ===== Profile tab avatar ===== */
+
+.navAvatar {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid transparent;
+  box-sizing: border-box;
+  display: block;
+  transition: border-color 0.15s ease;
+}
+
+.navAvatarFallback {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: #e5e7eb;
+  color: #374151;
+  font-size: 11px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid transparent;
+  box-sizing: border-box;
+  transition: border-color 0.15s ease;
+}
+
+.navAvatarActive {
+  border-color: #ef4444;
+}
+
+[data-theme="dark"] .navAvatarFallback {
+  background: #2a2a2e;
+  color: #d1d5db;
+}
