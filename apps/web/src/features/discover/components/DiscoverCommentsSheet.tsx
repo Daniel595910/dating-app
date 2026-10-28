@@ -650,37 +650,41 @@ export const DiscoverCommentsSheet: React.FC<DiscoverCommentsSheetProps> = ({
                 ? <img src={currentUserAvatar} alt="" />
                 : <span>?</span>}
             </div>
-            <textarea
-              ref={inputRef}
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={handleKeyDown}
-              onFocus={() => setKeyboardOpen(true)}
-              placeholder={replyingTo ? 'Reply to @' + replyingTo.authorName + '...' : 'Add comment...'}
-              disabled={sending}
-              rows={1}
-              className={styles.commentInputPill}
-            />
+            <div className={styles.inputPillWrapper}>
+              <textarea
+                ref={inputRef}
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={handleKeyDown}
+                onFocus={() => setKeyboardOpen(true)}
+                placeholder={replyingTo ? 'Reply to @' + replyingTo.authorName + '...' : 'Add comment...'}
+                disabled={sending}
+                rows={1}
+                className={styles.commentInputPill}
+              />
+              <button
+                type="button"
+                onClick={() => { setShowStickers((v) => !v); setShowEmoji(false); }}
+                aria-label="Stickers"
+                className={styles.inlineStickerButton + (showStickers ? ' ' + styles.inlineStickerButtonActive : '')}
+              >
+                <Sticker size={20} />
+              </button>
+            </div>
           </div>
 
-          {/* Toolbar: emoji + sticker + send */}
+          {/* Toolbar: send + emoji (desktop) */}
           <div className={styles.composerToolbar}>
-            <button
-              type="button"
-              onClick={handleEmojiClick}
-              aria-label="Emoji"
-              className={styles.composerToolButton + (showEmoji ? ' ' + styles.composerToolButtonActive : '')}
-            >
-              <Smile size={22} />
-            </button>
-            <button
-              type="button"
-              onClick={() => { setShowStickers((v) => !v); setShowEmoji(false); }}
-              aria-label="Stickers"
-              className={styles.composerToolButton + (showStickers ? ' ' + styles.composerToolButtonActive : '')}
-            >
-              <Sticker size={22} />
-            </button>
+            {!isTouchDevice() && (
+              <button
+                type="button"
+                onClick={handleEmojiClick}
+                aria-label="Emoji"
+                className={styles.composerToolButton + (showEmoji ? ' ' + styles.composerToolButtonActive : '')}
+              >
+                <Smile size={22} />
+              </button>
+            )}
             <div style={{ flex: 1 }} />
             <button
               type="button"
