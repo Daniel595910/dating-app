@@ -40,7 +40,7 @@ interface ConnectionsModalProps {
   loading: boolean;
 }
 
-type Tab = 'incoming' | 'outgoing' | 'matched' | 'likes';
+type Tab = 'connections' | 'matched' | 'likes';
 
 interface EmptyStateProps {
   icon: React.ReactNode;
@@ -86,13 +86,12 @@ export const ConnectionsModal: React.FC<ConnectionsModalProps> = ({
   onOpenChat,
   loading,
 }) => {
-  const [activeTab, setActiveTab] = useState<Tab>('incoming');
+  const [activeTab, setActiveTab] = useState<Tab>('connections');
 
   useEffect(() => {
     if (open) {
-      // Default tab: Requests if any, else Getting to Know, else Matched, else Likes
-      if (incoming.length > 0) setActiveTab('incoming');
-      else if (outgoing.length > 0) setActiveTab('outgoing');
+      // Default tab: Connections if any, else Matched, else Likes
+      if (incoming.length > 0 || outgoing.length > 0) setActiveTab('connections');
       else if (matched.length > 0) setActiveTab('matched');
       else setActiveTab('likes');
     }
@@ -111,8 +110,7 @@ export const ConnectionsModal: React.FC<ConnectionsModalProps> = ({
   const totalCount = outgoing.length + incoming.length + matched.length + likes.length;
 
   const tabs: { key: Tab; label: string; icon: React.ReactNode; count: number }[] = [
-    { key: 'incoming', label: 'Requests', icon: <Handshake size={16} />, count: incoming.length },
-    { key: 'outgoing', label: 'Getting to Know', icon: <Heart size={16} />, count: outgoing.length },
+    { key: 'connections', label: 'Connections', icon: <Handshake size={16} />, count: incoming.length + outgoing.length },
     { key: 'matched', label: 'Matched', icon: <Sparkles size={16} />, count: matched.length },
     { key: 'likes', label: 'Likes', icon: <Heart size={16} />, count: likes.length },
   ];
@@ -254,39 +252,49 @@ export const ConnectionsModal: React.FC<ConnectionsModalProps> = ({
             WebkitOverflowScrolling: 'touch',
           }}
         >
-          {activeTab === 'incoming' && (
-            <RequestsTab
-              requests={incoming}
-              onAccept={onAccept}
-              onDecline={onDecline}
-              onViewProfile={onViewProfile}
-              loading={loading}
-            />
-          )}
-
-          {activeTab === 'outgoing' && (
+          {activeTab === 'connections' && (
             <>
-              {outgoing.length === 0 ? (
+              {incoming.length > 0 && (
+                <div style={{ marginBottom: '1.25rem' }}>
+                  <h4 style={{ fontSize: '0.8125rem', fontWeight: 700, color: '#6b7280', margin: '0 0 0.5rem', textTransform: 'uppercase', letterSpacing: '0.03em' }}>
+                    Requests
+                  </h4>
+                  <RequestsTab
+                    requests={incoming}
+                    onAccept={onAccept}
+                    onDecline={onDecline}
+                    onViewProfile={onViewProfile}
+                    loading={loading}
+                  />
+                </div>
+              )}
+              {outgoing.length > 0 && (
+                <div>
+                  <h4 style={{ fontSize: '0.8125rem', fontWeight: 700, color: '#6b7280', margin: '0 0 0.5rem', textTransform: 'uppercase', letterSpacing: '0.03em' }}>
+                    Getting to Know
+                  </h4>
+                  {outgoing.map((conn) => (
+                    <ConnectionStatusCard
+                      key={conn.matchId}
+                      matchId={conn.matchId}
+                      targetUserId={conn.targetUserId}
+                      targetUserName={conn.targetUserName}
+                      targetAvatarUrl={conn.targetAvatarUrl || null}
+                      myInterest={conn.myInterest}
+                      otherInterest={conn.otherInterest}
+                      onExpressInterest={onExpressInterest}
+                      onViewProfile={onViewProfile}
+                      loading={loading}
+                    />
+                  ))}
+                </div>
+              )}
+              {incoming.length === 0 && outgoing.length === 0 && (
                 <EmptyState
                   icon={<Heart size={40} />}
                   title="No connections yet"
                   text="When you express interest and someone does the same, you will see them here."
                 />
-              ) : (
-                outgoing.map((conn) => (
-                  <ConnectionStatusCard
-                    key={conn.matchId}
-                    matchId={conn.matchId}
-                    targetUserId={conn.targetUserId}
-                    targetUserName={conn.targetUserName}
-                    targetAvatarUrl={conn.targetAvatarUrl || null}
-                    myInterest={conn.myInterest}
-                    otherInterest={conn.otherInterest}
-                    onExpressInterest={onExpressInterest}
-                    onViewProfile={onViewProfile}
-                    loading={loading}
-                  />
-                ))
               )}
             </>
           )}
