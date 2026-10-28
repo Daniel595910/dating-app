@@ -79,6 +79,13 @@ export const DiscoverPage: React.FC = () => {
   const containerRef = useRef<HTMLDivElement>(null);
   const videoInputRef = useRef<HTMLInputElement>(null);
   const swipeStateRef = useRef(swipe);
+  const videoCardRef = useRef<HTMLDivElement | null>(null);
+  const dragRef = useRef({
+    startX: 0,
+    startY: 0,
+    startTime: 0,
+    direction: null as 'horizontal' | 'vertical' | null,
+  });
   const progressBarRef = useRef<HTMLDivElement>(null);
   const previewVideoRef = useRef<HTMLVideoElement>(null);
 
@@ -249,57 +256,115 @@ export const DiscoverPage: React.FC = () => {
     setSwipeDirection(null);
   }, [candidates]);
 
+  const advanceVideo = useCallback((direction: 'next' | 'prev') => {
+    setCurrentIndex((prev) =>
+      direction === 'next'
+        ? Math.min(prev + 1, candidates.length)
+        : Math.max(prev - 1, 0)
+    );
+    setIsPlaying(false);
+    setVideoProgress(0);
+  }, [candidates.length]);
+
+  const resetDragVisual = useCallback(() => {
+    if (videoCardRef.current) {
+      videoCardRef.current.style.transition = '';
+      videoCardRef.current.style.transform = '';
+    }
+    dragRef.current = { startX: 0, startY: 0, startTime: 0, direction: null };
+    setSwipe({ isDragging: false, startX: 0, startY: 0, currentX: 0, currentY: 0, deltaX: 0, deltaY: 0 });
+    setSwipeDirection(null);
+  }, []);
+
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
     const touch = e.touches[0];
     if (!touch) return;
+    dragRef.current = {
+      startX: touch.clientX,
+      startY: touch.clientY,
+      startTime: performance.now(),
+      direction: null,
+    };
     setSwipe({ isDragging: true, startX: touch.clientX, startY: touch.clientY, currentX: touch.clientX, currentY: touch.clientY, deltaX: 0, deltaY: 0 });
-  }, [activeCategory]);
+    if (videoCardRef.current) {
+      videoCardRef.current.style.transition = 'none';
+    }
+  }, []);
 
   const handleTouchMove = useCallback((e: React.TouchEvent) => {
-    const state = swipeStateRef.current;
-    if (!state.isDragging) return;
+    const drag = dragRef.current;
+    if (!swipeStateRef.current.isDragging) return;
     const touch = e.touches[0];
     if (!touch) return;
-    const deltaX = touch.clientX - state.startX;
-    const deltaY = touch.clientY - state.startY;
-    setSwipe((prev) => ({ ...prev, currentX: touch.clientX, currentY: touch.clientY, deltaX, deltaY }));
-    if (Math.abs(deltaX) > 10 || Math.abs(deltaY) > 10) {
-      if (Math.abs(deltaX) > Math.abs(deltaY)) {
-        setSwipeDirection(deltaX > 0 ? 'right' : 'left');
-      } else {
-        setSwipeDirection(deltaY > 0 ? 'down' : 'up');
-      }
+
+    const rawX = touch.clientX - drag.startX;
+    const rawY = touch.clientY - drag.startY;
+
+    if (!drag.direction && (Math.abs(rawX) > 10 || Math.abs(rawY) > 10)) {
+      drag.direction = Math.abs(rawX) > Math.abs(rawY) ? 'horizontal' : 'vertical';
+      setSwipeDirection(
+        drag.direction === 'horizontal'
+          ? (rawX > 0 ? 'right' : 'left')
+          : (rawY > 0 ? 'down' : 'up')
+      );
     }
-  }, [activeCategory]);
+
+    const appliedX = drag.direction === 'horizontal' ? rawX : 0;
+    const appliedY = drag.direction === 'vertical' ? rawY : 0;
+
+    if (videoCardRef.current) {
+      videoCardRef.current.style.transform = `translate3d(${appliedX}px, ${appliedY}px, 0)`;
+    }
+
+    if (e.cancelable) e.preventDefault();
+  }, []);
 
   const handleTouchEnd = useCallback(() => {
-    const state = swipeStateRef.current;
-    if (!state.isDragging) return;
-    const threshold = 80;
-    if (Math.abs(state.deltaX) > Math.abs(state.deltaY)) {
-      if (state.deltaX < -threshold) {
-        setCurrentIndex((prev) => Math.min(prev + 1, candidates.length));
-        setIsPlaying(false);
-        setVideoProgress(0);
-      } else if (state.deltaX > threshold) {
-        setCurrentIndex((prev) => Math.max(prev - 1, 0));
-        setIsPlaying(false);
-        setVideoProgress(0);
-      }
-    } else {
-      if (state.deltaY < -threshold) {
-        setCurrentIndex((prev) => Math.min(prev + 1, candidates.length));
-        setIsPlaying(false);
-        setVideoProgress(0);
-      } else if (state.deltaY > threshold) {
-        setCurrentIndex((prev) => Math.max(prev - 1, 0));
-        setIsPlaying(false);
-        setVideoProgress(0);
-      }
+    if (!swipeStateRef.current.isDragging) return;
+
+    const drag = dragRef.current;
+    const elapsed = Math.max(performance.now() - drag.startTime, 1);
+
+    const card = videoCardRef.current;
+    let releasedX = 0;
+    let releasedY = 0;
+    if (card) {
+      const m = card.style.transform.match(/translate3d\((-?[\d.]+)px,\s*(-?[\d.]+)px/);
+      if (m) { releasedX = parseFloat(m[1]); releasedY = parseFloat(m[2]); }
     }
-    setSwipe({ isDragging: false, startX: 0, startY: 0, currentX: 0, currentY: 0, deltaX: 0, deltaY: 0 });
-    setSwipeDirection(null);
-  }, [candidates.length]);
+
+    const distanceThreshold = 80;
+    const velocityThreshold = 0.5;
+
+    const dx = drag.direction === 'horizontal' ? releasedX : 0;
+    const dy = drag.direction === 'vertical' ? releasedY : 0;
+    const velocity = (drag.direction === 'horizontal' ? dx : dy) / elapsed;
+
+    const shouldNext = (dx < -distanceThreshold || velocity < -velocityThreshold)
+      || (dy < -distanceThreshold || velocity < -velocityThreshold);
+    const shouldPrev = (dx > distanceThreshold || velocity > velocityThreshold)
+      || (dy > distanceThreshold || velocity > velocityThreshold);
+
+    if (shouldNext) {
+      if (card) { card.style.transition = ''; card.style.transform = 'translate3d(-100vw, 0, 0)'; }
+      setTimeout(() => {
+        advanceVideo('next');
+        resetDragVisual();
+      }, 180);
+    } else if (shouldPrev) {
+      if (card) { card.style.transition = ''; card.style.transform = 'translate3d(100vw, 0, 0)'; }
+      setTimeout(() => {
+        advanceVideo('prev');
+        resetDragVisual();
+      }, 180);
+    } else {
+      resetDragVisual();
+    }
+  }, [advanceVideo, resetDragVisual]);
+
+  const handleTouchCancel = useCallback(() => {
+    resetDragVisual();
+  }, [resetDragVisual]);
 
   const togglePlay = () => {
     if (videoRef.current) {
@@ -468,7 +533,7 @@ export const DiscoverPage: React.FC = () => {
 
 
   return (
-    <div ref={containerRef} className={styles.discoverPage} data-theme="dark" onTouchStart={(e) => { if (!commentsOpen && !showPublishModal) handleTouchStart(e); }} onTouchMove={(e) => { if (!commentsOpen && !showPublishModal) handleTouchMove(e); }} onTouchEnd={(e) => { if (!commentsOpen && !showPublishModal) handleTouchEnd(e); }} style={{ touchAction: 'none', userSelect: 'none', WebkitUserSelect: 'none', overscrollBehavior: 'none' }}>
+    <div ref={containerRef} className={styles.discoverPage} data-theme="dark" onTouchStart={(e) => { if (!commentsOpen && !showPublishModal) handleTouchStart(e); }} onTouchMove={(e) => { if (!commentsOpen && !showPublishModal) handleTouchMove(e); }} onTouchEnd={(e) => { if (!commentsOpen && !showPublishModal) handleTouchEnd(e); }} onTouchCancel={(e) => { if (!commentsOpen && !showPublishModal) handleTouchCancel(); }} style={{ touchAction: 'none', userSelect: 'none', WebkitUserSelect: 'none', overscrollBehavior: 'none' }}>
       <header className={styles.header}>
         <button className={styles.backButton} onClick={() => navigate(-1)} aria-label="Back">
           <ArrowLeft size={20} />
@@ -640,7 +705,7 @@ export const DiscoverPage: React.FC = () => {
       )}
 
       {current && (
-        <div className={styles.videoCard} style={{ transform: 'translateX(' + swipe.deltaX + 'px) translateY(' + swipe.deltaY + 'px)', transition: swipe.isDragging ? 'none' : 'transform 0.3s ease' }} onClick={handleDoubleTapLike}>
+        <div ref={videoCardRef} className={styles.videoCard} onClick={handleDoubleTapLike}>
           <video ref={videoRef} src={current.videoUrl} loop playsInline autoPlay preload="auto" onPlay={() => setIsPlaying(true)} onPause={() => setIsPlaying(false)} onTimeUpdate={handleTimeUpdate} className={styles.video} onClick={togglePlay} />
           {showHeartPop && <Heart size={120} className={styles.heartPop} fill="#f97316" />}
           {!isPlaying && <button className={styles.playOverlay} onClick={togglePlay}><Play size={48} /></button>}
