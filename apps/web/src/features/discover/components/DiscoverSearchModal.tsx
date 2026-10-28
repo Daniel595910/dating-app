@@ -1,26 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Search, X, Heart, Play, MapPin } from 'lucide-react';
 import { discoverService } from '../services/discover.service';
+import type { SearchResult } from '../types/discover.types';
 import styles from './DiscoverSearchModal.module.css';
-
-interface SearchResult {
-  video_id: string;
-  video_url: string;
-  thumbnail_url: string | null;
-  caption: string;
-  user_id: string;
-  display_name: string;
-  avatar_url: string | null;
-  is_verified: boolean;
-  like_count: number;
-  hashtags: string[];
-  location_text: string | null;
-}
 
 interface DiscoverSearchModalProps {
   open: boolean;
   onClose: () => void;
-  onVideoSelect: (videoId: string) => void;
+  onVideoSelect: (video: SearchResult) => void;
 }
 
 const formatCount = (n: number): string => {
@@ -167,7 +154,7 @@ export const DiscoverSearchModal: React.FC<DiscoverSearchModalProps> = ({
                   key={item.video_id} 
                   className={styles.card}
                   onClick={() => {
-                    onVideoSelect(item.video_id);
+                    onVideoSelect(item);
                     onClose();
                   }}
                 >

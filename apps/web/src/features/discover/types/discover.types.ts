@@ -40,3 +40,17 @@ export interface SwipeResult {
   matched: boolean;
   matchId: string | null;
 }
+
+export interface SearchResult {
+  video_id: string;
+  video_url: string;
+  thumbnail_url: string | null;
+  caption: string;
+  user_id: string;
+  display_name: string;
+  avatar_url: string | null;
+  is_verified: boolean;
+  like_count: number;
+  hashtags: string[];
+  location_text: string | null;
+}

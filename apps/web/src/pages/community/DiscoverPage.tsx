@@ -4,6 +4,7 @@ import { useAuthStore } from '@/store/auth.store';
 import { supabase } from '@/config/supabase.client';
 import { discoverService } from '../../features/discover/services/discover.service';
 import { mediaService } from '../../features/community/services/media.service';
+import { SearchResult } from '../../features/discover/types/discover.types';
 import { DiscoverCandidate } from '../../features/discover/types/discover.types';
 import { PublishDetails } from '../../features/discover/types/discover.types';
 import { PostDetailsModal } from '../../features/discover/components/PostDetailsModal';
@@ -914,10 +915,37 @@ export const DiscoverPage: React.FC = () => {
       <DiscoverSearchModal
         open={searchModalOpen}
         onClose={() => setSearchModalOpen(false)}
-        onVideoSelect={(videoId) => {
-          const idx = candidates.findIndex(c => c.videoId === videoId);
+        onVideoSelect={(video) => {
+          const idx = candidates.findIndex((c) => c.videoId === video.video_id);
           if (idx >= 0) {
             setCurrentIndex(idx);
+          } else {
+            const synthetic: DiscoverCandidate = {
+              userId: video.user_id,
+              videoId: video.video_id,
+              displayName: video.display_name,
+              avatarUrl: video.avatar_url,
+              videoUrl: video.video_url,
+              thumbnailUrl: video.thumbnail_url,
+              bio: video.caption || null,
+              age: null,
+              city: null,
+              state: null,
+              relationshipIntent: null,
+              interests: [],
+              isVerified: video.is_verified,
+              verificationBadge: video.is_verified ? 'verified' : '',
+              distanceKm: 0,
+              hashtags: video.hashtags || [],
+              locationText: video.location_text,
+              allowComments: true,
+              allowDuet: true,
+              likeCount: video.like_count,
+              userLiked: false,
+              commentCount: 0,
+            };
+            setCandidates((prev) => [synthetic, ...prev]);
+            setCurrentIndex(0);
           }
         }}
       />
