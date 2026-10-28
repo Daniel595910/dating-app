@@ -255,24 +255,16 @@ export const ConnectionsModal: React.FC<ConnectionsModalProps> = ({
           {activeTab === 'connections' && (
             <>
               {incoming.length > 0 && (
-                <div style={{ marginBottom: '1.25rem' }}>
-                  <h4 style={{ fontSize: '0.8125rem', fontWeight: 700, color: '#6b7280', margin: '0 0 0.5rem', textTransform: 'uppercase', letterSpacing: '0.03em' }}>
-                    Requests
-                  </h4>
-                  <RequestsTab
-                    requests={incoming}
-                    onAccept={onAccept}
-                    onDecline={onDecline}
-                    onViewProfile={onViewProfile}
-                    loading={loading}
-                  />
-                </div>
+                <RequestsTab
+                  requests={incoming}
+                  onAccept={onAccept}
+                  onDecline={onDecline}
+                  onViewProfile={onViewProfile}
+                  loading={loading}
+                />
               )}
               {outgoing.length > 0 && (
-                <div>
-                  <h4 style={{ fontSize: '0.8125rem', fontWeight: 700, color: '#6b7280', margin: '0 0 0.5rem', textTransform: 'uppercase', letterSpacing: '0.03em' }}>
-                    Getting to Know
-                  </h4>
+                <>
                   {outgoing.map((conn) => (
                     <ConnectionStatusCard
                       key={conn.matchId}
@@ -287,7 +279,7 @@ export const ConnectionsModal: React.FC<ConnectionsModalProps> = ({
                       loading={loading}
                     />
                   ))}
-                </div>
+                </>
               )}
               {incoming.length === 0 && outgoing.length === 0 && (
                 <EmptyState
