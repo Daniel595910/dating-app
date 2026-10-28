@@ -1,4 +1,7 @@
-﻿.bottomNav {
+/* Solid, theme-aware bottom navigation. Light/dark via [data-theme]. */
+
+/* ===== Light theme (default) ===== */
+.bottomNav {
   position: fixed;
   bottom: 0;
   left: 50%;
@@ -6,11 +9,13 @@
   width: 100%;
   max-width: var(--max-width, 480px);
   display: flex;
-  justify-content: space-around;
+  justify-content: space-evenly;
   align-items: center;
-  background-color: var(--color-surface, #ffffff);
-  border-top: 1px solid var(--color-border, #e5e7eb);
-  padding: 0.5rem 0.5rem calc(0.5rem + env(safe-area-inset-bottom));
+  gap: 4px;
+  padding: 6px 10px calc(6px + env(safe-area-inset-bottom));
+  background: #ffffff;
+  border-top: 1px solid #e5e7eb;
+  box-shadow: 0 -1px 3px rgba(0, 0, 0, 0.04);
   z-index: 40;
 }
 
@@ -18,48 +23,108 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.125rem;
-  background: none;
+  gap: 2px;
+  background: transparent;
   border: none;
   cursor: pointer;
-  color: var(--color-muted, #9ca3af);
-  padding: 0.25rem 0.75rem;
-  border-radius: 0.5rem;
-  transition: color 0.2s ease;
-  min-width: 64px;
+  color: #6b7280;
+  padding: 6px 12px;
+  border-radius: 12px;
+  transition: color 0.15s ease, background-color 0.15s ease, transform 0.1s ease;
+  min-width: 60px;
   min-height: 44px;
+  position: relative;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .navItem:hover {
-  color: var(--color-text-secondary, #374151);
+  color: #374151;
+  background-color: #f3f4f6;
+}
+
+.navItem:active {
+  transform: scale(0.94);
 }
 
 .navItemActive {
-  color: var(--color-primary, #ef4444);
+  color: #ef4444;
+  background-color: #fef2f2;
 }
 
 .navItemActive:hover {
-  color: var(--color-primary, #ef4444);
+  color: #ef4444;
+  background-color: #fee2e2;
+}
+
+.navItemActive .navLabel {
+  font-weight: 600;
+}
+
+.navItemActive::after {
+  content: '';
+  position: absolute;
+  bottom: 2px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background-color: currentColor;
 }
 
 .navLabel {
-  font-size: var(--font-xs, 0.6875rem);
+  font-size: 10px;
   font-weight: 500;
+  letter-spacing: 0.01em;
+  line-height: 1;
 }
 
 .navBadge {
   position: absolute;
-  top: 2px;
+  top: 4px;
   right: 8px;
-  min-width: 18px;
-  height: 18px;
+  min-width: 16px;
+  height: 16px;
   border-radius: 9999px;
-  background-color: var(--color-danger, #ef4444);
+  background-color: #ef4444;
   color: #ffffff;
-  font-size: 10px;
+  font-size: 9px;
   font-weight: 700;
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 0 4px;
+  border: 2px solid #ffffff;
+  box-sizing: content-box;
+}
+
+/* ===== Dark theme ===== */
+
+[data-theme="dark"] .bottomNav {
+  background: #1a1a1c;
+  border-top: 1px solid #2a2a2e;
+  box-shadow: 0 -1px 3px rgba(0, 0, 0, 0.3);
+}
+
+[data-theme="dark"] .navItem {
+  color: #a1a1a6;
+}
+
+[data-theme="dark"] .navItem:hover {
+  color: #f5f5f7;
+  background-color: rgba(255, 255, 255, 0.06);
+}
+
+[data-theme="dark"] .navItemActive {
+  color: #ef4444;
+  background-color: rgba(239, 68, 68, 0.12);
+}
+
+[data-theme="dark"] .navItemActive:hover {
+  color: #ef4444;
+  background-color: rgba(239, 68, 68, 0.18);
+}
+
+[data-theme="dark"] .navBadge {
+  border-color: #1a1a1c;
 }
