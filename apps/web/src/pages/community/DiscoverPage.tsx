@@ -478,14 +478,11 @@ export const DiscoverPage: React.FC = () => {
         <button className={styles.backButton} onClick={() => navigate(-1)} aria-label="Back">
           <ArrowLeft size={20} />
         </button>
-        <div style={{ display: 'flex', flexDirection: 'column', flex: 1, textAlign: 'center' }}>
-          <h1 className={styles.headerTitle} style={{ margin: 0 }}>Discover</h1>
-          <div style={{ display: 'flex', gap: 6, fontSize: 10, color: 'rgba(255,255,255,0.8)', justifyContent: 'center', marginTop: 2 }}>
-            <span>{swipeCount}/{dailyLimit} swipes</span>
-            <span style={{ color: '#34d399' }}>{swipesRemaining} remaining</span>
-          </div>
+        <div className={styles.swipeMeta}>
+          <span>{swipeCount}/{dailyLimit} swipes</span>
+          <span className={styles.swipeRemaining}>{swipesRemaining} remaining</span>
         </div>
-        <div style={{ display: 'flex', gap: 8 }}>
+        <div style={{ display: 'flex', gap: 8, marginLeft: 'auto' }}>
           <button className={styles.headerButton} onClick={(e) => { e.stopPropagation(); setShowMyVideos(true); }} aria-label="My Videos">
             <Grid3x3 size={20} />
           </button>
@@ -505,35 +502,91 @@ export const DiscoverPage: React.FC = () => {
       )}
 
       {showMyVideos && (
-        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.85)', zIndex: 999, display: 'flex' }} onClick={() => setShowMyVideos(false)}>
-          <div onClick={(e) => e.stopPropagation()} style={{ backgroundColor: '#fff', width: '100%', maxWidth: 480, height: '100dvh', display: 'flex', flexDirection: 'column' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: 16, borderBottom: '1px solid #e5e7eb' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                <button onClick={() => setShowMyVideos(false)} style={{ background: 'none', border: 'none', cursor: 'pointer' }}>
-                  <ArrowLeft size={24} />
-                </button>
-                <h2 style={{ fontSize: 18, fontWeight: 700, margin: 0 }}>My Videos</h2>
-              </div>
-              <button onClick={() => { setShowMyVideos(false); videoInputRef.current?.click(); }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ef4444' }}>
-                <Plus size={24} />
-              </button>
+        <div
+          style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.6)', zIndex: 999, display: 'flex', alignItems: 'flex-end', justifyContent: 'center', backdropFilter: 'blur(4px)', WebkitBackdropFilter: 'blur(4px)' }}
+          onClick={() => setShowMyVideos(false)}
+          onTouchStart={(e) => e.stopPropagation()}
+          onTouchMove={(e) => e.stopPropagation()}
+          onTouchEnd={(e) => e.stopPropagation()}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              backgroundColor: 'var(--color-surface)',
+              width: '100%',
+              maxWidth: 480,
+              height: '80dvh',
+              display: 'flex',
+              flexDirection: 'column',
+              borderTopLeftRadius: 24,
+              borderTopRightRadius: 24,
+              overflow: 'hidden',
+              boxShadow: '0 -8px 32px rgba(0,0,0,0.2)',
+            }}
+          >
+            {/* Drag handle */}
+            <div style={{ display: 'flex', justifyContent: 'center', paddingTop: 10, paddingBottom: 4 }}>
+              <div style={{ width: 40, height: 4, borderRadius: 9999, backgroundColor: 'var(--color-border-strong)' }} />
             </div>
-            <div style={{ flex: 1, overflowY: 'auto', padding: 4 }}>
+
+            {/* Header */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 16px 12px', borderBottom: '1px solid var(--color-border)' }}>
+              <h2 style={{ fontSize: 17, fontWeight: 700, margin: 0, color: 'var(--color-text)' }}>My Videos</h2>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <button
+                  onClick={() => { setShowMyVideos(false); videoInputRef.current?.click(); }}
+                  aria-label="Upload new video"
+                  style={{ width: 36, height: 36, borderRadius: '50%', border: 'none', backgroundColor: 'var(--color-primary)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+                >
+                  <Plus size={20} />
+                </button>
+                <button
+                  onClick={() => setShowMyVideos(false)}
+                  aria-label="Close"
+                  style={{ width: 36, height: 36, borderRadius: '50%', border: 'none', backgroundColor: 'var(--color-surface-alt)', color: 'var(--color-text-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+                >
+                  <X size={18} />
+                </button>
+              </div>
+            </div>
+
+            {/* Scrollable video grid */}
+            <div style={{ flex: 1, overflowY: 'auto', padding: 12 }}>
               {myVideos.length === 0 ? (
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', gap: 16, padding: 24, textAlign: 'center' }}>
-                  <Video size={48} style={{ color: '#d1d5db' }} />
-                  <p style={{ fontSize: 16, fontWeight: 600, margin: 0 }}>No videos yet</p>
-                  <button onClick={() => { setShowMyVideos(false); videoInputRef.current?.click(); }} style={{ padding: '12px 24px', backgroundColor: '#ef4444', color: '#fff', border: 'none', borderRadius: 9999, cursor: 'pointer' }}>Upload Video</button>
+                  <div style={{ width: 64, height: 64, borderRadius: '50%', backgroundColor: 'var(--color-surface-alt)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <Video size={32} style={{ color: 'var(--color-text-muted)' }} />
+                  </div>
+                  <div>
+                    <p style={{ fontSize: 16, fontWeight: 700, margin: '0 0 4px', color: 'var(--color-text)' }}>No videos yet</p>
+                    <p style={{ fontSize: 13, margin: 0, color: 'var(--color-text-secondary)' }}>Upload your first video to appear in Discover</p>
+                  </div>
+                  <button
+                    onClick={() => { setShowMyVideos(false); videoInputRef.current?.click(); }}
+                    style={{ padding: '12px 24px', backgroundColor: 'var(--color-primary)', color: '#fff', border: 'none', borderRadius: 9999, cursor: 'pointer', fontSize: 14, fontWeight: 600, marginTop: 8 }}
+                  >
+                    Upload Video
+                  </button>
                 </div>
               ) : (
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 4 }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 6 }}>
                   {myVideos.map((video) => (
-                    <div key={video.video_id} style={{ position: 'relative', aspectRatio: '9/16', backgroundColor: '#f3f4f6', borderRadius: 4, overflow: 'hidden', cursor: 'pointer' }} onClick={() => { setPreviewVideo(video); setPreviewPlaying(true); }}>
+                    <div
+                      key={video.video_id}
+                      style={{ position: 'relative', aspectRatio: '9/16', backgroundColor: 'var(--color-surface-alt)', borderRadius: 10, overflow: 'hidden', cursor: 'pointer' }}
+                      onClick={() => { setPreviewVideo(video); setPreviewPlaying(true); }}
+                    >
                       <video src={video.video_url} muted playsInline style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                      <div style={{ position: 'absolute', top: 8, left: 8 }}>
-                        {video.status === 'approved' && <span style={{ backgroundColor: '#10b981', color: '#fff', padding: '4px 8px', borderRadius: 9999, fontSize: 10, fontWeight: 700 }}>Approved</span>}
-                        {video.status === 'pending' && <span style={{ backgroundColor: '#f59e0b', color: '#fff', padding: '4px 8px', borderRadius: 9999, fontSize: 10, fontWeight: 700 }}>Pending</span>}
-                        {video.status === 'removed' && <span style={{ backgroundColor: '#6b7280', color: '#fff', padding: '4px 8px', borderRadius: 9999, fontSize: 10, fontWeight: 700 }}>Hidden</span>}
+                      <div style={{ position: 'absolute', top: 6, left: 6 }}>
+                        {video.status === 'approved' && (
+                          <span style={{ backgroundColor: 'rgba(16, 185, 129, 0.95)', color: '#fff', padding: '3px 8px', borderRadius: 9999, fontSize: 9, fontWeight: 700, letterSpacing: 0.02 }}>Approved</span>
+                        )}
+                        {video.status === 'pending' && (
+                          <span style={{ backgroundColor: 'rgba(245, 158, 11, 0.95)', color: '#fff', padding: '3px 8px', borderRadius: 9999, fontSize: 9, fontWeight: 700, letterSpacing: 0.02 }}>Pending</span>
+                        )}
+                        {video.status === 'removed' && (
+                          <span style={{ backgroundColor: 'rgba(107, 114, 128, 0.95)', color: '#fff', padding: '3px 8px', borderRadius: 9999, fontSize: 9, fontWeight: 700, letterSpacing: 0.02 }}>Hidden</span>
+                        )}
                       </div>
                     </div>
                   ))}
