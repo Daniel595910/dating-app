@@ -12,7 +12,7 @@ import { DiscoverSearchModal } from '../../features/discover/components/Discover
 import { 
   BadgeCheck, MapPin, Heart, X, Play, Pause, Video, Upload, 
   Loader, ArrowLeft, Grid3x3, Plus, Clock, CheckCircle2, XCircle,
-  Trash2, Eye, EyeOff, Volume2, VolumeX, RotateCcw, Check,
+  Trash2, Eye, EyeOff, Volume2, VolumeX, Check,
   MessageSquare, Send
 } from 'lucide-react';
 import styles from './DiscoverPage.module.css';
@@ -331,12 +331,6 @@ export const DiscoverPage: React.FC = () => {
     }
   };
 
-  const handleRewind = () => {
-    if (videoRef.current) {
-      videoRef.current.currentTime = 0;
-      setVideoProgress(0);
-    }
-  };
 
   const handleSeekStart = (e: React.MouseEvent | React.TouchEvent) => {
     setIsSeeking(true);
@@ -655,9 +649,6 @@ export const DiscoverPage: React.FC = () => {
           <button onClick={toggleMute} style={{ position: 'absolute', top: 80, right: 16, background: 'rgba(0,0,0,0.2)', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)', border: 'none', borderRadius: '50%', width: 36, height: 36, cursor: 'pointer', color: '#fff', zIndex: 15 }}>
             {isMuted ? <VolumeX size={16} /> : <Volume2 size={16} />}
           </button>
-          <button onClick={handleRewind} style={{ position: 'absolute', top: 130, right: 16, background: 'rgba(0,0,0,0.2)', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)', border: 'none', borderRadius: '50%', width: 36, height: 36, cursor: 'pointer', color: '#fff', zIndex: 15 }}>
-            <RotateCcw size={16} />
-          </button>
           <div className={styles.infoOverlay}>
             <div className={styles.infoNameRow}>
               <span className={styles.infoName}>
@@ -892,7 +883,6 @@ export const DiscoverPage: React.FC = () => {
     </div>
   );
 };
-
 
 
 
