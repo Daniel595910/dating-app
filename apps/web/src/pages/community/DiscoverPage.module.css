@@ -482,3 +482,37 @@
     gap: 10px;
   }
 }
+
+@media (max-height: 700px) {
+  .volumeButton {
+    top: calc(64px + env(safe-area-inset-top));
+  }
+}
+
+@media (max-height: 640px) {
+  .volumeButton {
+    top: calc(60px + env(safe-area-inset-top));
+  }
+  .rightActionButton,
+  .rightAvatarButton {
+    width: 40px;
+    height: 40px;
+  }
+  .likeCount {
+    min-width: 40px;
+    font-size: 12px;
+    margin-top: -12px;
+  }
+  .rightActions {
+    gap: 10px;
+    bottom: calc(65px + env(safe-area-inset-bottom));
+  }
+  .categoryTabs {
+    margin-top: 4px;
+    gap: 4px;
+  }
+  .categoryTab {
+    padding: 3px 8px;
+    font-size: 9px;
+  }
+}
