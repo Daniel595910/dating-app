@@ -211,38 +211,18 @@ export function useConnection(userId: string | null): UseConnectionResult {
     setLoading(true);
     setError(null);
 
-    // Optimistic remove from matched list
     const backup = matchedConnections;
     setMatchedConnections((prev) => prev.filter((c) => c.targetUserId !== otherUserId));
 
     try {
-      const { error: matchErr } = await supabase
-        .from('matches')
-        .update({
-          stage: 'rejected',
-          status: 'cancelled',
-          rejected_at: new Date().toISOString(),
-        })
-        .eq('id', matchId);
+      const { error: rpcError } = await supabase.rpc('unmatch_connection', {
+        p_match_id: matchId,
+      });
 
-      if (matchErr) throw matchErr;
+      if (rpcError) throw rpcError;
 
-      // Close the conversation so neither user can message
-      await supabase
-        .from('conversations')
-        .update({ closed_at: new Date().toISOString() })
-        .eq('match_id', matchId);
-
-      // Cancel any pending requests so they can rematch later
-      await supabase
-        .from('match_requests')
-        .update({ status: 'cancelled', updated_at: new Date().toISOString() })
-        .or(
-          `and(requester_id.eq.${otherUserId},target_id.eq.${userId}),` +
-          `and(requester_id.eq.${userId},target_id.eq.${otherUserId})`
-        )
-        .in('status', ['pending', 'accepted']);
-
+      await loadMatchedConnections();
+      await loadPendingRequests();
       return true;
     } catch (err: any) {
       setMatchedConnections(backup);
@@ -251,7 +231,7 @@ export function useConnection(userId: string | null): UseConnectionResult {
     } finally {
       setLoading(false);
     }
-  }, [matchedConnections, userId]);
+  }, [matchedConnections, loadMatchedConnections, loadPendingRequests]);
 
   const likeBack = useCallback(async (matchId: string) => {
     setLoading(true);
