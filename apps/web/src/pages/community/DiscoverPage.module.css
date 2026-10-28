@@ -197,7 +197,7 @@
   background: rgba(0, 0, 0, 0.22);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
-  color: #f97316;
+  color: #ffffff;
   transition: transform 0.15s ease, background 0.15s ease;
   padding: 0;
   flex-shrink: 0;
@@ -221,8 +221,8 @@
 }
 
 .rightAvatarButton {
-  width: clamp(40px, 12vw, 52px);
-  height: clamp(40px, 12vw, 52px);
+  width: clamp(48px, 14vw, 64px);
+  height: clamp(48px, 14vw, 64px);
   border-radius: 50%;
   border: 2.5px solid #f97316;
   cursor: pointer;
