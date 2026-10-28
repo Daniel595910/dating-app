@@ -34,6 +34,9 @@ export const DiscoverPage: React.FC = () => {
   const { user } = useAuthStore();
   const [candidates, setCandidates] = useState<DiscoverCandidate[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [hasMore, setHasMore] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [feedExhausted, setFeedExhausted] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -160,6 +163,43 @@ export const DiscoverPage: React.FC = () => {
     }
   };
 
+  const loadMore = useCallback(async () => {
+    if (loadingMore || !hasMore || !user) return;
+    setLoadingMore(true);
+    try {
+      const more = await discoverService.getCandidates(10, activeCategory, candidates.length);
+      if (more.length === 0) {
+        setHasMore(false);
+        setFeedExhausted(true);
+      } else {
+        setCandidates((prev) => [...prev, ...more]);
+      }
+    } catch (err) {
+      console.error('loadMore failed:', err);
+      setHasMore(false);
+    } finally {
+      setLoadingMore(false);
+    }
+  }, [loadingMore, hasMore, user, activeCategory, candidates.length]);
+
+  const reloadPopular = useCallback(async () => {
+    if (!user) return;
+    setLoadingMore(true);
+    setFeedExhausted(false);
+    try {
+      const popular = await discoverService.getCandidates(20, 'popular', 0);
+      if (popular.length > 0) {
+        setCandidates(popular);
+        setCurrentIndex(0);
+        setHasMore(true);
+      }
+    } catch (err) {
+      console.error('reloadPopular failed:', err);
+    } finally {
+      setLoadingMore(false);
+    }
+  }, [user]);
+
   const loadMyVideos = async () => {
     if (!user) return;
     const videos = await discoverService.getMyVideos();
@@ -250,6 +290,7 @@ export const DiscoverPage: React.FC = () => {
 
   const skipToNextPerson = useCallback((currentUserId: string) => {
     // Simple next - let users see multiple videos from same person
+    if (currentIndex >= candidates.length - 2 && hasMore && !loadingMore) { loadMore(); }
     setCurrentIndex((prev) => Math.min(prev + 1, Math.max(0, candidates.length - 1)));
     setIsPlaying(false);
     setVideoProgress(0);
@@ -347,6 +388,7 @@ export const DiscoverPage: React.FC = () => {
       || (dy > distanceThreshold || velocity > velocityThreshold);
 
     if (shouldNext) {
+      if (currentIndex >= candidates.length - 2 && hasMore && !loadingMore) { loadMore(); }
       if (card) { card.style.transition = ''; card.style.transform = 'translate3d(-100vw, 0, 0)'; }
       setTimeout(() => {
         advanceVideo('next');
@@ -962,6 +1004,23 @@ export const DiscoverPage: React.FC = () => {
               Got it
             </button>
           </div>
+        </div>
+      )}
+
+      {feedExhausted && current && currentIndex >= candidates.length - 1 && (
+        <div className={styles.caughtUpCard}>
+          <div className={styles.caughtUpIcon}>
+            <Heart size={32} fill="#f97316" />
+          </div>
+          <h3 className={styles.caughtUpTitle}>You're all caught up</h3>
+          <p className={styles.caughtUpText}>Here are some popular videos you might have missed</p>
+          <button
+            className={styles.caughtUpButton}
+            onClick={reloadPopular}
+            disabled={loadingMore}
+          >
+            {loadingMore ? 'Loading...' : 'See popular videos'}
+          </button>
         </div>
       )}
 

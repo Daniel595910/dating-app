@@ -105,7 +105,7 @@
   border-radius: 50%;
   cursor: pointer;
   color: #ffffff;
-  padding: 18px;
+  padding: 14px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -517,4 +517,72 @@
     padding: 3px 8px;
     font-size: 9px;
   }
+}
+
+.caughtUpCard {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: calc(100% - 48px);
+  max-width: 340px;
+  padding: 24px;
+  background: rgba(20, 20, 22, 0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  text-align: center;
+  z-index: 25;
+}
+
+.caughtUpIcon {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: rgba(249, 115, 22, 0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 16px;
+}
+
+.caughtUpTitle {
+  font-size: 18px;
+  font-weight: 700;
+  color: #ffffff;
+  margin: 0 0 8px;
+}
+
+.caughtUpText {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.7);
+  margin: 0 0 20px;
+  line-height: 1.5;
+}
+
+.caughtUpButton {
+  width: 100%;
+  padding: 12px 20px;
+  background: #f97316;
+  color: #ffffff;
+  border: none;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease, transform 0.1s ease;
+}
+
+.caughtUpButton:hover:not(:disabled) {
+  background: #ea6a0a;
+}
+
+.caughtUpButton:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+.caughtUpButton:disabled {
+  opacity: 0.6;
+  cursor: wait;
 }
