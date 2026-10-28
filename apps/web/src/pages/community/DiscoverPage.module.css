@@ -221,8 +221,8 @@
 }
 
 .rightAvatarButton {
-  width: clamp(48px, 14vw, 64px);
-  height: clamp(48px, 14vw, 64px);
+  width: clamp(56px, 16vw, 72px);
+  height: clamp(56px, 16vw, 72px);
   border-radius: 50%;
   border: 2.5px solid #f97316;
   cursor: pointer;
