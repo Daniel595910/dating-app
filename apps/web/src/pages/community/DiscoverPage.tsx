@@ -15,7 +15,7 @@ import {
   BadgeCheck, MapPin, Heart, X, Play, Pause, Video, Upload, 
   Loader, ArrowLeft, Grid3x3, Plus, Clock, CheckCircle2, XCircle,
   Trash2, Eye, EyeOff, Volume2, VolumeX, Check,
-  MessageSquare, Send
+  MessageSquare, Send, Maximize2
 } from 'lucide-react';
 import styles from './DiscoverPage.module.css';
 
@@ -41,6 +41,7 @@ export const DiscoverPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isMuted, setIsMuted] = useState(true);
+  const [videoIsLandscape, setVideoIsLandscape] = useState(false);
   const [swipe, setSwipe] = useState<SwipeState>({
     isDragging: false,
     startX: 0,
@@ -199,6 +200,10 @@ export const DiscoverPage: React.FC = () => {
       setLoadingMore(false);
     }
   }, [user]);
+
+  useEffect(() => {
+    setVideoIsLandscape(false);
+  }, [candidates[currentIndex]?.videoId]);
 
   const loadMyVideos = async () => {
     if (!user) return;
@@ -749,7 +754,33 @@ export const DiscoverPage: React.FC = () => {
 
       {current && (
         <div ref={videoCardRef} className={styles.videoCard} onClick={handleDoubleTapLike}>
-          <video ref={videoRef} src={current.videoUrl} loop playsInline autoPlay preload="auto" onPlay={() => setIsPlaying(true)} onPause={() => setIsPlaying(false)} onTimeUpdate={handleTimeUpdate} className={styles.video} onClick={togglePlay} />
+          <video ref={videoRef} src={current.videoUrl} loop playsInline autoPlay preload="auto" onPlay={() => setIsPlaying(true)} onPause={() => setIsPlaying(false)} onTimeUpdate={handleTimeUpdate} className={styles.video} style={{ objectFit: videoIsLandscape ? 'contain' : 'cover' }} onLoadedMetadata={() => { if (videoRef.current) { setVideoIsLandscape(videoRef.current.videoWidth > videoRef.current.videoHeight); } }} onClick={togglePlay} />
+          {videoIsLandscape && (
+            <button
+              className={styles.landscapeExpandButton}
+              onClick={async (e) => {
+                e.stopPropagation();
+                const vid = videoRef.current;
+                if (!vid) return;
+                try {
+                  const anyVid = vid as any;
+                  if (anyVid.webkitEnterFullscreen) {
+                    anyVid.webkitEnterFullscreen();
+                    return;
+                  }
+                  if (vid.requestFullscreen) {
+                    await vid.requestFullscreen();
+                    try { await (screen.orientation as any).lock('landscape'); } catch {}
+                  }
+                } catch (err) {
+                  console.error('fullscreen failed:', err);
+                }
+              }}
+              aria-label="Expand landscape video"
+            >
+              <Maximize2 size={16} />
+            </button>
+          )}
           {showHeartPop && <Heart size={120} className={styles.heartPop} fill="#f97316" />}
           {!isPlaying && <button className={styles.playOverlay} onClick={togglePlay}><Play size={32} /></button>}
           

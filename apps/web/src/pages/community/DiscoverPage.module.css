@@ -586,3 +586,32 @@
   opacity: 0.6;
   cursor: wait;
 }
+
+.landscapeExpandButton {
+  position: absolute;
+  bottom: calc(100px + env(safe-area-inset-bottom));
+  left: 16px;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: none;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 12;
+  transition: transform 0.15s ease, background 0.15s ease;
+}
+
+.landscapeExpandButton:hover {
+  background: rgba(0, 0, 0, 0.7);
+  transform: scale(1.05);
+}
+
+.landscapeExpandButton:active {
+  transform: scale(0.95);
+}
