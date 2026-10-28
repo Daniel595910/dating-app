@@ -460,12 +460,14 @@
 
 .progressBarWrapper {
   position: absolute;
-  bottom: calc(96px + env(safe-area-inset-bottom));
+  bottom: calc(57px + env(safe-area-inset-bottom));
   left: 0;
   right: 0;
   padding: 0 max(12px, env(safe-area-inset-left)) 0 max(12px, env(safe-area-inset-right));
   z-index: 20;
   cursor: pointer;
+  display: flex;
+  flex-direction: column-reverse;
 }
 
 @media (max-width: 375px) {
