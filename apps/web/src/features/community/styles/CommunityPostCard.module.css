@@ -94,6 +94,8 @@
   align-items: center;
   gap: 8px;
   margin-top: 2px;
+  min-width: 0;
+  overflow: hidden;
 }
 
 .locationRow {
@@ -102,11 +104,23 @@
   gap: 3px;
   font-size: 12px;
   color: var(--color-text-muted, #9ca3af);
+  min-width: 0;
+  overflow: hidden;
+  flex-shrink: 1;
+}
+
+.locationText {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
 }
 
 .timeAgo {
   font-size: 12px;
   color: var(--color-text-muted, #9ca3af);
+  flex-shrink: 0;
+  white-space: nowrap;
 }
 
 .authorActions {

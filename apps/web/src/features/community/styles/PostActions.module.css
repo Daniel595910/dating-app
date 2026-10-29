@@ -1,9 +1,9 @@
-﻿.actionsBar {
+.actionsBar {
   display: flex;
   align-items: center;
   gap: 0.5rem;
   padding: 0.625rem 0.5rem;
-  border-top: 1px solid #f9fafb;
+  border-top: none;
   margin: 0 0.5rem;
 }
 
@@ -14,32 +14,32 @@
   background: none;
   border: none;
   cursor: pointer;
-  color: #9ca3af;
+  color: var(--color-text-muted, #9ca3af);
   font-size: 0.8125rem;
   font-weight: 500;
   padding: 0.5rem 0.75rem;
   border-radius: 9999px;
   min-height: 40px;
-  transition: all 0.15s ease;
+  transition: background-color 0.15s ease, color 0.15s ease;
 }
 
 .actionButton:hover {
-  background-color: #f9fafb;
-  color: #374151;
+  background-color: var(--color-surface-alt, #f9fafb);
+  color: var(--color-text, #111827);
 }
 
 .actionButton:focus-visible {
-  outline: 2px solid #ef4444;
+  outline: 2px solid var(--color-primary, #ef4444);
   outline-offset: 2px;
 }
 
 .actionButtonLiked {
-  color: #ef4444;
+  color: var(--color-primary, #ef4444);
 }
 
 .actionButtonLiked:hover {
-  color: #ef4444;
-  background-color: #fee2e2;
+  color: var(--color-primary, #ef4444);
+  background-color: var(--color-primary-soft, #fee2e2);
 }
 
 .shareButton {

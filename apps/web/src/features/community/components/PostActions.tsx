@@ -1,4 +1,4 @@
-﻿import React from 'react';
+import React from 'react';
 import { Heart, MessageCircle, Share2 } from 'lucide-react';
 import { PostStats, PostViewerState } from '../../types/community.types';
 import styles from '../styles/PostActions.module.css';
@@ -27,7 +27,7 @@ export const PostActions: React.FC<PostActionsProps> = ({
         onClick={() => onLike(postId)}
         aria-label={viewer.liked ? 'Unlike' : 'Like'}
       >
-        <Heart size={18} fill={viewer.liked ? '#ef4444' : 'none'} />
+        <Heart size={18} fill={viewer.liked ? 'currentColor' : 'none'} />
         <span>{stats.likes}</span>
       </button>
 

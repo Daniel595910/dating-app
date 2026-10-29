@@ -1,4 +1,4 @@
-﻿import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Heart, MessageCircle, MapPin, BadgeCheck, Share2, UserPlus, Check, Play, Pause, Mic, MoreHorizontal, Flag, Ban } from 'lucide-react';
 import { CommunityPost } from '../../types/community.types';
 import { supabase } from '@/config/supabase.client';
@@ -155,7 +155,7 @@ export const CommunityPostCard: React.FC<CommunityPostCardProps> = ({
               {post.author.location && (
                 <span className={styles.locationRow}>
                   <MapPin size={10} />
-                  {post.author.location}
+                  <span className={styles.locationText}>{post.author.location}</span>
                 </span>
               )}
               <span className={styles.timeAgo}>{post.createdAt ? new Date(post.createdAt).toLocaleDateString() : ''}</span>
