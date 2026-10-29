@@ -1,7 +1,7 @@
 .communityPage {
   height: 100dvh;                    /* changed from min-height: was causing mobile scroll issues */
   max-height: 100dvh;                /* prevent growth beyond viewport */
-  background-color: #faf9f7;
+  background-color: var(--color-bg, #faf9f7);
   display: flex;
   flex-direction: column;
   max-width: 480px;

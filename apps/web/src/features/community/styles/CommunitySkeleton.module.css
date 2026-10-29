@@ -1,6 +1,6 @@
-﻿.skeletonPage {
+.skeletonPage {
   min-height: 100dvh;
-  background-color: #faf9f7;
+  background-color: var(--color-bg, #faf9f7);
   max-width: 480px;
   margin: 0 auto;
   padding-bottom: calc(5rem + env(safe-area-inset-bottom));
