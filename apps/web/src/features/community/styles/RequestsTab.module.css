@@ -1,0 +1,174 @@
+.card {
+  background: var(--color-surface, #ffffff);
+  border: 1px solid var(--color-border, #f3f4f6);
+  border-radius: 14px;
+  padding: 14px;
+  margin-bottom: 10px;
+  transition: border-color 0.15s ease;
+}
+
+.card:hover {
+  border-color: var(--color-border-strong, #e5e7eb);
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.avatarButton {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: var(--color-primary-soft, #fee2e2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.avatarImg {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.avatarInitial {
+  color: var(--color-primary, #ef4444);
+  font-weight: 700;
+  font-size: 16px;
+}
+
+.info {
+  flex: 1;
+  min-width: 0;
+}
+
+.nameButton {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  text-align: left;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--color-text, #111827);
+  margin: 0;
+  line-height: 1.3;
+  display: block;
+  width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.nameStrong {
+  color: var(--color-primary, #ef4444);
+}
+
+.nameSuffix {
+  color: var(--color-text-secondary, #6b7280);
+  font-weight: 400;
+}
+
+.message {
+  font-size: 13px;
+  color: var(--color-text-secondary, #6b7280);
+  margin: 4px 0 0;
+  font-style: italic;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.actions {
+  display: flex;
+  gap: 8px;
+}
+
+.btnPrimary,
+.btnSecondary {
+  flex: 1;
+  padding: 10px;
+  border-radius: 9999px;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 42px;
+  transition: background-color 0.15s ease, border-color 0.15s ease, opacity 0.15s ease;
+}
+
+.btnPrimary {
+  background: var(--color-primary, #ef4444);
+  color: #ffffff;
+  border: none;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.btnPrimary:hover:not(:disabled) {
+  background: var(--color-primary-hover, #dc2626);
+}
+
+.btnPrimary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btnSecondary {
+  background: transparent;
+  color: var(--color-text-secondary, #6b7280);
+  border: 1px solid var(--color-border-strong, #e5e7eb);
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.btnSecondary:hover:not(:disabled) {
+  background: var(--color-surface-alt, #f9fafb);
+}
+
+.btnSecondary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Empty state */
+.empty {
+  text-align: center;
+  padding: 3rem 1rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.emptyIcon {
+  color: var(--color-text-muted, #9ca3af);
+  opacity: 0.45;
+  margin-bottom: 0.75rem;
+}
+
+.emptyTitle {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--color-text-secondary, #6b7280);
+  margin: 0;
+}
+
+.emptyText {
+  font-size: 0.8125rem;
+  color: var(--color-text-muted, #9ca3af);
+  margin: 0.375rem 0 0;
+  max-width: 260px;
+  line-height: 1.4;
+}
