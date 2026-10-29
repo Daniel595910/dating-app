@@ -11,7 +11,7 @@ class MediaService {
   async uploadImage(
     file: File,
     userId: string,
-    purpose: 'post_image' | 'avatar' | 'cover_photo'
+    purpose: 'post_image' | 'avatar' | 'cover_photo' | 'story_image'
   ): Promise<UploadResult> {
     try {
       const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
@@ -122,7 +122,7 @@ class MediaService {
   async uploadVideo(
     file: File,
     userId: string,
-    purpose: 'post_video' | 'discover_video',
+    purpose: 'post_video' | 'discover_video' | 'story_video',
     onProgress?: (percent: number) => void
   ): Promise<UploadResult> {
     try {
