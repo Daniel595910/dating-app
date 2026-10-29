@@ -30,6 +30,7 @@ interface StoryViewerProps {
 }
 
 const IMAGE_DURATION_MS = 5000;
+const TICK_MS = 50;
 
 function timeAgo(iso: string): string {
   const diff = Date.now() - new Date(iso).getTime();
@@ -52,7 +53,9 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ open, onClose, initial
   const [error, setError] = useState<string | null>(null);
 
   const touchStartY = useRef<number | null>(null);
-  const advanceRef = useRef<() => void>(() => {});
+
+  const currentAuthor = authors[authorIdx];
+  const currentStory = currentAuthor?.stories[storyIdx];
 
   // Reset state when opened
   useEffect(() => {
@@ -74,7 +77,8 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ open, onClose, initial
         const { data, error: rpcErr } = await supabase.rpc('get_viewable_stories');
         if (cancelled) return;
         if (rpcErr) throw rpcErr;
-        const list = (data as StoryAuthor[]) || [];
+        const raw = data as unknown;
+        const list: StoryAuthor[] = typeof raw === 'string' ? JSON.parse(raw) : ((raw as StoryAuthor[]) || []);
         setAuthors(list);
 
         if (initialAuthorId) {
@@ -92,9 +96,7 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ open, onClose, initial
     return () => { cancelled = true; };
   }, [open, initialAuthorId]);
 
-  const currentAuthor = authors[authorIdx];
-  const currentStory = currentAuthor?.stories[storyIdx];
-
+  // Navigation
   const goNext = useCallback(() => {
     if (!currentAuthor) return;
     if (storyIdx < currentAuthor.stories.length - 1) {
@@ -121,9 +123,12 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ open, onClose, initial
     }
   }, [authorIdx, currentAuthor, storyIdx]);
 
-  advanceRef.current = goNext;
+  // Reset progress whenever the current story changes
+  useEffect(() => {
+    setProgress(0);
+  }, [authorIdx, storyIdx]);
 
-  // Mark viewed
+  // Mark viewed (after commit — safe setState location)
   useEffect(() => {
     if (!open || !currentStory) return;
     if (currentStory.viewed) return;
@@ -132,7 +137,7 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ open, onClose, initial
     });
   }, [open, currentStory]);
 
-  // Progress timer
+  // Progress timer — ONLY increments progress, never calls setState on other components
   useEffect(() => {
     if (!open || !currentStory || paused) return;
 
@@ -141,25 +146,23 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ open, onClose, initial
       ? Math.min((currentStory.duration_seconds || 15) * 1000, 15000)
       : IMAGE_DURATION_MS;
 
-    const tickMs = 50;
-    const step = (tickMs / durationMs) * 100;
+    const step = (TICK_MS / durationMs) * 100;
 
     const timer = window.setInterval(() => {
-      setProgress((p) => {
-        const next = p + step;
-        if (next >= 100) {
-          window.clearInterval(timer);
-          advanceRef.current();
-          return 0;
-        }
-        return next;
-      });
-    }, tickMs);
+      setProgress((p) => Math.min(100, p + step));
+    }, TICK_MS);
 
     return () => window.clearInterval(timer);
   }, [open, currentStory, paused, authorIdx, storyIdx]);
 
-  // Escape to close
+  // When progress hits 100, advance — this is an effect, runs after commit
+  useEffect(() => {
+    if (!open) return;
+    if (progress < 100) return;
+    goNext();
+  }, [open, progress, goNext]);
+
+  // Keyboard
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => {
@@ -188,7 +191,6 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ open, onClose, initial
       onTouchEnd={() => { touchStartY.current = null; }}
     >
       <div className={styles.stage} onClick={(e) => e.stopPropagation()}>
-        {/* Progress bars */}
         {hasStory && (
           <div className={styles.progressBars}>
             {currentAuthor.stories.map((s, i) => (
@@ -207,7 +209,6 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ open, onClose, initial
           </div>
         )}
 
-        {/* Header */}
         {hasStory && (
           <div className={styles.header}>
             <div className={styles.headerLeft}>
@@ -235,7 +236,6 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ open, onClose, initial
           </div>
         )}
 
-        {/* Content */}
         {loading ? (
           <div className={styles.centerState}>Loading stories…</div>
         ) : error ? (
@@ -267,7 +267,6 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ open, onClose, initial
           </div>
         ) : null}
 
-        {/* Tap zones */}
         {hasStory && (
           <>
             <button
