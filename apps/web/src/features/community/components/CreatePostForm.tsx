@@ -237,6 +237,9 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
     }
   };
 
+  const handleRemoveMedia = (mediaId: string) => {
+    setMedia((prev) => prev.filter((m) => m.id !== mediaId));
+  };
   const handleAudioFileSelect = (files: FileList | null) => {
     if (!files || files.length === 0) return;
     const file = files[0]!;
