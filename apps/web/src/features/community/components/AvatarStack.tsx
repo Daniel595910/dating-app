@@ -22,7 +22,7 @@ export const AvatarStack: React.FC<AvatarStackProps> = ({
   if (!members || members.length === 0) return null;
 
   const visible = members.slice(0, maxVisible);
-  const overflow = Math.max(0, totalCount - visible.length);
+  const overflow = Math.max(0, members.length - visible.length);
 
   return (
     <button

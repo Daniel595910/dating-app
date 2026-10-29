@@ -114,7 +114,7 @@ export const CommunityHeader: React.FC<CommunityHeaderProps> = ({
             <AvatarStack
               members={memberPreview}
               totalCount={community.memberCount}
-              maxVisible={3}
+              maxVisible={2}
               onClick={onOpenMembers}
             />
           </div>
