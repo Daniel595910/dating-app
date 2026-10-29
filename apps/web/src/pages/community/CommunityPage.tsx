@@ -6,6 +6,7 @@ import { useCommunityFeed } from '../../features/community/hooks/useCommunityFee
 import { usePostInteractions } from '../../features/community/hooks/usePostInteractions';
 import { useCommunityRealtime } from '../../features/community/hooks/useCommunityRealtime';
 import { usePullToRefresh } from '../../features/community/hooks/usePullToRefresh';
+import { useScrollDirection } from '../../features/community/hooks/useScrollDirection';
 import { useConnection } from '../../features/community/hooks/useConnection';
 import { useOfflineFeed } from '../../features/community/hooks/useOfflineFeed';
 import { CommunityHeader } from '../../features/community/components/CommunityHeader';
@@ -116,6 +117,7 @@ export const CommunityPage: React.FC = () => {
     },
     disabled: feedLoading,
   });
+  const headerHidden = useScrollDirection({ target: pull.containerRef });
 
   const { isOffline, hasCachedFeed } = useOfflineFeed({
     communityId: community?.id || null,
@@ -270,21 +272,7 @@ export const CommunityPage: React.FC = () => {
     <div className={styles.communityPage}>
       <OfflineBanner isOffline={isOffline} hasCachedFeed={hasCachedFeed} />
 
-      <CommunityHeader
-        community={{ ...community, onlineCount }}
-        userId={user?.id || ''}
-        onSearch={() => navigate('/search')}
-        onMore={() => {}}
-        onSwitchCommunity={() => setSwitcherOpen(true)}
-        onDiscover={() => navigate('/discover-communities')}
-        memberPreview={memberPreview}
-        memberPreviewCommunityId={memberPreviewCommunityId}
-        onOpenMembers={() => setMembersModalOpen(true)}
-        connectionCount={activeConnections.length + pendingRequests.length}
-        onOpenConnections={() => setConnectionsModalOpen(true)}
-      />
 
-      <FilterBar activeFilter={filter} onFilterChange={setFilter} />
 
       {newPostCount > 0 && (
         <button
@@ -323,6 +311,22 @@ export const CommunityPage: React.FC = () => {
         ref={pull.containerRef as React.RefObject<HTMLElement>}
         className={styles.feedContainer}
       >
+        <div className={styles.stickyHeader} data-hidden={headerHidden ? 'true' : 'false'}>
+        <CommunityHeader
+          community={{ ...community, onlineCount }}
+          userId={user?.id || ''}
+          onSearch={() => navigate('/search')}
+          onMore={() => {}}
+          onSwitchCommunity={() => setSwitcherOpen(true)}
+          onDiscover={() => navigate('/discover-communities')}
+          memberPreview={memberPreview}
+          memberPreviewCommunityId={memberPreviewCommunityId}
+          onOpenMembers={() => setMembersModalOpen(true)}
+          connectionCount={activeConnections.length + pendingRequests.length}
+          onOpenConnections={() => setConnectionsModalOpen(true)}
+        />
+        <FilterBar activeFilter={filter} onFilterChange={setFilter} />
+        </div>
         {filter === 'profiles' ? (
           <ProfileSwipeDeck userId={user?.id || ''} communityId={community.id} onGetToKnow={(id) => handleGetToKnow(id)} />
         ) : feedLoading && posts.length === 0 ? (

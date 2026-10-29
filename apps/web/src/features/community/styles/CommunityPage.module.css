@@ -15,10 +15,27 @@
   min-height: 0;                     /* critical: allows flex child to scroll */
   overflow-y: auto;
   overflow-x: hidden;
-  padding: 0.75rem 0.75rem calc(6rem + env(safe-area-inset-bottom));
+  padding: 0 0.75rem calc(6rem + env(safe-area-inset-bottom));
   -webkit-overflow-scrolling: touch;
   overscroll-behavior: contain;
   touch-action: pan-y;               /* explicit vertical swipe */
+}
+
+.stickyHeader {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background-color: var(--color-surface, #ffffff);
+  transition: transform 0.28s cubic-bezier(0.32, 0.72, 0, 1);
+  will-change: transform;
+}
+
+.stickyHeader[data-hidden="true"] {
+  transform: translateY(-100%);
+}
+
+.stickyHeader + * {
+  margin-top: 0.75rem;
 }
 
 .errorContainer {
