@@ -44,119 +44,82 @@ class ConnectionService {
       const {
         search,
         status = 'all',
-        dateFrom,
-        dateTo,
         limit = 20,
         offset = 0,
       } = filters;
 
-      let query = supabase.from('match_requests').select('*', { count: 'exact' });
-
-      if (status !== 'all') {
-        query = query.eq('status', status);
-      }
-
-      if (dateFrom) query = query.gte('created_at', dateFrom);
-      if (dateTo) query = query.lte('created_at', dateTo);
-
-      query = query
-        .order('created_at', { ascending: false })
-        .range(offset, offset + limit - 1);
-
-      const { data, error, count } = await query;
-
-      if (error) {
-        console.error('Failed to fetch connection requests:', error);
-        return { items: [], total: 0, hasMore: false };
-      }
-
-      const userIds = new Set<string>();
-      (data || []).forEach((r: any) => {
-        if (r.requester_id) userIds.add(r.requester_id);
-        if (r.target_id) userIds.add(r.target_id);
+      const { data, error } = await supabase.rpc('admin_list_connection_requests', {
+        p_status: status,
+        p_search: search && search.trim() ? search.trim() : null,
+        p_limit: limit,
+        p_offset: offset,
       });
 
-      let profileMap = new Map<string, any>();
-      if (userIds.size > 0) {
-        try {
-          const { data: profiles } = await supabase
-            .from('profiles')
-            .select('user_id, display_name, avatar_url, is_verified')
-            .in('user_id', Array.from(userIds));
-          profileMap = new Map((profiles || []).map((p: any) => [p.user_id, p]));
-        } catch {}
-      }
+      if (error) throw new Error(error.message);
 
-      let items: ConnectionRequest[] = (data || []).map((r: any) => ({
-        ...r,
-        requester: profileMap.get(r.requester_id)
+      const payload = (data || {}) as any;
+      const rawItems: any[] = Array.isArray(payload.items) ? payload.items : [];
+
+      const items: ConnectionRequest[] = rawItems.map((r: any) => ({
+        id: r.id,
+        requester_id: r.requester_id,
+        target_id: r.target_id,
+        status: r.status,
+        message: r.message,
+        created_at: r.created_at,
+        responded_at: r.responded_at,
+        expires_at: r.expires_at,
+        requester: r.requester_display_name
           ? {
-              display_name: profileMap.get(r.requester_id)!.display_name,
-              avatar_url: profileMap.get(r.requester_id)!.avatar_url,
-              is_verified: profileMap.get(r.requester_id)!.is_verified || false,
+              display_name: r.requester_display_name,
+              avatar_url: r.requester_avatar_url,
+              is_verified: !!r.requester_is_verified,
             }
           : undefined,
-        target: profileMap.get(r.target_id)
+        target: r.target_display_name
           ? {
-              display_name: profileMap.get(r.target_id)!.display_name,
-              avatar_url: profileMap.get(r.target_id)!.avatar_url,
-              is_verified: profileMap.get(r.target_id)!.is_verified || false,
+              display_name: r.target_display_name,
+              avatar_url: r.target_avatar_url,
+              is_verified: !!r.target_is_verified,
             }
           : undefined,
       }));
 
-      if (search && search.trim()) {
-        const term = search.toLowerCase();
-        items = items.filter(
-          (r) =>
-            r.requester?.display_name?.toLowerCase().includes(term) ||
-            r.target?.display_name?.toLowerCase().includes(term)
-        );
-      }
-
       return {
         items,
-        total: count || 0,
-        hasMore: (count || 0) > offset + limit,
+        total: typeof payload.total === 'number' ? payload.total : Number(payload.total || 0),
+        hasMore: !!payload.has_more,
       };
-    } catch {
+    } catch (err: any) {
+      console.error('Failed to fetch connection requests:', err);
       return { items: [], total: 0, hasMore: false };
     }
   }
 
   async getStats() {
-    const now = new Date();
-    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
-    const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString();
-
-    const safeCount = async (filter?: (q: any) => any) => {
-      try {
-        let q = supabase.from('match_requests').select('*', { count: 'exact', head: true });
-        if (filter) q = filter(q);
-        const { count, error } = await q;
-        return error ? 0 : count || 0;
-      } catch {
-        return 0;
-      }
-    };
-
-    const [total, pending, accepted, declined, today, week] = await Promise.all([
-      safeCount(),
-      safeCount((q) => q.eq('status', 'pending')),
-      safeCount((q) => q.eq('status', 'accepted')),
-      safeCount((q) => q.eq('status', 'declined')),
-      safeCount((q) => q.gte('created_at', todayStart)),
-      safeCount((q) => q.gte('created_at', weekAgo)),
-    ]);
-
-    return { total, pending, accepted, declined, today, week };
+    try {
+      const { data, error } = await supabase.rpc('admin_connection_stats');
+      if (error) throw new Error(error.message);
+      const payload = (data || {}) as any;
+      const n = (v: any) => (typeof v === 'number' ? v : Number(v || 0));
+      return {
+        total: n(payload.total),
+        pending: n(payload.pending),
+        accepted: n(payload.accepted),
+        declined: n(payload.declined),
+        today: n(payload.today),
+        week: n(payload.week),
+      };
+    } catch (err) {
+      console.error('Failed to fetch connection stats:', err);
+      return { total: 0, pending: 0, accepted: 0, declined: 0, today: 0, week: 0 };
+    }
   }
 
   async cancelRequest(requestId: string): Promise<boolean> {
-    const { error } = await supabase
-      .from('match_requests')
-      .update({ status: 'cancelled' })
-      .eq('id', requestId);
+    const { error } = await supabase.rpc('admin_cancel_connection_request', {
+      p_request_id: requestId,
+    });
 
     if (error) throw new Error(error.message);
 
@@ -170,10 +133,9 @@ class ConnectionService {
   }
 
   async deleteRequest(requestId: string): Promise<boolean> {
-    const { error } = await supabase
-      .from('match_requests')
-      .delete()
-      .eq('id', requestId);
+    const { error } = await supabase.rpc('admin_delete_connection_request', {
+      p_request_id: requestId,
+    });
 
     if (error) throw new Error(error.message);
 
