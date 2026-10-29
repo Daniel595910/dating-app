@@ -28,10 +28,10 @@ interface UseConnectionResult {
   loading: boolean;
   error: string | null;
   sendRequest: (targetId: string, message?: string) => Promise<boolean>;
-  acceptRequest: (requestId: string) => Promise<boolean>;
+  acceptRequest: (requestId: string) => Promise<{ matchId: string; otherUserId: string; otherUserName: string } | null>;
   declineRequest: (requestId: string) => Promise<boolean>;
   cancelRequest: (requestId: string) => Promise<boolean>;
-  expressInterest: (matchId: string) => Promise<ConnectionState | null>;
+  expressInterest: (matchId: string) => Promise<{ connectionId: string | null; matchId: string; status: string; progress: number; isMutualInterest: boolean; isMatched: boolean; targetUserId: string | null; targetUserName: string | null } | null>;
   getConnectionStatus: (targetUserId: string) => Promise<ConnectionStatus>;
   getOrCreateConversation: (matchId: string) => Promise<string | null>;
   unmatch: (matchId: string, otherUserId: string) => Promise<boolean>;
@@ -207,83 +207,6 @@ export function useConnection(userId: string | null): UseConnectionResult {
       const otherUserId = isUser1 ? m.user2_id : m.user1_id;
       const profile = profileMap.get(otherUserId);
 
-  const unmatch = useCallback(async (matchId: string, otherUserId: string) => {
-    setLoading(true);
-    setError(null);
-
-    const backup = matchedConnections;
-    setMatchedConnections((prev) => prev.filter((c) => c.targetUserId !== otherUserId));
-
-    try {
-      const { error: rpcError } = await supabase.rpc('unmatch_connection', {
-        p_match_id: matchId,
-      });
-
-      if (rpcError) throw rpcError;
-
-      await loadMatchedConnections();
-      await loadPendingRequests();
-      return true;
-    } catch (err: any) {
-      setMatchedConnections(backup);
-      setError(err.message || 'Failed to unmatch');
-      return false;
-    } finally {
-      setLoading(false);
-    }
-  }, [matchedConnections, loadMatchedConnections, loadPendingRequests]);
-
-  const likeBack = useCallback(async (matchId: string) => {
-    setLoading(true);
-    setError(null);
-
-    // Optimistic remove from likes list
-    const backup = likesReceived;
-    setLikesReceived((prev) => prev.filter((c) => c.matchId !== matchId));
-
-    try {
-      const { error: rpcErr } = await supabase.rpc('express_interest', {
-        p_match_id: matchId,
-      });
-
-      if (rpcErr) throw rpcErr;
-
-      await loadActiveConnections();
-      await loadMatchedConnections();
-      return true;
-    } catch (err: any) {
-      setLikesReceived(backup);
-      setError(err.message || 'Failed to like back');
-      return false;
-    } finally {
-      setLoading(false);
-    }
-  }, [likesReceived, loadActiveConnections, loadMatchedConnections]);
-
-  const skipLike = useCallback(async (matchId: string) => {
-    setLoading(true);
-    setError(null);
-
-    const backup = likesReceived;
-    setLikesReceived((prev) => prev.filter((c) => c.matchId !== matchId));
-
-    try {
-      const { error: updateErr } = await supabase
-        .from('matches')
-        .update({ stage: 'rejected', status: 'cancelled', rejected_at: new Date().toISOString() })
-        .eq('id', matchId);
-
-      if (updateErr) throw updateErr;
-      return true;
-    } catch (err: any) {
-      setLikesReceived(backup);
-      setError(err.message || 'Failed to skip');
-      return false;
-    } finally {
-      setLoading(false);
-    }
-  }, [likesReceived]);
-
       return {
         matchId: m.id,
         targetUserId: otherUserId,
@@ -303,6 +226,54 @@ export function useConnection(userId: string | null): UseConnectionResult {
     loadMatchedConnections();
     loadLikesReceived();
   }, [loadPendingRequests, loadActiveConnections, loadMatchedConnections, loadLikesReceived]);
+
+  // Real-time subscriptions for connection-related events.
+  // Refreshes all four lists when any row we care about changes.
+  useEffect(() => {
+    if (!userId) return;
+
+    let refreshTimer: ReturnType<typeof setTimeout> | null = null;
+    const scheduleRefresh = () => {
+      if (refreshTimer) clearTimeout(refreshTimer);
+      refreshTimer = setTimeout(() => {
+        loadPendingRequests();
+        loadActiveConnections();
+        loadMatchedConnections();
+        loadLikesReceived();
+      }, 300);
+    };
+
+    const channel = supabase.channel(`connections:${userId}`);
+
+    // Incoming / outgoing requests
+    channel.on(
+      'postgres_changes',
+      {
+        event: '*',
+        schema: 'public',
+        table: 'match_requests',
+      },
+      scheduleRefresh
+    );
+
+    // Match creation / stage changes (accept, express interest, unmatch)
+    channel.on(
+      'postgres_changes',
+      {
+        event: '*',
+        schema: 'public',
+        table: 'matches',
+      },
+      scheduleRefresh
+    );
+
+    channel.subscribe();
+
+    return () => {
+      if (refreshTimer) clearTimeout(refreshTimer);
+      channel.unsubscribe();
+    };
+  }, [userId, loadPendingRequests, loadActiveConnections, loadMatchedConnections, loadLikesReceived]);
 
   const sendRequest = useCallback(async (targetId: string, message?: string) => {
     setLoading(true);
@@ -412,103 +383,6 @@ export function useConnection(userId: string | null): UseConnectionResult {
 
       if (data) {
         const result = data as any;
-  const unmatch = useCallback(async (matchId: string, otherUserId: string) => {
-    setLoading(true);
-    setError(null);
-
-    // Optimistic remove from matched list
-    const backup = matchedConnections;
-    setMatchedConnections((prev) => prev.filter((c) => c.targetUserId !== otherUserId));
-
-    try {
-      const { error: matchErr } = await supabase
-        .from('matches')
-        .update({
-          stage: 'rejected',
-          status: 'cancelled',
-          rejected_at: new Date().toISOString(),
-        })
-        .eq('id', matchId);
-
-      if (matchErr) throw matchErr;
-
-      // Close the conversation so neither user can message
-      await supabase
-        .from('conversations')
-        .update({ closed_at: new Date().toISOString() })
-        .eq('match_id', matchId);
-
-      // Cancel any pending requests so they can rematch later
-      await supabase
-        .from('match_requests')
-        .update({ status: 'cancelled', updated_at: new Date().toISOString() })
-        .or(
-          `and(requester_id.eq.${otherUserId},target_id.eq.${userId}),` +
-          `and(requester_id.eq.${userId},target_id.eq.${otherUserId})`
-        )
-        .in('status', ['pending', 'accepted']);
-
-      return true;
-    } catch (err: any) {
-      setMatchedConnections(backup);
-      setError(err.message || 'Failed to unmatch');
-      return false;
-    } finally {
-      setLoading(false);
-    }
-  }, [matchedConnections, userId]);
-
-  const likeBack = useCallback(async (matchId: string) => {
-    setLoading(true);
-    setError(null);
-
-    // Optimistic remove from likes list
-    const backup = likesReceived;
-    setLikesReceived((prev) => prev.filter((c) => c.matchId !== matchId));
-
-    try {
-      const { error: rpcErr } = await supabase.rpc('express_interest', {
-        p_match_id: matchId,
-      });
-
-      if (rpcErr) throw rpcErr;
-
-      await loadActiveConnections();
-      await loadMatchedConnections();
-      return true;
-    } catch (err: any) {
-      setLikesReceived(backup);
-      setError(err.message || 'Failed to like back');
-      return false;
-    } finally {
-      setLoading(false);
-    }
-  }, [likesReceived, loadActiveConnections, loadMatchedConnections]);
-
-  const skipLike = useCallback(async (matchId: string) => {
-    setLoading(true);
-    setError(null);
-
-    const backup = likesReceived;
-    setLikesReceived((prev) => prev.filter((c) => c.matchId !== matchId));
-
-    try {
-      const { error: updateErr } = await supabase
-        .from('matches')
-        .update({ stage: 'rejected', status: 'cancelled', rejected_at: new Date().toISOString() })
-        .eq('id', matchId);
-
-      if (updateErr) throw updateErr;
-      return true;
-    } catch (err: any) {
-      setLikesReceived(backup);
-      setError(err.message || 'Failed to skip');
-      return false;
-    } finally {
-      setLoading(false);
-    }
-  }, [likesReceived]);
-
         return {
           connectionId: null,
           matchId: result.match_id,
