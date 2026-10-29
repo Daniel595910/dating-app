@@ -1,21 +1,27 @@
-﻿.searchPage {
+.searchPage {
   min-height: 100dvh;
-  background: #ffffff;
+  background: var(--color-bg, #faf9f7);
   max-width: 480px;
   margin: 0 auto;
   display: flex;
   flex-direction: column;
+  padding-bottom: env(safe-area-inset-bottom);
 }
+
+/* ============================================
+   Header
+   ============================================ */
 
 .header {
   display: flex;
   align-items: center;
   gap: 10px;
   padding: 12px 16px;
-  border-bottom: 1px solid #f3f4f6;
+  padding-top: calc(12px + env(safe-area-inset-top));
+  border-bottom: 1px solid var(--color-border, #f3f4f6);
   position: sticky;
   top: 0;
-  background: #ffffff;
+  background: var(--color-surface, #ffffff);
   z-index: 10;
 }
 
@@ -25,19 +31,19 @@
   cursor: pointer;
   padding: 8px;
   border-radius: 50%;
-  color: #6b7280;
+  color: var(--color-text-secondary, #6b7280);
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.15s;
+  transition: background-color 0.15s ease, color 0.15s ease;
   min-width: 36px;
   min-height: 36px;
   flex-shrink: 0;
 }
 
 .backButton:hover {
-  background: #f3f4f6;
-  color: #111827;
+  background: var(--color-surface-alt, #f3f4f6);
+  color: var(--color-text, #111827);
 }
 
 .searchInputContainer {
@@ -45,21 +51,22 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  background: #f3f4f6;
+  background: var(--color-surface-alt, #f3f4f6);
   border-radius: 9999px;
   padding: 0 14px;
   min-height: 42px;
-  transition: all 0.2s;
+  border: 1px solid transparent;
+  transition: background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
 .searchInputContainer:focus-within {
-  background: #ffffff;
-  border: 2px solid #ef4444;
-  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+  background: var(--color-surface, #ffffff);
+  border: 1px solid var(--color-primary, #ef4444);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary, #ef4444) 12%, transparent);
 }
 
 .searchIcon {
-  color: #9ca3af;
+  color: var(--color-text-muted, #9ca3af);
   flex-shrink: 0;
 }
 
@@ -69,31 +76,35 @@
   background: none;
   outline: none;
   font-size: 14px;
-  color: #111827;
+  color: var(--color-text, #111827);
   padding: 8px 0;
 }
 
 .searchInput::placeholder {
-  color: #9ca3af;
+  color: var(--color-text-muted, #9ca3af);
 }
 
 .clearButton {
   background: none;
   border: none;
   cursor: pointer;
-  padding: 4px;
+  padding: 6px;
   border-radius: 50%;
-  color: #9ca3af;
+  color: var(--color-text-muted, #9ca3af);
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.15s;
+  transition: background-color 0.15s ease, color 0.15s ease;
 }
 
 .clearButton:hover {
-  color: #6b7280;
-  background: #e5e7eb;
+  color: var(--color-text-secondary, #6b7280);
+  background: var(--color-border-strong, #e5e7eb);
 }
+
+/* ============================================
+   Content
+   ============================================ */
 
 .content {
   flex: 1;
@@ -124,19 +135,27 @@
   gap: 6px;
   font-size: 13px;
   font-weight: 700;
-  color: #374151;
+  color: var(--color-text, #111827);
 }
 
 .clearAllButton {
   background: none;
   border: none;
   cursor: pointer;
-  color: #ef4444;
+  color: var(--color-primary, #ef4444);
   font-size: 12px;
   font-weight: 600;
 }
 
+.clearAllButton:hover {
+  color: var(--color-primary-hover, #dc2626);
+}
+
 /* Recent Searches */
+.recentSection {
+  margin-bottom: 8px;
+}
+
 .recentChips {
   display: flex;
   flex-wrap: wrap;
@@ -148,38 +167,36 @@
   align-items: center;
   gap: 6px;
   padding: 8px 12px;
-  background: #f3f4f6;
-  border: none;
+  background: var(--color-surface-alt, #f3f4f6);
+  border: 1px solid var(--color-border, #f3f4f6);
   border-radius: 9999px;
   cursor: pointer;
   font-size: 12px;
   font-weight: 500;
-  color: #374151;
-  transition: all 0.15s;
+  color: var(--color-text, #111827);
+  transition: background-color 0.15s ease, border-color 0.15s ease;
 }
 
 .recentChip:hover {
-  background: #e5e7eb;
+  background: var(--color-border, #f3f4f6);
+  border-color: var(--color-border-strong, #e5e7eb);
 }
 
 .removeRecent {
   display: flex;
   align-items: center;
-  color: #9ca3af;
+  color: var(--color-text-muted, #9ca3af);
   padding: 2px;
   border-radius: 50%;
-  transition: all 0.15s;
+  transition: background-color 0.15s ease, color 0.15s ease;
 }
 
 .removeRecent:hover {
-  color: #ef4444;
-  background: #fef2f2;
+  color: var(--color-primary, #ef4444);
+  background: var(--color-primary-soft, #fef2f2);
 }
 
-/* ============================================
-   Popular Interests - Modern Chips
-   ============================================ */
-
+/* Popular Interests */
 .suggestedSection {
   margin-bottom: 8px;
 }
@@ -195,25 +212,24 @@
   align-items: center;
   gap: 6px;
   padding: 10px 14px;
-  background: #ffffff;
-  border: 1px solid #e5e7eb;
+  background: var(--color-surface, #ffffff);
+  border: 1px solid var(--color-border-strong, #e5e7eb);
   border-radius: 9999px;
   cursor: pointer;
   font-size: 13px;
   font-weight: 500;
-  color: #374151;
-  transition: all 0.2s ease;
+  color: var(--color-text, #111827);
+  transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease, transform 0.15s ease;
   min-height: 38px;
   animation: chipIn 0.3s ease forwards;
   opacity: 0;
 }
 
 .interestChip:hover {
-  background: #fef2f2;
-  border-color: #fecaca;
-  color: #dc2626;
+  background: var(--color-primary-soft, #fef2f2);
+  border-color: var(--color-primary-soft-border, #fecaca);
+  color: var(--color-primary, #ef4444);
   transform: translateY(-1px);
-  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.1);
 }
 
 .interestEmoji {
@@ -226,18 +242,18 @@
 }
 
 .interestSparkle {
-  color: #d1d5db;
+  color: var(--color-text-muted, #9ca3af);
   flex-shrink: 0;
-  transition: all 0.2s;
+  transition: color 0.2s ease;
 }
 
 .interestChip:hover .interestSparkle {
-  color: #ef4444;
+  color: var(--color-primary, #ef4444);
 }
 
 @keyframes chipIn {
   from { opacity: 0; transform: translateY(6px); }
-  to { opacity: 1; transform: translateY(0); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 
 /* ============================================
@@ -251,14 +267,14 @@
   justify-content: center;
   gap: 12px;
   padding: 40px;
-  color: #6b7280;
+  color: var(--color-text-secondary, #6b7280);
 }
 
 .spinner {
   width: 28px;
   height: 28px;
-  border: 3px solid #f3f4f6;
-  border-top-color: #ef4444;
+  border: 3px solid var(--color-border, #f3f4f6);
+  border-top-color: var(--color-primary, #ef4444);
   border-radius: 50%;
   animation: spin 0.6s linear infinite;
 }
@@ -281,7 +297,7 @@
   width: 80px;
   height: 80px;
   border-radius: 50%;
-  background: #fef2f2;
+  background: var(--color-primary-soft, #fef2f2);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -289,19 +305,19 @@
 }
 
 .emptyIcon {
-  color: #ef4444;
+  color: var(--color-primary, #ef4444);
 }
 
 .emptyTitle {
   font-size: 16px;
   font-weight: 700;
-  color: #111827;
+  color: var(--color-text, #111827);
   margin: 0;
 }
 
 .emptyText {
   font-size: 13px;
-  color: #9ca3af;
+  color: var(--color-text-muted, #9ca3af);
   margin: 0;
 }
 
@@ -316,22 +332,23 @@
 
 .suggestionLabel {
   font-size: 12px;
-  color: #9ca3af;
+  color: var(--color-text-muted, #9ca3af);
 }
 
 .suggestionChip {
   padding: 6px 12px;
-  background: #f3f4f6;
-  border: none;
+  background: var(--color-surface-alt, #f3f4f6);
+  border: 1px solid var(--color-border, #f3f4f6);
   border-radius: 9999px;
   cursor: pointer;
   font-size: 12px;
-  color: #374151;
-  transition: all 0.15s;
+  color: var(--color-text, #111827);
+  transition: background-color 0.15s ease, border-color 0.15s ease;
 }
 
 .suggestionChip:hover {
-  background: #e5e7eb;
+  background: var(--color-border, #f3f4f6);
+  border-color: var(--color-border-strong, #e5e7eb);
 }
 
 /* ============================================
@@ -346,7 +363,7 @@
 
 .resultsCount {
   font-size: 12px;
-  color: #9ca3af;
+  color: var(--color-text-muted, #9ca3af);
   margin: 0 0 4px;
   font-weight: 500;
 }
@@ -357,36 +374,32 @@
   gap: 12px;
   width: 100%;
   padding: 14px;
-  background: #ffffff;
-  border: 1px solid #f3f4f6;
+  background: var(--color-surface, #ffffff);
+  border: 1px solid var(--color-border, #f3f4f6);
   border-radius: 16px;
   cursor: pointer;
   text-align: left;
-  transition: all 0.15s;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
 }
 
 .resultCard:hover {
-  background: #f9fafb;
-  border-color: #e5e7eb;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
-  transform: translateY(-1px);
+  background: var(--color-surface-alt, #f9fafb);
+  border-color: var(--color-border-strong, #e5e7eb);
 }
 
 .resultAvatar {
   width: 52px;
   height: 52px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #fef2f2 0%, #fecaca 100%);
+  background: var(--color-primary-soft, #fef2f2);
   display: flex;
   align-items: center;
   justify-content: center;
   font-weight: 700;
-  color: #dc2626;
+  color: var(--color-primary, #ef4444);
   font-size: 18px;
   overflow: hidden;
   flex-shrink: 0;
-  border: 2px solid #ffffff;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 .resultAvatar img {
@@ -409,14 +422,14 @@
 .resultName {
   font-size: 15px;
   font-weight: 700;
-  color: #111827;
+  color: var(--color-text, #111827);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
 .verifiedIcon {
-  color: #3b82f6;
+  color: var(--color-primary, #ef4444);
   flex-shrink: 0;
 }
 
@@ -425,7 +438,7 @@
   align-items: center;
   gap: 4px;
   font-size: 11px;
-  color: #6b7280;
+  color: var(--color-text-secondary, #6b7280);
   margin-top: 3px;
 }
 
@@ -434,7 +447,7 @@
   align-items: center;
   gap: 2px;
   font-size: 11px;
-  color: #9ca3af;
+  color: var(--color-text-muted, #9ca3af);
   margin-top: 2px;
 }
 
@@ -448,8 +461,8 @@
 .resultInterestTag {
   font-size: 10px;
   font-weight: 500;
-  color: #dc2626;
-  background: #fef2f2;
+  color: var(--color-primary, #ef4444);
+  background: var(--color-primary-soft, #fef2f2);
   padding: 2px 8px;
   border-radius: 9999px;
 }
@@ -464,18 +477,18 @@
   width: 36px;
   height: 36px;
   border-radius: 50%;
-  background: #fef2f2;
-  border: 1px solid #fecaca;
+  background: var(--color-primary-soft, #fef2f2);
+  border: 1px solid var(--color-primary-soft-border, #fecaca);
   cursor: pointer;
-  color: #ef4444;
+  color: var(--color-primary, #ef4444);
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.15s;
+  transition: background-color 0.15s ease, color 0.15s ease, transform 0.15s ease;
 }
 
 .connectButton:hover {
-  background: #ef4444;
+  background: var(--color-primary, #ef4444);
   color: #ffffff;
   transform: scale(1.05);
 }
@@ -486,8 +499,8 @@
   gap: 4px;
   font-size: 11px;
   font-weight: 600;
-  color: #10b981;
-  background: #d1fae5;
+  color: var(--color-success, #10b981);
+  background: color-mix(in srgb, var(--color-success, #10b981) 15%, transparent);
   padding: 6px 10px;
   border-radius: 9999px;
   animation: fadeIn 0.3s ease;
@@ -499,8 +512,12 @@
 
 @keyframes fadeIn {
   from { opacity: 0; transform: scale(0.9); }
-  to { opacity: 1; transform: scale(1); }
+  to   { opacity: 1; transform: scale(1); }
 }
+
+/* ============================================
+   Communities
+   ============================================ */
 
 .communityResultsSection {
   margin-bottom: 16px;
@@ -509,7 +526,7 @@
 .communityResultsTitle {
   font-size: 12px;
   font-weight: 700;
-  color: #6b7280;
+  color: var(--color-text-secondary, #6b7280);
   margin: 0 0 8px;
   text-transform: uppercase;
   letter-spacing: 0.05em;
@@ -521,29 +538,28 @@
   gap: 12px;
   width: 100%;
   padding: 12px 14px;
-  background: #ffffff;
-  border: 1px solid #f3f4f6;
+  background: var(--color-surface, #ffffff);
+  border: 1px solid var(--color-border, #f3f4f6);
   border-radius: 14px;
   cursor: pointer;
-  transition: all 0.15s;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
   margin-bottom: 8px;
 }
 
 .communityCard:hover {
-  background: #f9fafb;
-  border-color: #e5e7eb;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  background: var(--color-surface-alt, #f9fafb);
+  border-color: var(--color-border-strong, #e5e7eb);
 }
 
 .communityIcon {
   width: 40px;
   height: 40px;
   border-radius: 12px;
-  background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+  background: var(--color-primary-soft, #fef2f2);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #3b82f6;
+  color: var(--color-primary, #ef4444);
   flex-shrink: 0;
 }
 
@@ -558,7 +574,7 @@
 .communityName {
   font-size: 14px;
   font-weight: 700;
-  color: #111827;
+  color: var(--color-text, #111827);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -566,19 +582,23 @@
 
 .communityMeta {
   font-size: 11px;
-  color: #9ca3af;
+  color: var(--color-text-muted, #9ca3af);
 }
 
 .communityMembers {
   font-size: 11px;
   font-weight: 600;
-  color: #3b82f6;
+  color: var(--color-primary, #ef4444);
 }
+
+/* ============================================
+   Section Labels
+   ============================================ */
 
 .sectionLabel {
   font-size: 12px;
   font-weight: 700;
-  color: #6b7280;
+  color: var(--color-text-secondary, #6b7280);
   margin: 0 0 8px;
   text-transform: uppercase;
   letter-spacing: 0.05em;
@@ -589,6 +609,10 @@
   margin-bottom: 16px;
 }
 
+/* ============================================
+   Tags
+   ============================================ */
+
 .tagChips {
   display: flex;
   flex-wrap: wrap;
@@ -597,34 +621,37 @@
 
 .tagChip {
   padding: 6px 12px;
-  background: #eff6ff;
-  border: 1px solid #dbeafe;
+  background: var(--color-primary-soft, #fef2f2);
+  border: 1px solid var(--color-primary-soft-border, #fecaca);
   border-radius: 9999px;
   cursor: pointer;
   font-size: 12px;
   font-weight: 600;
-  color: #3b82f6;
-  transition: all 0.15s;
+  color: var(--color-primary, #ef4444);
+  transition: background-color 0.15s ease;
 }
 
 .tagChip:hover {
-  background: #dbeafe;
+  background: var(--color-primary-soft-border, #fee2e2);
 }
+
+/* ============================================
+   Posts
+   ============================================ */
 
 .postResultCard {
   padding: 14px;
-  background: #ffffff;
-  border: 1px solid #f3f4f6;
+  background: var(--color-surface, #ffffff);
+  border: 1px solid var(--color-border, #f3f4f6);
   border-radius: 14px;
   cursor: pointer;
-  transition: all 0.15s;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
   margin-bottom: 8px;
 }
 
 .postResultCard:hover {
-  background: #f9fafb;
-  border-color: #e5e7eb;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  background: var(--color-surface-alt, #f9fafb);
+  border-color: var(--color-border-strong, #e5e7eb);
 }
 
 .postResultHeader {
@@ -638,12 +665,12 @@
   width: 28px;
   height: 28px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #fef2f2 0%, #fecaca 100%);
+  background: var(--color-primary-soft, #fef2f2);
   display: flex;
   align-items: center;
   justify-content: center;
   font-weight: 700;
-  color: #dc2626;
+  color: var(--color-primary, #ef4444);
   font-size: 12px;
   overflow: hidden;
   flex-shrink: 0;
@@ -658,12 +685,12 @@
 .postResultAuthor {
   font-size: 13px;
   font-weight: 700;
-  color: #111827;
+  color: var(--color-text, #111827);
 }
 
 .postResultContent {
   font-size: 13px;
-  color: #374151;
+  color: var(--color-text, #111827);
   margin: 0 0 8px;
   line-height: 1.4;
   overflow: hidden;
@@ -677,7 +704,7 @@
   display: flex;
   gap: 14px;
   font-size: 11px;
-  color: #9ca3af;
+  color: var(--color-text-muted, #9ca3af);
 }
 
 .postResultStats span {
