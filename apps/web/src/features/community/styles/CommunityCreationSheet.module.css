@@ -1,4 +1,4 @@
-﻿.overlay {
+.overlay {
   position: fixed;
   inset: 0;
   background-color: rgba(0, 0, 0, 0.5);
@@ -9,7 +9,7 @@
 }
 
 .sheet {
-  background-color: #ffffff;
+  background-color: var(--color-surface, #ffffff);
   border-radius: 1.5rem 1.5rem 0 0;
   width: 100%;
   max-width: 480px;
@@ -23,7 +23,7 @@
 .dragHandle {
   width: 40px;
   height: 4px;
-  background-color: #e5e7eb;
+  background-color: var(--color-border-strong, #e5e7eb);
   border-radius: 9999px;
   margin: 0 auto 0.75rem;
 }
@@ -38,7 +38,7 @@
 .title {
   font-size: 1.125rem;
   font-weight: 700;
-  color: #111827;
+  color: var(--color-text, #111827);
   margin: 0;
 }
 
@@ -46,11 +46,14 @@
   background: none;
   border: none;
   cursor: pointer;
-  color: #6b7280;
+  color: var(--color-text-secondary, #6b7280);
   padding: 0.5rem;
   border-radius: 9999px;
   min-width: 44px;
   min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .vipBanner {
@@ -58,17 +61,17 @@
   align-items: center;
   gap: 0.5rem;
   padding: 0.625rem 1rem;
-  background-color: #fef3c7;
+  background-color: color-mix(in srgb, var(--color-warning, #f59e0b) 15%, transparent);
   border-radius: 0.75rem;
   font-size: 0.8125rem;
   font-weight: 600;
-  color: #92400e;
+  color: var(--color-warning, #f59e0b);
   margin-bottom: 1rem;
 }
 
 .creditsBadge {
   margin-left: auto;
-  background-color: #f59e0b;
+  background-color: var(--color-warning, #f59e0b);
   color: #ffffff;
   padding: 0.25rem 0.625rem;
   border-radius: 9999px;
@@ -94,7 +97,7 @@
   display: block;
   font-size: 0.8125rem;
   font-weight: 600;
-  color: #374151;
+  color: var(--color-text-secondary, #6b7280);
   margin-bottom: 0.375rem;
 }
 
@@ -103,18 +106,19 @@
 .fieldSelect {
   width: 100%;
   padding: 0.625rem 0.875rem;
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--color-border-strong, #e5e7eb);
   border-radius: 0.5rem;
   font-size: 0.9375rem;
   font-family: inherit;
   outline: none;
-  color: #111827;
+  color: var(--color-text, #111827);
 }
 
 .fieldInput:focus,
 .fieldTextarea:focus,
 .fieldSelect:focus {
-  border-color: #ef4444;
+  border-color: var(--color-primary, #ef4444);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary, #ef4444) 18%, transparent);
 }
 
 .privateToggle {
@@ -129,35 +133,35 @@
   gap: 0.375rem;
   padding: 0.5rem 1rem;
   background: none;
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--color-border-strong, #e5e7eb);
   border-radius: 9999px;
   cursor: pointer;
   font-size: 0.8125rem;
   font-weight: 500;
-  color: #374151;
+  color: var(--color-text-secondary, #6b7280);
 }
 
 .toggleActive {
-  background-color: #fef2f2;
-  border-color: #fecaca;
-  color: #ef4444;
+  background-color: var(--color-primary-soft, #fef2f2);
+  border-color: var(--color-primary-soft-border, #fecaca);
+  color: var(--color-primary, #ef4444);
 }
 
 .costText {
   font-size: 0.75rem;
-  color: #f59e0b;
+  color: var(--color-warning, #f59e0b);
   font-weight: 600;
 }
 
 .error {
-  color: #ef4444;
+  color: var(--color-danger, #ef4444);
   font-size: 0.8125rem;
   margin: 0;
 }
 
 .submitButton {
   padding: 0.875rem;
-  background-color: #ef4444;
+  background-color: var(--color-primary, #ef4444);
   color: #ffffff;
   border: none;
   border-radius: 9999px;
@@ -165,6 +169,10 @@
   font-size: 0.9375rem;
   font-weight: 600;
   min-height: 48px;
+
+.submitButton:hover:not(:disabled) {
+  background-color: var(--color-primary-hover, #dc2626);
+}
 }
 
 .submitButton:disabled {
@@ -182,24 +190,28 @@
 }
 
 .noAccessIcon {
-  color: #f59e0b;
+  color: var(--color-warning, #f59e0b);
 }
 
 .noAccessText {
   font-size: 0.875rem;
-  color: #6b7280;
+  color: var(--color-text-secondary, #6b7280);
   margin: 0;
 }
 
 .upgradeButton {
   padding: 0.625rem 1.5rem;
-  background-color: #f59e0b;
+  background-color: var(--color-warning, #f59e0b);
   color: #ffffff;
   border: none;
   border-radius: 9999px;
   cursor: pointer;
   font-size: 0.875rem;
   font-weight: 600;
+}
+
+.upgradeButton:hover {
+  background-color: color-mix(in srgb, var(--color-warning, #f59e0b) 85%, #000);
 }
 
 .successState {
@@ -215,8 +227,8 @@
   width: 64px;
   height: 64px;
   border-radius: 50%;
-  background-color: #d1fae5;
-  color: #10b981;
+  background-color: color-mix(in srgb, var(--color-success, #10b981) 15%, transparent);
+  color: var(--color-success, #10b981);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -224,14 +236,14 @@
 
 .successText {
   font-size: 0.9375rem;
-  color: #111827;
+  color: var(--color-text, #111827);
   margin: 0;
   line-height: 1.5;
 }
 
 .creditInfo {
   font-size: 0.75rem;
-  color: #9ca3af;
+  color: var(--color-text-muted, #9ca3af);
   margin: 0;
 }
 
