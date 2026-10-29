@@ -185,7 +185,7 @@ export const NotificationBell: React.FC<NotificationBellProps> = ({ userId, butt
         aria-label={`Notifications (${unreadCount} unread)`}
         className={buttonClassName || styles.bellButton}
       >
-        <Bell size={22} style={{ color: 'inherit', stroke: 'currentColor' }} />
+        <Bell size={18} style={{ color: 'inherit', stroke: 'currentColor' }} />
         {unreadCount > 0 && (
           <span className={styles.badge}>
             {unreadCount > 9 ? '9+' : unreadCount}
