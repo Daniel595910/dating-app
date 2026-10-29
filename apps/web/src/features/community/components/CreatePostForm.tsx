@@ -123,6 +123,9 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
     else if (step === 'preview') setStep('compose');
   };
 
+  // Rule: no mixing photos and audio. Text is always allowed.
+  const hasPhotos = media.length > 0;
+  const hasAudio = Boolean(audioBlob || audioUrl);
   const handleNext = () => {
     if (!content.trim() && !audioUrl && media.length === 0 && postType !== 'photo') {
       setError('Please write something, record audio, or add a photo');
@@ -285,6 +288,11 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
   };
 
   const handlePublish = async () => {
+    if (hasPhotos && hasAudio) {
+      setError('You can only post photos OR audio, not both.');
+      return;
+    }
+
     setSubmitting(true);
     setError(null);
 
@@ -409,42 +417,73 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
               maxLength={5000}
             />
 
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+            <div className={styles.attachmentRow}>
               {!isRecording && !audioUrl && (
                 <>
-                  <button type="button" onClick={() => setShowRecordPrompt(true)} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 14px', background: 'none', border: '1px dashed #d1d5db', borderRadius: 9999, cursor: 'pointer', fontSize: 13, fontWeight: 500, color: '#6b7280', minHeight: 38 }}>
+                  <button
+                    type="button"
+                    onClick={() => setShowRecordPrompt(true)}
+                    className={styles.uploadButton}
+                    disabled={hasPhotos}
+                    title={hasPhotos ? 'Remove photos first to record audio' : ''}
+                  >
                     <Mic size={16} /> Record Voice
                   </button>
-                  <button type="button" onClick={() => audioFileInputRef.current?.click()} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 14px', background: 'none', border: '1px dashed #d1d5db', borderRadius: 9999, cursor: 'pointer', fontSize: 13, fontWeight: 500, color: '#6b7280', minHeight: 38 }}>
+                  <button
+                    type="button"
+                    onClick={() => audioFileInputRef.current?.click()}
+                    className={styles.uploadButton}
+                    disabled={hasPhotos}
+                    title={hasPhotos ? 'Remove photos first to upload audio' : ''}
+                  >
                     <Upload size={16} /> Upload Audio
                   </button>
                 </>
               )}
               {isRecording && (
-                <button type="button" onClick={stopRecording} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 14px', background: '#ef4444', border: 'none', borderRadius: 9999, cursor: 'pointer', fontSize: 13, fontWeight: 600, color: '#ffffff', minHeight: 38 }}>
+                <button
+                  type="button"
+                  onClick={stopRecording}
+                  className={styles.uploadButtonPrimary}
+                >
                   <Square size={14} /> Stop ({formatTime(recordingTime)})
                 </button>
               )}
               {audioUrl && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1 }}>
-                  <audio src={audioUrl} controls style={{ flex: 1, height: 32 }} />
-                  <button type="button" onClick={removeAudio} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ef4444', padding: 6 }}>
+                <div className={styles.audioPlayerRow}>
+                  <audio src={audioUrl} controls className={styles.audioPlayerElement} />
+                  <button
+                    type="button"
+                    onClick={removeAudio}
+                    className={styles.audioRemoveButton}
+                  >
                     <Trash2 size={14} />
                   </button>
                 </div>
               )}
             </div>
 
-            <input ref={fileInputRef} type="file" accept="image/jpeg,image/png,image/webp,image/gif" multiple onChange={(e) => handleFileSelect(e.target.files)} style={{ display: 'none' }} />
+            {(hasPhotos && hasAudio) && (
+              <div className={styles.warningBanner}>
+                <Sparkles size={14} className={styles.warningIcon} />
+                <span>You can only post photos OR audio, not both. Remove one to continue.</span>
+              </div>
+            )}
+<input ref={fileInputRef} type="file" accept="image/jpeg,image/png,image/webp,image/gif" multiple onChange={(e) => handleFileSelect(e.target.files)} style={{ display: 'none' }} />
             <input ref={audioFileInputRef} type="file" accept="audio/*,.mp3,.wav,.webm,.ogg,.m4a" onChange={(e) => handleAudioFileSelect(e.target.files)} style={{ display: 'none' }} />
 
-            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 8 }}>
-              <button type="button" onClick={() => fileInputRef.current?.click()} disabled={uploading || media.length >= maxPhotosPerPost} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 14px', background: 'none', border: '1px solid #e5e7eb', borderRadius: 9999, cursor: 'pointer', fontSize: 13, fontWeight: 500, color: '#374151', minHeight: 38 }}>
+            <div className={styles.attachmentRow}>
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={uploading || media.length >= maxPhotosPerPost || hasAudio}
+                className={styles.uploadButton}
+                title={hasAudio ? 'Remove audio first to add photos' : ''}
+              >
                 <ImagePlus size={16} />
                 <span>{uploading ? 'Uploading... ' + Math.round(uploadProgress) + '%' : media.length > 0 ? 'Add More Photos (' + media.length + '/' + maxPhotosPerPost + ')' : 'Add Photos'}</span>
               </button>
             </div>
-
             {media.length > 0 && (
               <div className={styles.mediaPreview}>
                 {media.map((m) => (
@@ -513,46 +552,46 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
 
       {/* Record Prompt Modal */}
       {showRecordPrompt && (
-        <div onClick={(e) => e.stopPropagation()} style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.6)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
-          <div style={{ backgroundColor: '#fff', borderRadius: 20, padding: '28px 24px', maxWidth: 400, width: '100%', textAlign: 'center' }}>
-            <div style={{ width: 64, height: 64, borderRadius: '50%', backgroundColor: '#fef2f2', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
-              <Mic size={32} style={{ color: '#ef4444' }} />
+        <div onClick={(e) => e.stopPropagation()} className={styles.modalOverlay}>
+          <div className={styles.modalDialog}>
+            <div className={styles.modalIconCircle}>
+              <Mic size={32} />
             </div>
-            <h3 style={{ fontSize: 18, fontWeight: 700, margin: '0 0 8px', color: '#111827' }}>Record Your Voice</h3>
-            <p style={{ fontSize: 13, color: '#6b7280', margin: '0 0 16px', lineHeight: 1.5 }}>
-              Record a short voice message to introduce yourself! Talk about what you're looking for, your interests, or just say hi!
+            <h3 className={styles.modalTitle}>Record Your Voice</h3>
+            <p className={styles.modalDescription}>
+              Record a short voice message to introduce yourself! Talk about what you&apos;re looking for, your interests, or just say hi!
             </p>
-            <p style={{ fontSize: 12, color: '#ef4444', fontWeight: 600, margin: '0 0 20px' }}>
-              Maximum {MAX_AUDIO_SECONDS} seconds
-            </p>
-            <div style={{ display: 'flex', gap: 10 }}>
-              <button onClick={startRecording} style={{ flex: 1, padding: 14, backgroundColor: '#ef4444', color: '#fff', border: 'none', borderRadius: 9999, cursor: 'pointer', fontSize: 15, fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+            <p className={styles.modalHint}>Maximum {MAX_AUDIO_SECONDS} seconds</p>
+            <div className={styles.modalActions}>
+              <button onClick={startRecording} className={styles.modalPrimaryButton}>
                 <Mic size={18} /> Start Recording
               </button>
-              <button onClick={() => setShowRecordPrompt(false)} style={{ flex: 1, padding: 14, background: 'none', color: '#6b7280', border: '1px solid #e5e7eb', borderRadius: 9999, cursor: 'pointer', fontSize: 15, fontWeight: 500 }}>
+              <button onClick={() => setShowRecordPrompt(false)} className={styles.modalSecondaryButton}>
                 Cancel
               </button>
             </div>
           </div>
         </div>
       )}
-
-      {/* CapCut-style Trim Modal */}
+      {/* Trim Modal */}
       {showTrimModal && audioFile && (
-        <div onClick={(e) => e.stopPropagation()} style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.85)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
-          <div style={{ backgroundColor: '#fff', borderRadius: 20, padding: '20px 16px', maxWidth: 420, width: '100%' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-              <h3 style={{ fontSize: 17, fontWeight: 700, margin: 0, color: '#111827' }}>Trim Audio</h3>
-              <button onClick={() => { setShowTrimModal(false); setAudioFile(null); }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#6b7280', padding: 6 }}>
+        <div onClick={(e) => e.stopPropagation()} className={styles.trimOverlay}>
+          <div className={styles.trimDialog}>
+            <div className={styles.trimHeader}>
+              <h3 className={styles.trimTitle}>Trim Audio</h3>
+              <button
+                onClick={() => { setShowTrimModal(false); setAudioFile(null); }}
+                className={styles.trimCloseButton}
+              >
                 <X size={20} />
               </button>
             </div>
 
-            <audio 
+            <audio
               ref={trimAudioRef}
-              src={URL.createObjectURL(audioFile)} 
-              controls 
-              style={{ width: '100%', marginBottom: 16 }}
+              src={URL.createObjectURL(audioFile)}
+              controls
+              className={styles.trimAudioElement}
               onLoadedMetadata={(e) => {
                 const dur = e.currentTarget.duration;
                 setAudioDuration(dur);
@@ -560,28 +599,21 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
               }}
             />
 
-            {/* Timeline */}
-            <div style={{ marginBottom: 16 }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: '#9ca3af', marginBottom: 6 }}>
+            <div>
+              <div className={styles.trimTimeLabels}>
                 <span>0:00</span>
                 <span>{formatTime(audioDuration)}</span>
               </div>
-              
-              {/* Track with selected range */}
-              <div style={{ position: 'relative', height: 44, marginBottom: 6 }}>
-                <div style={{ position: 'absolute', top: '50%', transform: 'translateY(-50%)', left: 0, right: 0, height: 6, backgroundColor: '#e5e7eb', borderRadius: 9999 }} />
-                <div style={{ 
-                  position: 'absolute', 
-                  top: '50%', 
-                  transform: 'translateY(-50%)', 
-                  left: (trimStart / (audioDuration || MAX_AUDIO_SECONDS)) * 100 + '%', 
-                  width: ((trimEnd - trimStart) / (audioDuration || MAX_AUDIO_SECONDS)) * 100 + '%', 
-                  height: 6, 
-                  backgroundColor: '#ef4444', 
-                  borderRadius: 9999 
-                }} />
-                
-                {/* Start slider */}
+
+              <div className={styles.trimTrackWrapper}>
+                <div className={styles.trimTrackBackground} />
+                <div
+                  className={styles.trimTrackSelected}
+                  style={{
+                    left: (trimStart / (audioDuration || MAX_AUDIO_SECONDS)) * 100 + '%',
+                    width: ((trimEnd - trimStart) / (audioDuration || MAX_AUDIO_SECONDS)) * 100 + '%',
+                  }}
+                />
                 <input
                   type="range"
                   min={0}
@@ -589,9 +621,9 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
                   step={0.1}
                   value={trimStart}
                   onChange={(e) => setTrimStart(Math.min(Number(e.target.value), trimEnd - 0.5))}
-                  style={{ position: 'absolute', top: '50%', transform: 'translateY(-50%)', left: 0, width: '100%', height: 44, opacity: 0, cursor: 'pointer', zIndex: 2 }}
+                  className={styles.trimRangeInput}
+                  style={{ zIndex: 2 }}
                 />
-                {/* End slider */}
                 <input
                   type="range"
                   min={0}
@@ -599,22 +631,23 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
                   step={0.1}
                   value={trimEnd}
                   onChange={(e) => setTrimEnd(Math.max(Number(e.target.value), trimStart + 0.5))}
-                  style={{ position: 'absolute', top: '50%', transform: 'translateY(-50%)', left: 0, width: '100%', height: 44, opacity: 0, cursor: 'pointer', zIndex: 3 }}
+                  className={styles.trimRangeInput}
+                  style={{ zIndex: 3 }}
                 />
               </div>
 
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: '#ef4444', fontWeight: 600 }}>
+              <div className={styles.trimValuesRow}>
                 <span>Start: {formatTime(trimStart)}</span>
                 <span>End: {formatTime(trimEnd)}</span>
                 <span>Length: {formatTime(trimEnd - trimStart)}</span>
               </div>
             </div>
 
-            <div style={{ display: 'flex', gap: 10 }}>
-              <button onClick={handleTrimConfirm} style={{ flex: 1, padding: 13, backgroundColor: '#ef4444', color: '#fff', border: 'none', borderRadius: 9999, cursor: 'pointer', fontSize: 14, fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+            <div className={styles.trimActions}>
+              <button onClick={handleTrimConfirm} className={styles.trimApplyButton}>
                 <Scissors size={16} /> Apply Trim
               </button>
-              <button onClick={() => { setShowTrimModal(false); setAudioFile(null); }} style={{ flex: 1, padding: 13, background: 'none', color: '#6b7280', border: '1px solid #e5e7eb', borderRadius: 9999, cursor: 'pointer', fontSize: 14, fontWeight: 500 }}>
+              <button onClick={() => { setShowTrimModal(false); setAudioFile(null); }} className={styles.trimCancelButton}>
                 Cancel
               </button>
             </div>

@@ -1,4 +1,9 @@
-﻿.overlay {
+/* ============================================================
+   CreatePostForm — modern create-post sheet
+   Theme-tokenized for light + dark mode.
+   ============================================================ */
+
+.overlay {
   position: fixed;
   inset: 0;
   background-color: rgba(0, 0, 0, 0.5);
@@ -9,7 +14,7 @@
 }
 
 .sheet {
-  background-color: #ffffff;
+  background-color: var(--color-surface, #ffffff);
   border-radius: 1.5rem 1.5rem 0 0;
   width: 100%;
   max-width: 480px;
@@ -18,22 +23,28 @@
   display: flex;
   flex-direction: column;
   animation: slideUp 0.3s ease;
+  overflow: hidden;
 }
+
+/* ============================================================
+   Header
+   ============================================================ */
 
 .header {
   display: flex;
   align-items: center;
   gap: 0.5rem;
   padding: 1rem 1.25rem;
-  border-bottom: 1px solid #f3f4f6;
+  border-bottom: 1px solid var(--color-border, #f3f4f6);
   flex-shrink: 0;
 }
 
-.backButton {
+.backButton,
+.closeButton {
   background: none;
   border: none;
   cursor: pointer;
-  color: #6b7280;
+  color: var(--color-text-secondary, #6b7280);
   padding: 0.5rem;
   border-radius: 9999px;
   display: flex;
@@ -41,10 +52,12 @@
   justify-content: center;
   min-width: 44px;
   min-height: 44px;
+  transition: background-color 0.15s ease;
 }
 
-.backButton:hover {
-  background-color: #f3f4f6;
+.backButton:hover,
+.closeButton:hover {
+  background-color: var(--color-surface-alt, #f3f4f6);
 }
 
 .title {
@@ -52,29 +65,14 @@
   font-size: 1.125rem;
   font-weight: 700;
   margin: 0;
-  color: #111827;
+  color: var(--color-text, #111827);
   text-align: center;
 }
 
-.closeButton {
-  background: none;
-  border: none;
-  cursor: pointer;
-  color: #6b7280;
-  padding: 0.5rem;
-  border-radius: 9999px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 44px;
-  min-height: 44px;
-}
+/* ============================================================
+   Step 1: Type Selection
+   ============================================================ */
 
-.closeButton:hover {
-  background-color: #f3f4f6;
-}
-
-/* Step 1: Type Selection */
 .typeGrid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -89,36 +87,39 @@
   align-items: center;
   gap: 0.375rem;
   padding: 1.25rem 0.75rem;
-  background-color: #f9fafb;
-  border: 1px solid #f3f4f6;
+  background-color: var(--color-surface-alt, #f9fafb);
+  border: 1px solid var(--color-border, #f3f4f6);
   border-radius: 1rem;
   cursor: pointer;
-  transition: all 0.15s ease;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
 }
 
 .typeCard:hover {
-  background-color: #f3f4f6;
-  border-color: #e5e7eb;
+  background-color: var(--color-border, #f3f4f6);
+  border-color: var(--color-border-strong, #e5e7eb);
 }
 
 .typeIcon {
-  color: #ef4444;
+  color: var(--color-primary, #ef4444);
   margin-bottom: 0.25rem;
 }
 
 .typeLabel {
   font-size: 0.9375rem;
   font-weight: 600;
-  color: #111827;
+  color: var(--color-text, #111827);
 }
 
 .typeDescription {
   font-size: 0.75rem;
-  color: #6b7280;
+  color: var(--color-text-secondary, #6b7280);
   text-align: center;
 }
 
-/* Step 2: Compose */
+/* ============================================================
+   Step 2: Compose
+   ============================================================ */
+
 .composeForm {
   padding: 1.25rem;
   display: flex;
@@ -136,7 +137,7 @@
 .fieldLabel {
   font-size: 0.875rem;
   font-weight: 500;
-  color: #374151;
+  color: var(--color-text, #111827);
 }
 
 .lookingForOptions {
@@ -147,56 +148,93 @@
 
 .lookingForOption {
   padding: 0.5rem 0.875rem;
-  background-color: #f3f4f6;
-  border: 1px solid #e5e7eb;
+  background-color: var(--color-surface-alt, #f3f4f6);
+  border: 1px solid var(--color-border-strong, #e5e7eb);
   border-radius: 9999px;
   cursor: pointer;
   font-size: 0.8125rem;
-  color: #374151;
-  transition: all 0.15s ease;
+  color: var(--color-text, #111827);
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.lookingForOption:hover {
+  border-color: var(--color-primary, #ef4444);
 }
 
 .lookingForOptionActive {
-  background-color: #fee2e2;
-  border-color: #ef4444;
-  color: #ef4444;
+  background-color: var(--color-primary-soft, #fee2e2);
+  border-color: var(--color-primary, #ef4444);
+  color: var(--color-primary, #ef4444);
 }
 
 .contentInput {
   width: 100%;
   padding: 0.75rem 1rem;
-  border: 1px solid #e5e7eb;
+  background-color: var(--color-surface-alt, #f9fafb);
+  color: var(--color-text, #111827);
+  border: 1px solid var(--color-border-strong, #e5e7eb);
   border-radius: 0.75rem;
   resize: none;
   font-size: 0.9375rem;
   font-family: inherit;
   outline: none;
   min-height: 120px;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.contentInput::placeholder {
+  color: var(--color-text-muted, #9ca3af);
 }
 
 .contentInput:focus {
-  border-color: #ef4444;
-  box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.1);
+  border-color: var(--color-primary, #ef4444);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary, #ef4444) 18%, transparent);
 }
 
 .tagsInput {
   width: 100%;
   padding: 0.625rem 0.875rem;
-  border: 1px solid #e5e7eb;
+  background-color: var(--color-surface-alt, #f9fafb);
+  color: var(--color-text, #111827);
+  border: 1px solid var(--color-border-strong, #e5e7eb);
   border-radius: 0.75rem;
   font-size: 0.9375rem;
   font-family: inherit;
   outline: none;
+  transition: border-color 0.15s ease;
+}
+
+.tagsInput::placeholder {
+  color: var(--color-text-muted, #9ca3af);
 }
 
 .tagsInput:focus {
-  border-color: #3b82f6;
+  border-color: var(--color-primary, #ef4444);
 }
 
 .error {
-  color: #ef4444;
+  color: var(--color-danger, #ef4444);
   font-size: 0.8125rem;
   margin: 0;
+}
+
+.warningBanner {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 10px 12px;
+  background: color-mix(in srgb, var(--color-warning, #f59e0b) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-warning, #f59e0b) 35%, transparent);
+  border-radius: 10px;
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--color-warning, #f59e0b);
+  font-weight: 500;
+}
+
+.warningIcon {
+  flex-shrink: 0;
+  margin-top: 1px;
 }
 
 .nextButton {
@@ -205,7 +243,7 @@
   justify-content: center;
   gap: 0.5rem;
   padding: 0.875rem;
-  background-color: #ef4444;
+  background-color: var(--color-primary, #ef4444);
   color: #ffffff;
   border: none;
   border-radius: 9999px;
@@ -213,176 +251,105 @@
   font-size: 0.9375rem;
   font-weight: 600;
   min-height: 48px;
+  transition: background-color 0.15s ease;
 }
 
-/* Step 3: Preview */
-.previewForm {
-  padding: 1.25rem;
+.nextButton:hover {
+  background-color: var(--color-primary-hover, #dc2626);
+}
+
+/* ============================================================
+   Attachment buttons
+   ============================================================ */
+
+.attachmentRow {
   display: flex;
-  flex-direction: column;
-  gap: 1rem;
-  overflow-y: auto;
-}
-
-.previewCard {
-  background-color: #f9fafb;
-  border: 1px solid #e5e7eb;
-  border-radius: 1rem;
-  padding: 1rem;
-}
-
-.previewHeader {
-  display: flex;
-  justify-content: space-between;
   align-items: center;
-  margin-bottom: 0.5rem;
-}
-
-.previewName {
-  font-weight: 600;
-  font-size: 0.9375rem;
-  color: #111827;
-}
-
-.previewType {
-  font-size: 0.75rem;
-  color: #6b7280;
-  text-transform: capitalize;
-}
-
-.previewLookingFor {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.25rem;
-  padding: 0.25rem 0.625rem;
-  background-color: #fee2e2;
-  color: #ef4444;
-  border-radius: 9999px;
-  font-size: 0.75rem;
-  font-weight: 600;
-  margin-bottom: 0.5rem;
-}
-
-.previewContent {
-  font-size: 0.9375rem;
-  line-height: 1.5;
-  color: #374151;
-  margin: 0 0 0.5rem;
-  white-space: pre-wrap;
-  word-break: break-word;
-}
-
-.previewTags {
-  display: flex;
+  gap: 0.5rem;
   flex-wrap: wrap;
-  gap: 0.375rem;
 }
 
-.previewTag {
-  color: #3b82f6;
-  font-size: 0.8125rem;
-}
-
-.previewActions {
+.uploadButton {
   display: flex;
-  gap: 0.5rem;
-}
-
-.editButton {
-  flex: 1;
-  padding: 0.875rem;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
   background: none;
-  color: #6b7280;
-  border: 1px solid #e5e7eb;
+  border: 1px dashed var(--color-border-strong, #d1d5db);
   border-radius: 9999px;
   cursor: pointer;
-  font-size: 0.9375rem;
+  font-size: 13px;
   font-weight: 500;
-  min-height: 48px;
+  color: var(--color-text-secondary, #6b7280);
+  min-height: 38px;
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
 }
 
-.publishButton {
-  flex: 2;
-  padding: 0.875rem;
-  background-color: #ef4444;
-  color: #ffffff;
+.uploadButton:hover:not(:disabled) {
+  background: var(--color-surface-alt, #f9fafb);
+  border-color: var(--color-primary, #ef4444);
+  color: var(--color-primary, #ef4444);
+}
+
+.uploadButton:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.uploadButtonPrimary {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  background: var(--color-primary, #ef4444);
   border: none;
   border-radius: 9999px;
   cursor: pointer;
-  font-size: 0.9375rem;
+  font-size: 13px;
   font-weight: 600;
-  min-height: 48px;
+  color: #ffffff;
+  min-height: 38px;
+  transition: background-color 0.15s ease;
 }
 
-.publishButton:disabled {
-  opacity: 0.5;
+.uploadButtonPrimary:hover:not(:disabled) {
+  background: var(--color-primary-hover, #dc2626);
+}
+
+.uploadButtonPrimary:disabled {
+  opacity: 0.55;
   cursor: not-allowed;
 }
 
-/* Success */
-.successState {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.75rem;
-  padding: 3rem 1rem;
-  text-align: center;
-}
-
-.successIcon {
-  width: 64px;
-  height: 64px;
-  border-radius: 50%;
-  background-color: #d1fae5;
-  color: #10b981;
+.audioPlayerRow {
   display: flex;
   align-items: center;
-  justify-content: center;
+  gap: 8px;
+  flex: 1;
 }
 
-.successText {
-  font-size: 1rem;
-  font-weight: 600;
-  color: #111827;
-  margin: 0;
+.audioPlayerElement {
+  flex: 1;
+  height: 32px;
 }
 
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-
-@keyframes slideUp {
-  from { transform: translateY(100%); }
-  to { transform: translateY(0); }
-}
-
-.photoUploadButton {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  padding: 0.75rem;
-  background-color: #f9fafb;
-  border: 1px dashed #d1d5db;
-  border-radius: 0.75rem;
+.audioRemoveButton {
+  background: none;
+  border: none;
   cursor: pointer;
-  font-size: 0.875rem;
-  font-weight: 500;
-  color: #6b7280;
-  transition: all 0.15s ease;
-  min-height: 48px;
+  color: var(--color-danger, #ef4444);
+  padding: 6px;
+  border-radius: 9999px;
+  transition: background-color 0.15s ease;
 }
 
-.photoUploadButton:hover:not(:disabled) {
-  background-color: #f3f4f6;
-  border-color: #9ca3af;
+.audioRemoveButton:hover {
+  background: var(--color-primary-soft, #fef2f2);
 }
 
-.photoUploadButton:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
+/* ============================================================
+   Media previews
+   ============================================================ */
 
 .mediaPreview {
   display: flex;
@@ -401,7 +368,7 @@
   height: 100%;
   object-fit: cover;
   border-radius: 0.5rem;
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--color-border-strong, #e5e7eb);
 }
 
 .mediaRemoveButton {
@@ -411,27 +378,435 @@
   width: 24px;
   height: 24px;
   border-radius: 50%;
-  background-color: #ef4444;
+  background-color: var(--color-primary, #ef4444);
   color: #ffffff;
-  border: 2px solid #ffffff;
+  border: 2px solid var(--color-surface, #ffffff);
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 0;
+  transition: background-color 0.15s ease;
 }
 
-.previewMediaRow {
+.mediaRemoveButton:hover {
+  background-color: var(--color-primary-hover, #dc2626);
+}
+
+/* ============================================================
+   Step 3: Preview
+   ============================================================ */
+
+.previewForm {
+  padding: 1.25rem;
   display: flex;
-  gap: 0.375rem;
-  margin-top: 0.5rem;
-  overflow-x: auto;
+  flex-direction: column;
+  gap: 1rem;
+  overflow-y: auto;
 }
 
-.previewMediaImage {
-  width: 80px;
-  height: 80px;
-  object-fit: cover;
-  border-radius: 0.5rem;
-  flex-shrink: 0;
+.previewCard {
+  background-color: var(--color-surface-alt, #f9fafb);
+  border: 1px solid var(--color-border-strong, #e5e7eb);
+  border-radius: 1rem;
+  padding: 1rem;
+}
+
+.previewHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.previewName {
+  font-weight: 600;
+  font-size: 0.9375rem;
+  color: var(--color-text, #111827);
+}
+
+.previewType {
+  font-size: 0.75rem;
+  color: var(--color-text-secondary, #6b7280);
+  text-transform: capitalize;
+}
+
+.previewLookingFor {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.25rem 0.625rem;
+  background-color: var(--color-primary-soft, #fee2e2);
+  color: var(--color-primary, #ef4444);
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+.previewContent {
+  font-size: 0.9375rem;
+  line-height: 1.5;
+  color: var(--color-text, #111827);
+  margin: 0 0 0.5rem;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.previewTags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+}
+
+.previewTag {
+  color: var(--color-primary, #ef4444);
+  font-size: 0.8125rem;
+}
+
+.previewActions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.editButton {
+  flex: 1;
+  padding: 0.875rem;
+  background: none;
+  color: var(--color-text-secondary, #6b7280);
+  border: 1px solid var(--color-border-strong, #e5e7eb);
+  border-radius: 9999px;
+  cursor: pointer;
+  font-size: 0.9375rem;
+  font-weight: 500;
+  min-height: 48px;
+  transition: background-color 0.15s ease;
+}
+
+.editButton:hover {
+  background-color: var(--color-surface-alt, #f3f4f6);
+}
+
+.publishButton {
+  flex: 2;
+  padding: 0.875rem;
+  background-color: var(--color-primary, #ef4444);
+  color: #ffffff;
+  border: none;
+  border-radius: 9999px;
+  cursor: pointer;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  min-height: 48px;
+  transition: background-color 0.15s ease;
+}
+
+.publishButton:hover:not(:disabled) {
+  background-color: var(--color-primary-hover, #dc2626);
+}
+
+.publishButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ============================================================
+   Success
+   ============================================================ */
+
+.successState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 3rem 1rem;
+  text-align: center;
+}
+
+.successIcon {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background-color: color-mix(in srgb, var(--color-success, #10b981) 15%, transparent);
+  color: var(--color-success, #10b981);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.successText {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--color-text, #111827);
+  margin: 0;
+}
+
+/* ============================================================
+   Record Prompt Modal
+   ============================================================ */
+
+.modalOverlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.6);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  animation: fadeIn 0.15s ease;
+}
+
+.modalDialog {
+  background-color: var(--color-surface-raised, #ffffff);
+  border-radius: 20px;
+  padding: 28px 24px;
+  max-width: 400px;
+  width: 100%;
+  text-align: center;
+  box-shadow: 0 20px 50px color-mix(in srgb, var(--color-text, #000) 25%, transparent);
+}
+
+.modalIconCircle {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background-color: var(--color-primary-soft, #fef2f2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 16px;
+  color: var(--color-primary, #ef4444);
+}
+
+.modalTitle {
+  font-size: 18px;
+  font-weight: 700;
+  margin: 0 0 8px;
+  color: var(--color-text, #111827);
+}
+
+.modalDescription {
+  font-size: 13px;
+  color: var(--color-text-secondary, #6b7280);
+  margin: 0 0 16px;
+  line-height: 1.5;
+}
+
+.modalHint {
+  font-size: 12px;
+  color: var(--color-primary, #ef4444);
+  font-weight: 600;
+  margin: 0 0 20px;
+}
+
+.modalActions {
+  display: flex;
+  gap: 10px;
+}
+
+.modalPrimaryButton {
+  flex: 1;
+  padding: 14px;
+  background-color: var(--color-primary, #ef4444);
+  color: #ffffff;
+  border: none;
+  border-radius: 9999px;
+  cursor: pointer;
+  font-size: 15px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: background-color 0.15s ease;
+}
+
+.modalPrimaryButton:hover {
+  background-color: var(--color-primary-hover, #dc2626);
+}
+
+.modalSecondaryButton {
+  flex: 1;
+  padding: 14px;
+  background: none;
+  color: var(--color-text-secondary, #6b7280);
+  border: 1px solid var(--color-border-strong, #e5e7eb);
+  border-radius: 9999px;
+  cursor: pointer;
+  font-size: 15px;
+  font-weight: 500;
+  transition: background-color 0.15s ease;
+}
+
+.modalSecondaryButton:hover {
+  background-color: var(--color-surface-alt, #f3f4f6);
+}
+
+/* ============================================================
+   Trim Modal (CapCut-style)
+   ============================================================ */
+
+.trimOverlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.85);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  animation: fadeIn 0.15s ease;
+}
+
+.trimDialog {
+  background-color: var(--color-surface-raised, #ffffff);
+  border-radius: 20px;
+  padding: 20px 16px;
+  max-width: 420px;
+  width: 100%;
+}
+
+.trimHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.trimTitle {
+  font-size: 17px;
+  font-weight: 700;
+  margin: 0;
+  color: var(--color-text, #111827);
+}
+
+.trimCloseButton {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--color-text-secondary, #6b7280);
+  padding: 6px;
+  border-radius: 9999px;
+  transition: background-color 0.15s ease;
+}
+
+.trimCloseButton:hover {
+  background-color: var(--color-surface-alt, #f3f4f6);
+}
+
+.trimAudioElement {
+  width: 100%;
+  margin-bottom: 16px;
+}
+
+.trimTimeLabels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  color: var(--color-text-muted, #9ca3af);
+  margin-bottom: 6px;
+}
+
+.trimTrackWrapper {
+  position: relative;
+  height: 44px;
+  margin-bottom: 6px;
+}
+
+.trimTrackBackground {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  left: 0;
+  right: 0;
+  height: 6px;
+  background-color: var(--color-border-strong, #e5e7eb);
+  border-radius: 9999px;
+}
+
+.trimTrackSelected {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  height: 6px;
+  background-color: var(--color-primary, #ef4444);
+  border-radius: 9999px;
+}
+
+.trimRangeInput {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  left: 0;
+  width: 100%;
+  height: 44px;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.trimValuesRow {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  color: var(--color-primary, #ef4444);
+  font-weight: 600;
+  margin-bottom: 16px;
+}
+
+.trimActions {
+  display: flex;
+  gap: 10px;
+}
+
+.trimApplyButton {
+  flex: 1;
+  padding: 13px;
+  background-color: var(--color-primary, #ef4444);
+  color: #ffffff;
+  border: none;
+  border-radius: 9999px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: background-color 0.15s ease;
+}
+
+.trimApplyButton:hover {
+  background-color: var(--color-primary-hover, #dc2626);
+}
+
+.trimCancelButton {
+  flex: 1;
+  padding: 13px;
+  background: none;
+  color: var(--color-text-secondary, #6b7280);
+  border: 1px solid var(--color-border-strong, #e5e7eb);
+  border-radius: 9999px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: background-color 0.15s ease;
+}
+
+.trimCancelButton:hover {
+  background-color: var(--color-surface-alt, #f3f4f6);
+}
+
+/* ============================================================
+   Animations
+   ============================================================ */
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { transform: translateY(100%); }
+  to   { transform: translateY(0); }
 }
