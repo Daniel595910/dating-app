@@ -26,6 +26,7 @@ import { ProfilePreviewSheet } from '../../features/community/components/Profile
 import { ConnectionPrompt } from '../../features/community/components/ConnectionPrompt';
 import { StoryViewer } from '../../features/community/components/StoryViewer';
 import { StoryCreator } from '../../features/community/components/StoryCreator';
+import { useStoryRings } from '../../features/community/hooks/useStoryRings';
 import { MatchSuccess } from '../../features/community/components/MatchSuccess';
 import { PendingRequests } from '../../features/community/components/PendingRequests';
 import { ConnectionsModal } from '../../features/community/components/ConnectionsModal';
@@ -41,6 +42,7 @@ export const CommunityPage: React.FC = () => {
   useLocation(); // retain router context
 
   const { user } = useAuthStore();
+  const { ringState: storyRingState } = useStoryRings(Boolean(user?.id));
   const [filter, setFilter] = useState<FeedFilter>('all');
   const [createSheetOpen, setCreateSheetOpen] = useState(false);
   const [commentPostId, setCommentPostId] = useState<string | null>(null);
@@ -326,6 +328,7 @@ export const CommunityPage: React.FC = () => {
           memberPreview={memberPreview}
           memberPreviewCommunityId={memberPreviewCommunityId}
           onOpenMembers={() => setMembersModalOpen(true)}
+          storyRingState={storyRingState}
           connectionCount={activeConnections.length + pendingRequests.length}
           onOpenConnections={() => setConnectionsModalOpen(true)}
         />

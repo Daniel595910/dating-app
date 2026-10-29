@@ -19,6 +19,7 @@ interface CommunityHeaderProps {
   onOpenMembers?: () => void;
   connectionCount?: number;
   onOpenConnections?: () => void;
+  storyRingState?: Record<string, 'unseen' | 'seen'>;
 }
 
 export const CommunityHeader: React.FC<CommunityHeaderProps> = ({
@@ -35,6 +36,7 @@ export const CommunityHeader: React.FC<CommunityHeaderProps> = ({
   onOpenMembers,
   connectionCount = 0,
   onOpenConnections,
+  storyRingState = {},
 }) => {
   const [moreMenuOpen, setMoreMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -120,6 +122,7 @@ export const CommunityHeader: React.FC<CommunityHeaderProps> = ({
               totalCount={community.memberCount}
               maxVisible={1}
               onClick={onOpenMembers}
+              ringState={storyRingState}
             />
           </div>
         )}
