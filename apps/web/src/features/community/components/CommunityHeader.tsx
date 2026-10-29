@@ -129,14 +129,14 @@ export const CommunityHeader: React.FC<CommunityHeaderProps> = ({
               aria-label="Connections"
               style={{ position: 'relative' }}
             >
-              <Handshake size={20} />
+              <Handshake size={18} />
               {connectionCount > 0 && (
                 <span
                   style={{
                     position: 'absolute',
                     top: 4,
                     right: 4,
-                    minWidth: 16,
+                    minWidth: 18,
                     height: 16,
                     borderRadius: '9999px',
                     background: '#ef4444',
@@ -146,18 +146,18 @@ export const CommunityHeader: React.FC<CommunityHeaderProps> = ({
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    padding: '0 4px',
+                    padding: '0 5px',
                     border: '2px solid #ffffff',
                     lineHeight: 1,
                   }}
                 >
-                  {connectionCount}
+                  {connectionCount > 99 ? '99+' : connectionCount}
                 </span>
               )}
             </button>
           )}
           <button className={styles.iconButton} onClick={onSearch} aria-label="Search">
-            <Search size={20} />
+            <Search size={18} />
           </button>
 
           {/* Three-dot menu */}
@@ -168,7 +168,7 @@ export const CommunityHeader: React.FC<CommunityHeaderProps> = ({
               aria-label="More options"
               aria-expanded={moreMenuOpen}
             >
-              <MoreVertical size={20} />
+              <MoreVertical size={18} />
             </button>
 
             {moreMenuOpen && (
