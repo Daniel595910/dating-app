@@ -24,6 +24,7 @@ import { CommentSheet } from '../../features/community/components/CommentSheet';
 import { ProfileSwipeDeck } from '../../features/community/components/ProfileSwipeDeck';
 import { ProfilePreviewSheet } from '../../features/community/components/ProfilePreviewSheet';
 import { ConnectionPrompt } from '../../features/community/components/ConnectionPrompt';
+import { StoryViewer } from '../../features/community/components/StoryViewer';
 import { MatchSuccess } from '../../features/community/components/MatchSuccess';
 import { PendingRequests } from '../../features/community/components/PendingRequests';
 import { ConnectionsModal } from '../../features/community/components/ConnectionsModal';
@@ -56,6 +57,7 @@ export const CommunityPage: React.FC = () => {
   const [connectingUserId, setConnectingUserId] = useState<string | null>(null);
   const [connectedIds, setConnectedIds] = useState<string[]>([]);
   const [memberPreviewCommunityId, setMemberPreviewCommunityId] = useState<string | null>(null);
+  const [storyViewerOpen, setStoryViewerOpen] = useState(false);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -438,6 +440,30 @@ export const CommunityPage: React.FC = () => {
         }}
         loadingUserId={connectingUserId}
       />
+
+      <StoryViewer open={storyViewerOpen} onClose={() => setStoryViewerOpen(false)} />
+
+      {/* TEMP — Session B test button; removed in Session D */}
+      <button
+        onClick={() => setStoryViewerOpen(true)}
+        style={{
+          position: 'fixed',
+          top: 'calc(4.5rem + env(safe-area-inset-top))',
+          right: 12,
+          zIndex: 9997,
+          padding: '0.5rem 0.75rem',
+          borderRadius: 9999,
+          border: '1px solid var(--color-border-strong, #e5e7eb)',
+          backgroundColor: 'var(--color-surface, #ffffff)',
+          color: 'var(--color-text, #111827)',
+          fontSize: 12,
+          fontWeight: 600,
+          cursor: 'pointer',
+          boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+        }}
+      >
+        ▶ Stories
+      </button>
 
       <MatchSuccess
         open={Boolean(matchUser)}
