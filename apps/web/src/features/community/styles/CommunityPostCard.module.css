@@ -1,30 +1,37 @@
+/* ============================================================
+   CommunityPostCard — modern card (Threads-inspired)
+   - No border, no shadow on base; separation via spacing + tone
+   - Theme tokens throughout (light + dark)
+   - Media bleeds to card edge, actions flat icon-only
+   ============================================================ */
+
 .card {
   background: var(--color-surface, #ffffff);
-  border-radius: 18px;
-  margin-bottom: 14px;
-  border: 1px solid var(--color-border, #f3f4f6);
-  transition: all 0.2s ease;
+  border-radius: 16px;
+  margin-bottom: 10px;
+  border: 1px solid transparent;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
   position: relative;
-  overflow: visible;
+  overflow: hidden;
 }
 
 .card:hover {
-  box-shadow: 0 2px 8px color-mix(in srgb, var(--color-text, #111827) 4%, transparent);
+  border-color: var(--color-border, #f3f4f6);
 }
 
-/* Author Row */
+/* ---------- Author row ---------- */
 .authorRow {
   display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 12px 16px 8px;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 14px 16px 10px;
   position: relative;
 }
 
 .authorClickable {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 11px;
   cursor: pointer;
   flex: 1;
   min-width: 0;
@@ -35,20 +42,18 @@
 }
 
 .avatar {
-  width: 40px;
-  height: 40px;
+  width: 44px;
+  height: 44px;
   border-radius: 50%;
   background: var(--color-primary-soft, #fef2f2);
   display: flex;
   align-items: center;
   justify-content: center;
   font-weight: 700;
-  color: var(--color-primary-hover, #dc2626);
+  color: var(--color-primary, #ef4444);
   font-size: 16px;
   overflow: hidden;
   flex-shrink: 0;
-  border: 2px solid var(--color-surface, #ffffff);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 .avatar img {
@@ -59,22 +64,24 @@
 
 .authorInfo {
   min-width: 0;
+  flex: 1;
 }
 
 .nameRow {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 5px;
 }
 
 .name {
-  font-weight: 700;
-  font-size: 14px;
+  font-weight: 600;
+  font-size: 15px;
   color: var(--color-text, #111827);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 150px;
+  max-width: 180px;
+  line-height: 1.25;
 }
 
 .verifiedIcon {
@@ -86,20 +93,20 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  margin-top: 1px;
+  margin-top: 2px;
 }
 
 .locationRow {
   display: flex;
   align-items: center;
-  gap: 2px;
-  font-size: 11px;
+  gap: 3px;
+  font-size: 12px;
   color: var(--color-text-muted, #9ca3af);
 }
 
 .timeAgo {
-  font-size: 11px;
-  color: var(--color-text-disabled, #d1d5db);
+  font-size: 12px;
+  color: var(--color-text-muted, #9ca3af);
 }
 
 .authorActions {
@@ -114,28 +121,29 @@
   align-items: center;
   gap: 4px;
   padding: 6px 12px;
-  background: var(--color-primary, #ef4444);
-  border: none;
+  background: transparent;
+  border: 1px solid var(--color-primary, #ef4444);
   border-radius: 9999px;
   cursor: pointer;
   font-size: 12px;
   font-weight: 600;
-  color: #ffffff;
+  color: var(--color-primary, #ef4444);
   min-height: 30px;
-  transition: all 0.15s ease;
+  transition: background-color 0.15s ease;
 }
 
 .followButton:hover {
-  background: var(--color-primary-hover, #dc2626);
+  background: var(--color-primary-soft, #fef2f2);
 }
 
 .followButtonActive {
-  background: var(--color-surface-alt, #f3f4f6);
+  background: var(--color-surface-alt, #f9fafb);
+  border-color: var(--color-border, #f3f4f6);
   color: var(--color-text-secondary, #6b7280);
 }
 
 .followButtonActive:hover {
-  background: var(--color-border-strong, #e5e7eb);
+  background: var(--color-border, #f3f4f6);
 }
 
 .moreButton {
@@ -150,27 +158,28 @@
   justify-content: center;
   min-width: 32px;
   min-height: 32px;
-  transition: all 0.15s;
+  transition: background-color 0.15s ease, color 0.15s ease;
 }
 
 .moreButton:hover {
-  color: var(--color-text-secondary, #6b7280);
-  background: var(--color-surface-alt, #f3f4f6);
+  color: var(--color-text, #111827);
+  background: var(--color-surface-alt, #f9fafb);
 }
 
-/* Dropdown Menu */
+/* ---------- Dropdown menu ---------- */
 .dropdownMenu {
   position: absolute;
-  top: 48px;
-  right: 16px;
-  background: var(--color-surface, #ffffff);
+  top: 52px;
+  right: 14px;
+  background: var(--color-surface-raised, #ffffff);
   border-radius: 12px;
-  box-shadow: 0 4px 16px color-mix(in srgb, var(--color-text, #111827) 12%, transparent);
-  border: 1px solid var(--color-border, #f3f4f6);
+  box-shadow:
+    0 10px 30px color-mix(in srgb, var(--color-text, #111827) 14%, transparent),
+    0 0 0 1px var(--color-border, #f3f4f6);
   z-index: 50;
-  min-width: 140px;
+  min-width: 150px;
   overflow: hidden;
-  animation: dropdownIn 0.15s ease;
+  animation: dropdownIn 0.14s ease;
 }
 
 .dropdownItem,
@@ -186,7 +195,7 @@
   font-size: 13px;
   font-weight: 500;
   color: var(--color-text, #111827);
-  transition: background 0.15s;
+  transition: background-color 0.12s ease;
   text-align: left;
 }
 
@@ -195,43 +204,44 @@
 }
 
 .dropdownItemDanger {
-  color: var(--color-primary, #ef4444);
+  color: var(--color-danger, #ef4444);
 }
 
 .dropdownItemDanger:hover {
   background: var(--color-primary-soft, #fef2f2);
 }
 
-/* Content */
+/* ---------- Content ---------- */
 .content {
   margin: 0;
-  padding: 0 16px 8px;
-  font-size: 14px;
-  line-height: 1.6;
+  padding: 2px 16px 12px;
+  font-size: 15px;
+  line-height: 1.5;
   color: var(--color-text, #111827);
   white-space: pre-wrap;
   word-break: break-word;
 }
 
-/* Media */
+/* ---------- Media (bleeds to edges) ---------- */
 .mediaWrapper {
-  padding: 0 16px 8px;
+  padding: 0;
+  margin: 0;
 }
 
-/* Audio */
+/* ---------- Audio player ---------- */
 .audioContainer {
   display: flex;
   align-items: center;
-  gap: 8px;
-  margin: 0 16px 10px;
-  padding: 8px 12px;
+  gap: 10px;
+  margin: 0 16px 12px;
+  padding: 9px 12px;
   background: var(--color-primary-soft, #fef2f2);
-  border-radius: 9999px;
+  border-radius: 12px;
 }
 
 .audioPlayButton {
-  width: 28px;
-  height: 28px;
+  width: 30px;
+  height: 30px;
   border-radius: 50%;
   background: var(--color-primary, #ef4444);
   color: #ffffff;
@@ -250,20 +260,6 @@
   padding: 8px 0;
 }
 
-
-.audioProgressThumb {
-  position: absolute;
-  top: 50%;
-  transform: translate(-50%, -50%);
-  width: 12px;
-  height: 12px;
-  background: var(--color-primary, #ef4444);
-  border: 2px solid var(--color-surface, #ffffff);
-  border-radius: 50%;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
-  pointer-events: none;
-}
-
 .audioProgressTrack {
   height: 3px;
   background: var(--color-primary-soft-border, #fecaca);
@@ -278,6 +274,19 @@
   transition: width 0.1s linear;
 }
 
+.audioProgressThumb {
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 12px;
+  height: 12px;
+  background: var(--color-primary, #ef4444);
+  border: 2px solid var(--color-surface, #ffffff);
+  border-radius: 50%;
+  box-shadow: 0 1px 3px color-mix(in srgb, var(--color-text, #111827) 20%, transparent);
+  pointer-events: none;
+}
+
 .audioDuration {
   font-size: 11px;
   color: var(--color-primary, #ef4444);
@@ -290,34 +299,6 @@
   flex-shrink: 0;
 }
 
-/* Tags */
-.tagsRow {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  padding: 0 16px 8px;
-}
-
-.tag {
-  color: var(--color-primary, #ef4444);
-  font-size: 12px;
-  font-weight: 500;
-  background: var(--color-primary-soft, #fef2f2);
-  padding: 2px 8px;
-  border-radius: 9999px;
-}
-
-/* Actions Divider */
-.actionsDivider {
-  border-top: 1px solid var(--color-border, #f3f4f6);
-  margin: 0 16px;
-}
-
-@keyframes dropdownIn {
-  from { opacity: 0; transform: translateY(-4px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
 .speedButton {
   background: none;
   border: 1px solid var(--color-primary-soft-border, #fecaca);
@@ -328,10 +309,39 @@
   padding: 3px 6px;
   border-radius: 6px;
   flex-shrink: 0;
-  transition: all 0.15s;
+  transition: background-color 0.15s ease;
   min-width: 28px;
 }
 
 .speedButton:hover {
+  background: var(--color-surface, #ffffff);
+}
+
+/* ---------- Tags ---------- */
+.tagsRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 0 16px 12px;
+}
+
+.tag {
+  color: var(--color-primary, #ef4444);
+  font-size: 12px;
+  font-weight: 500;
   background: var(--color-primary-soft, #fef2f2);
+  padding: 3px 10px;
+  border-radius: 9999px;
+}
+
+/* ---------- Actions row (flat, icon-only) ---------- */
+.actionsDivider {
+  border-top: none;
+  margin: 0;
+  padding: 0;
+}
+
+@keyframes dropdownIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
