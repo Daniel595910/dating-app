@@ -1,4 +1,4 @@
-﻿import { supabase } from '@/config/supabase.client';
+import { supabase } from '@/config/supabase.client';
 import { PostMedia } from '../types/community.types';
 
 interface UploadResult {
@@ -50,6 +50,72 @@ class MediaService {
       };
     } catch (err: any) {
       return { success: false, error: err.message || 'Upload failed' };
+    }
+  }
+
+  async uploadAudio(
+    blob: Blob,
+    userId: string,
+    purpose: 'post_audio' | 'voice_note'
+  ): Promise<UploadResult> {
+    try {
+      // Accept any audio/* MIME type, or fall back to webm/wav/mp3 if blob.type is empty
+      const allowedMimeTypes = [
+        'audio/webm',
+        'audio/webm;codecs=opus',
+        'audio/wav',
+        'audio/x-wav',
+        'audio/wave',
+        'audio/mpeg',
+        'audio/mp3',
+        'audio/ogg',
+        'audio/mp4',
+        'audio/m4a',
+      ];
+
+      const mimeType = blob.type || 'audio/webm';
+      const isAllowed = allowedMimeTypes.some((m) => mimeType.includes(m.split(String.fromCharCode(59))[0]!));
+      if (!isAllowed) {
+        return { success: false, error: `Audio type ${mimeType} not allowed` };
+      }
+
+      const maxSize = 10 * 1024 * 1024; // 10 MB
+      if (blob.size > maxSize) {
+        return { success: false, error: String.fromCharCode(65,117,100,105,111,32,102,105,108,101,32,101,120,99,101,101,100,115,32,49,48,77,66,32,108,105,109,105,116) };
+      }
+
+      // Derive extension from MIME type
+      let ext = String.fromCharCode(119, 101, 98, 109); // default webm
+      if (mimeType.includes(String.fromCharCode(119, 97, 118))) ext = String.fromCharCode(119, 97, 118);
+      else if (mimeType.includes(String.fromCharCode(109, 112, 101, 103)) || mimeType.includes(String.fromCharCode(109, 112, 51))) ext = String.fromCharCode(109, 112, 51);
+      else if (mimeType.includes(String.fromCharCode(111, 103, 103))) ext = String.fromCharCode(111, 103, 103);
+      else if (mimeType.includes(String.fromCharCode(109, 112, 52)) || mimeType.includes(String.fromCharCode(109, 52, 97))) ext = String.fromCharCode(109, 52, 97);
+
+      const timestamp = Date.now();
+      const randomSuffix = Math.random().toString(36).substring(2, 8);
+      const filePath = `${purpose}/${userId}/${timestamp}-${randomSuffix}.${ext}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('media')
+        .upload(filePath, blob, { cacheControl: '3600', upsert: false, contentType: mimeType });
+
+      if (uploadError) {
+        return { success: false, error: 'Failed to upload audio' };
+      }
+
+      const { data: publicUrlData } = supabase.storage.from('media').getPublicUrl(filePath);
+
+      return {
+        success: true,
+        media: {
+          id: `${timestamp}-${randomSuffix}`,
+          type: 'audio',
+          url: publicUrlData.publicUrl,
+          sortOrder: 0,
+        },
+      };
+    } catch (err: any) {
+      return { success: false, error: err.message || 'Audio upload failed' };
     }
   }
 
