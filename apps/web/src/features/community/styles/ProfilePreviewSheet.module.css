@@ -1,4 +1,4 @@
-﻿.overlay {
+.overlay {
   position: fixed;
   inset: 0;
   background-color: rgba(0, 0, 0, 0.5);
@@ -9,7 +9,7 @@
 }
 
 .sheet {
-  background-color: #ffffff;
+  background-color: var(--color-surface, #ffffff);
   border-radius: 1.5rem 1.5rem 0 0;
   width: 100%;
   max-width: 480px;
@@ -22,7 +22,7 @@
 .dragHandle {
   width: 40px;
   height: 4px;
-  background-color: #e5e7eb;
+  background-color: var(--color-border-strong, #e5e7eb);
   border-radius: 9999px;
   margin: 0 auto 0.75rem;
 }
@@ -34,7 +34,7 @@
   background: none;
   border: none;
   cursor: pointer;
-  color: #6b7280;
+  color: var(--color-text-secondary, #6b7280);
   padding: 0.5rem;
   border-radius: 9999px;
   display: flex;
@@ -46,19 +46,19 @@
 }
 
 .closeButton:hover {
-  background-color: #f3f4f6;
+  background-color: var(--color-surface-alt, #f3f4f6);
 }
 
 .loading {
   text-align: center;
   padding: 2rem;
-  color: #9ca3af;
+  color: var(--color-text-muted, #9ca3af);
 }
 
 .error {
   text-align: center;
   padding: 2rem;
-  color: #ef4444;
+  color: var(--color-primary, #ef4444);
 }
 
 .photoContainer {
@@ -67,7 +67,7 @@
   border-radius: 50%;
   margin: 0 auto 0.75rem;
   overflow: hidden;
-  background-color: #f3f4f6;
+  background-color: var(--color-surface-alt, #f3f4f6);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -82,7 +82,7 @@
 .photoFallback {
   font-size: 2.5rem;
   font-weight: 700;
-  color: #9ca3af;
+  color: var(--color-text-muted, #9ca3af);
 }
 
 .nameRow {
@@ -96,12 +96,12 @@
 .name {
   font-size: 1.25rem;
   font-weight: 700;
-  color: #111827;
+  color: var(--color-text, #111827);
   margin: 0;
 }
 
 .verifiedIcon {
-  color: #3b82f6;
+  color: var(--color-primary, #ef4444);
   flex-shrink: 0;
 }
 
@@ -111,7 +111,7 @@
   justify-content: center;
   gap: 0.25rem;
   font-size: 0.875rem;
-  color: #6b7280;
+  color: var(--color-text-secondary, #6b7280);
   margin-bottom: 0.5rem;
 }
 
@@ -121,8 +121,8 @@
   justify-content: center;
   gap: 0.375rem;
   padding: 0.375rem 0.875rem;
-  background-color: #fee2e2;
-  color: #ef4444;
+  background-color: var(--color-primary-soft, #fee2e2);
+  color: var(--color-primary, #ef4444);
   border-radius: 9999px;
   font-size: 0.8125rem;
   font-weight: 600;
@@ -133,7 +133,7 @@
 .bio {
   text-align: center;
   font-size: 0.875rem;
-  color: #374151;
+  color: var(--color-text, #111827);
   line-height: 1.5;
   margin: 0 0 0.75rem;
   padding: 0 0.5rem;
@@ -149,10 +149,10 @@
 
 .interestTag {
   padding: 0.25rem 0.625rem;
-  background-color: #f3f4f6;
+  background-color: var(--color-surface-alt, #f3f4f6);
   border-radius: 9999px;
   font-size: 0.75rem;
-  color: #6b7280;
+  color: var(--color-text-secondary, #6b7280);
 }
 
 .actions {
@@ -163,7 +163,7 @@
 
 .getToKnowButton {
   padding: 0.875rem;
-  background-color: #ef4444;
+  background-color: var(--color-primary, #ef4444);
   color: #ffffff;
   border: none;
   border-radius: 9999px;
@@ -175,19 +175,19 @@
 }
 
 .getToKnowButton:hover {
-  background-color: #dc2626;
+  background-color: var(--color-primary-hover, #dc2626);
 }
 
 .getToKnowButton:focus-visible {
-  outline: 2px solid #ef4444;
+  outline: 2px solid var(--color-primary, #ef4444);
   outline-offset: 2px;
 }
 
 .viewProfileButton {
   padding: 0.875rem;
   background: none;
-  color: #111827;
-  border: 1px solid #e5e7eb;
+  color: var(--color-text, #111827);
+  border: 1px solid var(--color-border-strong, #e5e7eb);
   border-radius: 9999px;
   cursor: pointer;
   font-size: 0.9375rem;
@@ -197,11 +197,11 @@
 }
 
 .viewProfileButton:hover {
-  background-color: #f9fafb;
+  background-color: var(--color-surface-alt, #f9fafb);
 }
 
 .viewProfileButton:focus-visible {
-  outline: 2px solid #111827;
+  outline: 2px solid var(--color-text, #111827);
   outline-offset: 2px;
 }
 
@@ -218,8 +218,8 @@
 .followButton {
   padding: 0.875rem;
   background: none;
-  color: #ef4444;
-  border: 1px solid #ef4444;
+  color: var(--color-primary, #ef4444);
+  border: 1px solid var(--color-primary, #ef4444);
   border-radius: 9999px;
   cursor: pointer;
   font-size: 0.9375rem;
@@ -229,5 +229,5 @@
 }
 
 .followButton:hover {
-  background-color: #fef2f2;
+  background-color: var(--color-primary-soft, #fef2f2);
 }

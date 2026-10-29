@@ -1,4 +1,4 @@
-﻿.overlay {
+.overlay {
   position: fixed;
   inset: 0;
   background-color: rgba(0, 0, 0, 0.5);
@@ -9,7 +9,7 @@
 }
 
 .sheet {
-  background-color: #ffffff;
+  background-color: var(--color-surface, #ffffff);
   border-radius: 1.5rem 1.5rem 0 0;
   width: 100%;
   max-width: 480px;
@@ -21,7 +21,7 @@
 .dragHandle {
   width: 40px;
   height: 4px;
-  background-color: #e5e7eb;
+  background-color: var(--color-border-strong, #e5e7eb);
   border-radius: 9999px;
   margin: 0 auto 0.75rem;
 }
@@ -36,7 +36,7 @@
 .title {
   font-size: 1rem;
   font-weight: 700;
-  color: #111827;
+  color: var(--color-text, #111827);
   margin: 0;
 }
 
@@ -44,7 +44,7 @@
   background: none;
   border: none;
   cursor: pointer;
-  color: #6b7280;
+  color: var(--color-text-secondary, #6b7280);
   padding: 0.5rem;
   border-radius: 9999px;
   min-width: 44px;
@@ -64,7 +64,7 @@
   background: none;
   border: none;
   cursor: pointer;
-  color: #374151;
+  color: var(--color-text, #111827);
   font-size: 0.9375rem;
   border-radius: 0.5rem;
   min-height: 48px;
@@ -73,7 +73,7 @@
 }
 
 .shareOption:hover {
-  background-color: #f9fafb;
+  background-color: var(--color-surface-alt, #f9fafb);
 }
 
 @keyframes fadeIn {
@@ -84,4 +84,23 @@
 @keyframes slideUp {
   from { transform: translateY(100%); }
   to { transform: translateY(0); }
+}
+.copiedState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  padding: 2rem 1rem;
+  text-align: center;
+}
+
+.copiedIcon {
+  color: var(--color-success, #10b981);
+}
+
+.copiedText {
+  font-size: 0.9375rem;
+  color: var(--color-text, #111827);
+  margin: 0;
 }

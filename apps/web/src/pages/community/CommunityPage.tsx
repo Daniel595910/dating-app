@@ -327,6 +327,7 @@ export const CommunityPage: React.FC = () => {
         />
         <FilterBar activeFilter={filter} onFilterChange={setFilter} />
         </div>
+        <div className={styles.postsWrapper}>
         {filter === 'profiles' ? (
           <ProfileSwipeDeck userId={user?.id || ''} communityId={community.id} onGetToKnow={(id) => handleGetToKnow(id)} />
         ) : feedLoading && posts.length === 0 ? (
@@ -351,6 +352,7 @@ export const CommunityPage: React.FC = () => {
             <InfiniteScrollSentinel onLoadMore={loadMore} loading={loadingMore} hasMore={hasMore} />
           </>
         )}
+        </div>
       </main>
 
       <CreatePostButton onClick={() => setCreateSheetOpen(true)} />

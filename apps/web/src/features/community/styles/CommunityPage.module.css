@@ -15,7 +15,7 @@
   min-height: 0;                     /* critical: allows flex child to scroll */
   overflow-y: auto;
   overflow-x: hidden;
-  padding: 0 0.75rem calc(6rem + env(safe-area-inset-bottom));
+  padding: 0 0 calc(6rem + env(safe-area-inset-bottom));
   -webkit-overflow-scrolling: touch;
   overscroll-behavior: contain;
   touch-action: pan-y;               /* explicit vertical swipe */
@@ -36,6 +36,10 @@
 
 .stickyHeader + * {
   margin-top: 0.75rem;
+}
+
+.postsWrapper {
+  padding: 0 0.75rem;
 }
 
 .errorContainer {
