@@ -58,189 +58,104 @@ class MatchService {
     hasMore: boolean;
   }> {
     try {
-      const {
-        status = 'all',
-        sortBy = 'created_at',
-        sortOrder = 'desc',
-        limit = 20,
-        offset = 0,
-      } = filters;
+      const { status = 'all', limit = 20, offset = 0, search } = filters;
+      const filter = status === 'recent' ? 'recent' : 'all';
 
-      let query = supabase.from('matches').select('*', { count: 'exact' });
+      const { data, error } = await supabase.rpc('admin_list_matches', {
+        p_filter: filter,
+        p_search: search && search.trim() ? search.trim() : null,
+        p_limit: limit,
+        p_offset: offset,
+      });
 
-      if (status === 'recent') {
-        const dayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
-        query = query.gte('created_at', dayAgo);
-      }
+      if (error) throw new Error(error.message);
 
-      query = query
-        .order(sortBy, { ascending: sortOrder === 'asc' })
-        .range(offset, offset + limit - 1);
-
-      const { data, error, count } = await query;
-
-      if (error) {
-        console.error('Failed to fetch matches:', error);
-        return { items: [], total: 0, hasMore: false };
-      }
-
-      const items = await this.enrichMatches((data || []) as Match[]);
+      const payload = (data || {}) as any;
+      const rawItems: any[] = Array.isArray(payload.items) ? payload.items : [];
+      const items = rawItems.map((r: any) => this.shapeMatch(r));
 
       return {
         items,
-        total: count || 0,
-        hasMore: (count || 0) > offset + limit,
+        total: typeof payload.total === 'number' ? payload.total : Number(payload.total || 0),
+        hasMore: !!payload.has_more,
       };
-    } catch {
+    } catch (err: any) {
+      console.error('Failed to fetch matches:', err);
       return { items: [], total: 0, hasMore: false };
     }
   }
 
-  private async enrichMatches(matches: Match[]): Promise<Match[]> {
-    if (matches.length === 0) return [];
-
-    const userIds = new Set<string>();
-    matches.forEach((m) => {
-      if (m.user1_id) userIds.add(m.user1_id);
-      if (m.user2_id) userIds.add(m.user2_id);
-    });
-
-    let profileMap = new Map<string, any>();
-    try {
-      const { data: profiles } = await supabase
-        .from('profiles')
-        .select('user_id, display_name, avatar_url, is_verified')
-        .in('user_id', Array.from(userIds));
-      profileMap = new Map((profiles || []).map((p: any) => [p.user_id, p]));
-    } catch {}
-
-    return matches.map((m) => {
-      const u1 = profileMap.get(m.user1_id);
-      const u2 = profileMap.get(m.user2_id);
-      return {
-        ...m,
-        user1: u1
-          ? {
-              display_name: u1.display_name,
-              avatar_url: u1.avatar_url,
-              is_verified: u1.is_verified || false,
-            }
-          : undefined,
-        user2: u2
-          ? {
-              display_name: u2.display_name,
-              avatar_url: u2.avatar_url,
-              is_verified: u2.is_verified || false,
-            }
-          : undefined,
-      };
-    });
-  }
-
-  async getMatchById(matchId: string): Promise<Match | null> {
-    try {
-      const { data, error } = await supabase
-        .from('matches')
-        .select('*')
-        .eq('id', matchId)
-        .single();
-
-      if (error || !data) return null;
-
-      const enriched = await this.enrichMatches([data as Match]);
-      return enriched[0] || null;
-    } catch {
-      return null;
-    }
+  private shapeMatch(r: any): Match {
+    return {
+      id: r.id,
+      user1_id: r.user1_id,
+      user2_id: r.user2_id,
+      match_score: r.match_score,
+      status: r.status,
+      created_at: r.created_at,
+      updated_at: r.updated_at,
+      user1: r.user1_display_name
+        ? {
+            display_name: r.user1_display_name,
+            avatar_url: r.user1_avatar_url,
+            is_verified: !!r.user1_is_verified,
+          }
+        : undefined,
+      user2: r.user2_display_name
+        ? {
+            display_name: r.user2_display_name,
+            avatar_url: r.user2_avatar_url,
+            is_verified: !!r.user2_is_verified,
+          }
+        : undefined,
+    };
   }
 
   async getStats() {
-    const now = new Date();
-    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
-    const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString();
-    const monthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000).toISOString();
-
-    const safeCount = async (table: string, filter?: (q: any) => any) => {
-      try {
-        let q = supabase.from(table).select('*', { count: 'exact', head: true });
-        if (filter) q = filter(q);
-        const { count, error } = await q;
-        return error ? 0 : count || 0;
-      } catch {
-        return 0;
-      }
-    };
-
-    const [total, today, week, month] = await Promise.all([
-      safeCount('matches'),
-      safeCount('matches', (q) => q.gte('created_at', todayStart)),
-      safeCount('matches', (q) => q.gte('created_at', weekAgo)),
-      safeCount('matches', (q) => q.gte('created_at', monthAgo)),
-    ]);
-
-    // Calculate average match score if column exists
-    let avgScore = 0;
     try {
-      const { data } = await supabase
-        .from('matches')
-        .select('match_score')
-        .not('match_score', 'is', null)
-        .limit(500);
-
-      if (data && data.length > 0) {
-        const sum = data.reduce((acc, m: any) => acc + (Number(m.match_score) || 0), 0);
-        avgScore = Math.round(sum / data.length);
-      }
-    } catch {}
-
-    return { total, today, week, month, avgScore };
+      const { data, error } = await supabase.rpc('admin_match_stats');
+      if (error) throw new Error(error.message);
+      const payload = (data || {}) as any;
+      const n = (v: any) => (typeof v === 'number' ? v : Number(v || 0));
+      return {
+        total: n(payload.total),
+        today: n(payload.today),
+        week: n(payload.week),
+        month: n(payload.month),
+        avgScore: n(payload.avg_score),
+      };
+    } catch (err) {
+      console.error('Failed to fetch match stats:', err);
+      return { total: 0, today: 0, week: 0, month: 0, avgScore: 0 };
+    }
   }
 
   async getDailyMatchSeries(days: number = 30): Promise<{ date: string; value: number }[]> {
-    const startDate = new Date();
-    startDate.setDate(startDate.getDate() - days);
-
     try {
-      const { data, error } = await supabase
-        .from('matches')
-        .select('created_at')
-        .gte('created_at', startDate.toISOString())
-        .order('created_at', { ascending: true });
-
-      if (error || !data) return [];
-
-      const counts = new Map<string, number>();
-      for (let i = days - 1; i >= 0; i--) {
-        const date = new Date();
-        date.setDate(date.getDate() - i);
-        const k = date.toISOString().split('T')[0]; if (k) counts.set(k, 0);
-      }
-
-      data.forEach((m: any) => {
-        const key = m.created_at.split('T')[0];
-        if (counts.has(key)) {
-          counts.set(key, (counts.get(key) || 0) + 1);
-        }
-      });
-
-      return Array.from(counts.entries()).map(([date, value]) => ({ date, value }));
-    } catch {
+      const { data, error } = await supabase.rpc('admin_match_daily_series', { p_days: days });
+      if (error) throw new Error(error.message);
+      const rows = Array.isArray(data) ? (data as any[]) : [];
+      return rows.map((r) => ({ date: String(r.date), value: Number(r.value) || 0 }));
+    } catch (err) {
+      console.error('Failed to fetch match series:', err);
       return [];
     }
   }
 
   async getTopMatchesByScore(limit = 10): Promise<Match[]> {
     try {
-      const { data, error } = await supabase
-        .from('matches')
-        .select('*')
-        .not('match_score', 'is', null)
-        .order('match_score', { ascending: false })
-        .limit(limit);
-
-      if (error || !data) return [];
-      return this.enrichMatches(data as Match[]);
-    } catch {
+      const { data, error } = await supabase.rpc('admin_list_matches', {
+        p_filter: 'top',
+        p_search: null,
+        p_limit: limit,
+        p_offset: 0,
+      });
+      if (error) throw new Error(error.message);
+      const payload = (data || {}) as any;
+      const rawItems: any[] = Array.isArray(payload.items) ? payload.items : [];
+      return rawItems.map((r: any) => this.shapeMatch(r));
+    } catch (err) {
+      console.error('Failed to fetch top matches:', err);
       return [];
     }
   }
@@ -256,7 +171,7 @@ class MatchService {
   }
 
   async deleteMatch(matchId: string): Promise<boolean> {
-    const { error } = await supabase.from('matches').delete().eq('id', matchId);
+    const { error } = await supabase.rpc('admin_delete_match', { p_match_id: matchId });
     if (error) throw new Error(error.message);
 
     await auditService.logAction({
@@ -269,21 +184,19 @@ class MatchService {
   }
 
   async getSuspiciousMatches(): Promise<Match[]> {
-    // Heuristic: matches between users that have no messages and unusual pattern
-    // For now, we look for matches made in the last 7 days with unusual activity
     try {
-      const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
-
-      const { data, error } = await supabase
-        .from('matches')
-        .select('*')
-        .gte('created_at', weekAgo)
-        .order('created_at', { ascending: false })
-        .limit(20);
-
-      if (error || !data) return [];
-      return this.enrichMatches(data as Match[]);
-    } catch {
+      const { data, error } = await supabase.rpc('admin_list_matches', {
+        p_filter: 'suspicious',
+        p_search: null,
+        p_limit: 20,
+        p_offset: 0,
+      });
+      if (error) throw new Error(error.message);
+      const payload = (data || {}) as any;
+      const rawItems: any[] = Array.isArray(payload.items) ? payload.items : [];
+      return rawItems.map((r: any) => this.shapeMatch(r));
+    } catch (err) {
+      console.error('Failed to fetch suspicious matches:', err);
       return [];
     }
   }
