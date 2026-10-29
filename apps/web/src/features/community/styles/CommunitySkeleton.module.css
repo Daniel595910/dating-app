@@ -11,8 +11,8 @@
   align-items: center;
   justify-content: space-between;
   padding: 1rem;
-  background-color: #ffffff;
-  border-bottom: 1px solid #f3f4f6;
+  background-color: var(--color-surface, #ffffff);
+  border-bottom: 1px solid var(--color-border, #f3f4f6);
 }
 
 .headerLeft {
@@ -23,7 +23,7 @@
   width: 160px;
   height: 20px;
   border-radius: 0.25rem;
-  background: linear-gradient(90deg, #f3f4f6 25%, #e5e7eb 50%, #f3f4f6 75%);
+  background: linear-gradient(90deg, var(--color-border, #f3f4f6) 25%, var(--color-border-strong, #e5e7eb) 50%, var(--color-border, #f3f4f6) 75%);
   background-size: 200% 100%;
   animation: shimmer 1.5s infinite;
   margin-bottom: 0.5rem;
@@ -33,7 +33,7 @@
   width: 120px;
   height: 14px;
   border-radius: 0.25rem;
-  background: linear-gradient(90deg, #f3f4f6 25%, #e5e7eb 50%, #f3f4f6 75%);
+  background: linear-gradient(90deg, var(--color-border, #f3f4f6) 25%, var(--color-border-strong, #e5e7eb) 50%, var(--color-border, #f3f4f6) 75%);
   background-size: 200% 100%;
   animation: shimmer 1.5s infinite;
 }
@@ -47,7 +47,7 @@
   width: 32px;
   height: 32px;
   border-radius: 50%;
-  background: linear-gradient(90deg, #f3f4f6 25%, #e5e7eb 50%, #f3f4f6 75%);
+  background: linear-gradient(90deg, var(--color-border, #f3f4f6) 25%, var(--color-border-strong, #e5e7eb) 50%, var(--color-border, #f3f4f6) 75%);
   background-size: 200% 100%;
   animation: shimmer 1.5s infinite;
 }
@@ -56,21 +56,21 @@
   display: flex;
   gap: 0.5rem;
   padding: 0.5rem 1rem;
-  background-color: #ffffff;
-  border-bottom: 1px solid #f3f4f6;
+  background-color: var(--color-surface, #ffffff);
+  border-bottom: 1px solid var(--color-border, #f3f4f6);
 }
 
 .filterItemSkeleton {
   width: 64px;
   height: 28px;
   border-radius: 9999px;
-  background: linear-gradient(90deg, #f3f4f6 25%, #e5e7eb 50%, #f3f4f6 75%);
+  background: linear-gradient(90deg, var(--color-border, #f3f4f6) 25%, var(--color-border-strong, #e5e7eb) 50%, var(--color-border, #f3f4f6) 75%);
   background-size: 200% 100%;
   animation: shimmer 1.5s infinite;
 }
 
 .postSkeleton {
-  background-color: #ffffff;
+  background-color: var(--color-surface, #ffffff);
   border-radius: 1rem;
   padding: 1rem;
   margin: 0.75rem;
@@ -88,7 +88,7 @@
   width: 44px;
   height: 44px;
   border-radius: 50%;
-  background: linear-gradient(90deg, #f3f4f6 25%, #e5e7eb 50%, #f3f4f6 75%);
+  background: linear-gradient(90deg, var(--color-border, #f3f4f6) 25%, var(--color-border-strong, #e5e7eb) 50%, var(--color-border, #f3f4f6) 75%);
   background-size: 200% 100%;
   animation: shimmer 1.5s infinite;
   flex-shrink: 0;
@@ -102,7 +102,7 @@
   width: 100px;
   height: 16px;
   border-radius: 0.25rem;
-  background: linear-gradient(90deg, #f3f4f6 25%, #e5e7eb 50%, #f3f4f6 75%);
+  background: linear-gradient(90deg, var(--color-border, #f3f4f6) 25%, var(--color-border-strong, #e5e7eb) 50%, var(--color-border, #f3f4f6) 75%);
   background-size: 200% 100%;
   animation: shimmer 1.5s infinite;
   margin-bottom: 0.25rem;
@@ -112,7 +112,7 @@
   width: 80px;
   height: 12px;
   border-radius: 0.25rem;
-  background: linear-gradient(90deg, #f3f4f6 25%, #e5e7eb 50%, #f3f4f6 75%);
+  background: linear-gradient(90deg, var(--color-border, #f3f4f6) 25%, var(--color-border-strong, #e5e7eb) 50%, var(--color-border, #f3f4f6) 75%);
   background-size: 200% 100%;
   animation: shimmer 1.5s infinite;
 }
@@ -121,7 +121,7 @@
   width: 100%;
   height: 14px;
   border-radius: 0.25rem;
-  background: linear-gradient(90deg, #f3f4f6 25%, #e5e7eb 50%, #f3f4f6 75%);
+  background: linear-gradient(90deg, var(--color-border, #f3f4f6) 25%, var(--color-border-strong, #e5e7eb) 50%, var(--color-border, #f3f4f6) 75%);
   background-size: 200% 100%;
   animation: shimmer 1.5s infinite;
   margin-bottom: 0.5rem;
@@ -131,7 +131,7 @@
   width: 60%;
   height: 14px;
   border-radius: 0.25rem;
-  background: linear-gradient(90deg, #f3f4f6 25%, #e5e7eb 50%, #f3f4f6 75%);
+  background: linear-gradient(90deg, var(--color-border, #f3f4f6) 25%, var(--color-border-strong, #e5e7eb) 50%, var(--color-border, #f3f4f6) 75%);
   background-size: 200% 100%;
   animation: shimmer 1.5s infinite;
   margin-bottom: 0.75rem;
@@ -141,14 +141,14 @@
   display: flex;
   gap: 1.5rem;
   padding-top: 0.75rem;
-  border-top: 1px solid #f9fafb;
+  border-top: 1px solid var(--color-border, #f3f4f6);
 }
 
 .actionIconSkeleton {
   width: 40px;
   height: 18px;
   border-radius: 0.25rem;
-  background: linear-gradient(90deg, #f3f4f6 25%, #e5e7eb 50%, #f3f4f6 75%);
+  background: linear-gradient(90deg, var(--color-border, #f3f4f6) 25%, var(--color-border-strong, #e5e7eb) 50%, var(--color-border, #f3f4f6) 75%);
   background-size: 200% 100%;
   animation: shimmer 1.5s infinite;
 }

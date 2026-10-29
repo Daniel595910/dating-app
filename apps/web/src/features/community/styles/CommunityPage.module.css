@@ -50,13 +50,13 @@
 .errorTitle {
   font-size: 1.125rem;
   font-weight: 600;
-  color: #111827;
+  color: var(--color-text, #111827);
   margin: 0;
 }
 
 .errorMessage {
   font-size: 0.875rem;
-  color: #6b7280;
+  color: var(--color-text-secondary, #6b7280);
   margin: 0;
   line-height: 1.5;
 }
@@ -67,7 +67,7 @@
   z-index: 5;
   margin: 0 auto 0.5rem;
   padding: 0.5rem 1rem;
-  background-color: #111827;
+  background-color: var(--color-text, #111827);
   color: #ffffff;
   border: none;
   border-radius: 9999px;
@@ -81,7 +81,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #6b7280;
+  color: var(--color-text-secondary, #6b7280);
   font-size: 0.8125rem;
   overflow: hidden;
   transition: height 0.2s ease;
@@ -91,11 +91,11 @@
   display: block;
   width: 100%;
   padding: 0.75rem;
-  background-color: #ffffff;
-  border: 1px solid #e5e7eb;
+  background-color: var(--color-surface, #ffffff);
+  border: 1px solid var(--color-border-strong, #e5e7eb);
   border-radius: 0.75rem;
   cursor: pointer;
-  color: #6b7280;
+  color: var(--color-text-secondary, #6b7280);
   font-size: 0.875rem;
   margin-top: 0.5rem;
 }
@@ -107,7 +107,7 @@
 
 .retryButton {
   padding: 0.75rem 1.5rem;
-  background-color: #ef4444;
+  background-color: var(--color-primary, #ef4444);
   color: #ffffff;
   border: none;
   border-radius: 9999px;
@@ -119,5 +119,5 @@
 }
 
 .retryButton:hover {
-  background-color: #dc2626;
+  background-color: var(--color-primary-hover, #dc2626);
 }
