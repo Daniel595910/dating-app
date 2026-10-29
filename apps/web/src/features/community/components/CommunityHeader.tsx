@@ -40,18 +40,22 @@ export const CommunityHeader: React.FC<CommunityHeaderProps> = ({
   const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    if (!moreMenuOpen) return;
+
     const handleClickOutside = (event: MouseEvent) => {
       if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
         setMoreMenuOpen(false);
       }
     };
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setMoreMenuOpen(false);
+    };
 
-    if (moreMenuOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
-    }
-
+    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('keydown', handleEscape);
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleEscape);
     };
   }, [moreMenuOpen]);
 
@@ -114,7 +118,7 @@ export const CommunityHeader: React.FC<CommunityHeaderProps> = ({
             <AvatarStack
               members={memberPreview}
               totalCount={community.memberCount}
-              maxVisible={2}
+              maxVisible={1}
               onClick={onOpenMembers}
             />
           </div>
@@ -175,21 +179,55 @@ export const CommunityHeader: React.FC<CommunityHeaderProps> = ({
               <div
                 style={{
                   position: 'absolute',
-                  top: 'calc(100% + 4px)',
+                  top: 'calc(100% + 6px)',
                   right: 0,
                   zIndex: 9999,
-                  backgroundColor: '#ffffff',
-                  borderRadius: '12px',
-                  boxShadow: '0 10px 30px rgba(0,0,0,0.2)',
-                  border: '1px solid #e5e7eb',
+                  backgroundColor: 'var(--color-surface-raised, #ffffff)',
+                  borderRadius: 14,
+                  boxShadow:
+                    '0 12px 40px color-mix(in srgb, var(--color-text, #111827) 12%, transparent), 0 0 0 1px color-mix(in srgb, var(--color-text, #111827) 3%, transparent)',
+                  border: '1px solid var(--color-border, #e5e7eb)',
                   minWidth: 220,
-                  padding: '6px',
+                  padding: 6,
+                  animation: 'communityMenuFadeIn 0.14s ease-out',
+                  overflow: 'hidden',
                 }}
               >
+                <style>{`
+                  @keyframes communityMenuFadeIn {
+                    from { opacity: 0; transform: translateY(-4px) scale(0.98); }
+                    to   { opacity: 1; transform: translateY(0) scale(1); }
+                  }
+                  .community-menu-item {
+                    display: flex;
+                    align-items: center;
+                    gap: 10px;
+                    width: 100%;
+                    padding: 10px 12px;
+                    background: none;
+                    border: none;
+                    cursor: pointer;
+                    color: var(--color-text, #111827);
+                    font-size: 14px;
+                    font-weight: 500;
+                    border-radius: 8px;
+                    text-align: left;
+                    transition: background-color 0.12s ease, color 0.12s ease;
+                  }
+                  .community-menu-item:hover {
+                    background-color: var(--color-surface-alt, #f9fafb);
+                  }
+                  .community-menu-item.danger {
+                    color: var(--color-danger, #ef4444);
+                  }
+                  .community-menu-item.danger:hover {
+                    background-color: var(--color-primary-soft, #fef2f2);
+                  }
+                `}</style>
                 {onDiscover && (
                   <button
+                    className="community-menu-item"
                     onClick={() => { setMoreMenuOpen(false); onDiscover(); }}
-                    style={{ display: 'flex', alignItems: 'center', gap: '10px', width: '100%', padding: '12px', background: 'none', border: 'none', cursor: 'pointer', color: '#374151', fontSize: '14px', borderRadius: '8px', textAlign: 'left' }}
                   >
                     <Compass size={16} />
                     Discover Communities
@@ -197,24 +235,24 @@ export const CommunityHeader: React.FC<CommunityHeaderProps> = ({
                 )}
                 {onCommunityInfo && (
                   <button
+                    className="community-menu-item"
                     onClick={() => { setMoreMenuOpen(false); onCommunityInfo(); }}
-                    style={{ display: 'flex', alignItems: 'center', gap: '10px', width: '100%', padding: '12px', background: 'none', border: 'none', cursor: 'pointer', color: '#374151', fontSize: '14px', borderRadius: '8px', textAlign: 'left' }}
                   >
                     <Info size={16} />
                     Community Info
                   </button>
                 )}
                 <button
+                  className="community-menu-item"
                   onClick={() => { setMoreMenuOpen(false); window.location.href = '/community-guidelines'; }}
-                  style={{ display: 'flex', alignItems: 'center', gap: '10px', width: '100%', padding: '12px', background: 'none', border: 'none', cursor: 'pointer', color: '#374151', fontSize: '14px', borderRadius: '8px', textAlign: 'left' }}
                 >
                   <Globe size={16} />
                   Community Guidelines
                 </button>
                 {onReportCommunity && (
                   <button
+                    className="community-menu-item danger"
                     onClick={() => { setMoreMenuOpen(false); onReportCommunity(); }}
-                    style={{ display: 'flex', alignItems: 'center', gap: '10px', width: '100%', padding: '12px', background: 'none', border: 'none', cursor: 'pointer', color: '#ef4444', fontSize: '14px', borderRadius: '8px', textAlign: 'left' }}
                   >
                     <Flag size={16} />
                     Report Community
