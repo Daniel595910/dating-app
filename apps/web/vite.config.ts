@@ -16,25 +16,32 @@ export default defineConfig({
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff,woff2}'],
       },
       manifest: {
-        name: 'Dating App',
-        short_name: 'DatingApp',
-        description: 'Regional Community Dating Platform',
-        theme_color: '#3b82f6',
-        background_color: '#ffffff',
+        name: 'Spensive',
+        short_name: 'Spensive',
+        description: 'Real connections. No games. Find your person.',
+        theme_color: '#ef4444',
+        background_color: '#faf9f7',
         display: 'standalone',
         orientation: 'portrait',
         start_url: '/',
         scope: '/',
+        id: '/',
+        lang: 'en',
+        dir: 'ltr',
+        categories: ['social', 'lifestyle', 'dating'],
+        prefer_related_applications: false,
         icons: [
           {
             src: '/icons/icon-192x192.png',
             sizes: '192x192',
-            type: 'image/png'
+            type: 'image/png',
+            purpose: 'any'
           },
           {
             src: '/icons/icon-512x512.png',
             sizes: '512x512',
-            type: 'image/png'
+            type: 'image/png',
+            purpose: 'any'
           },
           {
             src: '/icons/icon-512x512.png',
