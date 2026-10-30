@@ -79,7 +79,7 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({
   const currentAuthor = authors[authorIdx];
   const currentStory = currentAuthor?.stories[storyIdx];
 
-  const paused = inputFocused || holdingPause;
+  const paused = inputFocused || holdingPause || ownMenuOpen || deleteConfirmOpen;
 
   // Reset on open
   useEffect(() => {
@@ -519,6 +519,14 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({
           <div className={styles.centerState}>No stories yet.</div>
         ) : hasStory ? (
           <div className={styles.mediaWrap}>
+            {/* Blurred background fill */}
+            <div className={styles.blurFill} aria-hidden="true">
+              {currentStory.media_type === 'image' ? (
+                <img src={currentStory.media_url} alt="" className={styles.blurFillMedia} draggable={false} />
+              ) : (
+                <video src={currentStory.media_url} className={styles.blurFillMedia} autoPlay muted loop playsInline />
+              )}
+            </div>
             {currentStory.media_type === 'image' ? (
               <img
                 src={currentStory.media_url}
@@ -534,6 +542,7 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({
                 muted
                 playsInline
                 onEnded={goNext}
+              onError={(e) => { console.warn('[video-load-error]', (e.target as HTMLVideoElement).error, currentStory.media_url); }}
               />
             )}
             {currentStory.text_overlay && (

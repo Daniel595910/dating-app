@@ -68,6 +68,7 @@ export const StoryStudio: React.FC<StoryStudioProps> = ({
   const videoPreviewRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const recorderRef = useRef<MediaRecorder | null>(null);
+  const recordSecondsRef = useRef(0);
   const chunksRef = useRef<Blob[]>([]);
   const recordTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const autoStopRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -102,10 +103,6 @@ export const StoryStudio: React.FC<StoryStudioProps> = ({
         audio: false,
       });
       streamRef.current = stream;
-      if (videoPreviewRef.current) {
-        videoPreviewRef.current.srcObject = stream;
-        videoPreviewRef.current.play().catch(() => { /* ignore autoplay errors */ });
-      }
       setCameraState('ready');
     } catch (err: any) {
       const name = err?.name || '';
@@ -150,6 +147,15 @@ export const StoryStudio: React.FC<StoryStudioProps> = ({
     stopStream();
     stopRecordingTimers();
   }, [open, stopStream, stopRecordingTimers]);
+
+  // Attach stream to rendered <video> after cameraState becomes ready
+  useEffect(() => {
+    if (cameraState !== 'ready') return;
+    if (!videoPreviewRef.current || !streamRef.current) return;
+    videoPreviewRef.current.srcObject = streamRef.current;
+    videoPreviewRef.current.play().catch(() => { /* autoplay guard */ });
+  }, [cameraState]);
+
 
   // Escape closes
   useEffect(() => {
@@ -223,9 +229,10 @@ export const StoryStudio: React.FC<StoryStudioProps> = ({
 
   // Photo capture from live stream
   const capturePhoto = () => {
-    if (!videoPreviewRef.current) return;
+    if (!videoPreviewRef.current) { console.warn('[capture] video ref null'); setError('Camera not ready. Try again.'); return; }
     const video = videoPreviewRef.current;
     if (!video.videoWidth || !video.videoHeight) {
+      console.warn('[capture] videoWidth/Height 0', { w: video.videoWidth, h: video.videoHeight, readyState: video.readyState });
       setError('Camera not ready yet. Try again.');
       return;
     }
@@ -287,7 +294,7 @@ export const StoryStudio: React.FC<StoryStudioProps> = ({
           setRecordSeconds(0);
           stopStream();
           // Use actual recorded duration
-          setDraft({ url: URL.createObjectURL(file), file, type: 'video', durationSeconds: recordSeconds || 1 });
+          setDraft({ url: URL.createObjectURL(file), file, type: 'video', durationSeconds: Math.max(1, recordSecondsRef.current) });
           setStage('edit');
         };
         rec.start();
@@ -296,6 +303,7 @@ export const StoryStudio: React.FC<StoryStudioProps> = ({
         setRecordSeconds(0);
         recordTimerRef.current = setInterval(() => {
           setRecordSeconds((s) => s + 1);
+          recordSecondsRef.current = recordSecondsRef.current + 1;
         }, 1000);
         autoStopRef.current = setTimeout(() => {
           if (recorderRef.current && recorderRef.current.state !== 'inactive') {
@@ -311,7 +319,11 @@ export const StoryStudio: React.FC<StoryStudioProps> = ({
 
   const stopVideoRecording = () => {
     if (recorderRef.current && recorderRef.current.state !== 'inactive') {
-      recorderRef.current.stop();
+      const rec = recorderRef.current;
+      // Flush media chunks before stopping — prevents truncated files
+      setTimeout(() => {
+        try { if (rec && rec.state !== 'inactive') rec.stop(); } catch {}
+      }, 300);
     }
     stopRecordingTimers();
   };
@@ -487,23 +499,25 @@ export const StoryStudio: React.FC<StoryStudioProps> = ({
           )}
 
           {stage !== 'capture' && draft && (
-            <>
-              {draft.type === 'image' ? (
-                <img src={draft.url} alt="" className={styles.cameraPreviewMedia} />
-              ) : (
-                <video
-                  src={draft.url}
-                  className={styles.cameraPreviewMedia}
-                  autoPlay
-                  muted
-                  loop
-                  playsInline
-                />
-              )}
-              {textOverlay && (
-                <div className={styles.textOverlayOnPreview}>{textOverlay}</div>
-              )}
-            </>
+              <>
+                {/* Blurred background fill */}
+                <div className={styles.blurFill} aria-hidden="true">
+                  {draft.type === 'image' ? (
+                    <img src={draft.url} alt="" className={styles.blurFillMedia} />
+                  ) : (
+                    <video src={draft.url} className={styles.blurFillMedia} autoPlay muted loop playsInline />
+                  )}
+                </div>
+                {/* Foreground contained media */}
+                {draft.type === 'image' ? (
+                  <img src={draft.url} alt="" className={styles.cameraPreviewMedia} />
+                ) : (
+                  <video src={draft.url} className={styles.cameraPreviewMedia} autoPlay muted loop playsInline />
+                )}
+                {textOverlay && (
+                  <div className={styles.textOverlayOnPreview}>{textOverlay}</div>
+                )}
+              </>
           )}
 
           {stage === 'edit' && showTextPanel && (
