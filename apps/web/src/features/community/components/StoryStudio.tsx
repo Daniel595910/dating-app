@@ -353,30 +353,19 @@ export const StoryStudio: React.FC<StoryStudioProps> = ({
   // Video record from live stream
   const startVideoRecording = () => {
     if (!streamRef.current) { setError('Camera not ready.'); return; }
+    const livePreview = videoPreviewRef.current;
+    if (!livePreview || !livePreview.videoWidth || !livePreview.videoHeight) {
+      setError('Camera not ready yet. Try again.');
+      return;
+    }
     const mimeType = pickVideoMimeType();
     if (!mimeType) { setError('Video recording not supported in this browser.'); return; }
 
     (async () => {
       try {
-        stopStream();
-        const sourceStream = await navigator.mediaDevices.getUserMedia({
-          video: {
-            facingMode: facing === 'environment' ? { ideal: 'environment' } : 'user',
-            width: { ideal: 1920 },
-            height: { ideal: 1080 },
-            zoom: { ideal: 1 },
-            focusMode: { ideal: 'continuous' },
-            frameRate: { ideal: 30 },
-          },
-          audio: true,
-        });
-
-        // Hidden source video — plays the camera feed for the canvas loop
-        const srcVideo = document.createElement('video');
-        srcVideo.srcObject = sourceStream;
-        srcVideo.muted = true;
-        srcVideo.playsInline = true;
-        await srcVideo.play().catch(() => {});
+        // IMPORTANT: do NOT call stopStream() here — that is what caused the blackout.
+        // We record from the already-live <video> element via canvas, so the preview
+        // stays visible the whole time.
 
         // Portrait-locked canvas 1080x1920
         const canvas = document.createElement('canvas');
@@ -387,15 +376,17 @@ export const StoryStudio: React.FC<StoryStudioProps> = ({
         recordCanvasRef.current = canvas;
 
         const drawFrame = () => {
-          if (!srcVideo.videoWidth || !srcVideo.videoHeight) {
+          // Use the live preview element every frame — it never goes away
+          const src = videoPreviewRef.current;
+          if (!src || !src.videoWidth || !src.videoHeight) {
             recordRafRef.current = requestAnimationFrame(drawFrame);
             return;
           }
-          const srcW = srcVideo.videoWidth;
-          const srcH = srcVideo.videoHeight;
+          const srcW = src.videoWidth;
+          const srcH = src.videoHeight;
           const targetAspect = 1080 / 1920;
           const srcAspect = srcW / srcH;
-          let cropW, cropH, cropX, cropY;
+          let cropW: number, cropH: number, cropX: number, cropY: number;
           if (srcAspect > targetAspect) {
             cropH = srcH; cropW = srcH * targetAspect; cropX = (srcW - cropW) / 2; cropY = 0;
           } else {
@@ -405,21 +396,27 @@ export const StoryStudio: React.FC<StoryStudioProps> = ({
             ctx.save();
             ctx.translate(1080, 0);
             ctx.scale(-1, 1);
-            ctx.drawImage(srcVideo, cropX, cropY, cropW, cropH, 0, 0, 1080, 1920);
+            ctx.drawImage(src, cropX, cropY, cropW, cropH, 0, 0, 1080, 1920);
             ctx.restore();
           } else {
-            ctx.drawImage(srcVideo, cropX, cropY, cropW, cropH, 0, 0, 1080, 1920);
+            ctx.drawImage(src, cropX, cropY, cropW, cropH, 0, 0, 1080, 1920);
           }
           recordRafRef.current = requestAnimationFrame(drawFrame);
         };
         recordRafRef.current = requestAnimationFrame(drawFrame);
 
-        // Capture the canvas as a stream; mix in the original audio track
+        // Canvas video track + a SEPARATE audio-only stream (never touches the preview)
         const canvasStream = canvas.captureStream(30);
-        const audioTrack = sourceStream.getAudioTracks()[0];
-        if (audioTrack) canvasStream.addTrack(audioTrack);
+        let audioOnlyStream: MediaStream | null = null;
+        try {
+          audioOnlyStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+          const audioTrack = audioOnlyStream.getAudioTracks()[0];
+          if (audioTrack) canvasStream.addTrack(audioTrack);
+        } catch (audioErr) {
+          console.warn('[record] audio unavailable, recording silent video', audioErr);
+        }
+
         recordDestStreamRef.current = canvasStream;
-        streamRef.current = sourceStream;
 
         chunksRef.current = [];
         const rec = new MediaRecorder(canvasStream, { mimeType });
@@ -427,15 +424,16 @@ export const StoryStudio: React.FC<StoryStudioProps> = ({
         rec.ondataavailable = (e) => { if (e.data.size > 0) chunksRef.current.push(e.data); };
         rec.onstop = () => {
           if (recordRafRef.current !== null) { cancelAnimationFrame(recordRafRef.current); recordRafRef.current = null; }
-          sourceStream.getTracks().forEach((t) => { try { t.stop(); } catch {} });
-          canvasStream.getTracks().forEach((t) => { try { t.stop(); } catch {} });
+          // Stop ONLY the recording-side tracks. The preview stream is untouched.
+          try { canvasStream.getTracks().forEach((t) => t.stop()); } catch { /* ignore */ }
+          if (audioOnlyStream) { try { audioOnlyStream.getTracks().forEach((t) => t.stop()); } catch { /* ignore */ } }
           recordDestStreamRef.current = null;
           stopRecordingTimers();
           setRecording(false);
           setRecordSeconds(0);
           const blob = new Blob(chunksRef.current, { type: mimeType });
           const ext = mimeType.includes('mp4') ? 'mp4' : 'webm';
-          const file = new File([blob], `story-${Date.now()}.${ext}`, { type: mimeType });
+          const file = new File([blob], 'story-' + Date.now() + '.' + ext, { type: mimeType });
           setDraft({ url: URL.createObjectURL(file), file, type: 'video', durationSeconds: Math.max(1, recordSecondsRef.current) });
           setStage('edit');
         };
@@ -456,10 +454,10 @@ export const StoryStudio: React.FC<StoryStudioProps> = ({
       } catch (err: any) {
         setError(err?.message || 'Could not start recording.');
         setRecording(false);
+        if (recordRafRef.current !== null) { cancelAnimationFrame(recordRafRef.current); recordRafRef.current = null; }
       }
     })();
   };
-
   const stopVideoRecording = () => {
     if (recorderRef.current && recorderRef.current.state !== 'inactive') {
       const rec = recorderRef.current;
