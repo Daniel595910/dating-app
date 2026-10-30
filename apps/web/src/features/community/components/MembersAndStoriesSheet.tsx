@@ -115,6 +115,16 @@ export const MembersAndStoriesSheet: React.FC<MembersAndStoriesSheetProps> = ({
               </button>
 
               {/* Other authors */}
+              {otherStories.length === 0 && !selfStory && (
+                <div className={styles.emptyStoriesHint}>
+                  No stories yet from your connections
+                </div>
+              )}
+              {otherStories.length === 0 && selfStory && (
+                <div className={styles.emptyStoriesHint}>
+                  Only your story is active right now
+                </div>
+              )}
               {otherStories.map((author) => (
                 <button
                   key={author.author_id}

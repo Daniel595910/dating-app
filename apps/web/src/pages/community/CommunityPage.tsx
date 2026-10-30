@@ -42,7 +42,7 @@ export const CommunityPage: React.FC = () => {
   useLocation(); // retain router context
 
   const { user } = useAuthStore();
-  const { ringState: storyRingState, authors: storyAuthors } = useStoryRings(Boolean(user?.id));
+  const { ringState: storyRingState, authors: storyAuthors, refresh: refreshStoryRings } = useStoryRings(Boolean(user?.id));
   const [filter, setFilter] = useState<FeedFilter>('all');
   const [createSheetOpen, setCreateSheetOpen] = useState(false);
   const [commentPostId, setCommentPostId] = useState<string | null>(null);
@@ -462,7 +462,11 @@ export const CommunityPage: React.FC = () => {
         open={storyCreatorOpen}
         onClose={() => setStoryCreatorOpen(false)}
         userId={user?.id || ''}
-        onStoryCreated={() => setStoryViewerOpen(true)}
+        onStoryCreated={() => {
+          refreshStoryRings();
+          setStoryViewerAuthorId(user?.id || null);
+          setStoryViewerOpen(true);
+        }}
       />
 
       <StoryViewer

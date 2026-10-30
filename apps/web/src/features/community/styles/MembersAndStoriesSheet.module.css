@@ -105,6 +105,16 @@
   display: none;
 }
 
+.emptyStoriesHint {
+  display: flex;
+  align-items: center;
+  padding: 0 0.75rem;
+  font-size: 0.75rem;
+  color: var(--color-text-muted, #9ca3af);
+  font-style: italic;
+  white-space: nowrap;
+}
+
 .storyTile {
   display: flex;
   flex-direction: column;
