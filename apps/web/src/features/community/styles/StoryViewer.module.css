@@ -1,43 +1,52 @@
 .overlay {
   position: fixed;
   inset: 0;
-  background-color: #000;
+  background-color: rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
   z-index: 9998;
   display: flex;
-  align-items: stretch;
+  align-items: center;
   justify-content: center;
-  animation: slideInRight 0.3s cubic-bezier(0.32, 0.72, 0, 1);
+  animation: fadeInOverlay 0.2s ease;
 }
 
 .stage {
   position: relative;
-  width: 100%;
-  max-width: 480px;
-  height: 100dvh;
+  width: calc(100% - 1.5rem);
+  max-width: 460px;
+  height: calc(100dvh - 2rem);
+  max-height: calc(100dvh - 2rem);
+  margin: env(safe-area-inset-top) auto env(safe-area-inset-bottom);
+  border-radius: 22px;
+  overflow: hidden;
+  background-color: #000;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.06);
   display: flex;
   flex-direction: column;
-  overflow: hidden;
   color: #fff;
+  animation: slideInCard 0.3s cubic-bezier(0.32, 0.72, 0, 1);
 }
 
 .progressBars {
   display: flex;
-  gap: 3px;
-  padding: calc(0.75rem + env(safe-area-inset-top)) 0.75rem 0.5rem;
+  gap: 4px;
+  padding: 0.75rem 0.75rem 0.5rem;
   flex-shrink: 0;
 }
 
 .progressBar {
   flex: 1;
-  height: 2px;
-  background-color: rgba(255, 255, 255, 0.35);
+  height: 3px;
+  background-color: rgba(255, 255, 255, 0.25);
   border-radius: 9999px;
   overflow: hidden;
 }
 
 .progressFill {
   height: 100%;
-  background-color: #fff;
+  background: linear-gradient(90deg, #ffffff, #e5e7eb);
+  border-radius: 9999px;
   transition: width 0.05s linear;
 }
 
@@ -45,20 +54,20 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0.25rem 0.75rem 0.5rem;
+  padding: 0.25rem 0.875rem 0.625rem;
   flex-shrink: 0;
 }
 
 .headerLeft {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.625rem;
   min-width: 0;
 }
 
 .avatarWrap {
-  width: 32px;
-  height: 32px;
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
   overflow: hidden;
   background-color: rgba(255, 255, 255, 0.15);
@@ -66,6 +75,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 .avatar {
@@ -75,7 +85,7 @@
 }
 
 .avatarFallback {
-  font-size: 0.875rem;
+  font-size: 0.9375rem;
   font-weight: 700;
   color: #fff;
 }
@@ -84,48 +94,61 @@
   display: flex;
   flex-direction: column;
   min-width: 0;
+  gap: 1px;
 }
 
 .name {
-  font-size: 0.875rem;
+  font-size: 0.9375rem;
   font-weight: 600;
   color: #fff;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  letter-spacing: -0.01em;
 }
 
 .time {
   font-size: 0.75rem;
-  color: rgba(255, 255, 255, 0.7);
+  color: rgba(255, 255, 255, 0.65);
 }
 
 .closeBtn {
-  background: none;
-  border: none;
+  background-color: rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
   color: #fff;
   cursor: pointer;
-  padding: 0.375rem;
+  padding: 0.5rem;
   display: flex;
   align-items: center;
   justify-content: center;
-  min-width: 40px;
-  min-height: 40px;
-  border-radius: 9999px;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
   flex-shrink: 0;
+  transition: background-color 0.15s ease, transform 0.12s ease;
 }
 
 .closeBtn:hover {
-  background-color: rgba(255, 255, 255, 0.12);
+  background-color: rgba(0, 0, 0, 0.55);
+  transform: scale(1.05);
+}
+
+.closeBtn:active {
+  transform: scale(0.95);
 }
 
 .mediaWrap {
   position: relative;
   flex: 1;
+  margin: 0 0.5rem;
+  border-radius: 16px;
+  overflow: hidden;
   display: flex;
   align-items: center;
   justify-content: center;
-  overflow: hidden;
+  background-color: #0a0a0a;
 }
 
 .media {
@@ -133,27 +156,30 @@
   max-height: 100%;
   object-fit: contain;
   user-select: none;
+  border-radius: 16px;
 }
 
 .textOverlay {
   position: absolute;
   left: 1rem;
   right: 1rem;
-  bottom: calc(2rem + env(safe-area-inset-bottom));
+  bottom: calc(1.5rem + env(safe-area-inset-bottom));
   color: #fff;
-  font-size: 1rem;
-  font-weight: 500;
+  font-size: 1.0625rem;
+  font-weight: 600;
   text-align: center;
   white-space: pre-wrap;
-  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.85);
+  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.9), 0 0 40px rgba(0, 0, 0, 0.6);
   pointer-events: none;
+  line-height: 1.4;
+  letter-spacing: -0.01em;
 }
 
 .tapPrev,
 .tapNext {
   position: absolute;
-  top: 0;
-  bottom: 0;
+  top: 80px;
+  bottom: 80px;
   background: transparent;
   border: none;
   cursor: pointer;
@@ -165,18 +191,18 @@
 }
 
 .tapPrev {
-  left: 0;
-  width: 30%;
+  left: 0.5rem;
+  width: 25%;
 }
 
 .tapNext {
-  right: 0;
-  width: 30%;
+  right: 0.5rem;
+  width: 25%;
 }
 
 .tapPrev:hover,
 .tapNext:hover {
-  color: rgba(255, 255, 255, 0.5);
+  color: rgba(255, 255, 255, 0.55);
 }
 
 .tapPrev:focus-visible,
@@ -195,22 +221,14 @@
   text-align: center;
 }
 
-@keyframes slideInRight {
-  from { transform: translateX(100%); }
-  to   { transform: translateX(0); }
-}
+/* ---- Toolbar (reply + heart) ---- */
 
 .toolbar {
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 0;
   display: flex;
   align-items: center;
   gap: 0.5rem;
   padding: 0.75rem 0.75rem calc(0.75rem + env(safe-area-inset-bottom));
-  background: linear-gradient(to top, rgba(0,0,0,0.75), rgba(0,0,0,0));
-  z-index: 5;
+  flex-shrink: 0;
 }
 
 .replyWrap {
@@ -219,29 +237,30 @@
   align-items: center;
   gap: 0.375rem;
   min-width: 0;
-  position: relative;
 }
 
 .replyInput {
   flex: 1;
   min-width: 0;
   padding: 0.625rem 0.875rem;
-  background-color: rgba(255,255,255,0.15);
+  background-color: rgba(255, 255, 255, 0.12);
   color: #fff;
-  border: 1px solid rgba(255,255,255,0.3);
+  border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 9999px;
   font-size: 0.875rem;
   outline: none;
-  backdrop-filter: blur(8px);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  transition: border-color 0.15s ease, background-color 0.15s ease;
 }
 
 .replyInput::placeholder {
-  color: rgba(255,255,255,0.65);
+  color: rgba(255, 255, 255, 0.55);
 }
 
 .replyInput:focus {
-  border-color: rgba(255,255,255,0.65);
-  background-color: rgba(255,255,255,0.2);
+  border-color: rgba(255, 255, 255, 0.5);
+  background-color: rgba(255, 255, 255, 0.18);
 }
 
 .replyInput:disabled {
@@ -261,11 +280,16 @@
   cursor: pointer;
   flex-shrink: 0;
   transition: transform 0.12s ease, background-color 0.15s ease;
+  box-shadow: 0 4px 14px rgba(239, 68, 68, 0.4);
 }
 
 .sendBtn:hover:not(:disabled) {
   background-color: #dc2626;
   transform: scale(1.05);
+}
+
+.sendBtn:active:not(:disabled) {
+  transform: scale(0.95);
 }
 
 .sendBtn:disabled {
@@ -293,11 +317,12 @@
 }
 
 .heartBtn:active {
-  transform: scale(0.9);
+  transform: scale(0.88);
 }
 
 .heartBtnLiked {
   color: #ef4444;
+  filter: drop-shadow(0 0 6px rgba(239, 68, 68, 0.5));
 }
 
 .selfFooter {
@@ -315,10 +340,12 @@
   font-size: 0.875rem;
   font-weight: 600;
   color: #ef4444;
-  padding: 0.375rem 0.875rem;
-  background-color: rgba(255,255,255,0.12);
+  padding: 0.4375rem 0.9375rem;
+  background-color: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.15);
   border-radius: 9999px;
-  backdrop-filter: blur(8px);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
 }
 
 .toast {
@@ -326,7 +353,7 @@
   left: 50%;
   bottom: calc(5rem + env(safe-area-inset-bottom));
   transform: translateX(-50%);
-  background-color: rgba(0,0,0,0.85);
+  background-color: rgba(0, 0, 0, 0.9);
   color: #fff;
   padding: 0.5rem 1rem;
   border-radius: 9999px;
@@ -335,6 +362,147 @@
   pointer-events: none;
   animation: fadeInToast 0.2s ease;
   z-index: 10;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* ---- Tap / focus polish ---- */
+.stage button,
+.stage input,
+.stage textarea {
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+  outline: none;
+}
+
+.stage button:focus-visible,
+.stage input:focus-visible,
+.stage textarea:focus-visible {
+  outline: 2px solid rgba(255, 255, 255, 0.55);
+  outline-offset: 2px;
+}
+
+.stage input::-moz-focus-inner {
+  border: 0;
+}
+
+/* ---- Author controls (own story) ---- */
+.authorControls {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  flex-shrink: 0;
+  position: relative;
+}
+
+.menuPopover {
+  position: absolute;
+  top: calc(100% + 0.5rem);
+  right: 0.875rem;
+  min-width: 190px;
+  background-color: rgba(20, 20, 22, 0.96);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 14px;
+  padding: 6px;
+  z-index: 20;
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.6);
+  animation: popIn 0.14s ease-out;
+}
+
+.menuItem {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  width: 100%;
+  padding: 0.625rem 0.75rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #fff;
+  font-size: 0.875rem;
+  font-weight: 500;
+  border-radius: 8px;
+  text-align: left;
+  transition: background-color 0.12s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.menuItem:hover {
+  background-color: rgba(255, 255, 255, 0.08);
+}
+
+.menuItemDanger {
+  color: #f87171;
+}
+
+.menuItemDanger:hover {
+  background-color: rgba(239, 68, 68, 0.12);
+}
+
+.confirmBox {
+  padding: 0.5rem 0.75rem 0.75rem;
+}
+
+.confirmText {
+  margin: 0 0 0.75rem;
+  color: #fff;
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-align: center;
+}
+
+.confirmActions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.confirmBtn {
+  flex: 1;
+  padding: 0.5rem 0.75rem;
+  border-radius: 9999px;
+  background-color: rgba(255, 255, 255, 0.1);
+  color: #fff;
+  border: none;
+  cursor: pointer;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  -webkit-tap-highlight-color: transparent;
+  transition: background-color 0.12s ease;
+}
+
+.confirmBtn:hover:not(:disabled) {
+  background-color: rgba(255, 255, 255, 0.18);
+}
+
+.confirmBtnDanger {
+  background-color: #ef4444;
+}
+
+.confirmBtnDanger:hover:not(:disabled) {
+  background-color: #dc2626;
+}
+
+.confirmBtn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+@keyframes popIn {
+  from { opacity: 0; transform: translateY(-4px) scale(0.96); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes fadeInOverlay {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes slideInCard {
+  from { transform: translateY(20px) scale(0.98); opacity: 0; }
+  to   { transform: translateY(0) scale(1); opacity: 1; }
 }
 
 @keyframes fadeInToast {

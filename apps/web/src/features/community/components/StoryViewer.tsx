@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { X, ChevronLeft, ChevronRight, Heart, Send } from 'lucide-react';
+import { X, ChevronLeft, ChevronRight, Heart, Send, MoreVertical, Trash2, Share2 } from 'lucide-react';
 import { supabase } from '@/config/supabase.client';
 import styles from '../styles/StoryViewer.module.css';
 
@@ -34,6 +34,7 @@ interface StoryViewerProps {
 
 const IMAGE_DURATION_MS = 5000;
 const TICK_MS = 50;
+const LONG_PRESS_DELAY_MS = 120;
 
 function timeAgo(iso: string): string {
   const diff = Date.now() - new Date(iso).getTime();
@@ -46,7 +47,12 @@ function timeAgo(iso: string): string {
   return `${days}d ago`;
 }
 
-export const StoryViewer: React.FC<StoryViewerProps> = ({ open, onClose, initialAuthorId, initialStoryId }) => {
+export const StoryViewer: React.FC<StoryViewerProps> = ({
+  open,
+  onClose,
+  initialAuthorId,
+  initialStoryId,
+}) => {
   const [authors, setAuthors] = useState<StoryAuthor[]>([]);
   const [authorIdx, setAuthorIdx] = useState(0);
   const [storyIdx, setStoryIdx] = useState(0);
@@ -58,18 +64,22 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ open, onClose, initial
   const [replySending, setReplySending] = useState(false);
   const [replyToast, setReplyToast] = useState<string | null>(null);
   const [inputFocused, setInputFocused] = useState(false);
+  const [holdingPause, setHoldingPause] = useState(false);
 
-  // Optimistic heart state: storyId -> { liked, count }
+  const [ownMenuOpen, setOwnMenuOpen] = useState(false);
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+
   const [likeOverrides, setLikeOverrides] = useState<Record<string, { liked: boolean; count: number }>>({});
 
   const touchStartY = useRef<number | null>(null);
   const replyInputRef = useRef<HTMLInputElement | null>(null);
+  const longPressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const currentAuthor = authors[authorIdx];
   const currentStory = currentAuthor?.stories[storyIdx];
 
-  // Effective paused state — either explicitly paused OR reply input focused
-  const paused = inputFocused;
+  const paused = inputFocused || holdingPause;
 
   // Reset on open
   useEffect(() => {
@@ -82,6 +92,10 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ open, onClose, initial
     setReplySending(false);
     setReplyToast(null);
     setInputFocused(false);
+    setHoldingPause(false);
+    setOwnMenuOpen(false);
+    setDeleteConfirmOpen(false);
+    setDeleting(false);
     setLikeOverrides({});
   }, [open]);
 
@@ -99,20 +113,19 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ open, onClose, initial
         const list: StoryAuthor[] = typeof raw === 'string' ? JSON.parse(raw) : ((raw as StoryAuthor[]) || []);
         setAuthors(list);
 
-        if (initialAuthorId) {
-          const idx = list.findIndex((a) => a.author_id === initialAuthorId);
-          if (idx >= 0) setAuthorIdx(idx);
-        }
-
         if (initialStoryId) {
           for (let ai = 0; ai < list.length; ai++) {
             const si = list[ai].stories.findIndex((s) => s.id === initialStoryId);
             if (si >= 0) {
               setAuthorIdx(ai);
               setStoryIdx(si);
-              break;
+              return;
             }
           }
+        }
+        if (initialAuthorId) {
+          const idx = list.findIndex((a) => a.author_id === initialAuthorId);
+          if (idx >= 0) setAuthorIdx(idx);
         }
       } catch (err: any) {
         if (cancelled) return;
@@ -130,6 +143,8 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ open, onClose, initial
     if (!currentAuthor) return;
     setReplyText('');
     setReplyToast(null);
+    setOwnMenuOpen(false);
+    setDeleteConfirmOpen(false);
     if (storyIdx < currentAuthor.stories.length - 1) {
       setStoryIdx((i) => i + 1);
       setProgress(0);
@@ -146,6 +161,8 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ open, onClose, initial
     if (!currentAuthor) return;
     setReplyText('');
     setReplyToast(null);
+    setOwnMenuOpen(false);
+    setDeleteConfirmOpen(false);
     if (storyIdx > 0) {
       setStoryIdx((i) => i - 1);
       setProgress(0);
@@ -156,7 +173,6 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ open, onClose, initial
     }
   }, [authorIdx, currentAuthor, storyIdx]);
 
-  // Reset progress on story change
   useEffect(() => {
     setProgress(0);
   }, [authorIdx, storyIdx]);
@@ -187,7 +203,7 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ open, onClose, initial
     return () => window.clearInterval(timer);
   }, [open, currentStory, paused, authorIdx, storyIdx]);
 
-  // Auto-advance when full
+  // Auto-advance
   useEffect(() => {
     if (!open) return;
     if (progress < 100) return;
@@ -207,6 +223,33 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ open, onClose, initial
     return () => window.removeEventListener('keydown', onKey);
   }, [open, onClose, goNext, goPrev]);
 
+  // Long-press-to-pause
+  const handlePointerDown = (e: React.PointerEvent) => {
+    const target = e.target as HTMLElement;
+    // Ignore taps on interactive controls
+    if (target.closest('button') || target.closest('input') || target.closest('[role="button"]')) {
+      return;
+    }
+    if (longPressTimerRef.current) clearTimeout(longPressTimerRef.current);
+    longPressTimerRef.current = setTimeout(() => {
+      setHoldingPause(true);
+    }, LONG_PRESS_DELAY_MS);
+  };
+
+  const handlePointerUp = () => {
+    if (longPressTimerRef.current) {
+      clearTimeout(longPressTimerRef.current);
+      longPressTimerRef.current = null;
+    }
+    setHoldingPause(false);
+  };
+
+  useEffect(() => {
+    return () => {
+      if (longPressTimerRef.current) clearTimeout(longPressTimerRef.current);
+    };
+  }, []);
+
   // Heart toggle
   const handleHeart = async () => {
     if (!currentStory || currentAuthor?.is_self) return;
@@ -219,7 +262,6 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ open, onClose, initial
     const nextLiked = !current.liked;
     const nextCount = Math.max(0, current.count + (nextLiked ? 1 : -1));
 
-    // Optimistic
     setLikeOverrides((prev) => ({ ...prev, [storyId]: { liked: nextLiked, count: nextCount } }));
 
     try {
@@ -228,7 +270,6 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ open, onClose, initial
       if (e) throw e;
     } catch (err: any) {
       console.warn('Heart toggle failed:', err?.message || err);
-      // Revert
       setLikeOverrides((prev) => ({ ...prev, [storyId]: current }));
     }
   };
@@ -266,6 +307,78 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ open, onClose, initial
     }
   };
 
+  // Delete current story (own stories only)
+  const handleDeleteCurrentStory = async () => {
+    if (!currentStory || !currentAuthor?.is_self || deleting) return;
+    setDeleting(true);
+
+    try {
+      const { error: e } = await supabase
+        .from('stories')
+        .delete()
+        .eq('id', currentStory.id);
+
+      if (e) throw e;
+
+      // Local cleanup + advance
+      const totalBefore = currentAuthor.stories.length;
+      setAuthors((prev) =>
+        prev.map((a, i) => {
+          if (i !== authorIdx) return a;
+          return { ...a, stories: a.stories.filter((s) => s.id !== currentStory.id) };
+        })
+      );
+
+      setOwnMenuOpen(false);
+      setDeleteConfirmOpen(false);
+
+      if (totalBefore <= 1) {
+        if (authorIdx < authors.length - 1) {
+          setAuthorIdx((i) => i + 1);
+          setStoryIdx(0);
+        } else {
+          onClose();
+        }
+      } else if (storyIdx >= totalBefore - 1) {
+        setStoryIdx(storyIdx - 1);
+      }
+      setProgress(0);
+      setReplyToast('Story deleted');
+      setTimeout(() => setReplyToast(null), 1500);
+    } catch (err: any) {
+      console.warn('Delete story failed:', err?.message || err);
+      setReplyToast('Delete failed');
+      setTimeout(() => setReplyToast(null), 2000);
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  // Share current story (Web Share API with clipboard fallback)
+  const handleShareCurrentStory = async () => {
+    if (!currentStory) return;
+    const url = currentStory.media_url;
+    const title = `${currentAuthor?.author_name || 'Story'} on Spensive`;
+
+    try {
+      if (typeof navigator !== 'undefined' && (navigator as any).share) {
+        await (navigator as any).share({ title, url });
+        setReplyToast('Shared');
+        setTimeout(() => setReplyToast(null), 1200);
+      } else if (typeof navigator !== 'undefined' && navigator.clipboard) {
+        await navigator.clipboard.writeText(url);
+        setReplyToast('Link copied');
+        setTimeout(() => setReplyToast(null), 1500);
+      }
+    } catch (err: any) {
+      if (err?.name !== 'AbortError') {
+        console.warn('Share failed:', err?.message || err);
+      }
+    } finally {
+      setOwnMenuOpen(false);
+    }
+  };
+
   if (!open) return null;
 
   const hasAuthors = authors.length > 0;
@@ -290,7 +403,14 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ open, onClose, initial
       }}
       onTouchEnd={() => { touchStartY.current = null; }}
     >
-      <div className={styles.stage} onClick={(e) => e.stopPropagation()}>
+      <div
+        className={styles.stage}
+        onClick={(e) => e.stopPropagation()}
+        onPointerDown={handlePointerDown}
+        onPointerUp={handlePointerUp}
+        onPointerCancel={handlePointerUp}
+        onPointerLeave={handlePointerUp}
+      >
         {hasStory && (
           <div className={styles.progressBars}>
             {currentAuthor.stories.map((s, i) => (
@@ -326,13 +446,68 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ open, onClose, initial
                 <span className={styles.time}>{timeAgo(currentStory.created_at)}</span>
               </div>
             </div>
-            <button
-              onClick={onClose}
-              aria-label="Close"
-              className={styles.closeBtn}
-            >
-              <X size={22} />
-            </button>
+            <div className={styles.authorControls}>
+              {isSelfStory && (
+                <button
+                  onClick={() => setOwnMenuOpen((v) => !v)}
+                  aria-label="Story options"
+                  className={styles.closeBtn}
+                  disabled={deleting}
+                >
+                  <MoreVertical size={18} />
+                </button>
+              )}
+              <button
+                onClick={onClose}
+                aria-label="Close"
+                className={styles.closeBtn}
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            {ownMenuOpen && isSelfStory && (
+              <div className={styles.menuPopover} onClick={(e) => e.stopPropagation()}>
+                {!deleteConfirmOpen ? (
+                  <>
+                    <button
+                      className={styles.menuItem}
+                      onClick={handleShareCurrentStory}
+                    >
+                      <Share2 size={16} />
+                      Share story
+                    </button>
+                    <button
+                      className={`${styles.menuItem} ${styles.menuItemDanger}`}
+                      onClick={() => setDeleteConfirmOpen(true)}
+                    >
+                      <Trash2 size={16} />
+                      Delete story
+                    </button>
+                  </>
+                ) : (
+                  <div className={styles.confirmBox}>
+                    <p className={styles.confirmText}>Delete this story?</p>
+                    <div className={styles.confirmActions}>
+                      <button
+                        className={styles.confirmBtn}
+                        onClick={() => setDeleteConfirmOpen(false)}
+                        disabled={deleting}
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        className={`${styles.confirmBtn} ${styles.confirmBtnDanger}`}
+                        onClick={handleDeleteCurrentStory}
+                        disabled={deleting}
+                      >
+                        {deleting ? 'Deleting…' : 'Delete'}
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         )}
 
