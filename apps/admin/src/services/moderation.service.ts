@@ -1,4 +1,4 @@
-﻿import { supabase } from '@/config/supabase.client';
+import { supabase } from '@/config/supabase.client';
 import { auditService } from './audit.service';
 
 export type ReportStatus = 'pending' | 'under_review' | 'resolved' | 'dismissed' | 'escalated';
@@ -210,39 +210,38 @@ class ModerationService {
     if (action === 'hide_content' || action === 'delete_content') {
       if (targetType === 'post' && report.target_id) {
         try {
-          const updates = action === 'delete_content'
-            ? { is_deleted: true, deleted_at: new Date().toISOString() }
-            : { is_hidden: true, hidden_at: new Date().toISOString() };
-
-          await supabase.from('posts').update(updates).eq('id', report.target_id);
+          const rpc = action === 'delete_content' ? 'admin_delete_post' : 'admin_hide_post';
+          const args = action === 'delete_content'
+            ? { p_post_id: report.target_id }
+            : { p_post_id: report.target_id, p_hidden: true };
+          const { error: rpcErr } = await supabase.rpc(rpc, args);
+          if (rpcErr) throw rpcErr;
         } catch (err) {
-          console.warn('Failed to update post:', err);
+          console.warn('Failed to update post via RPC:', err);
         }
       } else if (targetType === 'comment' && report.target_id) {
         try {
-          const updates = action === 'delete_content'
-            ? { is_deleted: true, deleted_at: new Date().toISOString() }
-            : { is_hidden: true, hidden_at: new Date().toISOString() };
-
-          await supabase.from('comments').update(updates).eq('id', report.target_id);
+          const rpc = action === 'delete_content' ? 'admin_delete_comment' : 'admin_hide_comment';
+          const args = action === 'delete_content'
+            ? { p_comment_id: report.target_id }
+            : { p_comment_id: report.target_id, p_hidden: true };
+          const { error: rpcErr } = await supabase.rpc(rpc, args);
+          if (rpcErr) throw rpcErr;
         } catch (err) {
-          console.warn('Failed to update comment:', err);
+          console.warn('Failed to update comment via RPC:', err);
         }
       }
     }
 
     if (action === 'ban_user' && report.reported_user_id) {
       try {
-        await supabase
-          .from('profiles')
-          .update({
-            is_banned: true,
-            ban_reason: notes || 'Violation of community guidelines',
-            banned_at: new Date().toISOString(),
-          })
-          .eq('user_id', report.reported_user_id);
+        const { error: rpcErr } = await supabase.rpc('admin_ban_user', {
+          p_user_id: report.reported_user_id,
+          p_reason: notes || 'Violation of community guidelines',
+        });
+        if (rpcErr) throw rpcErr;
       } catch (err) {
-        console.warn('Failed to ban user:', err);
+        console.warn('Failed to ban user via RPC:', err);
       }
     }
 
