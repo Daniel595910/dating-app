@@ -1515,6 +1515,16 @@
   background-color: var(--color-surface-raised, #ffffff);
 }
 
+.storyReplyChip {
+  -webkit-tap-highlight-color: transparent;
+  outline: none;
+}
+
+.storyReplyChip:focus-visible {
+  outline: 2px solid var(--color-primary, #ef4444);
+  outline-offset: 2px;
+}
+
 .storyReplyChip:disabled {
   opacity: 0.65;
   cursor: default;
