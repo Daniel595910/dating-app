@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ArrowLeft, Camera, Image as ImageIcon, Video, RefreshCw,
-  Loader2, Sparkles, Type, Square, Circle,
+  Loader2, Zap, ZapOff, Type, Square,
 } from 'lucide-react';
 import { supabase } from '@/config/supabase.client';
 import { mediaService } from '../services/media.service';
@@ -59,6 +59,8 @@ export const StoryStudio: React.FC<StoryStudioProps> = ({
   const [progress, setProgress] = useState(0);
 
   const [cameraState, setCameraState] = useState<'idle' | 'loading' | 'ready' | 'error'>('idle');
+  const [torchSupported, setTorchSupported] = useState(false);
+  const [torchOn, setTorchOn] = useState(false);
   const [lastPickedThumb, setLastPickedThumb] = useState<string | null>(null);
   const [cameraError, setCameraError] = useState<string>('');
   const [recording, setRecording] = useState(false);
@@ -100,10 +102,19 @@ export const StoryStudio: React.FC<StoryStudioProps> = ({
           facingMode: mode === 'environment' ? { ideal: 'environment' } : 'user',
           width: { ideal: 1080 },
           height: { ideal: 1920 },
+          aspectRatio: { ideal: 9 / 16 },
+          frameRate: { ideal: 30 },
         },
         audio: false,
       });
       streamRef.current = stream;
+      // Inspect track capabilities for torch + log actual resolution
+      const track = stream.getVideoTracks()[0];
+      const caps = track?.getCapabilities?.() as MediaTrackCapabilities & { torch?: boolean };
+      setTorchSupported(Boolean(caps?.torch));
+      setTorchOn(false);
+      const settings = track?.getSettings?.();
+      console.info('[camera] actual', { w: settings?.width, h: settings?.height, fps: settings?.frameRate, torch: caps?.torch });
       setCameraState('ready');
     } catch (err: any) {
       const name = err?.name || '';
@@ -288,6 +299,8 @@ export const StoryStudio: React.FC<StoryStudioProps> = ({
             facingMode: facing === 'environment' ? { ideal: 'environment' } : 'user',
             width: { ideal: 1080 },
             height: { ideal: 1920 },
+            aspectRatio: { ideal: 9 / 16 },
+            frameRate: { ideal: 30 },
           },
           audio: true,
         });
@@ -359,6 +372,20 @@ export const StoryStudio: React.FC<StoryStudioProps> = ({
     const next = facing === 'environment' ? 'user' : 'environment';
     setFacing(next);
     await startCamera(next);
+  };
+
+  const toggleTorch = async () => {
+    const track = streamRef.current?.getVideoTracks()[0];
+    if (!track) return;
+    const caps = track.getCapabilities?.() as MediaTrackCapabilities & { torch?: boolean };
+    if (!caps?.torch) return;
+    const next = !torchOn;
+    try {
+      await track.applyConstraints({ advanced: [{ torch: next } as any] });
+      setTorchOn(next);
+    } catch (err) {
+      console.warn('[torch] failed', err);
+    }
   };
 
   const resetToCapture = () => {
@@ -453,11 +480,13 @@ export const StoryStudio: React.FC<StoryStudioProps> = ({
           </div>
 
           <button
-            className={styles.iconBtn}
-            disabled
-            aria-label="Grid overlay (coming soon)"
+            className={`${styles.iconBtn} ${torchOn ? styles.iconBtnActive : ''}`}
+            onClick={toggleTorch}
+            disabled={!torchSupported || cameraState !== 'ready' || recording}
+            aria-label={torchOn ? 'Turn off flash' : 'Turn on flash'}
+            title={torchSupported ? (torchOn ? 'Turn off flash' : 'Turn on flash') : 'Flash not available on this device'}
           >
-            <Sparkles size={18} />
+            {torchOn ? <Zap size={18} fill="currentColor" /> : <ZapOff size={18} />}
           </button>
         </div>
 
@@ -586,13 +615,9 @@ export const StoryStudio: React.FC<StoryStudioProps> = ({
                 onClick={handleShutter}
                 aria-label={mode === 'video' && recording ? 'Stop recording' : 'Capture'}
               >
-                <div className={styles.shutterInner}>
-                  {mode === 'video' && recording ? (
-                    <Square size={26} fill="#fff" color="#fff" />
-                  ) : mode === 'video' ? (
-                    <Video size={26} />
-                  ) : (
-                    <Circle size={26} fill="#fff" color="#fff" />
+                <div className={styles.shutterInner} aria-hidden="true">
+                  {mode === 'video' && recording && (
+                    <Square size={28} fill="#fff" color="#fff" />
                   )}
                 </div>
               </button>
