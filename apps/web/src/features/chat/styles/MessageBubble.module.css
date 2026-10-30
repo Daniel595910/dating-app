@@ -1509,6 +1509,8 @@
   max-width: 100%;
   min-width: 0;
   transition: background-color 0.15s ease;
+  -webkit-tap-highlight-color: transparent;
+  outline: none;
 }
 
 .storyReplyChip:hover:not(:disabled) {
