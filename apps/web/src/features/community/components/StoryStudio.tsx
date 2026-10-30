@@ -73,10 +73,18 @@ export const StoryStudio: React.FC<StoryStudioProps> = ({
   const [cameraError, setCameraError] = useState<string>('');
   const [recording, setRecording] = useState(false);
   const [recordSeconds, setRecordSeconds] = useState(0);
+  const [trimStart, setTrimStart] = useState(0);
+  const [trimEnd, setTrimEnd] = useState(0);
+  const [filterId, setFilterId] = useState<'normal'|'warm'|'cool'|'bw'|'vivid'|'fade'>('normal');
+  const [speed, setSpeed] = useState(1);
+  const [previewVideoRef, setPreviewVideoRef] = useState<HTMLVideoElement | null>(null);
 
   const imageInputRef = useRef<HTMLInputElement>(null);
   const videoInputRef = useRef<HTMLInputElement>(null);
   const videoPreviewRef = useRef<HTMLVideoElement>(null);
+  const recordCanvasRef = useRef<HTMLCanvasElement | null>(null);
+  const recordRafRef = useRef<number | null>(null);
+  const recordDestStreamRef = useRef<MediaStream | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const recorderRef = useRef<MediaRecorder | null>(null);
   const recordSecondsRef = useRef(0);
@@ -108,9 +116,10 @@ export const StoryStudio: React.FC<StoryStudioProps> = ({
       const stream = await navigator.mediaDevices.getUserMedia({
         video: {
           facingMode: mode === 'environment' ? { ideal: 'environment' } : 'user',
-          width: { ideal: 1080 },
-          height: { ideal: 1920 },
-          aspectRatio: { ideal: 9 / 16 },
+          width: { ideal: 1920 },
+          height: { ideal: 1080 },
+          zoom: { ideal: 1 },
+          focusMode: { ideal: 'continuous' },
           frameRate: { ideal: 30 },
         },
         audio: false,
@@ -286,21 +295,45 @@ export const StoryStudio: React.FC<StoryStudioProps> = ({
       setError('Camera not ready yet. Try again.');
       return;
     }
+
+    // Portrait-locked canvas: 1080x1920, center-cropped from the landscape sensor
+    const TARGET_W = 1080;
+    const TARGET_H = 1920;
     const canvas = document.createElement('canvas');
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
+    canvas.width = TARGET_W;
+    canvas.height = TARGET_H;
     const ctx = canvas.getContext('2d');
     if (!ctx) { setError('Capture failed.'); return; }
-    // Mirror front-camera capture
+
+    // Center-crop math: fit the landscape source into a portrait target
+    const srcW = video.videoWidth;
+    const srcH = video.videoHeight;
+    const targetAspect = TARGET_W / TARGET_H;
+    const srcAspect = srcW / srcH;
+    let cropW, cropH, cropX, cropY;
+    if (srcAspect > targetAspect) {
+      // Source is wider than target — crop sides
+      cropH = srcH;
+      cropW = srcH * targetAspect;
+      cropX = (srcW - cropW) / 2;
+      cropY = 0;
+    } else {
+      // Source is taller than target — crop top/bottom
+      cropW = srcW;
+      cropH = srcW / targetAspect;
+      cropX = 0;
+      cropY = (srcH - cropH) / 2;
+    }
+
     if (facing === 'user') {
-      ctx.translate(canvas.width, 0);
+      ctx.translate(TARGET_W, 0);
       ctx.scale(-1, 1);
     }
-    ctx.drawImage(video, 0, 0);
+    ctx.drawImage(video, cropX, cropY, cropW, cropH, 0, 0, TARGET_W, TARGET_H);
+
     canvas.toBlob((blob) => {
       if (!blob) { setError('Capture failed.'); return; }
-      const ext = blob.type.includes('png') ? 'png' : 'jpg';
-      const file = new File([blob], `story-${Date.now()}.${ext}`, { type: blob.type || 'image/jpeg' });
+      const file = new File([blob], `story-${Date.now()}.jpg`, { type: 'image/jpeg' });
       stopStream();
       handleImage(file);
     }, 'image/jpeg', 0.92);
@@ -312,40 +345,86 @@ export const StoryStudio: React.FC<StoryStudioProps> = ({
     const mimeType = pickVideoMimeType();
     if (!mimeType) { setError('Video recording not supported in this browser.'); return; }
 
-    // Need audio too for video — request a new stream with audio
     (async () => {
       try {
         stopStream();
-        const stream = await navigator.mediaDevices.getUserMedia({
+        const sourceStream = await navigator.mediaDevices.getUserMedia({
           video: {
             facingMode: facing === 'environment' ? { ideal: 'environment' } : 'user',
-            width: { ideal: 1080 },
-            height: { ideal: 1920 },
-            aspectRatio: { ideal: 9 / 16 },
+            width: { ideal: 1920 },
+            height: { ideal: 1080 },
+            zoom: { ideal: 1 },
+            focusMode: { ideal: 'continuous' },
             frameRate: { ideal: 30 },
           },
           audio: true,
         });
-        streamRef.current = stream;
-        if (videoPreviewRef.current) {
-          videoPreviewRef.current.srcObject = stream;
-          videoPreviewRef.current.play().catch(() => {});
-        }
-        setCameraState('ready');
+
+        // Hidden source video — plays the camera feed for the canvas loop
+        const srcVideo = document.createElement('video');
+        srcVideo.srcObject = sourceStream;
+        srcVideo.muted = true;
+        srcVideo.playsInline = true;
+        await srcVideo.play().catch(() => {});
+
+        // Portrait-locked canvas 1080x1920
+        const canvas = document.createElement('canvas');
+        canvas.width = 1080;
+        canvas.height = 1920;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) { setError('Canvas unavailable.'); return; }
+        recordCanvasRef.current = canvas;
+
+        const drawFrame = () => {
+          if (!srcVideo.videoWidth || !srcVideo.videoHeight) {
+            recordRafRef.current = requestAnimationFrame(drawFrame);
+            return;
+          }
+          const srcW = srcVideo.videoWidth;
+          const srcH = srcVideo.videoHeight;
+          const targetAspect = 1080 / 1920;
+          const srcAspect = srcW / srcH;
+          let cropW, cropH, cropX, cropY;
+          if (srcAspect > targetAspect) {
+            cropH = srcH; cropW = srcH * targetAspect; cropX = (srcW - cropW) / 2; cropY = 0;
+          } else {
+            cropW = srcW; cropH = srcW / targetAspect; cropX = 0; cropY = (srcH - cropH) / 2;
+          }
+          if (facing === 'user') {
+            ctx.save();
+            ctx.translate(1080, 0);
+            ctx.scale(-1, 1);
+            ctx.drawImage(srcVideo, cropX, cropY, cropW, cropH, 0, 0, 1080, 1920);
+            ctx.restore();
+          } else {
+            ctx.drawImage(srcVideo, cropX, cropY, cropW, cropH, 0, 0, 1080, 1920);
+          }
+          recordRafRef.current = requestAnimationFrame(drawFrame);
+        };
+        recordRafRef.current = requestAnimationFrame(drawFrame);
+
+        // Capture the canvas as a stream; mix in the original audio track
+        const canvasStream = canvas.captureStream(30);
+        const audioTrack = sourceStream.getAudioTracks()[0];
+        if (audioTrack) canvasStream.addTrack(audioTrack);
+        recordDestStreamRef.current = canvasStream;
+        streamRef.current = sourceStream;
 
         chunksRef.current = [];
-        const rec = new MediaRecorder(stream, { mimeType });
+        const rec = new MediaRecorder(canvasStream, { mimeType });
         recorderRef.current = rec;
         rec.ondataavailable = (e) => { if (e.data.size > 0) chunksRef.current.push(e.data); };
         rec.onstop = () => {
-          const blob = new Blob(chunksRef.current, { type: mimeType });
-          const ext = mimeType.includes('mp4') ? 'mp4' : 'webm';
-          const file = new File([blob], `story-${Date.now()}.${ext}`, { type: mimeType });
+          if (recordRafRef.current !== null) { cancelAnimationFrame(recordRafRef.current); recordRafRef.current = null; }
+          sourceStream.getTracks().forEach((t) => { try { t.stop(); } catch {} });
+          canvasStream.getTracks().forEach((t) => { try { t.stop(); } catch {} });
+          recordDestStreamRef.current = null;
           stopRecordingTimers();
           setRecording(false);
           setRecordSeconds(0);
-          stopStream();
-          // Use actual recorded duration
+          const blob = new Blob(chunksRef.current, { type: mimeType });
+          const ext = mimeType.includes('mp4') ? 'mp4' : 'webm';
+          const file = new File([blob], `story-${Date.now()}.${ext}`, { type: mimeType });
           setDraft({ url: URL.createObjectURL(file), file, type: 'video', durationSeconds: Math.max(1, recordSecondsRef.current) });
           setStage('edit');
         };
@@ -353,6 +432,7 @@ export const StoryStudio: React.FC<StoryStudioProps> = ({
 
         setRecording(true);
         setRecordSeconds(0);
+        recordSecondsRef.current = 0;
         recordTimerRef.current = setInterval(() => {
           setRecordSeconds((s) => s + 1);
           recordSecondsRef.current = recordSecondsRef.current + 1;
@@ -450,6 +530,12 @@ export const StoryStudio: React.FC<StoryStudioProps> = ({
         media_type: draft.type,
         text_overlay: textOverlay.trim() || null,
         duration_seconds: draft.durationSeconds,
+        metadata: {
+          filter: filterId,
+          speed,
+          trim_start: 0,
+          trim_end: draft.durationSeconds || 0,
+        },
       });
 
       if (insertErr) {
@@ -665,7 +751,7 @@ export const StoryStudio: React.FC<StoryStudioProps> = ({
         )}
 
         {stage === 'edit' && (
-          <div className={styles.publishBar}>
+          <div className={styles.editBar}>
             <button
               className={styles.cancelBtn}
               onClick={resetToCapture}
@@ -673,12 +759,31 @@ export const StoryStudio: React.FC<StoryStudioProps> = ({
             >
               Cancel
             </button>
+            <div className={styles.editToolsInline}>
+              <button
+                type="button"
+                className={styles.editToolBtn}
+                onClick={() => setShowTextPanel(true)}
+                aria-label="Add text"
+              >
+                <Type size={18} />
+              </button>
+              <button
+                type="button"
+                className={styles.editToolBtn}
+                disabled
+                aria-label="Speed (coming soon)"
+                title="Speed — coming soon"
+              >
+                <span className={styles.speedLabel}>{speed}x</span>
+              </button>
+            </div>
             <button
               className={styles.publishBtn}
               onClick={() => { setShowTextPanel(false); setStage('preview'); }}
               disabled={uploading}
             >
-              Preview
+              Next
             </button>
           </div>
         )}

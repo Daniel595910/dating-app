@@ -573,3 +573,55 @@
 .iconBtnActive:hover:not(:disabled) {
   background-color: rgba(251, 191, 36, 0.32);
 }
+
+/* ---- Phase C: TikTok-style edit screen ---- */
+.editBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1rem calc(0.75rem + env(safe-area-inset-bottom));
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+
+.editToolsInline {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+.editToolBtn {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background-color: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: background-color 0.15s ease, transform 0.1s ease;
+}
+
+.editToolBtn:hover:not(:disabled) {
+  background-color: rgba(255, 255, 255, 0.18);
+}
+
+.editToolBtn:active:not(:disabled) {
+  transform: scale(0.94);
+}
+
+.editToolBtn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.speedLabel {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #fff;
+}
