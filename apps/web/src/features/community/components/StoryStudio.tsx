@@ -30,12 +30,20 @@ const MAX_OVERLAY_CHARS = 140;
 
 function pickVideoMimeType(): string {
   if (typeof MediaRecorder === 'undefined') return '';
-  const candidates = [
-    'video/mp4',
-    'video/webm;codecs=vp9',
-    'video/webm;codecs=vp8',
-    'video/webm',
-  ];
+
+  // Platform detection: iOS records mp4 (WebKit only), Android records webm (reliable)
+  const isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent) ||
+                (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+
+  const candidates = isIOS
+    ? ['video/mp4']
+    : [
+        'video/webm;codecs=vp9',
+        'video/webm;codecs=vp8',
+        'video/webm',
+        'video/mp4',
+      ];
+
   for (const t of candidates) {
     try { if (MediaRecorder.isTypeSupported(t)) return t; } catch { /* ignore */ }
   }
@@ -110,11 +118,25 @@ export const StoryStudio: React.FC<StoryStudioProps> = ({
       streamRef.current = stream;
       // Inspect track capabilities for torch + log actual resolution
       const track = stream.getVideoTracks()[0];
-      const caps = track?.getCapabilities?.() as MediaTrackCapabilities & { torch?: boolean };
-      setTorchSupported(Boolean(caps?.torch));
+      const caps = (track?.getCapabilities?.() || {}) as any;
+      const settings = track?.getSettings?.() || {};
+      console.info('[camera] actual', { w: settings.width, h: settings.height, fps: settings.frameRate, torch: caps.torch });
+
+      // Torch detection — skip on iOS (Apple does not expose torch to WebKit)
+      const isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent) ||
+                    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+      let torchOk = false;
+      if (!isIOS && mode === 'environment' && track) {
+        try {
+          // Try a no-op torch constraint — if it succeeds, torch is possible
+          await track.applyConstraints({ advanced: [{ torch: false } as any] });
+          torchOk = true;
+        } catch {
+          torchOk = false;
+        }
+      }
+      setTorchSupported(torchOk);
       setTorchOn(false);
-      const settings = track?.getSettings?.();
-      console.info('[camera] actual', { w: settings?.width, h: settings?.height, fps: settings?.frameRate, torch: caps?.torch });
       setCameraState('ready');
     } catch (err: any) {
       const name = err?.name || '';
@@ -377,14 +399,18 @@ export const StoryStudio: React.FC<StoryStudioProps> = ({
   const toggleTorch = async () => {
     const track = streamRef.current?.getVideoTracks()[0];
     if (!track) return;
-    const caps = track.getCapabilities?.() as MediaTrackCapabilities & { torch?: boolean };
-    if (!caps?.torch) return;
     const next = !torchOn;
+    try {
+      await track.applyConstraints({ torch: next } as any);
+      setTorchOn(next);
+      return;
+    } catch { /* fall through */ }
     try {
       await track.applyConstraints({ advanced: [{ torch: next } as any] });
       setTorchOn(next);
     } catch (err) {
-      console.warn('[torch] failed', err);
+      console.warn('[torch] both attempts failed', err);
+      setTorchSupported(false);
     }
   };
 
@@ -479,15 +505,18 @@ export const StoryStudio: React.FC<StoryStudioProps> = ({
             {timerLabel}
           </div>
 
-          <button
-            className={`${styles.iconBtn} ${torchOn ? styles.iconBtnActive : ''}`}
-            onClick={toggleTorch}
-            disabled={!torchSupported || cameraState !== 'ready' || recording}
-            aria-label={torchOn ? 'Turn off flash' : 'Turn on flash'}
-            title={torchSupported ? (torchOn ? 'Turn off flash' : 'Turn on flash') : 'Flash not available on this device'}
-          >
-            {torchOn ? <Zap size={18} fill="currentColor" /> : <ZapOff size={18} />}
-          </button>
+          {torchSupported ? (
+            <button
+              className={`${styles.iconBtn} ${torchOn ? styles.iconBtnActive : ''}`}
+              onClick={toggleTorch}
+              disabled={cameraState !== 'ready' || recording}
+              aria-label={torchOn ? 'Turn off flash' : 'Turn on flash'}
+            >
+              {torchOn ? <Zap size={18} fill="currentColor" /> : <ZapOff size={18} />}
+            </button>
+          ) : (
+            <div style={{ width: 40, height: 40 }} aria-hidden="true" />
+          )}
         </div>
 
         {/* Camera area / preview */}

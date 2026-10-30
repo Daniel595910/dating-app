@@ -541,6 +541,8 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({
                 autoPlay
                 muted
                 playsInline
+                preload="metadata"
+                crossOrigin="anonymous"
                 onEnded={goNext}
               onError={(e) => { console.warn('[video-load-error]', (e.target as HTMLVideoElement).error, currentStory.media_url); }}
               />
