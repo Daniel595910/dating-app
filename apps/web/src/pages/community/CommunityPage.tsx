@@ -25,7 +25,7 @@ import { ProfileSwipeDeck } from '../../features/community/components/ProfileSwi
 import { ProfilePreviewSheet } from '../../features/community/components/ProfilePreviewSheet';
 import { ConnectionPrompt } from '../../features/community/components/ConnectionPrompt';
 import { StoryViewer } from '../../features/community/components/StoryViewer';
-import { StoryCreator } from '../../features/community/components/StoryCreator';
+import { StoryStudio } from '../../features/community/components/StoryStudio';
 import { useStoryRings } from '../../features/community/hooks/useStoryRings';
 import { MatchSuccess } from '../../features/community/components/MatchSuccess';
 import { PendingRequests } from '../../features/community/components/PendingRequests';
@@ -458,7 +458,7 @@ export const CommunityPage: React.FC = () => {
         }}
       />
 
-      <StoryCreator
+      <StoryStudio
         open={storyCreatorOpen}
         onClose={() => setStoryCreatorOpen(false)}
         userId={user?.id || ''}
