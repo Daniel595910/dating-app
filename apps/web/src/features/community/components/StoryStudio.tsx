@@ -524,23 +524,6 @@ export const StoryStudio: React.FC<StoryStudioProps> = ({
               )}
 
               {/* Self view PIP for front camera / decorative for rear */}
-              {cameraState === 'ready' && (
-                <div className={styles.selfView}>
-                  {facing === 'environment' ? (
-                    <Camera size={32} />
-                  ) : (
-                    <video
-                      className={styles.selfViewVideo}
-                      ref={(el) => {
-                        if (el && streamRef.current) el.srcObject = streamRef.current;
-                      }}
-                      autoPlay
-                      muted
-                      playsInline
-                    />
-                  )}
-                </div>
-              )}
             </>
           )}
 
