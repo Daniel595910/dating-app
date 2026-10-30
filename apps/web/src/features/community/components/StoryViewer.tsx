@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { X, ChevronLeft, ChevronRight } from 'lucide-react';
+import { X, ChevronLeft, ChevronRight, Heart, Send } from 'lucide-react';
 import { supabase } from '@/config/supabase.client';
 import styles from '../styles/StoryViewer.module.css';
 
@@ -11,6 +11,8 @@ interface StoryItem {
   duration_seconds: number | null;
   created_at: string;
   viewed: boolean;
+  liked_by_me: boolean;
+  like_count: number;
 }
 
 interface StoryAuthor {
@@ -48,26 +50,41 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ open, onClose, initial
   const [authorIdx, setAuthorIdx] = useState(0);
   const [storyIdx, setStoryIdx] = useState(0);
   const [progress, setProgress] = useState(0);
-  const [paused, setPaused] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const [replyText, setReplyText] = useState('');
+  const [replySending, setReplySending] = useState(false);
+  const [replyToast, setReplyToast] = useState<string | null>(null);
+  const [inputFocused, setInputFocused] = useState(false);
+
+  // Optimistic heart state: storyId -> { liked, count }
+  const [likeOverrides, setLikeOverrides] = useState<Record<string, { liked: boolean; count: number }>>({});
+
   const touchStartY = useRef<number | null>(null);
+  const replyInputRef = useRef<HTMLInputElement | null>(null);
 
   const currentAuthor = authors[authorIdx];
   const currentStory = currentAuthor?.stories[storyIdx];
 
-  // Reset state when opened
+  // Effective paused state — either explicitly paused OR reply input focused
+  const paused = inputFocused;
+
+  // Reset on open
   useEffect(() => {
     if (!open) return;
     setAuthorIdx(0);
     setStoryIdx(0);
     setProgress(0);
-    setPaused(false);
     setError(null);
+    setReplyText('');
+    setReplySending(false);
+    setReplyToast(null);
+    setInputFocused(false);
+    setLikeOverrides({});
   }, [open]);
 
-  // Fetch stories on open
+  // Fetch stories
   useEffect(() => {
     if (!open) return;
     let cancelled = false;
@@ -99,6 +116,8 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ open, onClose, initial
   // Navigation
   const goNext = useCallback(() => {
     if (!currentAuthor) return;
+    setReplyText('');
+    setReplyToast(null);
     if (storyIdx < currentAuthor.stories.length - 1) {
       setStoryIdx((i) => i + 1);
       setProgress(0);
@@ -113,6 +132,8 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ open, onClose, initial
 
   const goPrev = useCallback(() => {
     if (!currentAuthor) return;
+    setReplyText('');
+    setReplyToast(null);
     if (storyIdx > 0) {
       setStoryIdx((i) => i - 1);
       setProgress(0);
@@ -123,12 +144,12 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ open, onClose, initial
     }
   }, [authorIdx, currentAuthor, storyIdx]);
 
-  // Reset progress whenever the current story changes
+  // Reset progress on story change
   useEffect(() => {
     setProgress(0);
   }, [authorIdx, storyIdx]);
 
-  // Mark viewed (after commit — safe setState location)
+  // Mark viewed
   useEffect(() => {
     if (!open || !currentStory) return;
     if (currentStory.viewed) return;
@@ -137,7 +158,7 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ open, onClose, initial
     });
   }, [open, currentStory]);
 
-  // Progress timer — ONLY increments progress, never calls setState on other components
+  // Progress timer
   useEffect(() => {
     if (!open || !currentStory || paused) return;
 
@@ -145,7 +166,6 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ open, onClose, initial
     const durationMs = isVideo
       ? Math.min((currentStory.duration_seconds || 15) * 1000, 15000)
       : IMAGE_DURATION_MS;
-
     const step = (TICK_MS / durationMs) * 100;
 
     const timer = window.setInterval(() => {
@@ -155,7 +175,7 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ open, onClose, initial
     return () => window.clearInterval(timer);
   }, [open, currentStory, paused, authorIdx, storyIdx]);
 
-  // When progress hits 100, advance — this is an effect, runs after commit
+  // Auto-advance when full
   useEffect(() => {
     if (!open) return;
     if (progress < 100) return;
@@ -167,6 +187,7 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ open, onClose, initial
     if (!open) return;
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose();
+      else if (document.activeElement === replyInputRef.current) return;
       else if (e.key === 'ArrowRight') goNext();
       else if (e.key === 'ArrowLeft') goPrev();
     };
@@ -174,10 +195,77 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ open, onClose, initial
     return () => window.removeEventListener('keydown', onKey);
   }, [open, onClose, goNext, goPrev]);
 
+  // Heart toggle
+  const handleHeart = async () => {
+    if (!currentStory || currentAuthor?.is_self) return;
+
+    const storyId = currentStory.id;
+    const current = likeOverrides[storyId] || {
+      liked: currentStory.liked_by_me,
+      count: currentStory.like_count,
+    };
+    const nextLiked = !current.liked;
+    const nextCount = Math.max(0, current.count + (nextLiked ? 1 : -1));
+
+    // Optimistic
+    setLikeOverrides((prev) => ({ ...prev, [storyId]: { liked: nextLiked, count: nextCount } }));
+
+    try {
+      const rpc = nextLiked ? 'like_story' : 'unlike_story';
+      const { error: e } = await supabase.rpc(rpc, { p_story_id: storyId });
+      if (e) throw e;
+    } catch (err: any) {
+      console.warn('Heart toggle failed:', err?.message || err);
+      // Revert
+      setLikeOverrides((prev) => ({ ...prev, [storyId]: current }));
+    }
+  };
+
+  // Reply send
+  const handleSendReply = async () => {
+    if (!currentStory || replySending) return;
+    const text = replyText.trim();
+    if (!text) return;
+
+    setReplySending(true);
+    try {
+      const { data, error: e } = await supabase.rpc('notify_story_reply', {
+        p_story_id: currentStory.id,
+        p_text: text,
+      });
+      if (e) throw e;
+
+      const result = data as { success?: boolean; error?: string } | null;
+      if (!result?.success) {
+        setReplyToast(result?.error || 'Could not send reply');
+        setTimeout(() => setReplyToast(null), 2500);
+        return;
+      }
+
+      setReplyText('');
+      setReplyToast('Reply sent');
+      setTimeout(() => setReplyToast(null), 1500);
+    } catch (err: any) {
+      console.warn('Reply failed:', err?.message || err);
+      setReplyToast('Reply failed');
+      setTimeout(() => setReplyToast(null), 2500);
+    } finally {
+      setReplySending(false);
+    }
+  };
+
   if (!open) return null;
 
   const hasAuthors = authors.length > 0;
   const hasStory = Boolean(currentStory);
+  const isSelfStory = Boolean(currentAuthor?.is_self);
+
+  const likeState = currentStory
+    ? (likeOverrides[currentStory.id] || {
+        liked: currentStory.liked_by_me,
+        count: currentStory.like_count,
+      })
+    : { liked: false, count: 0 };
 
   return (
     <div
@@ -284,6 +372,63 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ open, onClose, initial
               <ChevronRight size={28} />
             </button>
           </>
+        )}
+
+        {hasStory && !loading && !error && (
+          <div className={styles.toolbar}>
+            {isSelfStory ? (
+              <div className={styles.selfFooter}>
+                <span className={styles.likeCount}>
+                  <Heart size={14} fill="currentColor" />
+                  {likeState.count} {likeState.count === 1 ? 'like' : 'likes'}
+                </span>
+              </div>
+            ) : (
+              <>
+                <div className={styles.replyWrap}>
+                  <input
+                    ref={replyInputRef}
+                    type="text"
+                    className={styles.replyInput}
+                    placeholder={`Reply to ${currentAuthor.author_name}…`}
+                    value={replyText}
+                    onChange={(e) => setReplyText(e.target.value)}
+                    onFocus={() => setInputFocused(true)}
+                    onBlur={() => setInputFocused(false)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        handleSendReply();
+                      }
+                    }}
+                    disabled={replySending}
+                    maxLength={500}
+                  />
+                  {replyText.trim().length > 0 && (
+                    <button
+                      className={styles.sendBtn}
+                      onClick={handleSendReply}
+                      disabled={replySending}
+                      aria-label="Send reply"
+                    >
+                      <Send size={18} />
+                    </button>
+                  )}
+                </div>
+                <button
+                  className={`${styles.heartBtn} ${likeState.liked ? styles.heartBtnLiked : ''}`}
+                  onClick={handleHeart}
+                  aria-label={likeState.liked ? 'Unlike' : 'Like'}
+                >
+                  <Heart size={26} fill={likeState.liked ? 'currentColor' : 'none'} />
+                </button>
+              </>
+            )}
+          </div>
+        )}
+
+        {replyToast && (
+          <div className={styles.toast}>{replyToast}</div>
         )}
       </div>
     </div>
