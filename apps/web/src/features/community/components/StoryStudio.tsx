@@ -59,6 +59,7 @@ export const StoryStudio: React.FC<StoryStudioProps> = ({
   const [progress, setProgress] = useState(0);
 
   const [cameraState, setCameraState] = useState<'idle' | 'loading' | 'ready' | 'error'>('idle');
+  const [lastPickedThumb, setLastPickedThumb] = useState<string | null>(null);
   const [cameraError, setCameraError] = useState<string>('');
   const [recording, setRecording] = useState(false);
   const [recordSeconds, setRecordSeconds] = useState(0);
@@ -133,6 +134,10 @@ export const StoryStudio: React.FC<StoryStudioProps> = ({
     setProgress(0);
     setRecording(false);
     setRecordSeconds(0);
+    try {
+      const saved = localStorage.getItem('storyStudio.lastPickerThumb');
+      if (saved) setLastPickedThumb(saved);
+    } catch { /* localStorage blocked */ }
     startCamera('environment');
     return () => {
       stopStream();
@@ -191,8 +196,20 @@ export const StoryStudio: React.FC<StoryStudioProps> = ({
 
   const handleImage = (file: File) => {
     setError(null);
-    setDraft({ url: URL.createObjectURL(file), file, type: 'image', durationSeconds: null });
+    const url = URL.createObjectURL(file);
+    setDraft({ url, file, type: 'image', durationSeconds: null });
     setStage('edit');
+    // Save a small preview of the picked photo for the gallery thumbnail
+    try {
+      const reader = new FileReader();
+      reader.onload = () => {
+        if (typeof reader.result === 'string') {
+          localStorage.setItem('storyStudio.lastPickerThumb', reader.result);
+          setLastPickedThumb(reader.result);
+        }
+      };
+      reader.readAsDataURL(file);
+    } catch { /* ignore */ }
   };
 
   const handleVideoFile = (file: File) => {
@@ -557,7 +574,11 @@ export const StoryStudio: React.FC<StoryStudioProps> = ({
                 onClick={openPicker}
                 aria-label="Open library"
               >
-                <ImageIcon size={22} />
+                {lastPickedThumb ? (
+                  <img src={lastPickedThumb} alt="" />
+                ) : (
+                  <ImageIcon size={22} />
+                )}
               </button>
 
               <button
