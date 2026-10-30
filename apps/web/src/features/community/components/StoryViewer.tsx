@@ -29,6 +29,7 @@ interface StoryViewerProps {
   open: boolean;
   onClose: () => void;
   initialAuthorId?: string | null;
+  initialStoryId?: string | null;
 }
 
 const IMAGE_DURATION_MS = 5000;
@@ -45,7 +46,7 @@ function timeAgo(iso: string): string {
   return `${days}d ago`;
 }
 
-export const StoryViewer: React.FC<StoryViewerProps> = ({ open, onClose, initialAuthorId }) => {
+export const StoryViewer: React.FC<StoryViewerProps> = ({ open, onClose, initialAuthorId, initialStoryId }) => {
   const [authors, setAuthors] = useState<StoryAuthor[]>([]);
   const [authorIdx, setAuthorIdx] = useState(0);
   const [storyIdx, setStoryIdx] = useState(0);
@@ -102,6 +103,17 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ open, onClose, initial
           const idx = list.findIndex((a) => a.author_id === initialAuthorId);
           if (idx >= 0) setAuthorIdx(idx);
         }
+
+        if (initialStoryId) {
+          for (let ai = 0; ai < list.length; ai++) {
+            const si = list[ai].stories.findIndex((s) => s.id === initialStoryId);
+            if (si >= 0) {
+              setAuthorIdx(ai);
+              setStoryIdx(si);
+              break;
+            }
+          }
+        }
       } catch (err: any) {
         if (cancelled) return;
         console.error('Failed to load stories:', err);
@@ -111,7 +123,7 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ open, onClose, initial
       }
     })();
     return () => { cancelled = true; };
-  }, [open, initialAuthorId]);
+  }, [open, initialAuthorId, initialStoryId]);
 
   // Navigation
   const goNext = useCallback(() => {

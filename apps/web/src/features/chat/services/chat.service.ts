@@ -126,6 +126,42 @@ class ChatService {
       };
     });
 
+    // Enrich story-reply messages with story preview
+    const storyReplyIds: string[] = [];
+    for (const m of feedMessages as any[]) {
+      const meta = typeof m.metadata === 'string' ? (() => { try { return JSON.parse(m.metadata); } catch { return null; } })() : m.metadata;
+      if (meta?.from_story_reply && meta?.story_id) {
+        storyReplyIds.push(meta.story_id);
+      }
+    }
+
+    if (storyReplyIds.length > 0) {
+      const { data: storyRows } = await supabase
+        .from('stories')
+        .select('id, media_url, media_type, text_overlay, expires_at')
+        .in('id', Array.from(new Set(storyReplyIds)));
+
+      const storyMap = new Map<string, any>((storyRows || []).map((s: any) => [s.id, s]));
+      const now = Date.now();
+
+      for (const msg of chatMessages) {
+        const meta = msg.metadata as any;
+        if (!meta?.from_story_reply || !meta?.story_id) continue;
+        const story = storyMap.get(meta.story_id);
+        msg.metadata = {
+          ...meta,
+          story_preview: story
+            ? {
+                media_url: story.media_url || null,
+                media_type: story.media_type || null,
+                text_overlay: story.text_overlay || null,
+                expired: new Date(story.expires_at).getTime() < now,
+              }
+            : { media_url: null, media_type: null, text_overlay: null, expired: true },
+        };
+      }
+    }
+
     const oldestMessage = feedMessages[feedMessages.length - 1];
     const nextCursor: MessageCursor | null = hasMore
       ? { createdAt: oldestMessage.created_at, id: oldestMessage.id }

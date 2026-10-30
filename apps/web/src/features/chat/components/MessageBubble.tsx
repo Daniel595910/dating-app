@@ -21,6 +21,7 @@ interface MessageBubbleProps {
   isPinned?: boolean;
   isGrouped?: boolean;
   onOpenActionSheet?: (message: ChatMessage) => void;
+  onOpenStory?: (storyId: string) => void;
 }
 
 const QUICK_REACTIONS = ['❤️', '😂', '😮', '😢', '👍'];
@@ -42,6 +43,7 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
   isPinned = false,
   isGrouped = false,
   onOpenActionSheet,
+  onOpenStory,
 }) => {
   const [imagePreviewOpen, setImagePreviewOpen] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -233,6 +235,39 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
               {message.metadata.replyToContent || 'Message'}
             </p>
           </div>
+        )}
+        
+        {message.metadata?.from_story_reply && (
+          <button
+            className={styles.storyReplyChip}
+            onClick={() => {
+              if (message.metadata?.story_preview?.expired) return;
+              if (message.metadata?.story_id && onOpenStory) {
+                onOpenStory(message.metadata.story_id);
+              }
+            }}
+            disabled={message.metadata?.story_preview?.expired}
+            aria-label={message.metadata?.story_preview?.expired ? 'Story expired' : 'Open story'}
+          >
+            {message.metadata?.story_preview?.media_url ? (
+              message.metadata.story_preview.media_type === 'video' ? (
+                <div className={styles.storyReplyThumbVideo}>
+                  <Play size={14} fill="#fff" color="#fff" />
+                </div>
+              ) : (
+                <img
+                  src={message.metadata.story_preview.media_url}
+                  alt=""
+                  className={styles.storyReplyThumb}
+                />
+              )
+            ) : null}
+            <span className={styles.storyReplyText}>
+              {message.metadata?.story_preview?.expired
+                ? 'Story expired'
+                : 'Replied to your story'}
+            </span>
+          </button>
         )}
         
         {renderContent()}

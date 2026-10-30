@@ -1495,3 +1495,67 @@
 [data-theme="dark"] .ownBubble .deletedMessage {
   color: rgba(255, 255, 255, 0.7);
 }
+
+.storyReplyChip {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.375rem 0.625rem 0.375rem 0.375rem;
+  margin-bottom: 0.375rem;
+  background-color: var(--color-surface-alt, #f3f4f6);
+  border: 1px solid var(--color-border-strong, #e5e7eb);
+  border-radius: 12px;
+  cursor: pointer;
+  max-width: 100%;
+  min-width: 0;
+  transition: background-color 0.15s ease;
+}
+
+.storyReplyChip:hover:not(:disabled) {
+  background-color: var(--color-surface-raised, #ffffff);
+}
+
+.storyReplyChip:disabled {
+  opacity: 0.65;
+  cursor: default;
+}
+
+.storyReplyThumb {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.storyReplyThumbVideo {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background-color: #000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.storyReplyText {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--color-text-secondary, #6b7280);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+.ownBubble .storyReplyChip,
+.ownWrapper .storyReplyChip {
+  background-color: rgba(255,255,255,0.2);
+  border-color: rgba(255,255,255,0.3);
+}
+
+.ownBubble .storyReplyText,
+.ownWrapper .storyReplyText {
+  color: rgba(255,255,255,0.85);
+}

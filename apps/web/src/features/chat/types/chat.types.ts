@@ -33,6 +33,14 @@ export interface ChatMessage {
     replyToContent?: string;
     replyToType?: string;
     isSticker?: boolean;
+    from_story_reply?: boolean;
+    story_id?: string;
+    story_preview?: {
+      media_url: string | null;
+      media_type: 'image' | 'video' | null;
+      text_overlay: string | null;
+      expired: boolean;
+    };
   };
   status: 'sending' | 'sent' | 'delivered' | 'read' | 'failed';
   createdAt: string;

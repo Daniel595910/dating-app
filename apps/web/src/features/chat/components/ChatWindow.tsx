@@ -8,6 +8,7 @@ import { ChatMessage, MessageCursor, MessageReactionSummary } from '../types/cha
 import { ChatHeader } from './ChatHeader';
 import { ChatClosedBanner } from './ChatClosedBanner';
 import { MessageBubble } from './MessageBubble';
+import { StoryViewer } from '../../community/components/StoryViewer';
 import { MessageComposer } from './MessageComposer';
 import { TypingIndicator } from './TypingIndicator';
 import { MessageActionSheet } from './MessageActionSheet';
@@ -68,6 +69,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
   const [editingMessage, setEditingMessage] = useState<ChatMessage | null>(null);
   const [actionSheetMessage, setActionSheetMessage] = useState<ChatMessage | null>(null);
   const [forwardMessage, setForwardMessage] = useState<ChatMessage | null>(null);
+  const [storyViewerStoryId, setStoryViewerStoryId] = useState<string | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [giftPickerOpen, setGiftPickerOpen] = useState(false);
   const [stickerPickerOpen, setStickerPickerOpen] = useState(false);
@@ -836,6 +838,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
               reactions={reactionMap.get(message.id) || []}
               isPinned={pinnedMessageIds.has(message.id)}
               onOpenActionSheet={setActionSheetMessage}
+              onOpenStory={setStoryViewerStoryId}
             />
             );
           })
