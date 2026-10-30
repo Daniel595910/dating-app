@@ -167,3 +167,36 @@
 [data-theme="dark"] .exploreButton:hover {
   background: #dc2626;
 }
+
+.storyRing {
+  padding: 2px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.storyRingUnseen {
+  background: conic-gradient(from 0deg, #f59e0b, #ef4444, #8b5cf6, #3b82f6, #10b981, #f59e0b);
+  animation: storyRingRotate 3s linear infinite;
+}
+
+.storyRingSeen {
+  background: var(--color-border-strong, #e5e7eb);
+}
+
+.storyRingInner {
+  border-radius: 50%;
+  background: var(--color-surface, #ffffff);
+  padding: 2px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+@keyframes storyRingRotate {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}

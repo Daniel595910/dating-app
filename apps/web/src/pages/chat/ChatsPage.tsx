@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '@/store/auth.store';
 import { supabase } from '@/config/supabase.client';
+import { useStoryRings } from '../../features/community/hooks/useStoryRings';
 import { chatService } from '../../features/chat/services/chat.service';
 import { usePresence } from '../../features/chat/hooks/usePresence';
 import { Conversation } from '../../features/chat/types/chat.types';
@@ -11,6 +12,7 @@ import styles from './ChatsPage.module.css';
 export const ChatsPage: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuthStore();
+  const { ringState } = useStoryRings(Boolean(user?.id));
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -132,13 +134,27 @@ export const ChatsPage: React.FC = () => {
                 onClick={() => handleSelectConversation(conv.id)}
               >
                 <div className={styles.avatarWrapper}>
-                  <div className={styles.avatar}>
-                    {otherUserAvatar ? (
-                      <img src={otherUserAvatar} alt={otherUserName} />
-                    ) : (
-                      otherUserName?.charAt(0).toUpperCase() || '?'
-                    )}
-                  </div>
+                  {otherUserId && ringState[otherUserId] ? (
+                    <div className={`${styles.storyRing} ${ringState[otherUserId] === 'unseen' ? styles.storyRingUnseen : styles.storyRingSeen}`}>
+                      <div className={styles.storyRingInner}>
+                        <div className={styles.avatar}>
+                          {otherUserAvatar ? (
+                            <img src={otherUserAvatar} alt={otherUserName} />
+                          ) : (
+                            otherUserName?.charAt(0).toUpperCase() || '?'
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className={styles.avatar}>
+                      {otherUserAvatar ? (
+                        <img src={otherUserAvatar} alt={otherUserName} />
+                      ) : (
+                        otherUserName?.charAt(0).toUpperCase() || '?'
+                      )}
+                    </div>
+                  )}
                   {isOnline && <span className={styles.onlineDot} />}
                 </div>
                 <div className={styles.conversationInfo}>
