@@ -77,7 +77,18 @@ export const StoryStudio: React.FC<StoryStudioProps> = ({
   const [trimEnd, setTrimEnd] = useState(0);
   const [filterId, setFilterId] = useState<'normal'|'warm'|'cool'|'bw'|'vivid'|'fade'>('normal');
   const [speed, setSpeed] = useState(1);
+  const FILTERS = [
+    { id: 'normal' as const, label: 'Normal', css: 'none' },
+    { id: 'warm' as const, label: 'Warm', css: 'sepia(0.2) saturate(1.3) hue-rotate(-10deg)' },
+    { id: 'cool' as const, label: 'Cool', css: 'saturate(1.1) hue-rotate(15deg) brightness(1.05)' },
+    { id: 'bw' as const, label: 'B&W', css: 'grayscale(1) contrast(1.1)' },
+    { id: 'vivid' as const, label: 'Vivid', css: 'saturate(1.5) contrast(1.1)' },
+    { id: 'fade' as const, label: 'Fade', css: 'saturate(0.7) brightness(1.15) contrast(0.9)' },
+  ];
+
+  const SPEEDS = [0.5, 1, 1.5, 2];
   const [previewVideoRef, setPreviewVideoRef] = useState<HTMLVideoElement | null>(null);
+  const [speedPickerOpen, setSpeedPickerOpen] = useState(false);
 
   const imageInputRef = useRef<HTMLInputElement>(null);
   const videoInputRef = useRef<HTMLInputElement>(null);
@@ -533,8 +544,8 @@ export const StoryStudio: React.FC<StoryStudioProps> = ({
         metadata: {
           filter: filterId,
           speed,
-          trim_start: 0,
-          trim_end: draft.durationSeconds || 0,
+          trim_start: trimStart,
+          trim_end: trimEnd || draft.durationSeconds || 0,
         },
       });
 
@@ -643,25 +654,48 @@ export const StoryStudio: React.FC<StoryStudioProps> = ({
           )}
 
           {stage !== 'capture' && draft && (
-              <>
-                {/* Blurred background fill */}
-                <div className={styles.blurFill} aria-hidden="true">
-                  {draft.type === 'image' ? (
-                    <img src={draft.url} alt="" className={styles.blurFillMedia} />
-                  ) : (
-                    <video src={draft.url} className={styles.blurFillMedia} autoPlay muted loop playsInline />
-                  )}
-                </div>
-                {/* Foreground contained media */}
+            <>
+              {/* Blurred background fill */}
+              <div className={styles.blurFill} aria-hidden="true">
                 {draft.type === 'image' ? (
-                  <img src={draft.url} alt="" className={styles.cameraPreviewMedia} />
+                  <img src={draft.url} alt="" className={styles.blurFillMedia} />
                 ) : (
-                  <video src={draft.url} className={styles.cameraPreviewMedia} autoPlay muted loop playsInline />
+                  <video src={draft.url} className={styles.blurFillMedia} autoPlay muted loop playsInline />
                 )}
-                {textOverlay && (
-                  <div className={styles.textOverlayOnPreview}>{textOverlay}</div>
-                )}
-              </>
+              </div>
+              {/* Foreground contained media with filter applied */}
+              {draft.type === 'image' ? (
+                <img
+                  src={draft.url}
+                  alt=""
+                  className={styles.cameraPreviewMedia}
+                  style={{ filter: FILTERS.find((f) => f.id === filterId)?.css || 'none' }}
+                />
+              ) : (
+                <video
+                  ref={(el) => { if (el) { setPreviewVideoRef(el); el.playbackRate = speed; } }}
+                  src={draft.url}
+                  className={styles.cameraPreviewMedia}
+                  autoPlay
+                  muted
+                  loop
+                  playsInline
+                  style={{ filter: FILTERS.find((f) => f.id === filterId)?.css || 'none' }}
+                  onLoadedMetadata={(e) => {
+                    const v = e.currentTarget;
+                    v.playbackRate = speed;
+                    if (draft.durationSeconds && draft.durationSeconds > 0) {
+                      setTrimEnd(draft.durationSeconds);
+                    } else if (v.duration && isFinite(v.duration)) {
+                      setTrimEnd(Math.round(v.duration));
+                    }
+                  }}
+                />
+              )}
+              {textOverlay && (
+                <div className={styles.textOverlayOnPreview}>{textOverlay}</div>
+              )}
+            </>
           )}
 
           {stage === 'edit' && showTextPanel && (
@@ -682,13 +716,79 @@ export const StoryStudio: React.FC<StoryStudioProps> = ({
           )}
 
           {stage === 'edit' && !showTextPanel && (
-            <button
-              className={styles.editTextBtn}
-              onClick={() => setShowTextPanel(true)}
-            >
-              <Type size={14} />
-              {textOverlay ? 'Edit text' : 'Add text'}
-            </button>
+            <>
+              <button
+                className={styles.editTextBtn}
+                onClick={() => setShowTextPanel(true)}
+              >
+                <Type size={14} />
+                {textOverlay ? 'Edit text' : 'Add text'}
+              </button>
+
+              {draft && (
+                <div className={styles.editToolsPanel}>
+                  {/* Filter strip */}
+                  <div className={styles.filterStrip}>
+                    {FILTERS.map((f) => (
+                      <button
+                        key={f.id}
+                        type="button"
+                        className={[styles.filterChip, filterId === f.id ? styles.filterChipActive : ''].filter(Boolean).join(' ')}
+                        onClick={() => setFilterId(f.id)}
+                      >
+                        <span
+                          className={styles.filterChipSwatch}
+                          style={{ filter: f.css }}
+                        />
+                        <span className={styles.filterChipLabel}>{f.label}</span>
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* Trim slider (video only) */}
+                  {draft.type === 'video' && (
+                    <div className={styles.trimStrip}>
+                      <div className={styles.trimLabel}>
+                        <span>Trim</span>
+                        <span className={styles.trimValue}>
+                          {trimStart.toFixed(1)}s – {trimEnd.toFixed(1)}s
+                        </span>
+                      </div>
+                      <div className={styles.trimTrack}>
+                        <div
+                          className={styles.trimSelection}
+                          style={{
+                            left: `calc(12px + (100% - 24px) * ${trimEnd > 0 ? trimStart / trimEnd : 0})`,
+                            right: `calc(12px + (100% - 24px) * ${trimEnd > 0 ? (1 - (trimStart > 0 ? 1 - trimEnd / trimEnd : 1)) : 1})`,
+                          }}
+                        />
+                        <input
+                          type="range"
+                          className={`${styles.trimHandle} ${styles.trimHandleLeft}`}
+                          min={0}
+                          max={Math.max(0.5, (trimEnd || draft.durationSeconds || 15) - 0.5)}
+                          step={0.1}
+                          value={trimStart}
+                          onChange={(e) => {
+                            const v = parseFloat(e.target.value);
+                            if (v < trimEnd - 0.5) setTrimStart(v);
+                          }}
+                        />
+                        <input
+                          type="range"
+                          className={`${styles.trimHandle} ${styles.trimHandleRight}`}
+                          min={trimStart + 0.5}
+                          max={draft.durationSeconds || 15}
+                          step={0.1}
+                          value={trimEnd}
+                          onChange={(e) => setTrimEnd(parseFloat(e.target.value))}
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </>
           )}
         </div>
 
@@ -770,13 +870,30 @@ export const StoryStudio: React.FC<StoryStudioProps> = ({
               </button>
               <button
                 type="button"
-                className={styles.editToolBtn}
-                disabled
-                aria-label="Speed (coming soon)"
-                title="Speed — coming soon"
+                className={`${styles.editToolBtn} ${speed !== 1 ? styles.editToolBtnActive : ''}`}
+                onClick={() => setSpeedPickerOpen((v) => !v)}
+                aria-label={`Speed: ${speed}x`}
               >
                 <span className={styles.speedLabel}>{speed}x</span>
               </button>
+              {speedPickerOpen && (
+                <div className={styles.speedPicker} role="menu">
+                  {SPEEDS.map((s) => (
+                    <button
+                      key={s}
+                      type="button"
+                      className={`${styles.speedOption} ${s === speed ? styles.speedOptionActive : ''}`}
+                      onClick={() => {
+                        setSpeed(s);
+                        if (previewVideoRef) { try { previewVideoRef.playbackRate = s; } catch {} }
+                        setSpeedPickerOpen(false);
+                      }}
+                    >
+                      {s}x
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
             <button
               className={styles.publishBtn}

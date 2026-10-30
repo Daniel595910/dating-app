@@ -625,3 +625,233 @@
   font-weight: 700;
   color: #fff;
 }
+
+/* ---- Phase C.2: filter strip, trim slider, speed picker ---- */
+
+.editToolBtnActive {
+  background-color: rgba(239, 68, 68, 0.22);
+  border-color: rgba(239, 68, 68, 0.45);
+  color: #fca5a5;
+}
+
+.editToolsPanel {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 0.75rem 0 calc(0.5rem + env(safe-area-inset-bottom));
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.92) 0%, rgba(0, 0, 0, 0.6) 60%, rgba(0, 0, 0, 0) 100%);
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  z-index: 20;
+  pointer-events: none;
+}
+
+.editToolsPanel > * {
+  pointer-events: auto;
+}
+
+/* Filter strip */
+.filterStrip {
+  display: flex;
+  gap: 0.5rem;
+  padding: 0 1rem;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.filterStrip::-webkit-scrollbar {
+  display: none;
+}
+
+.filterChip {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.3125rem;
+  background: transparent;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  flex-shrink: 0;
+}
+
+.filterChipSwatch {
+  width: 52px;
+  height: 52px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #fbbf24 0%, #f87171 50%, #a78bfa 100%);
+  border: 2px solid rgba(255, 255, 255, 0.15);
+  transition: border-color 0.15s ease, transform 0.12s ease;
+}
+
+.filterChip:active .filterChipSwatch {
+  transform: scale(0.94);
+}
+
+.filterChipActive .filterChipSwatch {
+  border-color: #ef4444;
+  box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.35);
+}
+
+.filterChipLabel {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.7);
+  letter-spacing: 0.02em;
+}
+
+.filterChipActive .filterChipLabel {
+  color: #fca5a5;
+}
+
+/* Trim slider */
+.trimStrip {
+  padding: 0 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+}
+
+.trimLabel {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.85);
+  letter-spacing: 0.02em;
+}
+
+.trimValue {
+  font-variant-numeric: tabular-nums;
+  color: rgba(255, 255, 255, 0.65);
+  font-weight: 500;
+}
+
+.trimTrack {
+  position: relative;
+  height: 28px;
+  border-radius: 8px;
+  background-color: rgba(255, 255, 255, 0.1);
+  overflow: visible;
+}
+
+.trimSelection {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  background-color: rgba(239, 68, 68, 0.18);
+  border-top: 2px solid rgba(239, 68, 68, 0.6);
+  border-bottom: 2px solid rgba(239, 68, 68, 0.6);
+  pointer-events: none;
+  border-radius: 4px;
+}
+
+.trimHandle {
+  position: absolute;
+  top: -4px;
+  bottom: -4px;
+  width: 20px;
+  height: calc(100% + 8px);
+  background: transparent;
+  -webkit-appearance: none;
+  appearance: none;
+  pointer-events: none;
+  margin: 0;
+  padding: 0;
+}
+
+.trimHandle::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 20px;
+  height: calc(100% + 8px);
+  border-radius: 6px;
+  background-color: #ef4444;
+  border: 2px solid #fff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+  cursor: grab;
+  pointer-events: auto;
+}
+
+.trimHandle::-webkit-slider-thumb:active {
+  cursor: grabbing;
+  transform: scale(1.08);
+}
+
+.trimHandle::-moz-range-thumb {
+  width: 20px;
+  height: calc(100% + 8px);
+  border-radius: 6px;
+  background-color: #ef4444;
+  border: 2px solid #fff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+  cursor: grab;
+  pointer-events: auto;
+}
+
+.trimHandle::-webkit-slider-runnable-track {
+  background: transparent;
+}
+
+.trimHandle::-moz-range-track {
+  background: transparent;
+}
+
+.trimHandleLeft {
+  left: 0;
+  right: calc(100% - 20px);
+  margin: 0;
+}
+
+.trimHandleRight {
+  left: calc(100% - 20px);
+  right: 0;
+  margin: 0;
+}
+
+/* Speed picker */
+.speedPicker {
+  position: absolute;
+  bottom: calc(100% + 0.5rem);
+  right: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 0.375rem;
+  background-color: rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  min-width: 64px;
+  z-index: 10;
+}
+
+.speedOption {
+  padding: 0.5rem 0.875rem;
+  background: transparent;
+  border: none;
+  color: #fff;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  border-radius: 8px;
+  cursor: pointer;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+  -webkit-tap-highlight-color: transparent;
+  transition: background-color 0.15s ease;
+}
+
+.speedOption:hover:not(.speedOptionActive) {
+  background-color: rgba(255, 255, 255, 0.08);
+}
+
+.speedOptionActive {
+  background-color: rgba(239, 68, 68, 0.22);
+  color: #fca5a5;
+}

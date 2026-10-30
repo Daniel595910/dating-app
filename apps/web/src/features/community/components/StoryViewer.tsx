@@ -13,6 +13,7 @@ interface StoryItem {
   viewed: boolean;
   liked_by_me: boolean;
   like_count: number;
+  metadata?: { filter?: string; speed?: number; trim_start?: number; trim_end?: number } | null;
 }
 
 interface StoryAuthor {
@@ -392,6 +393,20 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({
       })
     : { liked: false, count: 0 };
 
+    const __meta = currentStory?.metadata || {};
+    const __filterCss = (() => {
+      const f = __meta.filter || 'normal';
+      if (f === 'warm') return 'sepia(0.2) saturate(1.3) hue-rotate(-10deg)';
+      if (f === 'cool') return 'saturate(1.1) hue-rotate(15deg) brightness(1.05)';
+      if (f === 'bw') return 'grayscale(1) contrast(1.1)';
+      if (f === 'vivid') return 'saturate(1.5) contrast(1.1)';
+      if (f === 'fade') return 'saturate(0.7) brightness(1.15) contrast(0.9)';
+      return 'none';
+    })();
+    const __speed = __meta.speed && __meta.speed > 0 ? __meta.speed : 1;
+    const __trimStart = __meta.trim_start || 0;
+    const __trimEnd = __meta.trim_end || 0;
+
   return (
     <div
       className={styles.overlay}
@@ -525,6 +540,7 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({
                 alt={currentStory.text_overlay || ''}
                 className={styles.media}
                 draggable={false}
+                style={{ filter: __filterCss }}
               />
             ) : (
               <video
@@ -535,8 +551,20 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({
                 playsInline
                 preload="metadata"
                 crossOrigin="anonymous"
-                onEnded={goNext}
-              onError={(e) => { console.warn('[video-load-error]', (e.target as HTMLVideoElement).error, currentStory.media_url); }}
+                style={{ filter: __filterCss }}
+                onLoadedMetadata={(e) => {
+                  const v = e.currentTarget;
+                  try { v.playbackRate = __speed; } catch {}
+                  if (__trimStart > 0 && __trimStart < v.duration) v.currentTime = __trimStart;
+                }}
+                onTimeUpdate={(e) => {
+                  const v = e.currentTarget;
+                  if (__trimEnd > 0 && v.currentTime >= __trimEnd) {
+                    try { v.pause(); } catch {}
+                    goNext();
+                  }
+                }}
+                onError={(e) => { console.warn('[video-load-error]', (e.target as HTMLVideoElement).error, currentStory.media_url); }}
               />
             )}
             {currentStory.text_overlay && (
