@@ -519,14 +519,6 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({
           <div className={styles.centerState}>No stories yet.</div>
         ) : hasStory ? (
           <div className={styles.mediaWrap}>
-            {/* Blurred background fill */}
-            <div className={styles.blurFill} aria-hidden="true">
-              {currentStory.media_type === 'image' ? (
-                <img src={currentStory.media_url} alt="" className={styles.blurFillMedia} draggable={false} />
-              ) : (
-                <video src={currentStory.media_url} className={styles.blurFillMedia} autoPlay muted loop playsInline />
-              )}
-            </div>
             {currentStory.media_type === 'image' ? (
               <img
                 src={currentStory.media_url}
