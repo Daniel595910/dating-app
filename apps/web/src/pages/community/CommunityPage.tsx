@@ -10,7 +10,7 @@ import { useScrollDirection } from '../../features/community/hooks/useScrollDire
 import { useConnection } from '../../features/community/hooks/useConnection';
 import { useOfflineFeed } from '../../features/community/hooks/useOfflineFeed';
 import { CommunityHeader } from '../../features/community/components/CommunityHeader';
-import { MembersModal } from '../../features/community/components/MembersModal';
+import { MembersAndStoriesSheet } from '../../features/community/components/MembersAndStoriesSheet';
 import { communityService } from '../../features/community/services/community.service';
 import { FilterBar } from '../../features/community/components/FilterBar';
 import { CommunityPostCard } from '../../features/community/components/CommunityPostCard';
@@ -42,7 +42,7 @@ export const CommunityPage: React.FC = () => {
   useLocation(); // retain router context
 
   const { user } = useAuthStore();
-  const { ringState: storyRingState } = useStoryRings(Boolean(user?.id));
+  const { ringState: storyRingState, authors: storyAuthors } = useStoryRings(Boolean(user?.id));
   const [filter, setFilter] = useState<FeedFilter>('all');
   const [createSheetOpen, setCreateSheetOpen] = useState(false);
   const [commentPostId, setCommentPostId] = useState<string | null>(null);
@@ -61,6 +61,7 @@ export const CommunityPage: React.FC = () => {
   const [connectedIds, setConnectedIds] = useState<string[]>([]);
   const [memberPreviewCommunityId, setMemberPreviewCommunityId] = useState<string | null>(null);
   const [storyViewerOpen, setStoryViewerOpen] = useState(false);
+  const [storyViewerAuthorId, setStoryViewerAuthorId] = useState<string | null>(null);
   const [storyCreatorOpen, setStoryCreatorOpen] = useState(false);
 
   useEffect(() => {
@@ -422,7 +423,7 @@ export const CommunityPage: React.FC = () => {
         loading={connectionLoading}
       />
 
-      <MembersModal
+      <MembersAndStoriesSheet
         open={membersModalOpen}
         onClose={() => setMembersModalOpen(false)}
         members={memberPreview}
@@ -444,6 +445,17 @@ export const CommunityPage: React.FC = () => {
           }
         }}
         loadingUserId={connectingUserId}
+        storyAuthors={storyAuthors}
+        currentUserId={user?.id || ''}
+        onOpenStory={(authorId) => {
+          setMembersModalOpen(false);
+          setStoryViewerAuthorId(authorId);
+          setStoryViewerOpen(true);
+        }}
+        onCreateStory={() => {
+          setMembersModalOpen(false);
+          setStoryCreatorOpen(true);
+        }}
       />
 
       <StoryCreator
@@ -453,49 +465,11 @@ export const CommunityPage: React.FC = () => {
         onStoryCreated={() => setStoryViewerOpen(true)}
       />
 
-      <StoryViewer open={storyViewerOpen} onClose={() => setStoryViewerOpen(false)} />
-
-      {/* TEMP — Session B test button; removed in Session D */}
-      <button
-        onClick={() => setStoryViewerOpen(true)}
-        style={{
-          position: 'fixed',
-          top: 'calc(4.5rem + env(safe-area-inset-top))',
-          right: 12,
-          zIndex: 9997,
-          padding: '0.5rem 0.75rem',
-          borderRadius: 9999,
-          border: '1px solid var(--color-border-strong, #e5e7eb)',
-          backgroundColor: 'var(--color-surface, #ffffff)',
-          color: 'var(--color-text, #111827)',
-          fontSize: 12,
-          fontWeight: 600,
-          cursor: 'pointer',
-          boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-        }}
-      >
-        ▶ Stories
-      </button>
-      <button
-        onClick={() => setStoryCreatorOpen(true)}
-        style={{
-          position: 'fixed',
-          top: 'calc(4.5rem + env(safe-area-inset-top))',
-          right: 100,
-          zIndex: 9997,
-          padding: '0.5rem 0.75rem',
-          borderRadius: 9999,
-          border: '1px solid var(--color-border-strong, #e5e7eb)',
-          backgroundColor: 'var(--color-surface, #ffffff)',
-          color: 'var(--color-text, #111827)',
-          fontSize: 12,
-          fontWeight: 600,
-          cursor: 'pointer',
-          boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-        }}
-      >
-        ＋ Story
-      </button>
+      <StoryViewer
+        open={storyViewerOpen}
+        onClose={() => { setStoryViewerOpen(false); setStoryViewerAuthorId(null); }}
+        initialAuthorId={storyViewerAuthorId}
+      />
 
       <MatchSuccess
         open={Boolean(matchUser)}

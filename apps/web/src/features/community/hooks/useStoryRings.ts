@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { supabase } from '@/config/supabase.client';
 
 export interface StoryAuthorSummary {
@@ -30,6 +30,8 @@ export function useStoryRings(enabled: boolean): UseStoryRingsResult {
   const [ringState, setRingState] = useState<Record<string, 'unseen' | 'seen'>>({});
   const [authors, setAuthors] = useState<StoryAuthorSummary[]>([]);
   const [loading, setLoading] = useState(false);
+
+  const debounceTimer = useRef<number | null>(null);
 
   const load = useCallback(async () => {
     if (!enabled) return;
@@ -64,24 +66,41 @@ export function useStoryRings(enabled: boolean): UseStoryRingsResult {
     load();
   }, [enabled, load]);
 
-  // Realtime: refresh on new stories or new views
+  // Realtime: debounced refresh on new stories or new views
   useEffect(() => {
     if (!enabled) return;
-    const channel = supabase.channel('story-rings');
+    const channelName = `story-rings-${Math.random().toString(36).slice(2, 10)}`;
+    const channel = supabase.channel(channelName);
+
+    const scheduleReload = () => {
+      if (debounceTimer.current !== null) {
+        window.clearTimeout(debounceTimer.current);
+      }
+      debounceTimer.current = window.setTimeout(() => {
+        debounceTimer.current = null;
+        load();
+      }, 300);
+    };
 
     channel.on(
       'postgres_changes',
       { event: 'INSERT', schema: 'public', table: 'stories' },
-      () => { load(); }
+      scheduleReload
     );
     channel.on(
       'postgres_changes',
       { event: 'INSERT', schema: 'public', table: 'story_views' },
-      () => { load(); }
+      scheduleReload
     );
 
     channel.subscribe();
-    return () => { channel.unsubscribe(); };
+    return () => {
+      if (debounceTimer.current !== null) {
+        window.clearTimeout(debounceTimer.current);
+        debounceTimer.current = null;
+      }
+      channel.unsubscribe();
+    };
   }, [enabled, load]);
 
   return { ringState, authors, loading, refresh: load };
