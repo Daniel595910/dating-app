@@ -398,8 +398,8 @@
 
 .menuPopover {
   position: absolute;
-  top: calc(100% + 0.5rem);
-  right: 0;
+  top: 68px;
+  right: 0.875rem;
   min-width: 190px;
   background-color: rgba(20, 20, 22, 0.96);
   backdrop-filter: blur(16px);
