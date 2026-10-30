@@ -1,7 +1,7 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ArrowLeft, Camera, Image as ImageIcon, Video, RefreshCw,
-  Loader2, Sparkles, Type, X,
+  Loader2, Sparkles, Type, Square, Circle,
 } from 'lucide-react';
 import { supabase } from '@/config/supabase.client';
 import { mediaService } from '../services/media.service';
@@ -16,6 +16,7 @@ interface StoryStudioProps {
 
 type Stage = 'capture' | 'edit' | 'preview';
 type Mode = 'photo' | 'video';
+type FacingMode = 'user' | 'environment';
 
 interface Draft {
   url: string;
@@ -27,6 +28,20 @@ interface Draft {
 const MAX_VIDEO_SECONDS = 15;
 const MAX_OVERLAY_CHARS = 140;
 
+function pickVideoMimeType(): string {
+  if (typeof MediaRecorder === 'undefined') return '';
+  const candidates = [
+    'video/mp4',
+    'video/webm;codecs=vp9',
+    'video/webm;codecs=vp8',
+    'video/webm',
+  ];
+  for (const t of candidates) {
+    try { if (MediaRecorder.isTypeSupported(t)) return t; } catch { /* ignore */ }
+  }
+  return '';
+}
+
 export const StoryStudio: React.FC<StoryStudioProps> = ({
   open,
   onClose,
@@ -35,6 +50,7 @@ export const StoryStudio: React.FC<StoryStudioProps> = ({
 }) => {
   const [stage, setStage] = useState<Stage>('capture');
   const [mode, setMode] = useState<Mode>('photo');
+  const [facing, setFacing] = useState<FacingMode>('environment');
   const [draft, setDraft] = useState<Draft | null>(null);
   const [textOverlay, setTextOverlay] = useState('');
   const [showTextPanel, setShowTextPanel] = useState(false);
@@ -42,38 +58,129 @@ export const StoryStudio: React.FC<StoryStudioProps> = ({
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState(0);
 
+  const [cameraState, setCameraState] = useState<'idle' | 'loading' | 'ready' | 'error'>('idle');
+  const [cameraError, setCameraError] = useState<string>('');
+  const [recording, setRecording] = useState(false);
+  const [recordSeconds, setRecordSeconds] = useState(0);
+
   const imageInputRef = useRef<HTMLInputElement>(null);
   const videoInputRef = useRef<HTMLInputElement>(null);
+  const videoPreviewRef = useRef<HTMLVideoElement>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+  const recorderRef = useRef<MediaRecorder | null>(null);
+  const chunksRef = useRef<Blob[]>([]);
+  const recordTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const autoStopRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const stopStream = useCallback(() => {
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach((t) => { try { t.stop(); } catch { /* ignore */ } });
+      streamRef.current = null;
+    }
+    if (videoPreviewRef.current) videoPreviewRef.current.srcObject = null;
+  }, []);
+
+  const stopRecordingTimers = useCallback(() => {
+    if (recordTimerRef.current) { clearInterval(recordTimerRef.current); recordTimerRef.current = null; }
+    if (autoStopRef.current) { clearTimeout(autoStopRef.current); autoStopRef.current = null; }
+  }, []);
+
+  const startCamera = useCallback(async (mode: FacingMode) => {
+    setCameraState('loading');
+    setCameraError('');
+    stopStream();
+    try {
+      if (!navigator.mediaDevices?.getUserMedia) {
+        throw new Error('Camera API unavailable');
+      }
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: {
+          facingMode: mode === 'environment' ? { ideal: 'environment' } : 'user',
+          width: { ideal: 1080 },
+          height: { ideal: 1920 },
+        },
+        audio: false,
+      });
+      streamRef.current = stream;
+      if (videoPreviewRef.current) {
+        videoPreviewRef.current.srcObject = stream;
+        videoPreviewRef.current.play().catch(() => { /* ignore autoplay errors */ });
+      }
+      setCameraState('ready');
+    } catch (err: any) {
+      const name = err?.name || '';
+      let msg = 'Camera unavailable. Pick from your library instead.';
+      if (name === 'NotAllowedError' || name === 'SecurityError') {
+        msg = 'Camera access denied. Pick from your library instead.';
+      } else if (name === 'NotFoundError' || name === 'DevicesNotFoundError') {
+        msg = 'No camera found. Pick from your library instead.';
+      } else if (name === 'NotReadableError') {
+        msg = 'Camera is in use by another app. Pick from your library instead.';
+      }
+      setCameraError(msg);
+      setCameraState('error');
+    }
+  }, [stopStream]);
 
   // Reset on open
   useEffect(() => {
     if (!open) return;
     setStage('capture');
     setMode('photo');
+    setFacing('environment');
     setDraft(null);
     setTextOverlay('');
     setShowTextPanel(false);
     setError(null);
     setUploading(false);
     setProgress(0);
+    setRecording(false);
+    setRecordSeconds(0);
+    startCamera('environment');
+    return () => {
+      stopStream();
+      stopRecordingTimers();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
-  // Escape closes (unless uploading)
+  // Cleanup on close
+  useEffect(() => {
+    if (open) return;
+    stopStream();
+    stopRecordingTimers();
+  }, [open, stopStream, stopRecordingTimers]);
+
+  // Escape closes
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && !uploading) onClose();
+      if (e.key === 'Escape' && !uploading) {
+        if (recording) stopVideoRecording();
+        else onClose();
+      }
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [open, uploading, onClose]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, uploading, recording, onClose]);
 
   if (!open) return null;
 
   const openPicker = () => {
     setError(null);
+    // Release camera while library picker is open
+    stopStream();
     if (mode === 'photo') imageInputRef.current?.click();
     else videoInputRef.current?.click();
+  };
+
+  const resumeCamera = () => {
+    if (stage === 'capture' && cameraState !== 'ready') {
+      startCamera(facing);
+    } else if (stage === 'capture' && !streamRef.current) {
+      startCamera(facing);
+    }
   };
 
   const handleImage = (file: File) => {
@@ -82,7 +189,7 @@ export const StoryStudio: React.FC<StoryStudioProps> = ({
     setStage('edit');
   };
 
-  const handleVideo = (file: File) => {
+  const handleVideoFile = (file: File) => {
     setError(null);
     const video = document.createElement('video');
     video.preload = 'metadata';
@@ -111,7 +218,118 @@ export const StoryStudio: React.FC<StoryStudioProps> = ({
     if (!files || files.length === 0) return;
     const file = files[0]!;
     if (kind === 'image') handleImage(file);
-    else handleVideo(file);
+    else handleVideoFile(file);
+  };
+
+  // Photo capture from live stream
+  const capturePhoto = () => {
+    if (!videoPreviewRef.current) return;
+    const video = videoPreviewRef.current;
+    if (!video.videoWidth || !video.videoHeight) {
+      setError('Camera not ready yet. Try again.');
+      return;
+    }
+    const canvas = document.createElement('canvas');
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) { setError('Capture failed.'); return; }
+    // Mirror front-camera capture
+    if (facing === 'user') {
+      ctx.translate(canvas.width, 0);
+      ctx.scale(-1, 1);
+    }
+    ctx.drawImage(video, 0, 0);
+    canvas.toBlob((blob) => {
+      if (!blob) { setError('Capture failed.'); return; }
+      const ext = blob.type.includes('png') ? 'png' : 'jpg';
+      const file = new File([blob], `story-${Date.now()}.${ext}`, { type: blob.type || 'image/jpeg' });
+      stopStream();
+      handleImage(file);
+    }, 'image/jpeg', 0.92);
+  };
+
+  // Video record from live stream
+  const startVideoRecording = () => {
+    if (!streamRef.current) { setError('Camera not ready.'); return; }
+    const mimeType = pickVideoMimeType();
+    if (!mimeType) { setError('Video recording not supported in this browser.'); return; }
+
+    // Need audio too for video — request a new stream with audio
+    (async () => {
+      try {
+        stopStream();
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: {
+            facingMode: facing === 'environment' ? { ideal: 'environment' } : 'user',
+            width: { ideal: 1080 },
+            height: { ideal: 1920 },
+          },
+          audio: true,
+        });
+        streamRef.current = stream;
+        if (videoPreviewRef.current) {
+          videoPreviewRef.current.srcObject = stream;
+          videoPreviewRef.current.play().catch(() => {});
+        }
+        setCameraState('ready');
+
+        chunksRef.current = [];
+        const rec = new MediaRecorder(stream, { mimeType });
+        recorderRef.current = rec;
+        rec.ondataavailable = (e) => { if (e.data.size > 0) chunksRef.current.push(e.data); };
+        rec.onstop = () => {
+          const blob = new Blob(chunksRef.current, { type: mimeType });
+          const ext = mimeType.includes('mp4') ? 'mp4' : 'webm';
+          const file = new File([blob], `story-${Date.now()}.${ext}`, { type: mimeType });
+          stopRecordingTimers();
+          setRecording(false);
+          setRecordSeconds(0);
+          stopStream();
+          // Use actual recorded duration
+          setDraft({ url: URL.createObjectURL(file), file, type: 'video', durationSeconds: recordSeconds || 1 });
+          setStage('edit');
+        };
+        rec.start();
+
+        setRecording(true);
+        setRecordSeconds(0);
+        recordTimerRef.current = setInterval(() => {
+          setRecordSeconds((s) => s + 1);
+        }, 1000);
+        autoStopRef.current = setTimeout(() => {
+          if (recorderRef.current && recorderRef.current.state !== 'inactive') {
+            recorderRef.current.stop();
+          }
+        }, MAX_VIDEO_SECONDS * 1000);
+      } catch (err: any) {
+        setError(err?.message || 'Could not start recording.');
+        setRecording(false);
+      }
+    })();
+  };
+
+  const stopVideoRecording = () => {
+    if (recorderRef.current && recorderRef.current.state !== 'inactive') {
+      recorderRef.current.stop();
+    }
+    stopRecordingTimers();
+  };
+
+  const handleShutter = () => {
+    if (cameraState !== 'ready') { openPicker(); return; }
+    if (mode === 'photo') {
+      capturePhoto();
+    } else {
+      if (recording) stopVideoRecording();
+      else startVideoRecording();
+    }
+  };
+
+  const flipCamera = async () => {
+    const next = facing === 'environment' ? 'user' : 'environment';
+    setFacing(next);
+    await startCamera(next);
   };
 
   const resetToCapture = () => {
@@ -121,6 +339,8 @@ export const StoryStudio: React.FC<StoryStudioProps> = ({
     setShowTextPanel(false);
     setStage('capture');
     setError(null);
+    // Reinit camera
+    startCamera(facing);
   };
 
   const handlePublish = async () => {
@@ -165,10 +385,13 @@ export const StoryStudio: React.FC<StoryStudioProps> = ({
     }
   };
 
+  const timerLabel = recording
+    ? `00:${recordSeconds.toString().padStart(2, '0')}`
+    : '00:00';
+
   return (
     <div className={styles.overlay}>
       <div className={styles.studio}>
-        {/* Hidden file inputs */}
         <input
           ref={imageInputRef}
           type="file"
@@ -195,13 +418,15 @@ export const StoryStudio: React.FC<StoryStudioProps> = ({
             <ArrowLeft size={20} />
           </button>
 
-          <div className={styles.timerPill}>00:00</div>
+          <div className={styles.timerPill}>
+            {recording && <span className={styles.recordingDot} />}
+            {timerLabel}
+          </div>
 
           <button
             className={styles.iconBtn}
             disabled
-            aria-label="Grid (coming soon)"
-            title="Grid overlay — coming soon"
+            aria-label="Grid overlay (coming soon)"
           >
             <Sparkles size={18} />
           </button>
@@ -210,13 +435,55 @@ export const StoryStudio: React.FC<StoryStudioProps> = ({
         {/* Camera area / preview */}
         <div className={styles.cameraArea}>
           {stage === 'capture' && (
-            <div className={styles.cameraPlaceholder}>
-              <Camera size={40} />
-              <p className={styles.cameraPlaceholderTitle}>Add to Story</p>
-              <p className={styles.cameraPlaceholderText}>
-                Pick a photo or video from your library. Live camera capture is coming in a future update.
-              </p>
-            </div>
+            <>
+              {cameraState === 'loading' && (
+                <div className={styles.cameraLoading}>
+                  <Loader2 size={28} className={styles.spin} />
+                  <span>Starting camera…</span>
+                </div>
+              )}
+
+              {cameraState === 'error' && (
+                <div className={styles.cameraError}>
+                  <Camera size={40} />
+                  <p className={styles.cameraErrorTitle}>Camera unavailable</p>
+                  <p className={styles.cameraErrorText}>{cameraError}</p>
+                  <button className={styles.cameraErrorBtn} onClick={openPicker}>
+                    Open library
+                  </button>
+                </div>
+              )}
+
+              {cameraState === 'ready' && (
+                <video
+                  ref={videoPreviewRef}
+                  className={`${styles.cameraVideo} ${facing === 'environment' ? styles.cameraVideoRear : ''}`}
+                  autoPlay
+                  muted
+                  playsInline
+                  onClick={handleShutter}
+                />
+              )}
+
+              {/* Self view PIP for front camera / decorative for rear */}
+              {cameraState === 'ready' && (
+                <div className={styles.selfView}>
+                  {facing === 'environment' ? (
+                    <Camera size={32} />
+                  ) : (
+                    <video
+                      className={styles.selfViewVideo}
+                      ref={(el) => {
+                        if (el && streamRef.current) el.srcObject = streamRef.current;
+                      }}
+                      autoPlay
+                      muted
+                      playsInline
+                    />
+                  )}
+                </div>
+              )}
+            </>
           )}
 
           {stage !== 'capture' && draft && (
@@ -239,14 +506,6 @@ export const StoryStudio: React.FC<StoryStudioProps> = ({
             </>
           )}
 
-          {/* Self-view decorative circle */}
-          {stage === 'capture' && (
-            <div className={styles.selfView}>
-              <Camera size={32} />
-            </div>
-          )}
-
-          {/* Text edit panel (edit stage) */}
           {stage === 'edit' && showTextPanel && (
             <div className={styles.overlayPanel}>
               <textarea
@@ -264,7 +523,6 @@ export const StoryStudio: React.FC<StoryStudioProps> = ({
             </div>
           )}
 
-          {/* Edit-text button (edit stage, when panel closed) */}
           {stage === 'edit' && !showTextPanel && (
             <button
               className={styles.editTextBtn}
@@ -276,7 +534,7 @@ export const StoryStudio: React.FC<StoryStudioProps> = ({
           )}
         </div>
 
-        {/* Bottom bar — differs by stage */}
+        {/* Bottom bar */}
         {stage === 'capture' && (
           <>
             <div className={styles.bottomBar}>
@@ -289,20 +547,26 @@ export const StoryStudio: React.FC<StoryStudioProps> = ({
               </button>
 
               <button
-                className={styles.shutterBtn}
-                onClick={openPicker}
-                aria-label="Capture"
+                className={`${styles.shutterBtn} ${recording ? styles.shutterRecording : ''}`}
+                onClick={handleShutter}
+                aria-label={mode === 'video' && recording ? 'Stop recording' : 'Capture'}
               >
                 <div className={styles.shutterInner}>
-                  {mode === 'photo' ? <Camera size={26} /> : <Video size={26} />}
+                  {mode === 'video' && recording ? (
+                    <Square size={26} fill="#fff" color="#fff" />
+                  ) : mode === 'video' ? (
+                    <Video size={26} />
+                  ) : (
+                    <Circle size={26} fill="#fff" color="#fff" />
+                  )}
                 </div>
               </button>
 
               <button
                 className={styles.flipBtn}
-                disabled
-                aria-label="Flip camera (coming soon)"
-                title="Camera flip — coming soon"
+                onClick={flipCamera}
+                disabled={cameraState !== 'ready' || recording}
+                aria-label="Flip camera"
               >
                 <RefreshCw size={20} />
               </button>
@@ -312,13 +576,15 @@ export const StoryStudio: React.FC<StoryStudioProps> = ({
               <button className={styles.modeTab} disabled>Live</button>
               <button
                 className={`${styles.modeTab} ${mode === 'photo' ? styles.modeTabActive : ''}`}
-                onClick={() => setMode('photo')}
+                onClick={() => { if (!recording) setMode('photo'); }}
+                disabled={recording}
               >
                 Photo
               </button>
               <button
                 className={`${styles.modeTab} ${mode === 'video' ? styles.modeTabActive : ''}`}
-                onClick={() => setMode('video')}
+                onClick={() => { if (!recording) setMode('video'); }}
+                disabled={recording}
               >
                 Video
               </button>
@@ -371,10 +637,8 @@ export const StoryStudio: React.FC<StoryStudioProps> = ({
           </div>
         )}
 
-        {/* Error toast */}
         {error && <div className={styles.errorToast}>{error}</div>}
 
-        {/* Upload progress overlay */}
         {uploading && (
           <div className={styles.progressOverlay}>
             <div className={styles.progressBarOuter}>
