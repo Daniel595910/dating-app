@@ -1,4 +1,4 @@
-﻿import { supabase } from '@/config/supabase.client';
+import { supabase } from '@/config/supabase.client';
 import { auditService } from './audit.service';
 
 export interface PostRecord {
@@ -66,118 +66,38 @@ class ContentService {
       offset = 0,
     } = filters;
 
-    let query = supabase.from('posts').select('*', { count: 'exact' });
-
-    // Search
-    if (search && search.trim()) {
-      query = query.ilike('content', `%${search.trim()}%`);
-    }
-
-    // Filters
-    if (authorId) {
-      query = query.eq('author_id', authorId);
-    }
-
-    if (communityId) {
-      query = query.eq('community_id', communityId);
-    }
-
-    // Status filter — defensive: only apply if the column exists
-    try {
-      switch (status) {
-        case 'visible':
-          query = query.or('is_hidden.is.null,is_hidden.eq.false').or('is_deleted.is.null,is_deleted.eq.false');
-          break;
-        case 'hidden':
-          query = query.eq('is_hidden', true);
-          break;
-        case 'deleted':
-          query = query.eq('is_deleted', true);
-          break;
-      }
-    } catch (err) {
-      console.warn('Failed to apply status filter:', err);
-    }
-
-    query = query
-      .order(sortBy, { ascending: sortOrder === 'asc' })
-      .range(offset, offset + limit - 1);
-
-    const { data, error, count } = await query;
+    const { data, error } = await supabase.rpc('admin_list_posts', {
+      p_search: search?.trim() || null,
+      p_status: status,
+      p_author_id: authorId || null,
+      p_community_id: communityId || null,
+      p_sort_by: sortBy,
+      p_sort_order: sortOrder,
+      p_limit: limit,
+      p_offset: offset,
+    });
 
     if (error) {
-      console.error('Failed to fetch posts:', error);
+      console.error('Failed to fetch posts via RPC:', error);
       throw new Error(error.message);
     }
 
-    const posts = await this.enrichPosts((data || []) as PostRecord[]);
-
+    const result = (data as { items?: PostRecord[]; total?: number; has_more?: boolean }) || {};
     return {
-      items: posts,
-      total: count || 0,
-      hasMore: (count || 0) > offset + limit,
+      items: result.items || [],
+      total: result.total || 0,
+      hasMore: result.has_more || false,
     };
   }
 
-  private async enrichPosts(posts: PostRecord[]): Promise<PostRecord[]> {
-    if (posts.length === 0) return [];
-
-    const authorIds = [...new Set(posts.map((p) => p.author_id).filter(Boolean))];
-
-    let profileMap = new Map<string, any>();
-    try {
-      const { data: profiles } = await supabase
-        .from('profiles')
-        .select('user_id, display_name, avatar_url, is_verified')
-        .in('user_id', authorIds);
-
-      profileMap = new Map((profiles || []).map((p: any) => [p.user_id, p]));
-    } catch (err) {
-      console.warn('Failed to enrich posts with profiles:', err);
-    }
-
-    // Fetch report counts per post
-    const postIds = posts.map((p) => p.id);
-    const reportCounts = new Map<string, number>();
-
-    try {
-      const { data: reports } = await supabase
-        .from('reports')
-        .select('target_id')
-        .in('target_id', postIds)
-        .eq('status', 'pending');
-
-      (reports || []).forEach((r: any) => {
-        reportCounts.set(r.target_id, (reportCounts.get(r.target_id) || 0) + 1);
-      });
-    } catch (err) {
-      console.warn('Failed to fetch report counts:', err);
-    }
-
-    return posts.map((p) => {
-      const author = profileMap.get(p.author_id);
-      return {
-        ...p,
-        author: author
-          ? {
-              display_name: author.display_name,
-              avatar_url: author.avatar_url,
-              is_verified: author.is_verified || false,
-            }
-          : undefined,
-        report_count: reportCounts.get(p.id) || 0,
-      };
-    });
-  }
-
   async hidePost(postId: string, hidden: boolean): Promise<boolean> {
-    const updates = hidden
-      ? { is_hidden: true, hidden_at: new Date().toISOString() }
-      : { is_hidden: false, hidden_at: null };
-
-    const { error } = await supabase.from('posts').update(updates).eq('id', postId);
+    const { data, error } = await supabase.rpc('admin_hide_post', {
+      p_post_id: postId,
+      p_hidden: hidden,
+    });
 
     if (error) throw new Error(error.message);
+    if (!data) throw new Error('Post not found or permission denied');
 
     await auditService.logAction({
       action: hidden ? 'hide_post' : 'unhide_post',
@@ -189,15 +109,12 @@ class ContentService {
   }
 
   async deletePost(postId: string): Promise<boolean> {
-    const { error } = await supabase
-      .from('posts')
-      .update({
-        is_deleted: true,
-        deleted_at: new Date().toISOString(),
-      })
-      .eq('id', postId);
+    const { data, error } = await supabase.rpc('admin_delete_post', {
+      p_post_id: postId,
+    });
 
     if (error) throw new Error(error.message);
+    if (!data) throw new Error('Post not found or permission denied');
 
     await auditService.logAction({
       action: 'delete_post',
@@ -209,16 +126,13 @@ class ContentService {
   }
 
   async banAuthor(userId: string, reason: string): Promise<boolean> {
-    const { error } = await supabase
-      .from('profiles')
-      .update({
-        is_banned: true,
-        ban_reason: reason,
-        banned_at: new Date().toISOString(),
-      })
-      .eq('user_id', userId);
+    const { data, error } = await supabase.rpc('admin_ban_user', {
+      p_user_id: userId,
+      p_reason: reason,
+    });
 
     if (error) throw new Error(error.message);
+    if (!data) throw new Error('User not found or permission denied');
 
     await auditService.logAction({
       action: 'ban_user_from_content',
