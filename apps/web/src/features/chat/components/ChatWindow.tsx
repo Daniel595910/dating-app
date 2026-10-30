@@ -858,6 +858,13 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
         </button>
       )}
 
+      <StoryViewer
+        open={Boolean(storyViewerStoryId)}
+        onClose={() => setStoryViewerStoryId(null)}
+        initialStoryId={storyViewerStoryId}
+      />
+
+
       {editingMessage && (
         <div className={styles.editBar}>
           <span className={styles.editBarLabel}>âœï¸</span>
