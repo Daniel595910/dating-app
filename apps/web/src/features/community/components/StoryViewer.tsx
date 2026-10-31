@@ -249,32 +249,6 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({
     return () => window.removeEventListener('keydown', onKey);
   }, [open, onClose, goNext, goPrev]);
 
-  // Long-press-to-pause
-  const handlePointerDown = (e: React.PointerEvent) => {
-    const target = e.target as HTMLElement;
-    // Ignore taps on interactive controls
-    if (target.closest('button') || target.closest('input') || target.closest('[role="button"]')) {
-      return;
-    }
-    if (longPressTimerRef.current) clearTimeout(longPressTimerRef.current);
-    longPressTimerRef.current = setTimeout(() => {
-      setHoldingPause(true);
-    }, LONG_PRESS_DELAY_MS);
-  };
-
-  const handlePointerUp = () => {
-    if (longPressTimerRef.current) {
-      clearTimeout(longPressTimerRef.current);
-      longPressTimerRef.current = null;
-    }
-    setHoldingPause(false);
-  };
-
-  useEffect(() => {
-    return () => {
-      if (longPressTimerRef.current) clearTimeout(longPressTimerRef.current);
-    };
-  }, []);
 
   // Heart toggle
   const handleHeart = async () => {
@@ -446,10 +420,6 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({
       <div
         className={styles.stage}
         onClick={(e) => e.stopPropagation()}
-        onPointerDown={handlePointerDown}
-        onPointerUp={handlePointerUp}
-        onPointerCancel={handlePointerUp}
-        onPointerLeave={handlePointerUp}
       >
         {hasStory && (
           <div className={styles.progressBars}>
@@ -581,6 +551,7 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({
                 className={styles.media}
                 draggable={false}
                 style={{ filter: __filterCss }}
+                onContextMenu={(e) => e.preventDefault()}
               />
             ) : (
               <video
@@ -606,6 +577,7 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({
                   }
                 }}
                 onError={(e) => { console.warn('[video-load-error]', (e.target as HTMLVideoElement).error, currentStory.media_url); }}
+                onContextMenu={(e) => e.preventDefault()}
               />
             )}
             {currentStory.text_overlay && (
@@ -621,6 +593,12 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({
               className={`${styles.tapZone} ${styles.tapZoneRight}`}
               onClick={goNext}
               aria-label="Next story"
+              type="button"
+            />
+            <button
+              className={`${styles.tapZone} ${styles.tapZoneCenter}`}
+              onClick={() => setHoldingPause((p) => !p)}
+              aria-label={holdingPause ? 'Resume story' : 'Pause story'}
               type="button"
             />
           </div>

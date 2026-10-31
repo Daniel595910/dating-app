@@ -563,3 +563,25 @@
 .textOverlay {
   z-index: 4;
 }
+
+/* ---- Full-screen viewer + center tap zone (v2) ---- */
+.overlay {
+  background-color: #000;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+.mediaWrap {
+  margin: 0;
+  border-radius: 0;
+}
+
+.media {
+  border-radius: 0;
+}
+
+.tapZoneCenter {
+  left: 33.333%;
+  right: 33.333%;
+  width: auto;
+}
