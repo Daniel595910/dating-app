@@ -231,6 +231,7 @@ export const StoryStudio: React.FC<StoryStudioProps> = ({
     if (!open) return;
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape' && !uploading) {
+        if (showTextPanel) { setShowTextPanel(false); return; }
         if (recording) stopVideoRecording();
         else onClose();
       }
@@ -703,18 +704,37 @@ export const StoryStudio: React.FC<StoryStudioProps> = ({
           )}
 
           {stage === 'edit' && showTextPanel && (
-            <div className={styles.overlayPanel}>
-              <textarea
-                className={styles.overlayTextArea}
-                placeholder="Add text to your story…"
-                value={textOverlay}
-                maxLength={MAX_OVERLAY_CHARS}
-                onChange={(e) => setTextOverlay(e.target.value)}
-                rows={2}
-                autoFocus
-              />
-              <div className={styles.overlayCharCount}>
-                {textOverlay.length} / {MAX_OVERLAY_CHARS}
+            <div
+              className={styles.textModalBackdrop}
+              onClick={() => setShowTextPanel(false)}
+              role="dialog"
+              aria-modal="true"
+            >
+              <div
+                className={styles.overlayPanel}
+                onClick={(e) => e.stopPropagation()}
+              >
+                <textarea
+                  className={styles.overlayTextArea}
+                  placeholder="Add text to your story…"
+                  value={textOverlay}
+                  maxLength={MAX_OVERLAY_CHARS}
+                  onChange={(e) => setTextOverlay(e.target.value)}
+                  rows={2}
+                  autoFocus
+                />
+                <div className={styles.textPanelFooter}>
+                  <div className={styles.overlayCharCount}>
+                    {textOverlay.length} / {MAX_OVERLAY_CHARS}
+                  </div>
+                  <button
+                    type="button"
+                    className={styles.textDoneBtn}
+                    onClick={() => setShowTextPanel(false)}
+                  >
+                    Done
+                  </button>
+                </div>
               </div>
             </div>
           )}

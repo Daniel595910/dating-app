@@ -1217,3 +1217,57 @@
 
 /* --- Spin: softer animation curve --- */
 .spin { animation: spin 0.9s linear infinite; }
+
+/* ---- Text modal: full-screen backdrop + transparent panel ---- */
+.textModalBackdrop {
+  position: absolute;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding-bottom: calc(5.5rem + env(safe-area-inset-bottom));
+  z-index: 25;
+  animation: fadeInOverlay 0.15s ease;
+}
+
+/* Override: more transparent panel */
+.overlayPanel {
+  position: relative;
+  background-color: rgba(20, 20, 22, 0.62);
+  backdrop-filter: blur(24px) saturate(1.2);
+  -webkit-backdrop-filter: blur(24px) saturate(1.2);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 20px;
+  padding: 1rem;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.5);
+  max-width: 480px;
+  width: calc(100% - 1.5rem);
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.textPanelFooter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.textDoneBtn {
+  padding: 0.5rem 1.125rem;
+  background-color: #fff;
+  color: #111;
+  border: none;
+  border-radius: 9999px;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: background-color 0.15s ease, transform 0.1s ease;
+}
+.textDoneBtn:hover { background-color: rgba(255, 255, 255, 0.9); }
+.textDoneBtn:active { transform: scale(0.96); }
