@@ -149,7 +149,7 @@ export const StoryStudio: React.FC<StoryStudioProps> = ({
       const isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent) ||
                     (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
       const capsExplicitlyNoTorch = caps?.torch === false;
-      const torchOk = !isIOS && desiredFacing === 'environment' && !capsExplicitlyNoTorch;
+      const torchOk = !isIOS && mode === 'environment' && !capsExplicitlyNoTorch;
       setTorchSupported(torchOk);
       if (!torchOk) setTorchOn(false);
 
