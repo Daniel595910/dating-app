@@ -652,6 +652,10 @@
   pointer-events: auto;
 }
 
+.editToolsPanel > * {
+  pointer-events: auto;
+}
+
 /* Filter strip */
 .filterStrip {
   display: flex;

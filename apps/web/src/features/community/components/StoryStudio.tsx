@@ -170,6 +170,17 @@ export const StoryStudio: React.FC<StoryStudioProps> = ({
     }
   }, [stopStream]);
 
+  // Initialize trim range once per draft — do NOT reset on <video> remount
+  useEffect(() => {
+    if (!draft || draft.type !== 'video') return;
+    const d = draft.durationSeconds;
+    if (d && d > 0) {
+      setTrimEnd(d);
+      setTrimStart(0);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [draft?.url]);
+
   // Reset on open
   useEffect(() => {
     if (!open) return;
@@ -677,12 +688,7 @@ export const StoryStudio: React.FC<StoryStudioProps> = ({
                   style={{ filter: FILTERS.find((f) => f.id === filterId)?.css || 'none' }}
                   onLoadedMetadata={(e) => {
                     const v = e.currentTarget;
-                    v.playbackRate = speed;
-                    if (draft.durationSeconds && draft.durationSeconds > 0) {
-                      setTrimEnd(draft.durationSeconds);
-                    } else if (v.duration && isFinite(v.duration)) {
-                      setTrimEnd(Math.round(v.duration));
-                    }
+                    try { v.playbackRate = speed; } catch { /* ignore */ }
                   }}
                 />
               )}
