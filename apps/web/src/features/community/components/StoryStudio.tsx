@@ -148,7 +148,8 @@ export const StoryStudio: React.FC<StoryStudioProps> = ({
 
       const isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent) ||
                     (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-      const torchOk = !isIOS && mode === 'environment' && caps?.torch === true;
+      const capsExplicitlyNoTorch = caps?.torch === false;
+      const torchOk = !isIOS && desiredFacing === 'environment' && !capsExplicitlyNoTorch;
       setTorchSupported(torchOk);
       if (!torchOk) setTorchOn(false);
 
@@ -508,6 +509,7 @@ export const StoryStudio: React.FC<StoryStudioProps> = ({
     } catch (err) {
       console.warn('[torch] both attempts failed', err);
       setTorchSupported(false);
+        setTorchPromptOpen(true);
     }
   };
 
