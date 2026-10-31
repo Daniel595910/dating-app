@@ -963,3 +963,257 @@
 
 .promptBtn:hover { background-color: rgba(255, 255, 255, 0.9); }
 .promptBtn:active { transform: scale(0.97); }
+
+/* ==== Modernization pass — visual polish, appended overrides ==== */
+/* Deliberately appended (not modified in place) so the original rules
+   remain readable and the diff is additive. No structural properties
+   (display/position/flex) are changed — only shadows, radii, spacing,
+   color, and transitions. */
+
+/* --- Top bar: depth without noise --- */
+.topBar {
+  padding: calc(0.625rem + env(safe-area-inset-top)) 1rem 0.625rem;
+}
+
+.iconBtn {
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  transition: background-color 0.18s ease, transform 0.12s ease, box-shadow 0.18s ease;
+}
+.iconBtn:hover:not(:disabled) {
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.09);
+}
+.iconBtn:active:not(:disabled) {
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+.iconBtnActive {
+  box-shadow: 0 4px 16px rgba(251, 191, 36, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+}
+
+.timerPill {
+  padding: 0.4375rem 1rem;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+  letter-spacing: 0.03em;
+}
+
+/* --- Camera area: softer radius, subtle inner ring --- */
+.cameraArea {
+  border-radius: 24px;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.04), 0 8px 32px rgba(0, 0, 0, 0.35);
+}
+
+.cameraPreviewMedia {
+  border-radius: 24px;
+}
+
+/* --- Shutter: larger tap feel --- */
+.shutterBtn {
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
+  transition: transform 0.12s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.shutterBtn:active:not(:disabled) {
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.25);
+  transform: scale(0.96);
+}
+
+.shutterInner {
+  box-shadow:
+    0 6px 24px rgba(239, 68, 68, 0.6),
+    0 2px 8px rgba(239, 68, 68, 0.35),
+    inset 0 -2px 8px rgba(0, 0, 0, 0.18),
+    inset 0 1px 1px rgba(255, 255, 255, 0.25);
+}
+
+/* --- Library thumb + flip: consistent depth --- */
+.libraryThumb {
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+.libraryThumb:active { transform: scale(0.95); }
+
+.flipBtn {
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+.flipBtn:active:not(:disabled) { transform: scale(0.94); }
+
+/* --- Mode tabs: proper active pill --- */
+.modeTab {
+  padding: 0.5625rem 1.125rem;
+  transition: color 0.18s ease, background-color 0.18s ease, transform 0.12s ease;
+}
+.modeTab:active:not(:disabled) { transform: scale(0.97); }
+
+.modeTabActive {
+  color: #fff;
+  background-color: rgba(255, 255, 255, 0.14);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+/* --- Edit bar: more breathing room + subtle gradient --- */
+.editBar {
+  padding: 0.875rem 1rem calc(0.875rem + env(safe-area-inset-bottom));
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.4) 0%, rgba(0, 0, 0, 0) 100%);
+}
+
+.editToolsInline {
+  gap: 0.5rem;
+}
+
+.editToolBtn {
+  width: 48px;
+  height: 48px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  transition: background-color 0.18s ease, transform 0.12s ease, box-shadow 0.18s ease;
+}
+.editToolBtn:hover:not(:disabled) {
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.09);
+}
+.editToolBtn:active:not(:disabled) {
+  transform: scale(0.94);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+.editToolBtnActive {
+  box-shadow: 0 4px 14px rgba(239, 68, 68, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+.speedLabel {
+  font-size: 0.8125rem;
+  letter-spacing: -0.01em;
+}
+
+/* --- Filter chips: rounded swatch with a proper active ring --- */
+.filterChipSwatch {
+  width: 56px;
+  height: 56px;
+  border-radius: 12px;
+  border: 2px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+  transition: border-color 0.18s ease, transform 0.12s ease, box-shadow 0.18s ease;
+}
+
+.filterChip:active .filterChipSwatch {
+  transform: scale(0.94);
+}
+
+.filterChipLabel {
+  font-size: 0.75rem;
+  letter-spacing: 0.01em;
+}
+
+/* --- Trim: deeper track, brighter selection, subtle thumb shadow --- */
+.trimTrack {
+  height: 32px;
+  border-radius: 10px;
+  background-color: rgba(255, 255, 255, 0.08);
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.4);
+}
+
+.trimSelection {
+  background-color: rgba(239, 68, 68, 0.15);
+  border-top: 2px solid rgba(239, 68, 68, 0.7);
+  border-bottom: 2px solid rgba(239, 68, 68, 0.7);
+  box-shadow: 0 0 12px rgba(239, 68, 68, 0.25);
+  border-radius: 6px;
+}
+
+.trimHandle::-webkit-slider-thumb {
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(255, 255, 255, 0.15);
+  transition: transform 0.12s ease, box-shadow 0.18s ease;
+}
+
+.trimHandle::-moz-range-thumb {
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(255, 255, 255, 0.15);
+}
+
+/* --- Speed picker: elevated card --- */
+.speedPicker {
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.6), 0 4px 12px rgba(0, 0, 0, 0.35);
+}
+
+.speedOption {
+  transition: background-color 0.15s ease, transform 0.1s ease;
+}
+
+.speedOptionActive {
+  background-color: rgba(239, 68, 68, 0.24);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+/* --- Publish button: subtle gradient + softer shadow --- */
+.publishBtn {
+  background: linear-gradient(135deg, #f87171 0%, #ef4444 55%, #dc2626 100%);
+  box-shadow:
+    0 8px 24px rgba(239, 68, 68, 0.42),
+    0 2px 6px rgba(239, 68, 68, 0.25),
+    inset 0 1px 0 rgba(255, 255, 255, 0.18);
+  transition: transform 0.12s ease, box-shadow 0.18s ease, filter 0.15s ease;
+}
+.publishBtn:hover:not(:disabled) {
+  box-shadow:
+    0 10px 28px rgba(239, 68, 68, 0.5),
+    0 2px 8px rgba(239, 68, 68, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  filter: brightness(1.03);
+}
+.publishBtn:active:not(:disabled) {
+  transform: scale(0.98);
+  box-shadow:
+    0 4px 14px rgba(239, 68, 68, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.15);
+}
+
+/* --- Cancel / secondary buttons --- */
+.cancelBtn {
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  transition: background-color 0.15s ease, transform 0.12s ease;
+}
+.cancelBtn:active:not(:disabled) { transform: scale(0.98); }
+
+.editTextBtn {
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  transition: background-color 0.15s ease, transform 0.12s ease;
+}
+.editTextBtn:active { transform: scale(0.96); }
+
+/* --- Text overlay panel --- */
+.overlayPanel {
+  border-radius: 20px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.55), 0 4px 16px rgba(0, 0, 0, 0.3);
+}
+
+.overlayTextArea {
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+.overlayTextArea:focus {
+  border-color: rgba(239, 68, 68, 0.5);
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+/* --- Progress overlay --- */
+.progressBarOuter {
+  width: 240px;
+  height: 6px;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.4);
+}
+
+.progressBarInner {
+  background: linear-gradient(90deg, #f87171 0%, #ef4444 100%);
+  box-shadow: 0 0 8px rgba(239, 68, 68, 0.6);
+  transition: width 0.2s ease;
+}
+
+.progressLabel {
+  font-size: 0.875rem;
+  letter-spacing: 0.01em;
+}
+
+/* --- Error toast --- */
+.errorToast {
+  box-shadow: 0 6px 20px rgba(239, 68, 68, 0.4), 0 2px 6px rgba(0, 0, 0, 0.3);
+  padding: 0.625rem 1.125rem;
+}
+
+/* --- Spin: softer animation curve --- */
+.spin { animation: spin 0.9s linear infinite; }
