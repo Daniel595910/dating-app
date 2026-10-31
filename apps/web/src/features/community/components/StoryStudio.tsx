@@ -102,6 +102,9 @@ export const StoryStudio: React.FC<StoryStudioProps> = ({
   const chunksRef = useRef<Blob[]>([]);
   const recordTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const autoStopRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const torchOnRef = useRef(false);
+
+  useEffect(() => { torchOnRef.current = torchOn; }, [torchOn]);
 
   const stopStream = useCallback(() => {
     if (streamRef.current) {
@@ -142,21 +145,16 @@ export const StoryStudio: React.FC<StoryStudioProps> = ({
       const settings = track?.getSettings?.() || {};
       console.info('[camera] actual', { w: settings.width, h: settings.height, fps: settings.frameRate, torch: caps.torch });
 
-      // Torch detection — skip on iOS (Apple does not expose torch to WebKit)
       const isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent) ||
                     (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-      let torchOk = false;
-      if (!isIOS && mode === 'environment' && track) {
-        try {
-          // Try a no-op torch constraint — if it succeeds, torch is possible
-          await track.applyConstraints({ advanced: [{ torch: false } as any] });
-          torchOk = true;
-        } catch {
-          torchOk = false;
-        }
-      }
+      const torchOk = !isIOS && mode === 'environment' && caps?.torch === true;
       setTorchSupported(torchOk);
-      setTorchOn(false);
+      if (!torchOk) setTorchOn(false);
+
+      if (torchOnRef.current && torchOk && track) {
+        try { await track.applyConstraints({ advanced: [{ torch: true } as any] }); }
+        catch { /* ignore */ }
+      }
       setCameraState('ready');
     } catch (err: any) {
       const name = err?.name || '';
@@ -604,13 +602,21 @@ export const StoryStudio: React.FC<StoryStudioProps> = ({
             <button
               className={`${styles.iconBtn} ${torchOn ? styles.iconBtnActive : ''}`}
               onClick={toggleTorch}
-              disabled={cameraState !== 'ready' || recording}
+              disabled={cameraState !== 'ready'}
               aria-label={torchOn ? 'Turn off flash' : 'Turn on flash'}
+              title={torchOn ? 'Turn off flash' : 'Turn on flash'}
             >
-              {torchOn ? <Zap size={18} fill="currentColor" /> : <ZapOff size={18} />}
+              {torchOn ? <Zap size={20} fill="currentColor" /> : <ZapOff size={20} />}
             </button>
           ) : (
-            <div style={{ width: 40, height: 40 }} aria-hidden="true" />
+            <button
+              className={styles.iconBtn}
+              disabled
+              aria-label="Flash unavailable on this camera"
+              title="Flash unavailable on this camera"
+            >
+              <ZapOff size={20} />
+            </button>
           )}
         </div>
 
