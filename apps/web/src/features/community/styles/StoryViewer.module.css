@@ -536,3 +536,30 @@
 }
 .volumeBtn:hover { background-color: rgba(0, 0, 0, 0.55); transform: scale(1.05); }
 .volumeBtn:active { transform: scale(0.95); }
+
+/* ---- Tap zones for story navigation (left/right thirds) ---- */
+.tapZone {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 33%;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  z-index: 3;
+  -webkit-tap-highlight-color: transparent;
+  outline: none;
+}
+
+.tapZoneLeft {
+  left: 0;
+}
+
+.tapZoneRight {
+  right: 0;
+}
+
+/* Raise text above video (was z-index auto = painted under media) */
+.textOverlay {
+  z-index: 4;
+}

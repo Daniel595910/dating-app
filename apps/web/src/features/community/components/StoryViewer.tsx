@@ -605,27 +605,21 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({
             {currentStory.text_overlay && (
               <div className={styles.textOverlay}>{currentStory.text_overlay}</div>
             )}
+            <button
+              className={`${styles.tapZone} ${styles.tapZoneLeft}`}
+              onClick={goPrev}
+              aria-label="Previous story"
+              type="button"
+            />
+            <button
+              className={`${styles.tapZone} ${styles.tapZoneRight}`}
+              onClick={goNext}
+              aria-label="Next story"
+              type="button"
+            />
           </div>
         ) : null}
 
-        {hasStory && (
-          <>
-            <button
-              className={styles.tapPrev}
-              aria-label="Previous story"
-              onClick={goPrev}
-            >
-              <ChevronLeft size={28} />
-            </button>
-            <button
-              className={styles.tapNext}
-              aria-label="Next story"
-              onClick={goNext}
-            >
-              <ChevronRight size={28} />
-            </button>
-          </>
-        )}
 
         {hasStory && !loading && !error && (
           <div className={styles.toolbar}>
