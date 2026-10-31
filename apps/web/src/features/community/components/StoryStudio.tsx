@@ -90,6 +90,7 @@ export const StoryStudio: React.FC<StoryStudioProps> = ({
   const SPEEDS = [0.5, 1, 1.5, 2];
   const [previewVideoRef, setPreviewVideoRef] = useState<HTMLVideoElement | null>(null);
   const [speedPickerOpen, setSpeedPickerOpen] = useState(false);
+  const [torchPromptOpen, setTorchPromptOpen] = useState(false);
 
   const mediaInputRef = useRef<HTMLInputElement>(null);
   const videoPreviewRef = useRef<HTMLVideoElement>(null);
@@ -613,9 +614,9 @@ export const StoryStudio: React.FC<StoryStudioProps> = ({
           ) : (
             <button
               className={styles.iconBtn}
-              disabled
-              aria-label="Flash unavailable on this camera"
-              title="Flash unavailable on this camera"
+              onClick={() => setTorchPromptOpen(true)}
+              aria-label="Flash unavailable — tap for details"
+              title="Flash unavailable — tap for details"
             >
               <ZapOff size={20} />
             </button>
@@ -937,6 +938,32 @@ export const StoryStudio: React.FC<StoryStudioProps> = ({
         )}
 
         {error && <div className={styles.errorToast}>{error}</div>}
+        {torchPromptOpen && (
+          <div
+            className={styles.promptBackdrop}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="torchPromptTitle"
+            onClick={() => setTorchPromptOpen(false)}
+          >
+            <div className={styles.promptCard} onClick={(e) => e.stopPropagation()}>
+              <div className={styles.promptIcon} aria-hidden="true">
+                <ZapOff size={28} />
+              </div>
+              <h3 id="torchPromptTitle" className={styles.promptTitle}>Flash unavailable</h3>
+              <p className={styles.promptText}>
+                This camera doesn&apos;t support a flashlight. Try the rear camera, or use a device with a torch.
+              </p>
+              <button
+                type="button"
+                className={styles.promptBtn}
+                onClick={() => setTorchPromptOpen(false)}
+              >
+                Got it
+              </button>
+            </div>
+          </div>
+        )}
 
         {uploading && (
           <div className={styles.progressOverlay}>
