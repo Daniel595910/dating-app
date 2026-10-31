@@ -514,3 +514,25 @@
 
 /* ---- Blur-fill background for landscape / non-9:16 media ---- */
 
+
+/* ---- Volume toggle (video stories) ---- */
+.volumeBtn {
+  background-color: rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #fff;
+  cursor: pointer;
+  padding: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  -webkit-tap-highlight-color: transparent;
+  transition: background-color 0.15s ease, transform 0.12s ease;
+}
+.volumeBtn:hover { background-color: rgba(0, 0, 0, 0.55); transform: scale(1.05); }
+.volumeBtn:active { transform: scale(0.95); }

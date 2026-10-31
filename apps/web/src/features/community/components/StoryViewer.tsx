@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { X, ChevronLeft, ChevronRight, Heart, Send, MoreVertical, Trash2, Share2 } from 'lucide-react';
+import { X, ChevronLeft, ChevronRight, Heart, Send, MoreVertical, Trash2, Share2, Volume2, VolumeX } from 'lucide-react';
 import { supabase } from '@/config/supabase.client';
 import styles from '../styles/StoryViewer.module.css';
 
@@ -73,9 +73,12 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({
 
   const [likeOverrides, setLikeOverrides] = useState<Record<string, { liked: boolean; count: number }>>({});
 
+  const [muted, setMuted] = useState(true);
+
   const touchStartY = useRef<number | null>(null);
   const replyInputRef = useRef<HTMLInputElement | null>(null);
   const longPressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
 
   const currentAuthor = authors[authorIdx];
   const currentStory = currentAuthor?.stories[storyIdx];
@@ -98,6 +101,7 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({
     setDeleteConfirmOpen(false);
     setDeleting(false);
     setLikeOverrides({});
+    setMuted(true);
   }, [open]);
 
   // Fetch stories
@@ -477,6 +481,21 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({
               </div>
             </div>
             <div className={styles.authorControls}>
+              {currentStory.media_type === 'video' && (
+                <button
+                  onClick={() => {
+                    const next = !muted;
+                    setMuted(next);
+                    const v = videoRef.current;
+                    if (v && !next && v.paused) { v.play().catch(() => {}); }
+                  }}
+                  aria-label={muted ? 'Unmute video' : 'Mute video'}
+                  title={muted ? 'Unmute' : 'Mute'}
+                  className={styles.volumeBtn}
+                >
+                  {muted ? <VolumeX size={18} /> : <Volume2 size={18} />}
+                </button>
+              )}
               {isSelfStory && (
                 <button
                   onClick={() => setOwnMenuOpen((v) => !v)}
@@ -562,7 +581,7 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({
                 src={currentStory.media_url}
                 className={styles.media}
                 autoPlay
-                muted
+                muted={muted}
                 playsInline
                 preload="metadata"
                 style={{ filter: __filterCss }}
