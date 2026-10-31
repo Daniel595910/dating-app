@@ -565,7 +565,6 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({
                 muted
                 playsInline
                 preload="metadata"
-                crossOrigin="anonymous"
                 style={{ filter: __filterCss }}
                 onLoadedMetadata={(e) => {
                   const v = e.currentTarget;
