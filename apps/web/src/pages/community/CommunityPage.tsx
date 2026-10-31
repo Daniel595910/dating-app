@@ -471,7 +471,7 @@ export const CommunityPage: React.FC = () => {
 
       <StoryViewer
         open={storyViewerOpen}
-        onClose={() => { setStoryViewerOpen(false); setStoryViewerAuthorId(null); }}
+        onClose={() => { setStoryViewerOpen(false); setStoryViewerAuthorId(null); refreshStoryRings(); }}
         initialAuthorId={storyViewerAuthorId}
       />
 
