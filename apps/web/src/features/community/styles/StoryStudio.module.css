@@ -857,3 +857,24 @@
   background-color: rgba(239, 68, 68, 0.22);
   color: #fca5a5;
 }
+
+/* ---- Trim filmstrip (video preview frames inside track) ---- */
+.trimFilmstrip {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  overflow: hidden;
+  border-radius: 8px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.trimFilmstripImg {
+  flex: 1 1 0;
+  min-width: 0;
+  height: 100%;
+  object-fit: cover;
+  user-select: none;
+  -webkit-user-drag: none;
+  display: block;
+}

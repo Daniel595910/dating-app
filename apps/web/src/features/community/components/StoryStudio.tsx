@@ -5,6 +5,7 @@ import {
 } from 'lucide-react';
 import { supabase } from '@/config/supabase.client';
 import { mediaService } from '../services/media.service';
+import { TrimFilmstrip } from './TrimFilmstrip';
 import styles from '../styles/StoryStudio.module.css';
 
 interface StoryStudioProps {
@@ -755,6 +756,10 @@ export const StoryStudio: React.FC<StoryStudioProps> = ({
                         </span>
                       </div>
                       <div className={styles.trimTrack}>
+                        <TrimFilmstrip
+                          src={draft.url}
+                          duration={draft.durationSeconds || 15}
+                        />
                         <div
                           className={styles.trimSelection}
                           style={{
