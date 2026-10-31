@@ -771,7 +771,7 @@ export const StoryStudio: React.FC<StoryStudioProps> = ({
                           value={trimStart}
                           onChange={(e) => {
                             const v = parseFloat(e.target.value);
-                            if (v < trimEnd - 0.5) setTrimStart(v);
+                            if (v < trimEnd - 0.5) { setTrimStart(v); if (previewVideoRef) { try { previewVideoRef.currentTime = v; } catch { /* ignore */ } } }
                           }}
                         />
                         <input
@@ -781,7 +781,7 @@ export const StoryStudio: React.FC<StoryStudioProps> = ({
                           max={draft.durationSeconds || 15}
                           step={0.1}
                           value={trimEnd}
-                          onChange={(e) => setTrimEnd(parseFloat(e.target.value))}
+                          onChange={(e) => { const v = parseFloat(e.target.value); setTrimEnd(v); if (previewVideoRef) { try { previewVideoRef.currentTime = v; } catch { /* ignore */ } } }}
                         />
                       </div>
                     </div>
