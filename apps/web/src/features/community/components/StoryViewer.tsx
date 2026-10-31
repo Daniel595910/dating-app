@@ -140,8 +140,11 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({
   }, [open, initialAuthorId, initialStoryId]);
 
   // Navigation
+  const advancingRef = useRef(false);
   const goNext = useCallback(() => {
     if (!currentAuthor) return;
+    if (advancingRef.current) return;
+    advancingRef.current = true;
     setReplyText('');
     setReplyToast(null);
     setOwnMenuOpen(false);
@@ -156,10 +159,14 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({
     } else {
       onClose();
     }
+    setTimeout(() => { advancingRef.current = false; }, 100);
   }, [authorIdx, authors.length, currentAuthor, onClose, storyIdx]);
 
+  const goingPrevRef = useRef(false);
   const goPrev = useCallback(() => {
     if (!currentAuthor) return;
+    if (goingPrevRef.current) return;
+    goingPrevRef.current = true;
     setReplyText('');
     setReplyToast(null);
     setOwnMenuOpen(false);
@@ -172,6 +179,7 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({
       setStoryIdx(0);
       setProgress(0);
     }
+    setTimeout(() => { goingPrevRef.current = false; }, 100);
   }, [authorIdx, currentAuthor, storyIdx]);
 
   useEffect(() => {
@@ -192,8 +200,15 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({
     if (!open || !currentStory || paused) return;
 
     const isVideo = currentStory.media_type === 'video';
+    const __metaForTimer = currentStory.metadata || {};
+    const __speedForTimer = __metaForTimer.speed && __metaForTimer.speed > 0 ? __metaForTimer.speed : 1;
+    const __tStartForTimer = __metaForTimer.trim_start || 0;
+    const __tEndForTimer = __metaForTimer.trim_end || 0;
+    const __effectiveSec = (__tEndForTimer > __tStartForTimer)
+      ? (__tEndForTimer - __tStartForTimer) / __speedForTimer
+      : (currentStory.duration_seconds || 15) / __speedForTimer;
     const durationMs = isVideo
-      ? Math.min((currentStory.duration_seconds || 15) * 1000, 15000)
+      ? Math.max(500, Math.min(__effectiveSec * 1000, 15000))
       : IMAGE_DURATION_MS;
     const step = (TICK_MS / durationMs) * 100;
 
@@ -559,8 +574,10 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({
                 }}
                 onTimeUpdate={(e) => {
                   const v = e.currentTarget;
-                  if (__trimEnd > 0 && v.currentTime >= __trimEnd) {
+                  const endTime = __trimEnd > 0 ? __trimEnd : (v.duration || 0);
+                  if (endTime > 0 && v.currentTime >= endTime - 0.05) {
                     try { v.pause(); } catch {}
+                    setProgress(100);
                     goNext();
                   }
                 }}
