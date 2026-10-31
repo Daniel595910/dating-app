@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, Plus, X, Gift, Video, Smile } from 'lucide-react';
+import { Send, Plus, X, Gift, Image as ImageIcon, Smile } from 'lucide-react';
 import { supabase } from '@/config/supabase.client';
 import { ChatMessage } from '../../types/chat.types';
 import styles from '../styles/MessageComposer.module.css';
@@ -38,7 +38,6 @@ export const MessageComposer: React.FC<MessageComposerProps> = ({
   const [attachmentMenuOpen, setAttachmentMenuOpen] = useState(false);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const imageFileInputRef = useRef<HTMLInputElement>(null);
-  const videoFileInputRef = useRef<HTMLInputElement>(null);
 
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastTypingBroadcastRef = useRef<number>(0);
@@ -101,22 +100,16 @@ export const MessageComposer: React.FC<MessageComposerProps> = ({
   const handleImageSelect = (files: FileList | null) => {
     if (!files || files.length === 0) return;
     const file = files[0];
-    if (file && file.type.startsWith('image/')) {
-      onSendImage(file);
-    }
+    if (!file) return;
     if (imageFileInputRef.current) imageFileInputRef.current.value = '';
     setAttachmentMenuOpen(false);
+    if (file.type.startsWith('video/')) {
+      onSendVideo(file);
+    } else if (file.type.startsWith('image/')) {
+      onSendImage(file);
+    }
   };
 
-  const handleVideoSelect = (files: FileList | null) => {
-    if (!files || files.length === 0) return;
-    const file = files[0];
-    if (file && file.type.startsWith('video/')) {
-      onSendVideo(file);
-    }
-    if (videoFileInputRef.current) videoFileInputRef.current.value = '';
-    setAttachmentMenuOpen(false);
-  };
 
 
   return (
@@ -137,14 +130,10 @@ export const MessageComposer: React.FC<MessageComposerProps> = ({
       {attachmentMenuOpen && (
         <div className={styles.attachmentMenu}>
           <button className={styles.attachmentOption} onClick={() => imageFileInputRef.current?.click()}>
-            <Plus size={18} />
-            <span>Photo</span>
+            <ImageIcon size={18} />
+            <span>Media</span>
           </button>
 
-          <button className={styles.attachmentOption} onClick={() => videoFileInputRef.current?.click()}>
-            <Video size={18} />
-            <span>Video</span>
-          </button>
           <button className={styles.attachmentOption} onClick={onOpenStickerPicker}>
             <Smile size={18} />
             <span>Stickers</span>
@@ -160,15 +149,8 @@ export const MessageComposer: React.FC<MessageComposerProps> = ({
         <input
           ref={imageFileInputRef}
           type="file"
-          accept="image/jpeg,image/png,image/webp,image/gif"
+          accept="image/jpeg,image/png,image/webp,image/gif,video/mp4,video/webm,video/quicktime"
           onChange={(e) => handleImageSelect(e.target.files)}
-          style={{ display: 'none' }}
-        />
-        <input
-          ref={videoFileInputRef}
-          type="file"
-          accept="video/mp4,video/webm,video/quicktime"
-          onChange={(e) => handleVideoSelect(e.target.files)}
           style={{ display: 'none' }}
         />
 
