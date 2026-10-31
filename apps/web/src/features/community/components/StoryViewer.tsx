@@ -130,7 +130,13 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({
         }
         if (initialAuthorId) {
           const idx = list.findIndex((a) => a.author_id === initialAuthorId);
-          if (idx >= 0) setAuthorIdx(idx);
+          if (idx >= 0) {
+            setAuthorIdx(idx);
+            const authorStories = list[idx].stories;
+            if (authorStories.length > 0) {
+              setStoryIdx(authorStories.length - 1);
+            }
+          }
         }
       } catch (err: any) {
         if (cancelled) return;
