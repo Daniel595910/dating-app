@@ -62,6 +62,21 @@ export const CommunityPage: React.FC = () => {
   const [memberPreviewCommunityId, setMemberPreviewCommunityId] = useState<string | null>(null);
   const [storyViewerOpen, setStoryViewerOpen] = useState(false);
   const [storyViewerAuthorId, setStoryViewerAuthorId] = useState<string | null>(null);
+  const [storyViewerStoryId, setStoryViewerStoryId] = useState<string | null>(null);
+
+  // Deep-link: /community?storyId=<id> opens StoryViewer at that story
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const params = new URLSearchParams(window.location.search);
+    const storyId = params.get('storyId');
+    if (!storyId) return;
+    setStoryViewerStoryId(storyId);
+    setStoryViewerOpen(true);
+    const url = new URL(window.location.href);
+    url.searchParams.delete('storyId');
+    window.history.replaceState({}, '', url.pathname + url.search);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const [storyCreatorOpen, setStoryCreatorOpen] = useState(false);
 
   useEffect(() => {
@@ -471,8 +486,9 @@ export const CommunityPage: React.FC = () => {
 
       <StoryViewer
         open={storyViewerOpen}
-        onClose={() => { setStoryViewerOpen(false); setStoryViewerAuthorId(null); refreshStoryRings(); }}
+        onClose={() => { setStoryViewerOpen(false); setStoryViewerAuthorId(null); setStoryViewerStoryId(null); refreshStoryRings(); }}
         initialAuthorId={storyViewerAuthorId}
+        initialStoryId={storyViewerStoryId}
       />
 
       <MatchSuccess
