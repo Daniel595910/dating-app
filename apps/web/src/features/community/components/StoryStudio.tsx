@@ -90,8 +90,7 @@ export const StoryStudio: React.FC<StoryStudioProps> = ({
   const [previewVideoRef, setPreviewVideoRef] = useState<HTMLVideoElement | null>(null);
   const [speedPickerOpen, setSpeedPickerOpen] = useState(false);
 
-  const imageInputRef = useRef<HTMLInputElement>(null);
-  const videoInputRef = useRef<HTMLInputElement>(null);
+  const mediaInputRef = useRef<HTMLInputElement>(null);
   const videoPreviewRef = useRef<HTMLVideoElement>(null);
   const recordCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const recordRafRef = useRef<number | null>(null);
@@ -231,10 +230,8 @@ export const StoryStudio: React.FC<StoryStudioProps> = ({
 
   const openPicker = () => {
     setError(null);
-    // Release camera while library picker is open
     stopStream();
-    if (mode === 'photo') imageInputRef.current?.click();
-    else videoInputRef.current?.click();
+    mediaInputRef.current?.click();
   };
 
   const resumeCamera = () => {
@@ -288,11 +285,11 @@ export const StoryStudio: React.FC<StoryStudioProps> = ({
     };
   };
 
-  const onFile = (files: FileList | null, kind: 'image' | 'video') => {
+  const onFile = (files: FileList | null) => {
     if (!files || files.length === 0) return;
     const file = files[0]!;
-    if (kind === 'image') handleImage(file);
-    else handleVideoFile(file);
+    if (file.type.startsWith('video/')) handleVideoFile(file);
+    else handleImage(file);
   };
 
   // Photo capture from live stream
@@ -568,18 +565,11 @@ export const StoryStudio: React.FC<StoryStudioProps> = ({
     <div className={styles.overlay}>
       <div className={styles.studio}>
         <input
-          ref={imageInputRef}
+          ref={mediaInputRef}
           type="file"
-          accept="image/jpeg,image/png,image/webp,image/gif"
+          accept="image/*,video/*"
           style={{ display: 'none' }}
-          onChange={(e) => onFile(e.target.files, 'image')}
-        />
-        <input
-          ref={videoInputRef}
-          type="file"
-          accept="video/mp4,video/webm,video/quicktime"
-          style={{ display: 'none' }}
-          onChange={(e) => onFile(e.target.files, 'video')}
+          onChange={(e) => onFile(e.target.files)}
         />
 
         {/* Top bar */}
