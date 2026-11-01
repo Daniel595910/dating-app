@@ -575,3 +575,99 @@
 .cropHandle_s  { bottom: -10px; left: 50%; margin-left: -10px; cursor: s-resize; }
 .cropHandle_sw { bottom: -10px; left: -10px; cursor: sw-resize; }
 .cropHandle_w  { top: 50%; margin-top: -10px; left: -10px; cursor: w-resize; }
+
+/* ============================================================ */
+/* Markup (commit 7B)                                            */
+/* ============================================================ */
+
+.markupOverlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  z-index: 5;
+}
+
+.markupCanvas {
+  pointer-events: auto;
+  touch-action: none;
+  cursor: crosshair;
+  max-width: 100%;
+  max-height: 100%;
+  border-radius: 8px;
+  background: #000;
+}
+
+.markupToolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 0;
+  margin-bottom: 4px;
+}
+
+.markupColorRow {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.markupColorBtn {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  cursor: pointer;
+  transition: transform 0.1s ease, border-color 0.15s ease;
+  flex-shrink: 0;
+  padding: 0;
+}
+
+.markupColorBtn:hover:not(:disabled) {
+  transform: scale(1.1);
+}
+
+.markupColorBtnActive {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.4);
+  transform: scale(1.1);
+}
+
+.markupColorBtn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.markupActionRow {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.markupIconBtn {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.85);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s ease;
+  flex-shrink: 0;
+}
+
+.markupIconBtn:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.15);
+  color: #ffffff;
+}
+
+.markupIconBtn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
