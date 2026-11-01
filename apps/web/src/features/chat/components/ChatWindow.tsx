@@ -498,7 +498,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
 
 
 
-  const handleSendImage = async (file: File, quality: 'hd' | 'sd' = 'sd') => {
+  const handleSendImage = async (file: File, quality: 'hd' | 'sd' = 'sd', caption?: string) => {
     if (!user || readOnly) return;
     
     const tempId = `temp-${Date.now()}`;
@@ -510,7 +510,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
       senderName: 'You',
       senderAvatar: null,
       type: 'image',
-      content: 'Photo',
+      content: caption || 'Photo',
       metadata: { imageUrl: '' },
       status: 'sending',
       createdAt: new Date().toISOString(),
@@ -526,7 +526,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
 
       const imageUrl = uploadResult.url;
       const newMessage = await chatService.sendMessage(
-        conversationId, user.id, 'Photo', 'text', { imageUrl, actualType: 'image' }
+        conversationId, user.id, caption || 'Photo', 'text', { imageUrl, actualType: 'image' }
       );
 
       if (newMessage) {
@@ -571,7 +571,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
     }
   };
 
-  const handleSendVideo = async (file: File, quality: 'hd' | 'sd' = 'sd') => {
+  const handleSendVideo = async (file: File, quality: 'hd' | 'sd' = 'sd', caption?: string) => {
     if (!user || readOnly) return;
     
     const tempId = `temp-${Date.now()}`;
@@ -583,7 +583,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
       senderName: 'You',
       senderAvatar: null,
       type: 'video',
-      content: 'Video',
+      content: caption || 'Video',
       metadata: { videoUrl: '' },
       status: 'sending',
       createdAt: new Date().toISOString(),
@@ -599,7 +599,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
 
       const videoUrl = uploadResult.url;
       const newMessage = await chatService.sendMessage(
-        conversationId, user.id, 'Video', 'text', { videoUrl, actualType: 'video' }
+        conversationId, user.id, caption || 'Video', 'text', { videoUrl, actualType: 'video' }
       );
 
       if (newMessage) {

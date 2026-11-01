@@ -3,14 +3,15 @@ import { Send, Plus, X, Gift, Image as ImageIcon, Smile } from 'lucide-react';
 import { supabase } from '@/config/supabase.client';
 import { ChatMessage } from '../../types/chat.types';
 import styles from '../styles/MessageComposer.module.css';
+import { MediaEditor } from './MediaEditor/MediaEditor';
 import { useSettings } from '@/hooks/useSettings';
 
 interface MessageComposerProps {
   conversationId: string;
   userId: string;
   onSend: (content: string) => void;
-  onSendImage: (file: File) => void;
-  onSendVideo: (file: File) => void;
+  onSendImage: (file: File, quality?: 'hd' | 'sd', caption?: string) => void;
+  onSendVideo: (file: File, quality?: 'hd' | 'sd', caption?: string) => void;
   onTypingChange: (isTyping: boolean) => void;
   replyingTo?: ChatMessage | null;
   onCancelReply?: () => void;
@@ -42,6 +43,7 @@ export const MessageComposer: React.FC<MessageComposerProps> = ({
   const [attachmentMenuOpen, setAttachmentMenuOpen] = useState(false);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const mediaFileInputRef = useRef<HTMLInputElement>(null);
+  const [pendingMedia, setPendingMedia] = useState<File | null>(null);
 
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastTypingBroadcastRef = useRef<number>(0);
@@ -107,10 +109,8 @@ export const MessageComposer: React.FC<MessageComposerProps> = ({
     if (!file) return;
     if (mediaFileInputRef.current) mediaFileInputRef.current.value = '';
     setAttachmentMenuOpen(false);
-    if (file.type.startsWith('video/')) {
-      onSendVideo(file, quality);
-    } else if (file.type.startsWith('image/')) {
-      onSendImage(file, quality);
+    if (file.type.startsWith('video/') || file.type.startsWith('image/')) {
+      setPendingMedia(file);
     }
   };
 
@@ -206,6 +206,22 @@ export const MessageComposer: React.FC<MessageComposerProps> = ({
           <Send size={18} />
         </button>
       </div>
+
+      {pendingMedia && (
+        <MediaEditor
+          file={pendingMedia}
+          initialQuality={quality}
+          onCancel={() => setPendingMedia(null)}
+          onConfirm={(result) => {
+            setPendingMedia(null);
+            if (result.file.type.startsWith('video/')) {
+              onSendVideo(result.file, result.quality, result.caption);
+            } else if (result.file.type.startsWith('image/')) {
+              onSendImage(result.file, result.quality, result.caption);
+            }
+          }}
+        />
+      )}
     </div>
   );
 };
