@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { X, Send, Timer } from 'lucide-react';
+import { X, Send, Timer, Sliders, Crop, Pencil } from 'lucide-react';
+import { AdjustmentPanel } from './AdjustmentPanel';
+import { Adjustments, DEFAULT_ADJUSTMENTS, isDefaultAdjustments, cssFilterFromAdjustments, applyAdjustmentsToImage } from '../../utils/mediaEditor';
 import { CaptionInput } from './CaptionInput';
 import styles from './MediaEditor.module.css';
 
@@ -25,6 +27,8 @@ export const MediaEditor: React.FC<MediaEditorProps> = ({
   const [caption, setCaption] = useState('');
   const [quality, setQuality] = useState<'hd' | 'sd'>(initialQuality);
   const [sending, setSending] = useState(false);
+  const [adjustments, setAdjustments] = useState<Adjustments>({ ...DEFAULT_ADJUSTMENTS });
+  const [activeTab, setActiveTab] = useState<'adjust' | 'crop' | 'markup' | null>(null);
 
   const isVideo = file.type.startsWith('video/');
   const [objectUrl, setObjectUrl] = useState<string>('');
@@ -45,10 +49,19 @@ export const MediaEditor: React.FC<MediaEditorProps> = ({
     return () => window.removeEventListener('keydown', onKey);
   }, [onCancel, sending]);
 
-  const handleConfirm = () => {
+  const handleConfirm = async () => {
     if (sending) return;
     setSending(true);
-    onConfirm({ file, quality, caption: caption.trim() });
+    try {
+      let outFile = file;
+      if (!isVideo && !isDefaultAdjustments(adjustments)) {
+        outFile = await applyAdjustmentsToImage(file, adjustments, quality);
+      }
+      onConfirm({ file: outFile, quality, caption: caption.trim() });
+    } catch (err) {
+      console.error('[MediaEditor] Export failed:', err);
+      setSending(false);
+    }
   };
 
   return (
@@ -86,16 +99,59 @@ export const MediaEditor: React.FC<MediaEditorProps> = ({
               muted
             />
           ) : (
-            <img src={objectUrl} alt="Preview" className={styles.media} />
+            <img
+              src={objectUrl}
+              alt="Preview"
+              className={styles.media}
+              style={!isDefaultAdjustments(adjustments) ? { filter: cssFilterFromAdjustments(adjustments) } : undefined}
+            />
           )}
         </div>
 
+
+        {activeTab === 'adjust' && !isVideo && (
+          <AdjustmentPanel
+            adjustments={adjustments}
+            onChange={setAdjustments}
+            disabled={sending}
+          />
+        )}
         <div className={styles.footer}>
           <CaptionInput
             value={caption}
             onChange={setCaption}
             disabled={sending}
           />
+
+          <div className={styles.tabBar}>
+            <button
+              type="button"
+              className={`${styles.tabButton} ${activeTab === 'adjust' ? styles.tabButtonActive : ''}`}
+              onClick={() => setActiveTab(activeTab === 'adjust' ? null : 'adjust')}
+              disabled={sending || isVideo}
+            >
+              <Sliders size={14} />
+              <span>Adjust</span>
+            </button>
+            <button
+              type="button"
+              className={styles.tabButton}
+              disabled
+              title="Coming in commit 6"
+            >
+              <Crop size={14} />
+              <span>Crop</span>
+            </button>
+            <button
+              type="button"
+              className={styles.tabButton}
+              disabled
+              title="Coming in commit 7"
+            >
+              <Pencil size={14} />
+              <span>Markup</span>
+            </button>
+          </div>
 
           <div className={styles.controlsRow}>
             <div className={styles.qualityToggle} role="group" aria-label="Quality">
