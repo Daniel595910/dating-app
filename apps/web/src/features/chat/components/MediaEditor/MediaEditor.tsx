@@ -1,11 +1,11 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { X, Send, Timer, Sliders, Crop, Pencil } from 'lucide-react';
 import { AdjustmentPanel } from './AdjustmentPanel';
-import { Adjustments, DEFAULT_ADJUSTMENTS, isDefaultAdjustments, cssFilterFromAdjustments, CropRect, AspectPreset, computeCropRect, exportImage, Stroke, BrushType } from '../../utils/mediaEditor';
+import { Adjustments, DEFAULT_ADJUSTMENTS, isDefaultAdjustments, cssFilterFromAdjustments, exportImage, Stroke, BrushType } from '../../utils/mediaEditor';
 import { CaptionInput } from './CaptionInput';
 import styles from './MediaEditor.module.css';
-import { CropOverlay } from './CropOverlay';
-import { MarkupCanvas } from './MarkupCanvas';
+import { CropModal } from './CropModal';
+import { MarkupCanvas, MarkupCanvasHandle } from './MarkupCanvas';
 import { MarkupToolbar } from './MarkupToolbar';
 
 export interface MediaEditorResult {
@@ -32,96 +32,74 @@ export const MediaEditor: React.FC<MediaEditorProps> = ({
   const [sending, setSending] = useState(false);
   const [adjustments, setAdjustments] = useState<Adjustments>({ ...DEFAULT_ADJUSTMENTS });
   const [activeTab, setActiveTab] = useState<'adjust' | 'crop' | 'markup' | null>(null);
-  const [cropRect, setCropRect] = useState<CropRect | null>(null);
-  const [cropRotation, setCropRotation] = useState(0);
-  const [aspectPreset, setAspectPreset] = useState<AspectPreset>('free');
-  const [naturalDims, setNaturalDims] = useState<{ w: number; h: number } | null>(null);
-  const [renderedDims, setRenderedDims] = useState<{ w: number; h: number } | null>(null);
-  const previewAreaRef = useRef<HTMLDivElement>(null);
+
+  const [currentFile, setCurrentFile] = useState<File>(file);
+  const [currentUrl, setCurrentUrl] = useState<string>('');
+  const [currentDims, setCurrentDims] = useState<{ w: number; h: number } | null>(null);
+
   const [strokes, setStrokes] = useState<Stroke[]>([]);
-  const [markupPreview, setMarkupPreview] = useState<string | null>(null);
-  const [cropPreview, setCropPreview] = useState<string | null>(null);
   const [markupColor, setMarkupColor] = useState('#ef4444');
   const [markupBrush, setMarkupBrush] = useState<BrushType>('pen');
   const [markupSize, setMarkupSize] = useState(8);
+  const markupCanvasRef = useRef<MarkupCanvasHandle>(null);
 
   const isVideo = file.type.startsWith('video/');
-  const [objectUrl, setObjectUrl] = useState<string>('');
+  const prevUrlRef = useRef<string>('');
 
   useEffect(() => {
-    const url = URL.createObjectURL(file);
-    setObjectUrl(url);
-    return () => {
-      URL.revokeObjectURL(url);
-    };
-  }, [file]);
+    const url = URL.createObjectURL(currentFile);
+    setCurrentUrl(url);
 
-  const onImageLoad = (e: React.SyntheticEvent<HTMLImageElement>) => {
-    const img = e.currentTarget;
-    setNaturalDims({ w: img.naturalWidth, h: img.naturalHeight });
-  };
+    if (isVideo) {
+      const video = document.createElement('video');
+      video.src = url;
+      video.onloadedmetadata = () => setCurrentDims({ w: video.videoWidth, h: video.videoHeight });
+    } else {
+      const img = new Image();
+      img.onload = () => {
+        setCurrentDims({ w: img.naturalWidth, h: img.naturalHeight });
+      };
+      img.src = url;
+    }
 
-  useEffect(() => {
-    const el = previewAreaRef.current;
-    if (!el || !naturalDims) return;
-    const measure = () => {
-      const containerW = el.clientWidth;
-      const containerH = el.clientHeight;
-      const scale = Math.min(containerW / naturalDims.w, containerH / naturalDims.h);
-      setRenderedDims({ w: naturalDims.w * scale, h: naturalDims.h * scale });
-    };
-    measure();
-    const ro = new ResizeObserver(measure);
-    ro.observe(el);
-    return () => ro.disconnect();
-  }, [naturalDims]);
-
-  useEffect(() => {
-    if (!naturalDims) return;
-    setCropRect(computeCropRect(naturalDims.w, naturalDims.h, aspectPreset));
-  }, [naturalDims, aspectPreset]);
-
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && !sending) onCancel();
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [onCancel, sending]);
+    const prev = prevUrlRef.current;
+    prevUrlRef.current = url;
+    if (prev && prev !== url) {
+      try { URL.revokeObjectURL(prev); } catch { /* ignore */ }
+    }
+  }, [currentFile, isVideo]);
 
   const handleConfirm = async () => {
-    if (sending || !naturalDims) return;
+    if (sending) return;
     setSending(true);
     try {
-      let outFile = file;
-      const hasCrop = cropRect !== null;
-      const hasAdjust = !isDefaultAdjustments(adjustments);
-      const hasMarkup = strokes.length > 0;
-      if (!isVideo && (hasCrop || hasAdjust || hasMarkup)) {
-        outFile = await exportImage(file, {
-          crop: cropRect,
-          rotation: cropRotation,
+      let finalFile = currentFile;
+      if (!isVideo && !isDefaultAdjustments(adjustments)) {
+        finalFile = await exportImage(currentFile, {
+          crop: null,
+          rotation: 0,
           adjustments,
-          markup: strokes,
+          markup: null,
         });
       }
-      onConfirm({ file: outFile, quality, caption: caption.trim() });
+      onConfirm({ file: finalFile, quality, caption: caption.trim() });
     } catch (err) {
-      console.error('[MediaEditor] Export failed:', err);
+      console.error('[MediaEditor] Send failed:', err);
       setSending(false);
     }
   };
 
   return (
     <>
-      {/* 1. MARKUP STUDIO (Full-screen modal) */}
-      {activeTab === 'markup' && !isVideo && (
+      {/* 1. MARKUP STUDIO (full-screen) */}
+      {activeTab === 'markup' && !isVideo && currentDims && (
         <div className={styles.markupFullscreenOverlay}>
           <div className={styles.markupImageContainer}>
               <MarkupCanvas
-                imageUrl={cropPreview || objectUrl}
-                naturalW={naturalDims.w}
-                naturalH={naturalDims.h}
+                ref={markupCanvasRef}
+                imageUrl={currentUrl}
+                naturalW={currentDims.w}
+                naturalH={currentDims.h}
                 strokes={strokes}
                 onStrokesChange={setStrokes}
                 color={markupColor}
@@ -136,11 +114,21 @@ export const MediaEditor: React.FC<MediaEditorProps> = ({
             onBrushTypeChange={setMarkupBrush}
             brushSize={markupSize}
             onBrushSizeChange={setMarkupSize}
-            onDone={() => {
-              if (strokes.length > 0) {
-                exportImage(file, { crop: null, adjustments: DEFAULT_ADJUSTMENTS, markup: strokes })
-                  .then(previewFile => setMarkupPreview(URL.createObjectURL(previewFile)))
-                  .catch(err => console.error('Preview failed', err));
+            onDone={async () => {
+              const latestStrokes = markupCanvasRef.current?.getStrokes() ?? [];
+              if (latestStrokes.length > 0) {
+                try {
+                  const markedUpFile = await exportImage(currentFile, {
+                    crop: null,
+                    rotation: 0,
+                    adjustments: DEFAULT_ADJUSTMENTS,
+                    markup: latestStrokes,
+                  });
+                  setCurrentFile(markedUpFile);
+                  setStrokes([]);
+                } catch (err) {
+                  console.error('Markup export failed', err);
+                }
               }
               setActiveTab(null);
             }}
@@ -152,8 +140,21 @@ export const MediaEditor: React.FC<MediaEditorProps> = ({
         </div>
       )}
 
-      {/* 2. STANDARD MEDIA EDITOR */}
-      {activeTab !== 'markup' && (
+      {/* 2. CROP MODAL (full-screen, sibling to everything else) */}
+      {activeTab === 'crop' && !isVideo && currentDims && (
+        <CropModal
+          imageUrl={currentUrl}
+                onCropComplete={(croppedFile) => {
+                  setCurrentFile(croppedFile);
+                  setActiveTab(null);
+                }}
+          onCancel={() => setActiveTab(null)}
+          disabled={sending}
+        />
+      )}
+
+      {/* 3. STANDARD MEDIA EDITOR (hidden when crop or markup is active) */}
+      {activeTab !== 'markup' && activeTab !== 'crop' && (
         <div className={styles.overlay} onClick={() => { if (!sending) onCancel(); }}>
           <div className={styles.container} onClick={(e) => e.stopPropagation()}>
             <div className={styles.header}>
@@ -161,24 +162,20 @@ export const MediaEditor: React.FC<MediaEditorProps> = ({
                 <X size={20} />
               </button>
               <span className={styles.headerTitle}>Send Media</span>
-              <button type="button" className={styles.sendBtn} onClick={handleConfirm} disabled={sending || !naturalDims} aria-label="Send">
+              <button type="button" className={styles.sendBtn} onClick={handleConfirm} disabled={sending || !currentDims} aria-label="Send">
                 {sending ? 'Sending...' : <><Send size={16} /><span>Send</span></>}
               </button>
             </div>
 
-            <div className={styles.previewArea} ref={previewAreaRef}>
+            <div className={styles.previewArea}>
               {isVideo ? (
-                <video src={objectUrl} className={styles.media} controls playsInline autoPlay muted />
+                <video src={currentUrl} className={styles.media} controls playsInline autoPlay muted />
               ) : (
                 <img
-                  src={cropPreview || markupPreview || objectUrl}
+                  src={currentUrl}
                   alt="Preview"
                   className={styles.media}
-                  onLoad={onImageLoad}
-                  style={{
-                    ...(!isDefaultAdjustments(adjustments) ? { filter: cssFilterFromAdjustments(adjustments) } : {}),
-                    opacity: (activeTab === 'crop' || activeTab === 'markup') && !isVideo ? 0 : 1,
-                  }}
+                  style={!isDefaultAdjustments(adjustments) ? { filter: cssFilterFromAdjustments(adjustments) } : undefined}
                 />
               )}
             </div>
@@ -186,27 +183,6 @@ export const MediaEditor: React.FC<MediaEditorProps> = ({
             {activeTab === 'adjust' && !isVideo && (
               <AdjustmentPanel adjustments={adjustments} onChange={setAdjustments} disabled={sending} />
             )}
-
-{activeTab === 'crop' && !isVideo && (
-          <CropOverlay
-            imageUrl={objectUrl}
-            onCropComplete={async (croppedArea, rotation) => {
-              // Save the crop dimensions and rotation
-              setCropRect(croppedArea);
-              setCropRotation(rotation);
-              // Generate a temporary preview of the crop
-              try {
-                const croppedFile = await exportImage(file, { crop: croppedArea, rotation: rotation, adjustments: DEFAULT_ADJUSTMENTS, markup: null });
-                setCropPreview(URL.createObjectURL(croppedFile));
-              } catch (e) {
-                console.error('Failed to preview crop', e);
-              }
-              setActiveTab(null); // Close the modal
-            }}
-            onCancel={() => setActiveTab(null)}
-            disabled={sending}
-          />
-        )}
 
             <div className={styles.footer}>
               <CaptionInput value={caption} onChange={setCaption} disabled={sending} />

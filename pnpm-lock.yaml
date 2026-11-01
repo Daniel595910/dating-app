@@ -126,6 +126,9 @@ importers:
       react:
         specifier: ^18.2.0
         version: 18.2.0
+      react-advanced-cropper:
+        specifier: ^0.20.1
+        version: 0.20.1(react@18.2.0)
       react-dom:
         specifier: ^18.2.0
         version: 18.2.0(react@18.2.0)
@@ -2286,6 +2289,13 @@ packages:
     hasBin: true
     dev: true
 
+  /advanced-cropper@0.17.1:
+    resolution: {integrity: sha512-Z1P0sYOXa2tqZjeY742QtNERofXh1AuOa27LEurO9rbx3IfzLrGQlzy7sWEc5VN9hRg+J/qCiMmnB6tUDLb1TA==}
+    engines: {node: '>=8', npm: '>=5'}
+    dependencies:
+      tslib: 2.8.1
+    dev: false
+
   /ajv@6.15.0:
     resolution: {integrity: sha512-fgFx7Hfoq60ytK2c7DhnF8jIvzYgOMxfugjLOSMHjLIPgenqa7S7oaagATUq99mV6IYvN2tRmC0wnTYX6iPbMw==}
     dependencies:
@@ -2593,6 +2603,10 @@ packages:
       ansi-styles: 4.3.0
       supports-color: 7.2.0
     dev: true
+
+  /classnames@2.5.1:
+    resolution: {integrity: sha512-saHYOzhIQs6wy2sVxTM6bUDsQO4F50V9RQ22qBpEdCW+I+/Wmke2HOl6lS6dTpdxVhb88/I6+Hs+438c3lfUow==}
+    dev: false
 
   /color-convert@2.0.1:
     resolution: {integrity: sha512-RRECPsj7iu/xb5oKYcsFHSppFNnsj/52OVTRKb4zP5onXwVF3zVmmToNcOfGC+CRDpfK/U584fMg38ZHCaElKQ==}
@@ -4124,6 +4138,18 @@ packages:
   /queue-microtask@1.2.3:
     resolution: {integrity: sha512-NuaNSa6flKT5JaSYQzJok04JzTL1CA6aGhv5rfLW3PgqA+M2ChpZQnAC8h8i4ZFkBS8X5RqkDBHA7r4hej3K9A==}
     dev: true
+
+  /react-advanced-cropper@0.20.1(react@18.2.0):
+    resolution: {integrity: sha512-Pcmkv0xQMpig6+LkM+zLbEuqBbYG3+CwXvIfYU+LDNn9l8t91Jm0fp9MSTNW0pjIvT6frAGTfmlnvnZW4PEs7Q==}
+    engines: {node: '>=8', npm: '>=5'}
+    peerDependencies:
+      react: '>=16.8.0'
+    dependencies:
+      advanced-cropper: 0.17.1
+      classnames: 2.5.1
+      react: 18.2.0
+      tslib: 2.8.1
+    dev: false
 
   /react-dom@18.2.0(react@18.2.0):
     resolution: {integrity: sha512-6IMTriUmvsjHUjNtEDudZfuDQUoWXVxKHhlEGSk81n4YFS+r/Kl99wXiwlVXtPBtJenozv2P+hxDsw9eA7Xo6g==}

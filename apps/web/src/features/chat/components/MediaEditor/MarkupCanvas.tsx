@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState } from 'react';
 import { Stroke, StrokePoint, renderMarkupToCanvas, BrushType } from '../../utils/mediaEditor';
 import styles from './MediaEditor.module.css';
 
@@ -14,7 +14,12 @@ interface MarkupCanvasProps {
   disabled?: boolean;
 }
 
-export const MarkupCanvas: React.FC<MarkupCanvasProps> = ({
+export interface MarkupCanvasHandle {
+  /** Synchronous source of truth for all committed strokes. */
+  getStrokes: () => Stroke[];
+}
+
+export const MarkupCanvas = forwardRef<MarkupCanvasHandle, MarkupCanvasProps>(({
   imageUrl,
   naturalW,
   naturalH,
@@ -24,7 +29,7 @@ export const MarkupCanvas: React.FC<MarkupCanvasProps> = ({
   brushType,
   brushSize,
   disabled = false,
-}) => {
+}, ref) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const imageElRef = useRef<HTMLImageElement | null>(null);
@@ -32,6 +37,20 @@ export const MarkupCanvas: React.FC<MarkupCanvasProps> = ({
   const [currentPoints, setCurrentPoints] = useState<StrokePoint[]>([]);
   const [renderedW, setRenderedW] = useState(0);
   const [renderedH, setRenderedH] = useState(0);
+  const [imageLoadedTick, setImageLoadedTick] = useState(0);
+
+  // --- Synchronous source of truth (avoids React state-batching races) ---
+  const currentPointsRef = useRef<StrokePoint[]>([]);
+  const strokesRef = useRef<Stroke[]>(strokes);
+
+  // Keep the ref in sync with the prop, but never rely on this for export.
+  useEffect(() => {
+    strokesRef.current = strokes;
+  }, [strokes]);
+
+  useImperativeHandle(ref, () => ({
+    getStrokes: () => strokesRef.current,
+  }), []);
 
   // Measure container
   useEffect(() => {
@@ -76,13 +95,19 @@ export const MarkupCanvas: React.FC<MarkupCanvasProps> = ({
   }, [renderedW, renderedH, naturalW, naturalH, strokes, currentPoints, color, brushSize, brushType]);
 
   useEffect(() => {
+    let cancelled = false;
     const img = new Image();
     img.crossOrigin = 'anonymous';
-    img.onload = () => { imageElRef.current = img; redraw(); };
+    img.onload = () => {
+      if (cancelled) return;
+      imageElRef.current = img;
+      setImageLoadedTick((t) => t + 1);
+    };
     img.src = imageUrl;
-  }, [imageUrl, redraw]);
+    return () => { cancelled = true; };
+  }, [imageUrl]);
 
-  useEffect(() => { redraw(); }, [redraw]);
+  useEffect(() => { redraw(); }, [redraw, imageLoadedTick]);
 
   const getNaturalPoint = (e: React.PointerEvent<HTMLCanvasElement>): StrokePoint => {
     const canvas = canvasRef.current;
@@ -99,6 +124,7 @@ export const MarkupCanvas: React.FC<MarkupCanvasProps> = ({
       e.preventDefault();
       const p = getNaturalPoint(e);
       setDrawing(true);
+      currentPointsRef.current = [p];
       setCurrentPoints([p]);
       e.currentTarget.setPointerCapture(e.pointerId);
     },
@@ -110,22 +136,30 @@ export const MarkupCanvas: React.FC<MarkupCanvasProps> = ({
       if (!drawing || disabled) return;
       e.preventDefault();
       const p = getNaturalPoint(e);
-      setCurrentPoints((prev) => [...prev, p]);
+      currentPointsRef.current = [...currentPointsRef.current, p];
+      setCurrentPoints(currentPointsRef.current);
     },
     [drawing, disabled, naturalW, naturalH]
   );
 
-  const onPointerUp = useCallback(() => {
+  const commitStroke = useCallback(() => {
     if (!drawing) return;
     setDrawing(false);
-    if (currentPoints.length > 0) {
-      onStrokesChange([
-        ...strokes,
-        { points: currentPoints, color, width: brushSize, brushType },
-      ]);
+
+    const points = currentPointsRef.current;
+    if (points.length > 0) {
+      const nextStrokes: Stroke[] = [
+        ...strokesRef.current,
+        { points, color, width: brushSize, brushType },
+      ];
+      // 1) Update the synchronous ref FIRST - export reads this.
+      strokesRef.current = nextStrokes;
+      // 2) Then notify the parent (for toolbar undo/clear parity + redraw).
+      onStrokesChange(nextStrokes);
     }
+    currentPointsRef.current = [];
     setCurrentPoints([]);
-  }, [drawing, currentPoints, strokes, color, brushSize, brushType, onStrokesChange]);
+  }, [drawing, color, brushSize, brushType, onStrokesChange]);
 
   if (renderedW <= 0 || renderedH <= 0) {
     return <div ref={containerRef} className={styles.markupContainerPlaceholder} />;
@@ -141,11 +175,12 @@ export const MarkupCanvas: React.FC<MarkupCanvasProps> = ({
             style={{ width: renderedW, height: renderedH }}
             onPointerDown={onPointerDown}
             onPointerMove={onPointerMove}
-            onPointerUp={onPointerUp}
-            onPointerCancel={onPointerUp}
+            onPointerUp={commitStroke}
+            onPointerCancel={commitStroke}
           />
         </div>
       </div>
     </div>
   );
-};
+});
+MarkupCanvas.displayName = 'MarkupCanvas';

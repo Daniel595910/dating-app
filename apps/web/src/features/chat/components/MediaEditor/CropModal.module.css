@@ -1,0 +1,152 @@
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: #09090b;
+  z-index: 9999;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  color: #ffffff;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  padding-top: calc(16px + env(safe-area-inset-top));
+  background: #09090b;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  z-index: 20;
+}
+
+.textBtn {
+  background: none;
+  border: none;
+  color: #a1a1aa;
+  font-size: 15px;
+  font-weight: 500;
+  cursor: pointer;
+  padding: 8px 12px;
+  border-radius: 8px;
+}
+
+.doneBtn {
+  color: #3b82f6;
+  font-weight: 600;
+}
+
+.title {
+  color: #ffffff;
+  font-weight: 600;
+  font-size: 15px;
+}
+
+.viewport {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  background: #000;
+  overflow: hidden;
+}
+
+.cropperInstance {
+  height: 100%;
+  width: 100%;
+}
+
+.cropperImage {
+  /* Ensures image remains sharp */
+  image-rendering: -webkit-optimize-contrast; 
+}
+
+.toolbar {
+  background: #18181b;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 12px;
+  padding-bottom: calc(12px + env(safe-area-inset-bottom));
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  z-index: 20;
+}
+
+.toolRow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.toolGroup {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.05);
+  padding: 4px;
+  border-radius: 12px;
+}
+
+.iconBtn {
+  background: none;
+  border: none;
+  color: #a1a1aa;
+  cursor: pointer;
+  padding: 10px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.iconBtn:hover:not(:disabled) {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.iconBtnActive {
+  color: #3b82f6;
+  background: rgba(59, 130, 246, 0.15);
+}
+
+.aspectBtn {
+  background: none;
+  border: none;
+  color: #a1a1aa;
+  font-size: 13px;
+  font-weight: 500;
+  padding: 8px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.aspectBtnActive {
+  color: #3b82f6;
+  background: rgba(59, 130, 246, 0.15);
+}
+
+/* CROPPER.JS OVERRIDES */
+:global(.advanced-cropper) {
+  background: #000;
+}
+
+/* The dark overlay outside the crop area */
+:global(.advanced-cropper-stencil) {
+  border: 2px solid rgba(255, 255, 255, 0.9);
+  box-shadow: 0 0 0 9999em rgba(0, 0, 0, 0.7);
+}
+
+/* The grid inside the crop area */
+:global(.advanced-cropper-stencil__grid-lines) {
+  border-color: rgba(255, 255, 255, 0.4) !important;
+}
+
+/* The crop handles (corners and edges) */
+:global(.advanced-cropper-stencil__handler) {
+  background: #ffffff;
+  border-radius: 50%;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5);
+}
