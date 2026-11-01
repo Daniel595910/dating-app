@@ -151,45 +151,186 @@ function loadImage(url: string): Promise<HTMLImageElement> {
  * - Quality maps: 'hd' → 0.92, 'sd' → 0.75. Matches upload.service.ts.
  *   Without this, SD users who adjust photos get double-compressed.
  */
-export async function applyAdjustmentsToImage(
+// ============================================================================
+// Crop types + geometry (commit 6A)
+// ============================================================================
+
+/**
+ * Crop rectangle in NATURAL image pixels (not rendered/screen pixels).
+ * `x` and `y` are the top-left corner. All four values are non-negative.
+ */
+export type CropRect = {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+};
+
+export type AspectPreset = '1:1' | '4:5' | '16:9' | 'original' | 'free';
+
+/**
+ * Compute the initial centered crop rect for a given aspect preset.
+ *
+ * - 'original' and 'free' return the full image.
+ * - Named ratios return the largest centered rect with that ratio that fits
+ *   inside the image (no overflow, no letterbox).
+ *
+ * Single-algorithm implementation: the `ratio > imageRatio` branch handles
+ * every aspect-locked case. Adding new presets is one string in the
+ * AspectPreset union — no new branch here.
+ */
+export function computeCropRect(
+  imageW: number,
+  imageH: number,
+  preset: AspectPreset
+): CropRect {
+  if (preset === 'original' || preset === 'free') {
+    return { x: 0, y: 0, width: imageW, height: imageH };
+  }
+
+  const [rw, rh] = preset.split(':').map(Number);
+  const ratio = rw / rh;
+  const imageRatio = imageW / imageH;
+
+  let width: number;
+  let height: number;
+  if (ratio > imageRatio) {
+    width = imageW;
+    height = imageW / ratio;
+  } else {
+    height = imageH;
+    width = imageH * ratio;
+  }
+
+  const x = (imageW - width) / 2;
+  const y = (imageH - height) / 2;
+  return { x, y, width, height };
+}
+
+/**
+ * Scale crop rect from natural image pixels to rendered screen pixels.
+ *
+ * IMPORTANT: `renderedW` and `renderedH` must be the dimensions of the
+ * RENDERED IMAGE CONTENT (not the container, which may include letterboxing).
+ * The caller (CropOverlay in 6B) is responsible for providing these
+ * correctly. When the container is exactly sized to the image content,
+ * renderedW === containerW and this is straightforward.
+ */
+export function scaleCropToScreen(
+  crop: CropRect,
+  renderedW: number,
+  renderedH: number,
+  naturalW: number,
+  naturalH: number
+): CropRect {
+  const scaleX = renderedW / naturalW;
+  const scaleY = renderedH / naturalH;
+  return {
+    x: crop.x * scaleX,
+    y: crop.y * scaleY,
+    width: crop.width * scaleX,
+    height: crop.height * scaleY,
+  };
+}
+
+/**
+ * Inverse of scaleCropToScreen — pointer events happen in rendered pixels;
+ * the crop state is stored in natural pixels.
+ *
+ * Same IMPORTANT note as scaleCropToScreen: renderedW/H are the CONTENT
+ * dimensions, not the container.
+ */
+export function scaleCropToNatural(
+  rendered: CropRect,
+  renderedW: number,
+  renderedH: number,
+  naturalW: number,
+  naturalH: number
+): CropRect {
+  const scaleX = renderedW / naturalW;
+  const scaleY = renderedH / naturalH;
+  return {
+    x: rendered.x / scaleX,
+    y: rendered.y / scaleY,
+    width: rendered.width / scaleX,
+    height: rendered.height / scaleY,
+  };
+}
+
+// ============================================================================
+// Combined export — crop + adjustments in a single pass (commit 6A)
+// ============================================================================
+
+/**
+ * Bake crop + adjustments into a new File in one decode/encode pass.
+ *
+ * No `quality` parameter. This function ALWAYS outputs at maximum useful
+ * quality (0.92 JPEG, or format-preserved with the same quality). The
+ * upload layer (upload.service.ts) is the ONLY place SD compression happens.
+ * Passing quality here would double-compress on SD — that was the bug fixed
+ * in commit 5C.
+ */
+export async function exportImage(
   file: File,
-  adj: Adjustments,
-  quality: 'hd' | 'sd' = 'hd'
+  opts: {
+    crop: CropRect | null;
+    adjustments: Adjustments;
+  }
 ): Promise<File> {
-  if (isDefaultAdjustments(adj)) {
+  const { crop, adjustments } = opts;
+  const cropApplied = crop !== null;
+  const adjustApplied = !isDefaultAdjustments(adjustments);
+
+  if (!cropApplied && !adjustApplied) {
     return file;
   }
 
-  const jpegQuality = quality === 'sd' ? 0.75 : 0.92;
   const url = URL.createObjectURL(file);
 
   try {
     const img = await loadImage(url);
+
+    const targetW = crop ? Math.round(crop.width) : img.naturalWidth;
+    const targetH = crop ? Math.round(crop.height) : img.naturalHeight;
+    const sourceX = crop ? Math.round(crop.x) : 0;
+    const sourceY = crop ? Math.round(crop.y) : 0;
+
     const canvas = document.createElement('canvas');
-    canvas.width = img.naturalWidth;
-    canvas.height = img.naturalHeight;
+    canvas.width = targetW;
+    canvas.height = targetH;
     const ctx = canvas.getContext('2d');
     if (!ctx) throw new Error('Failed to get canvas context');
 
     const supportsFilter = ctxFilterSupported(ctx);
 
-    if (supportsFilter) {
-      const warmth = Math.max(0, (adj.warmth - 100) / 2);
-      ctx.filter = `brightness(${adj.brightness}%) contrast(${adj.contrast}%) saturate(${adj.saturation}%) sepia(${warmth}%)`;
-      ctx.drawImage(img, 0, 0);
-      ctx.filter = 'none';
-    } else {
-      ctx.drawImage(img, 0, 0);
-      applyAdjustmentsPerPixel(ctx, canvas.width, canvas.height, adj);
+    if (adjustApplied && supportsFilter) {
+      const warmth = Math.max(0, (adjustments.warmth - 100) / 2);
+      ctx.filter = `brightness(${adjustments.brightness}%) contrast(${adjustments.contrast}%) saturate(${adjustments.saturation}%) sepia(${warmth}%)`;
     }
 
-    // Determine output type — preserve original format, fall back to jpeg
+    ctx.drawImage(
+      img,
+      sourceX,
+      sourceY,
+      targetW,
+      targetH,
+      0,
+      0,
+      targetW,
+      targetH
+    );
+    if (adjustApplied && supportsFilter) {
+      ctx.filter = 'none';
+    }
+
+    if (adjustApplied && !supportsFilter) {
+      applyAdjustmentsPerPixel(ctx, targetW, targetH, adjustments);
+    }
+
     let outputType = file.type;
     if (!outputType || !outputType.startsWith('image/')) {
       outputType = 'image/jpeg';
     }
-    // Some browsers don't support PNG/WebP encode via toBlob in all versions;
-    // fall back to jpeg for exotic formats rather than failing.
     const supportedEncode = ['image/jpeg', 'image/png', 'image/webp'];
     if (!supportedEncode.includes(outputType)) {
       outputType = 'image/jpeg';
@@ -199,12 +340,11 @@ export async function applyAdjustmentsToImage(
       canvas.toBlob(
         (b) => resolve(b),
         outputType,
-        outputType === 'image/png' ? undefined : jpegQuality
+        outputType === 'image/png' ? undefined : 0.92
       );
     });
     if (!blob) throw new Error('Canvas export returned null blob');
 
-    // Preserve original filename, adjust extension if format changed
     let outName = file.name;
     if (outputType === 'image/jpeg' && !/\.(jpe?g)$/i.test(outName)) {
       outName = outName.replace(/\.[^.]+$/, '') + '.jpg';
@@ -218,4 +358,21 @@ export async function applyAdjustmentsToImage(
   } finally {
     URL.revokeObjectURL(url);
   }
+}
+
+// ============================================================================
+// Backward-compat wrapper (deprecated)
+// ============================================================================
+
+/**
+ * @deprecated Use exportImage(file, { crop: null, adjustments }) instead.
+ * Kept for compatibility. The `quality` parameter is IGNORED — export always
+ * produces max quality (0.92); the upload layer owns SD compression.
+ */
+export async function applyAdjustmentsToImage(
+  file: File,
+  adj: Adjustments,
+  _quality?: 'hd' | 'sd'
+): Promise<File> {
+  return exportImage(file, { crop: null, adjustments: adj });
 }
