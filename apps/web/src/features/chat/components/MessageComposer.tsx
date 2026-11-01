@@ -37,7 +37,7 @@ export const MessageComposer: React.FC<MessageComposerProps> = ({
   const [sending, setSending] = useState(false);
   const [attachmentMenuOpen, setAttachmentMenuOpen] = useState(false);
   const inputRef = useRef<HTMLTextAreaElement>(null);
-  const imageFileInputRef = useRef<HTMLInputElement>(null);
+  const mediaFileInputRef = useRef<HTMLInputElement>(null);
 
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastTypingBroadcastRef = useRef<number>(0);
@@ -97,11 +97,11 @@ export const MessageComposer: React.FC<MessageComposerProps> = ({
     }, 2500);
   };
 
-  const handleImageSelect = (files: FileList | null) => {
+  const handleMediaSelect = (files: FileList | null) => {
     if (!files || files.length === 0) return;
     const file = files[0];
     if (!file) return;
-    if (imageFileInputRef.current) imageFileInputRef.current.value = '';
+    if (mediaFileInputRef.current) mediaFileInputRef.current.value = '';
     setAttachmentMenuOpen(false);
     if (file.type.startsWith('video/')) {
       onSendVideo(file);
@@ -129,7 +129,7 @@ export const MessageComposer: React.FC<MessageComposerProps> = ({
       {/* Attachment menu */}
       {attachmentMenuOpen && (
         <div className={styles.attachmentMenu}>
-          <button className={styles.attachmentOption} onClick={() => imageFileInputRef.current?.click()}>
+          <button className={styles.attachmentOption} onClick={() => mediaFileInputRef.current?.click()}>
             <ImageIcon size={18} />
             <span>Media</span>
           </button>
@@ -147,10 +147,10 @@ export const MessageComposer: React.FC<MessageComposerProps> = ({
 
       <div className={styles.composer}>
         <input
-          ref={imageFileInputRef}
+          ref={mediaFileInputRef}
           type="file"
           accept="image/jpeg,image/png,image/webp,image/gif,video/mp4,video/webm,video/quicktime"
-          onChange={(e) => handleImageSelect(e.target.files)}
+          onChange={(e) => handleMediaSelect(e.target.files)}
           style={{ display: 'none' }}
         />
 
