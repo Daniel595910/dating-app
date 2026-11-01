@@ -363,7 +363,7 @@ export async function exportImage(
     if (!supportedEncode.includes(outputType)) outputType = 'image/jpeg';
 
     const blob = await new Promise<Blob | null>((resolve) => {
-      finalCanvas.toBlob((b) => resolve(b), outputType, outputType === 'image/png' ? undefined : 0.92);
+      canvas.toBlob((b) => resolve(b), outputType, outputType === 'image/png' ? undefined : 0.92);
     });
     if (!blob) throw new Error('Canvas export returned null blob');
 

@@ -56,17 +56,11 @@ export const MediaEditor: React.FC<MediaEditorProps> = ({
       video.onloadedmetadata = () => setCurrentDims({ w: video.videoWidth, h: video.videoHeight });
     } else {
       const img = new Image();
-      img.onload = () => {
-        setCurrentDims({ w: img.naturalWidth, h: img.naturalHeight });
-      };
+      img.onload = () => setCurrentDims({ w: img.naturalWidth, h: img.naturalHeight });
       img.src = url;
     }
 
-    const prev = prevUrlRef.current;
-    prevUrlRef.current = url;
-    if (prev && prev !== url) {
-      try { URL.revokeObjectURL(prev); } catch { /* ignore */ }
-    }
+    // No URL.revokeObjectURL — let GC handle it. Revoking causes ERR_FILE_NOT_FOUND.
   }, [currentFile, isVideo]);
 
   const handleConfirm = async () => {
@@ -172,6 +166,7 @@ export const MediaEditor: React.FC<MediaEditorProps> = ({
                 <video src={currentUrl} className={styles.media} controls playsInline autoPlay muted />
               ) : (
                 <img
+                  key={currentUrl}
                   src={currentUrl}
                   alt="Preview"
                   className={styles.media}
