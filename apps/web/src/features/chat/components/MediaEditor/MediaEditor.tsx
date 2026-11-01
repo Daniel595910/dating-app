@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { X, Send, Timer } from 'lucide-react';
 import { CaptionInput } from './CaptionInput';
 import styles from './MediaEditor.module.css';
@@ -27,13 +27,15 @@ export const MediaEditor: React.FC<MediaEditorProps> = ({
   const [sending, setSending] = useState(false);
 
   const isVideo = file.type.startsWith('video/');
-  const objectUrl = useMemo(() => URL.createObjectURL(file), [file]);
+  const [objectUrl, setObjectUrl] = useState<string>('');
 
   useEffect(() => {
+    const url = URL.createObjectURL(file);
+    setObjectUrl(url);
     return () => {
-      URL.revokeObjectURL(objectUrl);
+      URL.revokeObjectURL(url);
     };
-  }, [objectUrl]);
+  }, [file]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
