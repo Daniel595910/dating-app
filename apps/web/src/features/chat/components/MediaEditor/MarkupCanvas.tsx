@@ -33,17 +33,16 @@ export const MarkupCanvas = forwardRef<MarkupCanvasHandle, MarkupCanvasProps>(({
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const imageElRef = useRef<HTMLImageElement | null>(null);
-  const [drawing, setDrawing] = useState(false);
-  const [currentPoints, setCurrentPoints] = useState<StrokePoint[]>([]);
   const [renderedW, setRenderedW] = useState(0);
   const [renderedH, setRenderedH] = useState(0);
   const [imageLoadedTick, setImageLoadedTick] = useState(0);
 
-  // --- Synchronous source of truth (avoids React state-batching races) ---
+  // Synchronous source of truth — pointer handlers NEVER read React state
+  const drawingRef = useRef(false);
   const currentPointsRef = useRef<StrokePoint[]>([]);
   const strokesRef = useRef<Stroke[]>(strokes);
 
-  // Keep the ref in sync with the prop, but never rely on this for export.
+  // Keep the ref in sync with the prop for external updates (undo/clear)
   useEffect(() => {
     strokesRef.current = strokes;
   }, [strokes]);
@@ -68,32 +67,7 @@ export const MarkupCanvas = forwardRef<MarkupCanvasHandle, MarkupCanvasProps>(({
     return () => ro.disconnect();
   }, [naturalW, naturalH]);
 
-  const redraw = useCallback(() => {
-    const canvas = canvasRef.current;
-    const img = imageElRef.current;
-    if (!canvas || !img || renderedW <= 0 || renderedH <= 0) return;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-
-    canvas.width = renderedW;
-    canvas.height = renderedH;
-    ctx.clearRect(0, 0, renderedW, renderedH);
-    ctx.drawImage(img, 0, 0, renderedW, renderedH);
-
-    renderMarkupToCanvas(ctx, strokes, naturalW, naturalH, renderedW, renderedH);
-
-    if (currentPoints.length > 0) {
-      renderMarkupToCanvas(
-        ctx,
-        [{ points: currentPoints, color, width: brushSize, brushType }],
-        naturalW,
-        naturalH,
-        renderedW,
-        renderedH
-      );
-    }
-  }, [renderedW, renderedH, naturalW, naturalH, strokes, currentPoints, color, brushSize, brushType]);
-
+  // Load the image once per imageUrl change
   useEffect(() => {
     let cancelled = false;
     const img = new Image();
@@ -107,8 +81,28 @@ export const MarkupCanvas = forwardRef<MarkupCanvasHandle, MarkupCanvasProps>(({
     return () => { cancelled = true; };
   }, [imageUrl]);
 
-  useEffect(() => { redraw(); }, [redraw, imageLoadedTick]);
+  // Full redraw — image + all committed strokes. Does NOT draw in-progress stroke
+  // (that's handled synchronously in pointermove via canvas ctx).
+  const fullRedraw = useCallback(() => {
+    const canvas = canvasRef.current;
+    const img = imageElRef.current;
+    if (!canvas || !img || renderedW <= 0 || renderedH <= 0) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
 
+    canvas.width = renderedW;
+    canvas.height = renderedH;
+    ctx.clearRect(0, 0, renderedW, renderedH);
+    ctx.drawImage(img, 0, 0, renderedW, renderedH);
+    renderMarkupToCanvas(ctx, strokes, naturalW, naturalH, renderedW, renderedH);
+  }, [renderedW, renderedH, naturalW, naturalH, strokes]);
+
+  // Full redraw whenever strokes / image / dims change
+  useEffect(() => {
+    fullRedraw();
+  }, [fullRedraw, imageLoadedTick]);
+
+  // Convert screen coords → natural image coords
   const getNaturalPoint = (e: React.PointerEvent<HTMLCanvasElement>): StrokePoint => {
     const canvas = canvasRef.current;
     if (!canvas) return { x: 0, y: 0 };
@@ -118,48 +112,71 @@ export const MarkupCanvas = forwardRef<MarkupCanvasHandle, MarkupCanvasProps>(({
     return { x, y };
   };
 
+  // Live in-progress stroke draw — bypasses React entirely
+  const drawInProgressStroke = useCallback(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    // Redraw committed strokes over the image each frame
+    const img = imageElRef.current;
+    if (!img) return;
+    ctx.clearRect(0, 0, renderedW, renderedH);
+    ctx.drawImage(img, 0, 0, renderedW, renderedH);
+    renderMarkupToCanvas(ctx, strokesRef.current, naturalW, naturalH, renderedW, renderedH);
+    // Draw the in-progress stroke
+    if (currentPointsRef.current.length > 0) {
+      renderMarkupToCanvas(
+        ctx,
+        [{ points: currentPointsRef.current, color, width: brushSize, brushType }],
+        naturalW,
+        naturalH,
+        renderedW,
+        renderedH
+      );
+    }
+  }, [renderedW, renderedH, naturalW, naturalH, color, brushSize, brushType]);
+
   const onPointerDown = useCallback(
     (e: React.PointerEvent<HTMLCanvasElement>) => {
       if (disabled) return;
       e.preventDefault();
       const p = getNaturalPoint(e);
-      setDrawing(true);
+      drawingRef.current = true;
       currentPointsRef.current = [p];
-      setCurrentPoints([p]);
-      e.currentTarget.setPointerCapture(e.pointerId);
+      (e.target as Element).setPointerCapture?.(e.pointerId);
+      drawInProgressStroke();
     },
-    [disabled, naturalW, naturalH]
+    [disabled, naturalW, naturalH, drawInProgressStroke]
   );
 
   const onPointerMove = useCallback(
     (e: React.PointerEvent<HTMLCanvasElement>) => {
-      if (!drawing || disabled) return;
+      if (!drawingRef.current || disabled) return;
       e.preventDefault();
       const p = getNaturalPoint(e);
       currentPointsRef.current = [...currentPointsRef.current, p];
-      setCurrentPoints(currentPointsRef.current);
+      drawInProgressStroke();
     },
-    [drawing, disabled, naturalW, naturalH]
+    [disabled, naturalW, naturalH, drawInProgressStroke]
   );
 
   const commitStroke = useCallback(() => {
-    if (!drawing) return;
-    setDrawing(false);
+    if (!drawingRef.current) return;
+    drawingRef.current = false;
 
     const points = currentPointsRef.current;
-    if (points.length > 0) {
-      const nextStrokes: Stroke[] = [
-        ...strokesRef.current,
-        { points, color, width: brushSize, brushType },
-      ];
-      // 1) Update the synchronous ref FIRST - export reads this.
-      strokesRef.current = nextStrokes;
-      // 2) Then notify the parent (for toolbar undo/clear parity + redraw).
-      onStrokesChange(nextStrokes);
-    }
     currentPointsRef.current = [];
-    setCurrentPoints([]);
-  }, [drawing, color, brushSize, brushType, onStrokesChange]);
+    if (points.length === 0) return;
+
+    const nextStrokes: Stroke[] = [
+      ...strokesRef.current,
+      { points, color, width: brushSize, brushType },
+    ];
+    strokesRef.current = nextStrokes;
+    onStrokesChange(nextStrokes);
+  }, [color, brushSize, brushType, onStrokesChange]);
 
   if (renderedW <= 0 || renderedH <= 0) {
     return <div ref={containerRef} className={styles.markupContainerPlaceholder} />;
@@ -172,7 +189,7 @@ export const MarkupCanvas = forwardRef<MarkupCanvasHandle, MarkupCanvasProps>(({
           <canvas
             ref={canvasRef}
             className={styles.markupCanvas}
-            style={{ width: renderedW, height: renderedH }}
+            style={{ width: renderedW, height: renderedH, touchAction: 'none' }}
             onPointerDown={onPointerDown}
             onPointerMove={onPointerMove}
             onPointerUp={commitStroke}

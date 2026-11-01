@@ -134,6 +134,17 @@ export const MediaEditor: React.FC<MediaEditorProps> = ({
         </div>
       )}
 
+      {/* 1b. ADJUST SUB-MODAL (bottom sheet) */}
+      {/* ADJUST SUB-MODAL */}
+      {activeTab === 'adjust' && !isVideo && (
+        <AdjustmentPanel
+          imageUrl={currentUrl}
+          adjustments={adjustments}
+          onChange={setAdjustments}
+          onDone={() => setActiveTab(null)}
+          disabled={sending}
+        />
+      )}
       {/* 2. CROP MODAL (full-screen, sibling to everything else) */}
       {activeTab === 'crop' && !isVideo && currentDims && (
         <CropModal
@@ -148,7 +159,7 @@ export const MediaEditor: React.FC<MediaEditorProps> = ({
       )}
 
       {/* 3. STANDARD MEDIA EDITOR (hidden when crop or markup is active) */}
-      {activeTab !== 'markup' && activeTab !== 'crop' && (
+      {activeTab !== 'markup' && activeTab !== 'crop' && activeTab !== 'adjust' && (
         <div className={styles.overlay} onClick={() => { if (!sending) onCancel(); }}>
           <div className={styles.container} onClick={(e) => e.stopPropagation()}>
             <div className={styles.header}>
@@ -175,9 +186,16 @@ export const MediaEditor: React.FC<MediaEditorProps> = ({
               )}
             </div>
 
-            {activeTab === 'adjust' && !isVideo && (
-              <AdjustmentPanel adjustments={adjustments} onChange={setAdjustments} disabled={sending} />
-            )}
+      {/* ADJUST SUB-MODAL */}
+      {activeTab === 'adjust' && !isVideo && (
+        <AdjustmentPanel
+          imageUrl={currentUrl}
+          adjustments={adjustments}
+          onChange={setAdjustments}
+          onDone={() => setActiveTab(null)}
+          disabled={sending}
+        />
+      )}
 
             <div className={styles.footer}>
               <CaptionInput value={caption} onChange={setCaption} disabled={sending} />
