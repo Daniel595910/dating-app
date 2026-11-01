@@ -55,7 +55,9 @@ export const MediaEditor: React.FC<MediaEditorProps> = ({
     try {
       let outFile = file;
       if (!isVideo && !isDefaultAdjustments(adjustments)) {
-        outFile = await applyAdjustmentsToImage(file, adjustments, quality);
+        // Export at max quality; uploadFile applies SD compression downstream.
+        // Do NOT pass `quality` here — that would double-compress on SD.
+        outFile = await applyAdjustmentsToImage(file, adjustments, 'hd');
       }
       onConfirm({ file: outFile, quality, caption: caption.trim() });
     } catch (err) {
