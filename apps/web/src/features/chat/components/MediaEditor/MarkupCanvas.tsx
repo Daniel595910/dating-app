@@ -28,41 +28,45 @@ export const MarkupCanvas: React.FC<MarkupCanvasProps> = ({
   disabled = false,
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const imageElRef = useRef<HTMLImageElement | null>(null);
   const [drawing, setDrawing] = useState(false);
   const [currentPoints, setCurrentPoints] = useState<StrokePoint[]>([]);
 
   // Redraw on every state change: image, existing strokes, in-progress stroke
-  useEffect(() => {
+  const redraw = useCallback(() => {
     const canvas = canvasRef.current;
-    if (!canvas || renderedW <= 0 || renderedH <= 0) return;
+    const img = imageElRef.current;
+    if (!canvas || !img || renderedW <= 0 || renderedH <= 0) return;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
     canvas.width = renderedW;
     canvas.height = renderedH;
     ctx.clearRect(0, 0, renderedW, renderedH);
+    ctx.drawImage(img, 0, 0, renderedW, renderedH);
 
-    // Draw image scaled to rendered size
+    renderMarkupToCanvas(ctx, strokes, naturalW, naturalH, renderedW, renderedH);
+
+    if (currentPoints.length > 0) {
+      renderMarkupToCanvas(
+        ctx,
+        [{ points: currentPoints, color, width: STROKE_WIDTH_NATURAL }],
+        naturalW,
+        naturalH,
+        renderedW,
+        renderedH
+      );
+    }
+  }, [renderedW, renderedH, naturalW, naturalH, strokes, currentPoints, color]);
+
+  useEffect(() => {
     const img = new Image();
     img.crossOrigin = 'anonymous';
-    img.onload = () => {
-      ctx.drawImage(img, 0, 0, renderedW, renderedH);
-      // Draw committed strokes
-      renderMarkupToCanvas(ctx, strokes, naturalW, naturalH, renderedW, renderedH);
-      // Draw in-progress stroke
-      if (currentPoints.length > 0) {
-        renderMarkupToCanvas(
-          ctx,
-          [{ points: currentPoints, color, width: STROKE_WIDTH_NATURAL }],
-          naturalW,
-          naturalH,
-          renderedW,
-          renderedH
-        );
-      }
-    };
+    img.onload = () => { imageElRef.current = img; redraw(); };
     img.src = imageUrl;
-  }, [imageUrl, renderedW, renderedH, naturalW, naturalH, strokes, currentPoints, color]);
+  }, [imageUrl, redraw]);
+
+  useEffect(() => { redraw(); }, [redraw]);
 
   const getNaturalPoint = (e: React.PointerEvent<HTMLCanvasElement>): StrokePoint => {
     const canvas = canvasRef.current;
