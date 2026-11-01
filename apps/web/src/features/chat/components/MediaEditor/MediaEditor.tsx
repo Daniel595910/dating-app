@@ -119,7 +119,7 @@ export const MediaEditor: React.FC<MediaEditorProps> = ({
         <div className={styles.markupFullscreenOverlay}>
           <div className={styles.markupImageContainer}>
               <MarkupCanvas
-                imageUrl={objectUrl}
+                imageUrl={cropPreview || objectUrl}
                 naturalW={naturalDims.w}
                 naturalH={naturalDims.h}
                 strokes={strokes}

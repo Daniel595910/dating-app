@@ -18,7 +18,7 @@ export const CropOverlay: React.FC<CropOverlayProps> = ({
   disabled = false,
 }) => {
   const [crop, setCrop] = useState({ x: 0, y: 0 });
-  const [zoom, setZoom] = useState(1);
+  const [zoom, setZoom] = useState(1.1);
   const [rotation, setRotation] = useState(0);
   const [croppedAreaPixels, setCroppedAreaPixels] = useState<CropRect | null>(null);
   const [aspect, setAspect] = useState<number | undefined>(undefined);
@@ -64,7 +64,7 @@ export const CropOverlay: React.FC<CropOverlayProps> = ({
           onZoomChange={setZoom}
           onRotationChange={setRotation}
           showGrid={true}
-          restrictPosition={true}
+          restrictPosition={false}
           classes={{
             containerClassName: styles.cropContainerInner,
             cropAreaClassName: styles.cropArea,
