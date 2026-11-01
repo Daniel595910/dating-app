@@ -275,13 +275,15 @@ export async function exportImage(
   opts: {
     crop: CropRect | null;
     adjustments: Adjustments;
+    markup: Stroke[] | null;
   }
 ): Promise<File> {
-  const { crop, adjustments } = opts;
+  const { crop, adjustments, markup } = opts;
+  const markupApplied = markup !== null && markup.length > 0;
   const cropApplied = crop !== null;
   const adjustApplied = !isDefaultAdjustments(adjustments);
 
-  if (!cropApplied && !adjustApplied) {
+  if (!cropApplied && !adjustApplied && !markupApplied) {
     return file;
   }
 
@@ -319,12 +321,18 @@ export async function exportImage(
       targetW,
       targetH
     );
+
     if (adjustApplied && supportsFilter) {
       ctx.filter = 'none';
     }
 
     if (adjustApplied && !supportsFilter) {
       applyAdjustmentsPerPixel(ctx, targetW, targetH, adjustments);
+    }
+
+    // Markup on top — never tinted by adjustments (commit 7A)
+    if (markupApplied && markup) {
+      renderMarkupToCanvas(ctx, markup, targetW, targetH);
     }
 
     let outputType = file.type;
@@ -374,5 +382,71 @@ export async function applyAdjustmentsToImage(
   adj: Adjustments,
   _quality?: 'hd' | 'sd'
 ): Promise<File> {
-  return exportImage(file, { crop: null, adjustments: adj });
+  return exportImage(file, { crop: null, adjustments: adj, markup: null });
+}
+// ============================================================================
+// Markup (freehand drawing) — commit 7A
+// ============================================================================
+
+export type StrokePoint = { x: number; y: number };
+
+export type Stroke = {
+  points: StrokePoint[];
+  color: string;
+  width: number; // in natural image pixels
+};
+
+/**
+ * Draw strokes onto a 2D context at target dimensions.
+ *
+ * Stroke points are in NATURAL image pixels (source coordinate space).
+ * The caller's canvas is typically the target (crop-resized) canvas —
+ * we scale points from natural to target space so a stroke drawn on a
+ * 4000×3000 image shows up correctly on a 1200×900 crop.
+ *
+ * Line width also scales proportionally so visual thickness is preserved.
+ */
+export function renderMarkupToCanvas(
+  ctx: CanvasRenderingContext2D,
+  strokes: Stroke[],
+  naturalW: number,
+  naturalH: number,
+  targetW: number = ctx.canvas.width,
+  targetH: number = ctx.canvas.height
+): void {
+  if (strokes.length === 0) return;
+
+  const scaleX = targetW / naturalW;
+  const scaleY = targetH / naturalH;
+  const avgScale = (scaleX + scaleY) / 2;
+
+  ctx.save();
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+
+  for (const stroke of strokes) {
+    if (stroke.points.length === 0) continue;
+    ctx.strokeStyle = stroke.color;
+    ctx.lineWidth = Math.max(1, stroke.width * avgScale);
+
+    if (stroke.points.length === 1) {
+      const p = stroke.points[0];
+      ctx.beginPath();
+      ctx.arc(p.x * scaleX, p.y * scaleY, ctx.lineWidth / 2, 0, Math.PI * 2);
+      ctx.fillStyle = stroke.color;
+      ctx.fill();
+      continue;
+    }
+
+    ctx.beginPath();
+    const first = stroke.points[0];
+    ctx.moveTo(first.x * scaleX, first.y * scaleY);
+    for (let i = 1; i < stroke.points.length; i++) {
+      const p = stroke.points[i];
+      ctx.lineTo(p.x * scaleX, p.y * scaleY);
+    }
+    ctx.stroke();
+  }
+
+  ctx.restore();
 }
