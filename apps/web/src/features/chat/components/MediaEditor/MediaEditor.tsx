@@ -1,9 +1,10 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { X, Send, Timer, Sliders, Crop, Pencil } from 'lucide-react';
 import { AdjustmentPanel } from './AdjustmentPanel';
-import { Adjustments, DEFAULT_ADJUSTMENTS, isDefaultAdjustments, cssFilterFromAdjustments, applyAdjustmentsToImage } from '../../utils/mediaEditor';
+import { Adjustments, DEFAULT_ADJUSTMENTS, isDefaultAdjustments, cssFilterFromAdjustments, CropRect, AspectPreset, computeCropRect, exportImage } from '../../utils/mediaEditor';
 import { CaptionInput } from './CaptionInput';
 import styles from './MediaEditor.module.css';
+import { CropOverlay } from './CropOverlay';
 
 export interface MediaEditorResult {
   file: File;
@@ -29,6 +30,11 @@ export const MediaEditor: React.FC<MediaEditorProps> = ({
   const [sending, setSending] = useState(false);
   const [adjustments, setAdjustments] = useState<Adjustments>({ ...DEFAULT_ADJUSTMENTS });
   const [activeTab, setActiveTab] = useState<'adjust' | 'crop' | 'markup' | null>(null);
+  const [cropRect, setCropRect] = useState<CropRect | null>(null);
+  const [aspectPreset, setAspectPreset] = useState<AspectPreset>('free');
+  const [naturalDims, setNaturalDims] = useState<{ w: number; h: number } | null>(null);
+  const [renderedDims, setRenderedDims] = useState<{ w: number; h: number } | null>(null);
+  const previewAreaRef = useRef<HTMLDivElement>(null);
 
   const isVideo = file.type.startsWith('video/');
   const [objectUrl, setObjectUrl] = useState<string>('');
@@ -41,6 +47,31 @@ export const MediaEditor: React.FC<MediaEditorProps> = ({
     };
   }, [file]);
 
+  const onImageLoad = (e: React.SyntheticEvent<HTMLImageElement>) => {
+    const img = e.currentTarget;
+    setNaturalDims({ w: img.naturalWidth, h: img.naturalHeight });
+  };
+
+  useEffect(() => {
+    const el = previewAreaRef.current;
+    if (!el || !naturalDims) return;
+    const measure = () => {
+      const containerW = el.clientWidth;
+      const containerH = el.clientHeight;
+      const scale = Math.min(containerW / naturalDims.w, containerH / naturalDims.h);
+      setRenderedDims({ w: naturalDims.w * scale, h: naturalDims.h * scale });
+    };
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [naturalDims]);
+
+  useEffect(() => {
+    if (!naturalDims) return;
+    setCropRect(computeCropRect(naturalDims.w, naturalDims.h, aspectPreset));
+  }, [naturalDims, aspectPreset]);
+
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape' && !sending) onCancel();
@@ -50,14 +81,17 @@ export const MediaEditor: React.FC<MediaEditorProps> = ({
   }, [onCancel, sending]);
 
   const handleConfirm = async () => {
-    if (sending) return;
+    if (sending || !naturalDims) return;
     setSending(true);
     try {
       let outFile = file;
-      if (!isVideo && !isDefaultAdjustments(adjustments)) {
-        // Export at max quality; uploadFile applies SD compression downstream.
-        // Do NOT pass `quality` here — that would double-compress on SD.
-        outFile = await applyAdjustmentsToImage(file, adjustments, 'hd');
+      const hasCrop = cropRect !== null;
+      const hasAdjust = !isDefaultAdjustments(adjustments);
+      if (!isVideo && (hasCrop || hasAdjust)) {
+        outFile = await exportImage(file, {
+          crop: cropRect,
+          adjustments,
+        });
       }
       onConfirm({ file: outFile, quality, caption: caption.trim() });
     } catch (err) {
@@ -83,14 +117,14 @@ export const MediaEditor: React.FC<MediaEditorProps> = ({
             type="button"
             className={styles.sendBtn}
             onClick={handleConfirm}
-            disabled={sending}
+            disabled={sending || !naturalDims}
             aria-label="Send"
           >
             {sending ? 'Sending...' : <><Send size={16} /><span>Send</span></>}
           </button>
         </div>
 
-        <div className={styles.previewArea}>
+        <div className={styles.previewArea} ref={previewAreaRef}>
           {isVideo ? (
             <video
               src={objectUrl}
@@ -105,7 +139,11 @@ export const MediaEditor: React.FC<MediaEditorProps> = ({
               src={objectUrl}
               alt="Preview"
               className={styles.media}
-              style={!isDefaultAdjustments(adjustments) ? { filter: cssFilterFromAdjustments(adjustments) } : undefined}
+              onLoad={onImageLoad}
+              style={{
+                ...(!isDefaultAdjustments(adjustments) ? { filter: cssFilterFromAdjustments(adjustments) } : {}),
+                visibility: (activeTab === 'crop' && !isVideo && naturalDims && renderedDims) ? 'hidden' : 'visible',
+              }}
             />
           )}
         </div>
@@ -115,6 +153,21 @@ export const MediaEditor: React.FC<MediaEditorProps> = ({
           <AdjustmentPanel
             adjustments={adjustments}
             onChange={setAdjustments}
+            disabled={sending}
+          />
+        )}
+
+        {activeTab === 'crop' && !isVideo && naturalDims && renderedDims && cropRect && (
+          <CropOverlay
+            imageUrl={objectUrl}
+            naturalW={naturalDims.w}
+            naturalH={naturalDims.h}
+            renderedW={renderedDims.w}
+            renderedH={renderedDims.h}
+            cropRect={cropRect}
+            onCropChange={setCropRect}
+            aspectPreset={aspectPreset}
+            onAspectChange={setAspectPreset}
             disabled={sending}
           />
         )}
@@ -137,9 +190,9 @@ export const MediaEditor: React.FC<MediaEditorProps> = ({
             </button>
             <button
               type="button"
-              className={styles.tabButton}
-              disabled
-              title="Coming in commit 6"
+              className={`${styles.tabButton} ${activeTab === 'crop' ? styles.tabButtonActive : ''}`}
+              onClick={() => setActiveTab(activeTab === 'crop' ? null : 'crop')}
+              disabled={sending || isVideo}
             >
               <Crop size={14} />
               <span>Crop</span>

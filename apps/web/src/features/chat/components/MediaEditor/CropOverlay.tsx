@@ -5,6 +5,8 @@ import styles from './MediaEditor.module.css';
 interface CropOverlayProps {
   imageUrl: string;
   naturalW: number;
+  renderedW: number;
+  renderedH: number;
   naturalH: number;
   cropRect: CropRect;
   onCropChange: (rect: CropRect) => void;
@@ -79,33 +81,21 @@ export const CropOverlay: React.FC<CropOverlayProps> = ({
   imageUrl,
   naturalW,
   naturalH,
+  renderedW,
+  renderedH,
   cropRect,
   onCropChange,
   aspectPreset,
   onAspectChange,
   disabled = false,
 }) => {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const [rendered, setRendered] = useState<{ w: number; h: number }>({ w: 0, h: 0 });
   const dragRef = useRef<{ handle: HandleId; startX: number; startY: number; startRect: CropRect } | null>(null);
 
   // Measure the rendered image content area — the container has no padding,
   // so its contentRect is the image content dimensions.
-  useEffect(() => {
-    const el = containerRef.current;
-    if (!el) return;
-    const measure = () => {
-      const rect = el.getBoundingClientRect();
-      setRendered({ w: rect.width, h: rect.height });
-    };
-    measure();
-    const ro = new ResizeObserver(measure);
-    ro.observe(el);
-    return () => ro.disconnect();
-  }, []);
 
-  const screenRect = rendered.w > 0
-    ? scaleCropToScreen(cropRect, rendered.w, rendered.h, naturalW, naturalH)
+  const screenRect = renderedW > 0
+    ? scaleCropToScreen(cropRect, renderedW, renderedH, naturalW, naturalH)
     : null;
 
   const handleAspectClick = (preset: AspectPreset) => {
@@ -116,7 +106,7 @@ export const CropOverlay: React.FC<CropOverlayProps> = ({
 
   const onPointerDown = useCallback(
     (handle: HandleId) => (e: React.PointerEvent) => {
-      if (disabled || rendered.w === 0) return;
+      if (disabled || renderedW === 0) return;
       e.preventDefault();
       e.stopPropagation();
       dragRef.current = {
@@ -127,15 +117,15 @@ export const CropOverlay: React.FC<CropOverlayProps> = ({
       };
       (e.target as Element).setPointerCapture?.(e.pointerId);
     },
-    [disabled, rendered.w, cropRect]
+    [disabled, renderedW, cropRect]
   );
 
   const onPointerMove = useCallback(
     (e: React.PointerEvent) => {
       const drag = dragRef.current;
-      if (!drag || rendered.w === 0) return;
-      const scaleX = naturalW / rendered.w;
-      const scaleY = naturalH / rendered.h;
+      if (!drag || renderedW === 0) return;
+      const scaleX = naturalW / renderedW;
+      const scaleY = naturalH / renderedH;
       const dx = (e.clientX - drag.startX) * scaleX;
       const dy = (e.clientY - drag.startY) * scaleY;
       const r = drag.startRect;
@@ -160,7 +150,7 @@ export const CropOverlay: React.FC<CropOverlayProps> = ({
       next = constrainCrop(next, naturalW, naturalH, ratio);
       onCropChange(next);
     },
-    [rendered.w, rendered.h, naturalW, naturalH, aspectPreset, onCropChange]
+    [renderedW, renderedH, naturalW, naturalH, aspectPreset, onCropChange]
   );
 
   const onPointerUp = useCallback(() => {
@@ -189,7 +179,13 @@ export const CropOverlay: React.FC<CropOverlayProps> = ({
         ))}
       </div>
 
-      <div ref={containerRef} className={styles.cropStage}>
+      <div
+        className={styles.cropStage}
+        style={{
+          width: renderedW,
+          height: renderedH,
+        }}
+      >
         <img src={imageUrl} alt="" className={styles.cropStageImg} draggable={false} />
 
         {/* Dim outside crop: 4 shading rects around the crop box */}
