@@ -1,10 +1,12 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { X, Send, Timer, Sliders, Crop, Pencil } from 'lucide-react';
 import { AdjustmentPanel } from './AdjustmentPanel';
-import { Adjustments, DEFAULT_ADJUSTMENTS, isDefaultAdjustments, cssFilterFromAdjustments, CropRect, AspectPreset, computeCropRect, exportImage } from '../../utils/mediaEditor';
+import { Adjustments, DEFAULT_ADJUSTMENTS, isDefaultAdjustments, cssFilterFromAdjustments, CropRect, AspectPreset, computeCropRect, exportImage, Stroke } from '../../utils/mediaEditor';
 import { CaptionInput } from './CaptionInput';
 import styles from './MediaEditor.module.css';
 import { CropOverlay } from './CropOverlay';
+import { MarkupCanvas } from './MarkupCanvas';
+import { MarkupToolbar } from './MarkupToolbar';
 
 export interface MediaEditorResult {
   file: File;
@@ -35,6 +37,8 @@ export const MediaEditor: React.FC<MediaEditorProps> = ({
   const [naturalDims, setNaturalDims] = useState<{ w: number; h: number } | null>(null);
   const [renderedDims, setRenderedDims] = useState<{ w: number; h: number } | null>(null);
   const previewAreaRef = useRef<HTMLDivElement>(null);
+  const [strokes, setStrokes] = useState<Stroke[]>([]);
+  const [markupColor, setMarkupColor] = useState('#ef4444');
 
   const isVideo = file.type.startsWith('video/');
   const [objectUrl, setObjectUrl] = useState<string>('');
@@ -87,10 +91,12 @@ export const MediaEditor: React.FC<MediaEditorProps> = ({
       let outFile = file;
       const hasCrop = cropRect !== null;
       const hasAdjust = !isDefaultAdjustments(adjustments);
-      if (!isVideo && (hasCrop || hasAdjust)) {
+      const hasMarkup = strokes.length > 0;
+      if (!isVideo && (hasCrop || hasAdjust || hasMarkup)) {
         outFile = await exportImage(file, {
           crop: cropRect,
           adjustments,
+          markup: strokes,
         });
       }
       onConfirm({ file: outFile, quality, caption: caption.trim() });
@@ -142,7 +148,7 @@ export const MediaEditor: React.FC<MediaEditorProps> = ({
               onLoad={onImageLoad}
               style={{
                 ...(!isDefaultAdjustments(adjustments) ? { filter: cssFilterFromAdjustments(adjustments) } : {}),
-                visibility: (activeTab === 'crop' && !isVideo && naturalDims && renderedDims) ? 'hidden' : 'visible',
+                visibility: (activeTab === 'crop' || activeTab === 'markup') && !isVideo && naturalDims && renderedDims ? 'hidden' : 'visible',
               }}
             />
           )}
@@ -171,12 +177,36 @@ export const MediaEditor: React.FC<MediaEditorProps> = ({
             disabled={sending}
           />
         )}
+
+        {activeTab === 'markup' && !isVideo && naturalDims && renderedDims && (
+          <MarkupCanvas
+            imageUrl={objectUrl}
+            naturalW={naturalDims.w}
+            naturalH={naturalDims.h}
+            renderedW={renderedDims.w}
+            renderedH={renderedDims.h}
+            strokes={strokes}
+            onStrokesChange={setStrokes}
+            color={markupColor}
+            disabled={sending}
+          />
+        )}
         <div className={styles.footer}>
           <CaptionInput
             value={caption}
             onChange={setCaption}
             disabled={sending}
           />
+
+          {activeTab === 'markup' && !isVideo && (
+            <MarkupToolbar
+              color={markupColor}
+              onColorChange={setMarkupColor}
+              strokes={strokes}
+              onStrokesChange={setStrokes}
+              disabled={sending}
+            />
+          )}
 
           <div className={styles.tabBar}>
             <button
@@ -199,9 +229,9 @@ export const MediaEditor: React.FC<MediaEditorProps> = ({
             </button>
             <button
               type="button"
-              className={styles.tabButton}
-              disabled
-              title="Coming in commit 7"
+              className={`${styles.tabButton} ${activeTab === 'markup' ? styles.tabButtonActive : ''}`}
+              onClick={() => setActiveTab(activeTab === 'markup' ? null : 'markup')}
+              disabled={sending || isVideo}
             >
               <Pencil size={14} />
               <span>Markup</span>
