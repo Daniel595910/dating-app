@@ -16,6 +16,8 @@ interface MessageComposerProps {
   onCancelReply?: () => void;
   onOpenGift?: () => void;
   onOpenStickerPicker?: () => void;
+  quality?: 'hd' | 'sd';
+  onQualityChange?: (q: 'hd' | 'sd') => void;
   disabled?: boolean;
 }
 
@@ -30,6 +32,8 @@ export const MessageComposer: React.FC<MessageComposerProps> = ({
   onCancelReply,
   onOpenGift,
   onOpenStickerPicker,
+  quality = 'sd',
+  onQualityChange,
   disabled = false,
 }) => {
   const [content, setContent] = useState('');
@@ -104,9 +108,9 @@ export const MessageComposer: React.FC<MessageComposerProps> = ({
     if (mediaFileInputRef.current) mediaFileInputRef.current.value = '';
     setAttachmentMenuOpen(false);
     if (file.type.startsWith('video/')) {
-      onSendVideo(file);
+      onSendVideo(file, quality);
     } else if (file.type.startsWith('image/')) {
-      onSendImage(file);
+      onSendImage(file, quality);
     }
   };
 
@@ -145,6 +149,27 @@ export const MessageComposer: React.FC<MessageComposerProps> = ({
         </div>
       )}
 
+      
+      {onQualityChange && (
+        <div className={styles.qualityToggle} role="group" aria-label="Media quality">
+          <button
+            type="button"
+            className={`${styles.qualityOption} ${quality === 'sd' ? styles.qualityOptionActive : ''}`}
+            onClick={() => onQualityChange('sd')}
+            aria-pressed={quality === 'sd'}
+          >
+            SD
+          </button>
+          <button
+            type="button"
+            className={`${styles.qualityOption} ${quality === 'hd' ? styles.qualityOptionActive : ''}`}
+            onClick={() => onQualityChange('hd')}
+            aria-pressed={quality === 'hd'}
+          >
+            HD
+          </button>
+        </div>
+      )}
       <div className={styles.composer}>
         <input
           ref={mediaFileInputRef}

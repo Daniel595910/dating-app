@@ -87,6 +87,9 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
   const [disappearingEnabled, setDisappearingEnabled] = useState(false);
   const [disappearingDuration, setDisappearingDuration] = useState(24);
   
+  // Media quality state (persists across chats; resets on full reload)
+  const [mediaQuality, setMediaQuality] = useState<'hd' | 'sd'>('sd');
+  
   // Refs
   const cursorRef = useRef<MessageCursor | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -495,7 +498,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
 
 
 
-  const handleSendImage = async (file: File) => {
+  const handleSendImage = async (file: File, quality: 'hd' | 'sd' = 'sd') => {
     if (!user || readOnly) return;
     
     const tempId = `temp-${Date.now()}`;
@@ -515,7 +518,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
     scrollToBottom();
 
     try {
-      const uploadResult = await uploadService.uploadFile(file, 'message_media', user.id);
+      const uploadResult = await uploadService.uploadFile(file, 'message_media', user.id, quality);
       
       if (!uploadResult.success || !uploadResult.url) {
         throw new Error(uploadResult.error || 'Failed to upload image');
@@ -568,7 +571,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
     }
   };
 
-  const handleSendVideo = async (file: File) => {
+  const handleSendVideo = async (file: File, quality: 'hd' | 'sd' = 'sd') => {
     if (!user || readOnly) return;
     
     const tempId = `temp-${Date.now()}`;
@@ -588,7 +591,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
     scrollToBottom();
 
     try {
-      const uploadResult = await uploadService.uploadFile(file, 'message_media', user.id);
+      const uploadResult = await uploadService.uploadFile(file, 'message_media', user.id, quality);
       
       if (!uploadResult.success || !uploadResult.url) {
         throw new Error(uploadResult.error || 'Failed to upload video');
@@ -918,6 +921,8 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
           onOpenGift={() => setGiftPickerOpen(true)}
           onOpenStickerPicker={() => setStickerPickerOpen(true)}
           disabled={readOnly}
+          quality={mediaQuality}
+          onQualityChange={setMediaQuality}
         />
         </>
       )}
