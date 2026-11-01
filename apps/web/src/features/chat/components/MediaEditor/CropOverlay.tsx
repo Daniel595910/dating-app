@@ -1,221 +1,103 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { CropRect, AspectPreset, computeCropRect, scaleCropToScreen, scaleCropToNatural } from '../../utils/mediaEditor';
+import React, { useState, useCallback } from 'react';
+import Cropper from 'react-easy-crop';
+import { RotateCw, Check, X } from 'lucide-react';
+import { CropRect } from '../../utils/mediaEditor';
 import styles from './MediaEditor.module.css';
 
 interface CropOverlayProps {
   imageUrl: string;
-  naturalW: number;
-  renderedW: number;
-  renderedH: number;
-  naturalH: number;
-  cropRect: CropRect;
-  onCropChange: (rect: CropRect) => void;
-  aspectPreset: AspectPreset;
-  onAspectChange: (preset: AspectPreset) => void;
+  onCropComplete: (croppedAreaPixels: CropRect, rotation: number) => void;
+  onCancel: () => void;
   disabled?: boolean;
-}
-
-type HandleId = 'nw' | 'n' | 'ne' | 'e' | 'se' | 's' | 'sw' | 'w';
-
-const MIN_SIZE_NATURAL = 50;
-const ASPECT_PRESETS: Array<{ value: AspectPreset; label: string }> = [
-  { value: '1:1', label: '1:1' },
-  { value: '4:5', label: '4:5' },
-  { value: '16:9', label: '16:9' },
-  { value: 'original', label: 'Original' },
-  { value: 'free', label: 'Free' },
-];
-
-const ratioOf = (preset: AspectPreset): number | null => {
-  if (preset === 'original' || preset === 'free') return null;
-  const [rw, rh] = preset.split(':').map(Number);
-  return rw / rh;
-};
-
-// Clamp a crop rect to image bounds and min-size. If `ratio` is non-null,
-// enforce the aspect ratio by adjusting the dimension that wasn't dragged.
-function constrainCrop(
-  rect: CropRect,
-  imageW: number,
-  imageH: number,
-  ratio: number | null
-): CropRect {
-  let { x, y, width, height } = rect;
-
-  if (ratio !== null) {
-    // Preserve ratio: width is truth, height follows (or vice versa depending
-    // on which dimension is larger relative to image). Simpler: always derive
-    // height from width, unless width would overflow, in which case derive
-    // width from height.
-    if (width / height > ratio) {
-      // too wide → shrink width
-      width = height * ratio;
-    } else if (width / height < ratio) {
-      // too tall → shrink height
-      height = width / ratio;
-    }
-  }
-
-  // Min size
-  if (width < MIN_SIZE_NATURAL) {
-    width = MIN_SIZE_NATURAL;
-    if (ratio !== null) height = width / ratio;
-  }
-  if (height < MIN_SIZE_NATURAL) {
-    height = MIN_SIZE_NATURAL;
-    if (ratio !== null) width = height * ratio;
-  }
-
-  // Clamp to image bounds (shift, don't just shrink, so the rect stays useful)
-  if (width > imageW) { width = imageW; if (ratio !== null) height = width / ratio; }
-  if (height > imageH) { height = imageH; if (ratio !== null) width = height * ratio; }
-  if (x < 0) x = 0;
-  if (y < 0) y = 0;
-  if (x + width > imageW) x = imageW - width;
-  if (y + height > imageH) y = imageH - height;
-
-  return { x, y, width, height };
 }
 
 export const CropOverlay: React.FC<CropOverlayProps> = ({
   imageUrl,
-  naturalW,
-  naturalH,
-  renderedW,
-  renderedH,
-  cropRect,
-  onCropChange,
-  aspectPreset,
-  onAspectChange,
+  onCropComplete,
+  onCancel,
   disabled = false,
 }) => {
-  const dragRef = useRef<{ handle: HandleId; startX: number; startY: number; startRect: CropRect } | null>(null);
+  const [crop, setCrop] = useState({ x: 0, y: 0 });
+  const [zoom, setZoom] = useState(1);
+  const [rotation, setRotation] = useState(0);
+  const [croppedAreaPixels, setCroppedAreaPixels] = useState<CropRect | null>(null);
+  const [aspect, setAspect] = useState<number | undefined>(undefined);
 
-  // Measure the rendered image content area — the container has no padding,
-  // so its contentRect is the image content dimensions.
-
-  const screenRect = renderedW > 0
-    ? scaleCropToScreen(cropRect, renderedW, renderedH, naturalW, naturalH)
-    : null;
-
-  const handleAspectClick = (preset: AspectPreset) => {
-    if (disabled) return;
-    onAspectChange(preset);
-    onCropChange(computeCropRect(naturalW, naturalH, preset));
+  const onCropChange = (crop: { x: number; y: number }) => {
+    setCrop(crop);
   };
 
-  const onPointerDown = useCallback(
-    (handle: HandleId) => (e: React.PointerEvent) => {
-      if (disabled || renderedW === 0) return;
-      e.preventDefault();
-      e.stopPropagation();
-      dragRef.current = {
-        handle,
-        startX: e.clientX,
-        startY: e.clientY,
-        startRect: cropRect,
-      };
-      (e.target as Element).setPointerCapture?.(e.pointerId);
+  const handleCropComplete = useCallback(
+    (croppedArea: any, croppedAreaPixels: CropRect) => {
+      setCroppedAreaPixels(croppedAreaPixels);
     },
-    [disabled, renderedW, cropRect]
+    []
   );
 
-  const onPointerMove = useCallback(
-    (e: React.PointerEvent) => {
-      const drag = dragRef.current;
-      if (!drag || renderedW === 0) return;
-      const scaleX = naturalW / renderedW;
-      const scaleY = naturalH / renderedH;
-      const dx = (e.clientX - drag.startX) * scaleX;
-      const dy = (e.clientY - drag.startY) * scaleY;
-      const r = drag.startRect;
-      let next: CropRect = { ...r };
-
-      switch (drag.handle) {
-        case 'nw': next = { x: r.x + dx, y: r.y + dy, width: r.width - dx, height: r.height - dy }; break;
-        case 'n':  next = { x: r.x, y: r.y + dy, width: r.width, height: r.height - dy }; break;
-        case 'ne': next = { x: r.x, y: r.y + dy, width: r.width + dx, height: r.height - dy }; break;
-        case 'e':  next = { x: r.x, y: r.y, width: r.width + dx, height: r.height }; break;
-        case 'se': next = { x: r.x, y: r.y, width: r.width + dx, height: r.height + dy }; break;
-        case 's':  next = { x: r.x, y: r.y, width: r.width, height: r.height + dy }; break;
-        case 'sw': next = { x: r.x + dx, y: r.y, width: r.width - dx, height: r.height + dy }; break;
-        case 'w':  next = { x: r.x + dx, y: r.y, width: r.width - dx, height: r.height }; break;
-      }
-
-      // Negative dimensions: flip the anchor
-      if (next.width < 0) { next.x += next.width; next.width = -next.width; }
-      if (next.height < 0) { next.y += next.height; next.height = -next.height; }
-
-      const ratio = ratioOf(aspectPreset);
-      next = constrainCrop(next, naturalW, naturalH, ratio);
-      onCropChange(next);
-    },
-    [renderedW, renderedH, naturalW, naturalH, aspectPreset, onCropChange]
-  );
-
-  const onPointerUp = useCallback(() => {
-    dragRef.current = null;
-  }, []);
-
-  if (!screenRect) {
-    return <div ref={containerRef} className={styles.cropOverlay} />;
-  }
-
-  const handles: HandleId[] = ['nw', 'n', 'ne', 'e', 'se', 's', 'sw', 'w'];
+  const handleDone = () => {
+    if (croppedAreaPixels) {
+      onCropComplete(croppedAreaPixels, rotation);
+    }
+  };
 
   return (
-    <div className={styles.cropOverlay}>
-      <div className={styles.aspectBar}>
-        {ASPECT_PRESETS.map((p) => (
-          <button
-            key={p.value}
-            type="button"
-            className={`${styles.aspectButton} ${aspectPreset === p.value ? styles.aspectButtonActive : ''}`}
-            onClick={() => handleAspectClick(p.value)}
-            disabled={disabled}
-          >
-            {p.label}
-          </button>
-        ))}
+    <div className={styles.cropFullscreenOverlay}>
+      <div className={styles.cropTopBar}>
+        <button className={styles.cropIconBtn} onClick={onCancel} disabled={disabled}>
+          <X size={24} />
+        </button>
+        <span className={styles.cropTitle}>Crop</span>
+        <button className={styles.cropDoneBtn} onClick={handleDone} disabled={disabled || !croppedAreaPixels}>
+          Done
+        </button>
       </div>
 
-      <div
-        className={styles.cropStage}
-        style={{
-          width: renderedW,
-          height: renderedH,
-        }}
-      >
-        <img src={imageUrl} alt="" className={styles.cropStageImg} draggable={false} />
+      <div className={styles.cropContainer}>
+        <Cropper
+          image={imageUrl}
+          crop={crop}
+          zoom={zoom}
+          rotation={rotation}
+          aspect={aspect}
+          onCropChange={onCropChange}
+          onCropComplete={handleCropComplete}
+          onZoomChange={setZoom}
+          onRotationChange={setRotation}
+          showGrid={true}
+          restrictPosition={true}
+          classes={{
+            containerClassName: styles.cropContainerInner,
+            cropAreaClassName: styles.cropArea,
+          }}
+        />
+      </div>
 
-        {/* Dim outside crop: 4 shading rects around the crop box */}
-        <div className={styles.cropDim} style={{ left: 0, top: 0, right: 0, height: screenRect.y }} />
-        <div className={styles.cropDim} style={{ left: 0, top: screenRect.y + screenRect.height, right: 0, bottom: 0 }} />
-        <div className={styles.cropDim} style={{ left: 0, top: screenRect.y, width: screenRect.x, height: screenRect.height }} />
-        <div className={styles.cropDim} style={{ left: screenRect.x + screenRect.width, top: screenRect.y, right: 0, height: screenRect.height }} />
-
-        {/* Crop box with border + grid */}
-        <div
-          className={styles.cropRect}
-          style={{ left: screenRect.x, top: screenRect.y, width: screenRect.width, height: screenRect.height }}
-          onPointerMove={onPointerMove}
-          onPointerUp={onPointerUp}
-          onPointerCancel={onPointerUp}
-        >
-          <div className={styles.cropGrid}>
-            <div className={styles.cropGridV} style={{ left: '33.33%' }} />
-            <div className={styles.cropGridV} style={{ left: '66.66%' }} />
-            <div className={styles.cropGridH} style={{ top: '33.33%' }} />
-            <div className={styles.cropGridH} style={{ top: '66.66%' }} />
-          </div>
-
-          {handles.map((h) => (
-            <div
-              key={h}
-              className={`${styles.cropHandle} ${styles[`cropHandle_${h}`]}`}
-              onPointerDown={onPointerDown(h)}
-            />
-          ))}
+      <div className={styles.cropBottomBar}>
+        <div className={styles.cropAspectBtns}>
+          <button className={`${styles.cropAspectBtn} ${aspect === undefined ? styles.cropAspectBtnActive : ''}`} onClick={() => setAspect(undefined)}>Free</button>
+          <button className={`${styles.cropAspectBtn} ${aspect === 1 ? styles.cropAspectBtnActive : ''}`} onClick={() => setAspect(1)}>1:1</button>
+          <button className={`${styles.cropAspectBtn} ${aspect === 4/5 ? styles.cropAspectBtnActive : ''}`} onClick={() => setAspect(4/5)}>4:5</button>
+          <button className={`${styles.cropAspectBtn} ${aspect === 16/9 ? styles.cropAspectBtnActive : ''}`} onClick={() => setAspect(16/9)}>16:9</button>
+        </div>
+        
+        <div className={styles.cropControls}>
+          <input
+            type="range"
+            min={1}
+            max={3}
+            step={0.1}
+            value={zoom}
+            onChange={(e) => setZoom(Number(e.target.value))}
+            className={styles.cropSlider}
+            disabled={disabled}
+          />
+          <button
+            className={styles.cropRotateBtn}
+            onClick={() => setRotation((r) => r + 90)}
+            disabled={disabled}
+          >
+            <RotateCw size={20} />
+          </button>
         </div>
       </div>
     </div>

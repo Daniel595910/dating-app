@@ -33,12 +33,14 @@ export const MediaEditor: React.FC<MediaEditorProps> = ({
   const [adjustments, setAdjustments] = useState<Adjustments>({ ...DEFAULT_ADJUSTMENTS });
   const [activeTab, setActiveTab] = useState<'adjust' | 'crop' | 'markup' | null>(null);
   const [cropRect, setCropRect] = useState<CropRect | null>(null);
+  const [cropRotation, setCropRotation] = useState(0);
   const [aspectPreset, setAspectPreset] = useState<AspectPreset>('free');
   const [naturalDims, setNaturalDims] = useState<{ w: number; h: number } | null>(null);
   const [renderedDims, setRenderedDims] = useState<{ w: number; h: number } | null>(null);
   const previewAreaRef = useRef<HTMLDivElement>(null);
   const [strokes, setStrokes] = useState<Stroke[]>([]);
   const [markupPreview, setMarkupPreview] = useState<string | null>(null);
+  const [cropPreview, setCropPreview] = useState<string | null>(null);
   const [markupColor, setMarkupColor] = useState('#ef4444');
   const [markupBrush, setMarkupBrush] = useState<BrushType>('pen');
   const [markupSize, setMarkupSize] = useState(8);
@@ -98,6 +100,7 @@ export const MediaEditor: React.FC<MediaEditorProps> = ({
       if (!isVideo && (hasCrop || hasAdjust || hasMarkup)) {
         outFile = await exportImage(file, {
           crop: cropRect,
+          rotation: cropRotation,
           adjustments,
           markup: strokes,
         });
@@ -168,7 +171,7 @@ export const MediaEditor: React.FC<MediaEditorProps> = ({
                 <video src={objectUrl} className={styles.media} controls playsInline autoPlay muted />
               ) : (
                 <img
-                  src={markupPreview || objectUrl}
+                  src={cropPreview || markupPreview || objectUrl}
                   alt="Preview"
                   className={styles.media}
                   onLoad={onImageLoad}
@@ -184,20 +187,26 @@ export const MediaEditor: React.FC<MediaEditorProps> = ({
               <AdjustmentPanel adjustments={adjustments} onChange={setAdjustments} disabled={sending} />
             )}
 
-            {activeTab === 'crop' && !isVideo && naturalDims && renderedDims && cropRect && (
-              <CropOverlay
-                imageUrl={markupPreview || objectUrl}
-                naturalW={naturalDims.w}
-                naturalH={naturalDims.h}
-                renderedW={renderedDims.w}
-                renderedH={renderedDims.h}
-                cropRect={cropRect}
-                onCropChange={setCropRect}
-                aspectPreset={aspectPreset}
-                onAspectChange={setAspectPreset}
-                disabled={sending}
-              />
-            )}
+{activeTab === 'crop' && !isVideo && (
+          <CropOverlay
+            imageUrl={objectUrl}
+            onCropComplete={async (croppedArea, rotation) => {
+              // Save the crop dimensions and rotation
+              setCropRect(croppedArea);
+              setCropRotation(rotation);
+              // Generate a temporary preview of the crop
+              try {
+                const croppedFile = await exportImage(file, { crop: croppedArea, rotation: rotation, adjustments: DEFAULT_ADJUSTMENTS, markup: null });
+                setCropPreview(URL.createObjectURL(croppedFile));
+              } catch (e) {
+                console.error('Failed to preview crop', e);
+              }
+              setActiveTab(null); // Close the modal
+            }}
+            onCancel={() => setActiveTab(null)}
+            disabled={sending}
+          />
+        )}
 
             <div className={styles.footer}>
               <CaptionInput value={caption} onChange={setCaption} disabled={sending} />

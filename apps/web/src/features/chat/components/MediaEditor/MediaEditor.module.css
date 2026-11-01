@@ -832,3 +832,181 @@
   color: #fff;
   background: rgba(255, 255, 255, 0.15);
 }
+
+/* ============================================================ */
+/* CROP STUDIO (Full-screen modal)                               */
+/* ============================================================ */
+/* CROP STUDIO (Premium Modal)                                  */
+/* ============================================================ */
+/* CROP STUDIO (Modern)                                         */
+/* ============================================================ */
+/* CROP STUDIO (Modern with Corner Brackets)                    */
+/* ============================================================ */
+/* CROP STUDIO (Fixed)                                          */
+/* ============================================================ */
+
+.cropFullscreenOverlay {
+  position: fixed;
+  inset: 0;
+  background: #000;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+}
+
+.cropTopBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: calc(16px + env(safe-area-inset-top)) 20px 16px;
+  z-index: 10;
+}
+
+.cropIconBtn {
+  background: transparent;
+  border: none;
+  color: #fff;
+  cursor: pointer;
+}
+
+.cropTitle {
+  color: #fff;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.cropDoneBtn {
+  background: rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(8px);
+  border: none;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 700;
+  padding: 8px 20px;
+  border-radius: 9999px;
+  cursor: pointer;
+}
+
+.cropContainer {
+  position: relative;
+  flex: 1;
+}
+
+.cropContainerInner {
+  position: absolute !important;
+  inset: 0;
+}
+
+/* The Crop Area Box */
+.cropArea {
+  position: relative;
+  box-shadow: 0 0 0 9999em rgba(0, 0, 0, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  pointer-events: auto !important;
+}
+
+/* Grid Lines */
+.cropArea::before, .cropArea::after {
+  content: "";
+  position: absolute;
+  pointer-events: none;
+}
+
+.cropArea::before {
+  top: 33.33%; bottom: 33.33%;
+  left: 0; right: 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.3);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.cropArea::after {
+  left: 33.33%; right: 33.33%;
+  top: 0; bottom: 0;
+  border-left: 1px solid rgba(255, 255, 255, 0.3);
+  border-right: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+/* Corner Brackets */
+.cropArea {
+  background-image: 
+    linear-gradient(to right, #fff 4px, transparent 4px),
+    linear-gradient(to bottom, #fff 4px, transparent 4px),
+    linear-gradient(to left, #fff 4px, transparent 4px),
+    linear-gradient(to bottom, #fff 4px, transparent 4px),
+    linear-gradient(to right, #fff 4px, transparent 4px),
+    linear-gradient(to top, #fff 4px, transparent 4px),
+    linear-gradient(to left, #fff 4px, transparent 4px),
+    linear-gradient(to top, #fff 4px, transparent 4px);
+  background-repeat: no-repeat;
+  background-size: 24px 24px;
+  background-position: top left, top left, top right, top right, bottom left, bottom left, bottom right, bottom right;
+}
+
+/* Bottom Controls */
+.cropBottomBar {
+  padding: 20px 20px calc(24px + env(safe-area-inset-bottom));
+  background: #0a0a0a;
+  z-index: 10;
+}
+
+.cropAspectBtns {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.cropAspectBtn {
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, 0.5);
+  padding: 6px 12px;
+  border-radius: 9999px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.cropAspectBtnActive {
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
+}
+
+.cropControls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  max-width: 400px;
+  margin: 0 auto;
+}
+
+.cropSlider {
+  flex: 1;
+  -webkit-appearance: none;
+  height: 4px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.2);
+  outline: none;
+}
+
+.cropSlider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: #fff;
+}
+
+.cropRotateBtn {
+  background: rgba(255, 255, 255, 0.1);
+  border: none;
+  color: #fff;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}

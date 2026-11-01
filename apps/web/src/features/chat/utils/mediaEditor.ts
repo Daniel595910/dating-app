@@ -274,16 +274,17 @@ export async function exportImage(
   file: File,
   opts: {
     crop: CropRect | null;
+    rotation?: number;
     adjustments: Adjustments;
     markup: Stroke[] | null;
   }
 ): Promise<File> {
-  const { crop, adjustments, markup } = opts;
+  const { crop, rotation = 0, adjustments, markup } = opts;
   const markupApplied = markup !== null && markup.length > 0;
   const cropApplied = crop !== null;
   const adjustApplied = !isDefaultAdjustments(adjustments);
 
-  if (!cropApplied && !adjustApplied && !markupApplied) {
+  if (!cropApplied && !adjustApplied && !markupApplied && rotation === 0) {
     return file;
   }
 
@@ -291,76 +292,85 @@ export async function exportImage(
 
   try {
     const img = await loadImage(url);
-
-    const targetW = crop ? Math.round(crop.width) : img.naturalWidth;
-    const targetH = crop ? Math.round(crop.height) : img.naturalHeight;
-    const sourceX = crop ? Math.round(crop.x) : 0;
-    const sourceY = crop ? Math.round(crop.y) : 0;
-
     const canvas = document.createElement('canvas');
-    canvas.width = targetW;
-    canvas.height = targetH;
     const ctx = canvas.getContext('2d');
     if (!ctx) throw new Error('Failed to get canvas context');
 
-    const supportsFilter = ctxFilterSupported(ctx);
+    // 1. Rotate the image on a temp canvas
+    const rad = (rotation * Math.PI) / 180;
+    const sin = Math.abs(Math.sin(rad));
+    const cos = Math.abs(Math.cos(rad));
+    const boundsW = img.naturalWidth * cos + img.naturalHeight * sin;
+    const boundsH = img.naturalWidth * sin + img.naturalHeight * cos;
 
-    if (adjustApplied && supportsFilter) {
-      const warmth = Math.max(0, (adjustments.warmth - 100) / 2);
-      ctx.filter = `brightness(${adjustments.brightness}%) contrast(${adjustments.contrast}%) saturate(${adjustments.saturation}%) sepia(${warmth}%)`;
+    const rotCanvas = document.createElement('canvas');
+    rotCanvas.width = boundsW;
+    rotCanvas.height = boundsH;
+    const rotCtx = rotCanvas.getContext('2d');
+    if (!rotCtx) throw new Error('Failed to get rotation context');
+
+    rotCtx.translate(boundsW / 2, boundsH / 2);
+    rotCtx.rotate(rad);
+    rotCtx.translate(-img.naturalWidth / 2, -img.naturalHeight / 2);
+    rotCtx.drawImage(img, 0, 0);
+
+    // 2. Crop the rotated image
+    let finalCanvas = rotCanvas;
+    if (crop) {
+      const cropCanvas = document.createElement('canvas');
+      cropCanvas.width = crop.width;
+      cropCanvas.height = crop.height;
+      const cropCtx = cropCanvas.getContext('2d');
+      if (!cropCtx) throw new Error('Failed to get crop context');
+
+      cropCtx.drawImage(
+        rotCanvas,
+        crop.x, crop.y, crop.width, crop.height,
+        0, 0, crop.width, crop.height
+      );
+      finalCanvas = cropCanvas;
     }
 
-    ctx.drawImage(
-      img,
-      sourceX,
-      sourceY,
-      targetW,
-      targetH,
-      0,
-      0,
-      targetW,
-      targetH
-    );
+    // 3. Apply adjustments and markup
+    canvas.width = finalCanvas.width;
+    canvas.height = finalCanvas.height;
+    const finalCtx = canvas.getContext('2d');
+    if (!finalCtx) throw new Error('Failed to get final context');
+
+    const supportsFilter = ctxFilterSupported(finalCtx);
+    if (adjustApplied && supportsFilter) {
+      const warmth = Math.max(0, (adjustments.warmth - 100) / 2);
+      finalCtx.filter = `brightness(${adjustments.brightness}%) contrast(${adjustments.contrast}%) saturate(${adjustments.saturation}%) sepia(${warmth}%)`;
+    }
+
+    finalCtx.drawImage(finalCanvas, 0, 0);
 
     if (adjustApplied && supportsFilter) {
-      ctx.filter = 'none';
+      finalCtx.filter = 'none';
     }
 
     if (adjustApplied && !supportsFilter) {
-      applyAdjustmentsPerPixel(ctx, targetW, targetH, adjustments);
+      applyAdjustmentsPerPixel(finalCtx, finalCanvas.width, finalCanvas.height, adjustments);
     }
 
-    // Markup on top — never tinted by adjustments (commit 7A)
     if (markupApplied && markup) {
-      renderMarkupToCanvas(ctx, markup, targetW, targetH);
+      renderMarkupToCanvas(finalCtx, markup, finalCanvas.width, finalCanvas.height, finalCanvas.width, finalCanvas.height);
     }
 
     let outputType = file.type;
-    if (!outputType || !outputType.startsWith('image/')) {
-      outputType = 'image/jpeg';
-    }
+    if (!outputType || !outputType.startsWith('image/')) outputType = 'image/jpeg';
     const supportedEncode = ['image/jpeg', 'image/png', 'image/webp'];
-    if (!supportedEncode.includes(outputType)) {
-      outputType = 'image/jpeg';
-    }
+    if (!supportedEncode.includes(outputType)) outputType = 'image/jpeg';
 
     const blob = await new Promise<Blob | null>((resolve) => {
-      canvas.toBlob(
-        (b) => resolve(b),
-        outputType,
-        outputType === 'image/png' ? undefined : 0.92
-      );
+      finalCanvas.toBlob((b) => resolve(b), outputType, outputType === 'image/png' ? undefined : 0.92);
     });
     if (!blob) throw new Error('Canvas export returned null blob');
 
     let outName = file.name;
-    if (outputType === 'image/jpeg' && !/\.(jpe?g)$/i.test(outName)) {
-      outName = outName.replace(/\.[^.]+$/, '') + '.jpg';
-    } else if (outputType === 'image/png' && !/\.png$/i.test(outName)) {
-      outName = outName.replace(/\.[^.]+$/, '') + '.png';
-    } else if (outputType === 'image/webp' && !/\.webp$/i.test(outName)) {
-      outName = outName.replace(/\.[^.]+$/, '') + '.webp';
-    }
+    if (outputType === 'image/jpeg' && !/\\.(jpe?g)$/i.test(outName)) outName = outName.replace(/\\.[^.]+$/, '') + '.jpg';
+    else if (outputType === 'image/png' && !/\\.png$/i.test(outName)) outName = outName.replace(/\\.[^.]+$/, '') + '.png';
+    else if (outputType === 'image/webp' && !/\\.webp$/i.test(outName)) outName = outName.replace(/\\.[^.]+$/, '') + '.webp';
 
     return new File([blob], outName, { type: outputType });
   } finally {
