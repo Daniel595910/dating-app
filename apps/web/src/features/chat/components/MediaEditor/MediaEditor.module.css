@@ -580,6 +580,12 @@
 /* Markup (commit 7B)                                            */
 /* ============================================================ */
 
+
+/* ============================================================ */
+/* MARKUP STUDIO (Final, clean styles)                           */
+/* ============================================================ */
+
+/* Canvas & Container */
 .markupOverlay {
   position: absolute;
   inset: 0;
@@ -600,74 +606,229 @@
   background: #000;
 }
 
-.markupToolbar {
+.markupContainerPlaceholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Full-screen Modal Overlay */
+.markupFullscreenOverlay {
+  position: fixed;
+  inset: 0;
+  background: #0f0f10;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.markupImageContainer {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Studio Layout Wrapper */
+.markupStudio {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 50;
+}
+
+/* Top Bar (Done & Undo) */
+.markupTopBar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
   display: flex;
   align-items: center;
   justify-content: space-between;
+  padding: calc(16px + env(safe-area-inset-top)) 20px 16px;
+  background: linear-gradient(to bottom, rgba(0,0,0,0.85), transparent);
+  pointer-events: auto;
+  z-index: 100;
+}
+
+.markupTopActions {
+  display: flex;
   gap: 12px;
-  padding: 8px 0;
-  margin-bottom: 4px;
-}
-
-.markupColorRow {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-}
-
-.markupColorBtn {
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  border: 2px solid rgba(255, 255, 255, 0.3);
-  cursor: pointer;
-  transition: transform 0.1s ease, border-color 0.15s ease;
-  flex-shrink: 0;
-  padding: 0;
-}
-
-.markupColorBtn:hover:not(:disabled) {
-  transform: scale(1.1);
-}
-
-.markupColorBtnActive {
-  border-color: var(--color-primary);
-  box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.4);
-  transform: scale(1.1);
-}
-
-.markupColorBtn:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
-}
-
-.markupActionRow {
-  display: flex;
-  gap: 6px;
-  align-items: center;
 }
 
 .markupIconBtn {
-  width: 32px;
-  height: 32px;
+  width: 44px;
+  height: 44px;
   border-radius: 50%;
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  background: rgba(255, 255, 255, 0.08);
-  color: rgba(255, 255, 255, 0.85);
+  background: rgba(255, 255, 255, 0.1);
+  border: none;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  backdrop-filter: blur(8px);
+  transition: background 0.2s;
+}
+
+.markupIconBtn:disabled {
+  opacity: 0.3;
+}
+
+/* The Transparent Done Button */
+.markupDoneBtn {
+  background: transparent;
+  border: none;
+  color: #ffffff;
+  font-size: 16px;
+  font-weight: 600;
+  padding: 8px 16px;
+  cursor: pointer;
+  transition: opacity 0.2s;
+  letter-spacing: 0.3px;
+  text-shadow: 0 1px 4px rgba(0,0,0,0.5);
+}
+
+.markupDoneBtn:hover {
+  opacity: 0.7;
+}
+
+.markupDoneBtn:active {
+  opacity: 0.5;
+}
+
+/* Right Side Slider */
+.markupSideSlider {
+  position: absolute;
+  right: 20px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  pointer-events: auto;
+  z-index: 100;
+  background: rgba(0, 0, 0, 0.4);
+  padding: 16px 10px;
+  border-radius: 30px;
+  backdrop-filter: blur(12px);
+}
+
+.verticalRange {
+  writing-mode: bt-lr;
+  -webkit-appearance: slider-vertical;
+  width: 8px;
+  height: 160px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+  outline: none;
+  cursor: pointer;
+}
+
+.verticalRange::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.5);
+}
+
+.brushPreviewDot {
+  border: 2px solid #fff;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+  transition: all 0.1s ease;
+}
+
+/* Bottom Palette */
+.markupBottomBar {
+  position: absolute;
+  bottom: calc(24px + env(safe-area-inset-bottom));
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: center;
+  padding: 0 16px;
+  pointer-events: auto;
+  z-index: 100;
+}
+
+.markupPalettePill {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: rgba(30, 30, 30, 0.85);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  padding: 8px 16px;
+  border-radius: 9999px;
+  box-shadow: 0 12px 32px rgba(0,0,0,0.5);
+  border: 1px solid rgba(255,255,255,0.08);
+}
+
+.markupColorWrapper {
+  position: relative;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  cursor: pointer;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.markupColorInput {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+  z-index: 2;
+  width: 100%;
+  height: 100%;
+}
+
+.markupColorRing {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: conic-gradient(from 90deg, #f00, #ff0, #0f0, #0ff, #00f, #f0f, #f00);
+  padding: 3px;
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+.markupPaletteDivider {
+  width: 1px;
+  height: 28px;
+  background: rgba(255, 255, 255, 0.15);
+  margin: 0 4px;
+}
+
+.markupToolBtn {
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, 0.5);
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: background 0.15s ease;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  transition: all 0.2s;
   flex-shrink: 0;
 }
 
-.markupIconBtn:hover:not(:disabled) {
+.markupToolBtnActive {
+  color: #fff;
   background: rgba(255, 255, 255, 0.15);
-  color: #ffffff;
-}
-
-.markupIconBtn:disabled {
-  opacity: 0.35;
-  cursor: not-allowed;
 }

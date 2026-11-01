@@ -390,10 +390,13 @@ export async function applyAdjustmentsToImage(
 
 export type StrokePoint = { x: number; y: number };
 
+export type BrushType = 'pen' | 'highlighter' | 'marker';
+
 export type Stroke = {
   points: StrokePoint[];
   color: string;
   width: number; // in natural image pixels
+  brushType: BrushType;
 };
 
 /**
@@ -421,13 +424,31 @@ export function renderMarkupToCanvas(
   const avgScale = (scaleX + scaleY) / 2;
 
   ctx.save();
-  ctx.lineCap = 'round';
-  ctx.lineJoin = 'round';
 
   for (const stroke of strokes) {
     if (stroke.points.length === 0) continue;
+
+    // Apply brush type properties
+    let widthMultiplier = 1;
+    if (stroke.brushType === 'highlighter') {
+      widthMultiplier = 3.5;
+      ctx.globalAlpha = 0.4;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+    } else if (stroke.brushType === 'marker') {
+      widthMultiplier = 2.0;
+      ctx.globalAlpha = 0.9;
+      ctx.lineCap = 'square';
+      ctx.lineJoin = 'miter';
+    } else {
+      widthMultiplier = 1.0;
+      ctx.globalAlpha = 1.0;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+    }
+
     ctx.strokeStyle = stroke.color;
-    ctx.lineWidth = Math.max(1, stroke.width * avgScale);
+    ctx.lineWidth = Math.max(1, stroke.width * avgScale * widthMultiplier);
 
     if (stroke.points.length === 1) {
       const p = stroke.points[0];

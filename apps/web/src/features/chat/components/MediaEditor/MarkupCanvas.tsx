@@ -1,38 +1,54 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Stroke, StrokePoint, renderMarkupToCanvas } from '../../utils/mediaEditor';
+import { Stroke, StrokePoint, renderMarkupToCanvas, BrushType } from '../../utils/mediaEditor';
 import styles from './MediaEditor.module.css';
 
 interface MarkupCanvasProps {
   imageUrl: string;
   naturalW: number;
   naturalH: number;
-  renderedW: number;
-  renderedH: number;
   strokes: Stroke[];
   onStrokesChange: (strokes: Stroke[]) => void;
   color: string;
+  brushType: BrushType;
+  brushSize: number;
   disabled?: boolean;
 }
-
-const STROKE_WIDTH_NATURAL = 8; // width in natural pixels
 
 export const MarkupCanvas: React.FC<MarkupCanvasProps> = ({
   imageUrl,
   naturalW,
   naturalH,
-  renderedW,
-  renderedH,
   strokes,
   onStrokesChange,
   color,
+  brushType,
+  brushSize,
   disabled = false,
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   const imageElRef = useRef<HTMLImageElement | null>(null);
   const [drawing, setDrawing] = useState(false);
   const [currentPoints, setCurrentPoints] = useState<StrokePoint[]>([]);
+  const [renderedW, setRenderedW] = useState(0);
+  const [renderedH, setRenderedH] = useState(0);
 
-  // Redraw on every state change: image, existing strokes, in-progress stroke
+  // Measure container
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el || !naturalW || !naturalH) return;
+    const measure = () => {
+      const rect = el.getBoundingClientRect();
+      const scale = Math.min(rect.width / naturalW, rect.height / naturalH);
+      setRenderedW(naturalW * scale);
+      setRenderedH(naturalH * scale);
+    };
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [naturalW, naturalH]);
+
   const redraw = useCallback(() => {
     const canvas = canvasRef.current;
     const img = imageElRef.current;
@@ -50,14 +66,14 @@ export const MarkupCanvas: React.FC<MarkupCanvasProps> = ({
     if (currentPoints.length > 0) {
       renderMarkupToCanvas(
         ctx,
-        [{ points: currentPoints, color, width: STROKE_WIDTH_NATURAL }],
+        [{ points: currentPoints, color, width: brushSize, brushType }],
         naturalW,
         naturalH,
         renderedW,
         renderedH
       );
     }
-  }, [renderedW, renderedH, naturalW, naturalH, strokes, currentPoints, color]);
+  }, [renderedW, renderedH, naturalW, naturalH, strokes, currentPoints, color, brushSize, brushType]);
 
   useEffect(() => {
     const img = new Image();
@@ -105,23 +121,31 @@ export const MarkupCanvas: React.FC<MarkupCanvasProps> = ({
     if (currentPoints.length > 0) {
       onStrokesChange([
         ...strokes,
-        { points: currentPoints, color, width: STROKE_WIDTH_NATURAL },
+        { points: currentPoints, color, width: brushSize, brushType },
       ]);
     }
     setCurrentPoints([]);
-  }, [drawing, currentPoints, strokes, color, onStrokesChange]);
+  }, [drawing, currentPoints, strokes, color, brushSize, brushType, onStrokesChange]);
+
+  if (renderedW <= 0 || renderedH <= 0) {
+    return <div ref={containerRef} className={styles.markupContainerPlaceholder} />;
+  }
 
   return (
-    <div className={styles.markupOverlay}>
-      <canvas
-        ref={canvasRef}
-        className={styles.markupCanvas}
-        style={{ width: renderedW, height: renderedH }}
-        onPointerDown={onPointerDown}
-        onPointerMove={onPointerMove}
-        onPointerUp={onPointerUp}
-        onPointerCancel={onPointerUp}
-      />
+    <div ref={containerRef} className={styles.markupContainerPlaceholder}>
+      <div style={{ position: 'relative', width: renderedW, height: renderedH }}>
+        <div className={styles.markupOverlay}>
+          <canvas
+            ref={canvasRef}
+            className={styles.markupCanvas}
+            style={{ width: renderedW, height: renderedH }}
+            onPointerDown={onPointerDown}
+            onPointerMove={onPointerMove}
+            onPointerUp={onPointerUp}
+            onPointerCancel={onPointerUp}
+          />
+        </div>
+      </div>
     </div>
   );
 };
