@@ -1,4 +1,4 @@
-﻿export type UploadPurpose = 'avatar' | 'cover_photo' | 'post_image' | 'verification_document' | 'message_media';
+export type UploadPurpose = 'avatar' | 'cover_photo' | 'post_image' | 'verification_document' | 'message_media';
 
 export interface UploadPurposeConfig {
   purpose: UploadPurpose;
@@ -40,7 +40,7 @@ export const UPLOAD_PURPOSES: Record<UploadPurpose, UploadPurposeConfig> = {
   message_media: {
     purpose: 'message_media',
     maxSizeBytes: 50 * 1024 * 1024,
-    allowedTypes: ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'video/mp4', 'video/webm'],
+    allowedTypes: ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'video/mp4', 'video/webm', 'video/quicktime'],
     maxCount: 1,
     description: 'Message media attachments'
   }
