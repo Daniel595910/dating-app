@@ -439,3 +439,139 @@
   opacity: 0.5;
   cursor: not-allowed;
 }
+
+/* ============================================================ */
+/* Crop overlay (commit 6B)                                      */
+/* ============================================================ */
+
+.cropOverlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  pointer-events: none;
+  z-index: 5;
+}
+
+.aspectBar {
+  position: absolute;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  border-radius: 9999px;
+  background: rgba(0, 0, 0, 0.65);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  z-index: 10;
+  pointer-events: auto;
+}
+
+.aspectButton {
+  padding: 6px 12px;
+  border: none;
+  border-radius: 9999px;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.75);
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+  white-space: nowrap;
+  min-height: 28px;
+}
+
+.aspectButton:hover:not(:disabled):not(.aspectButtonActive) {
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+}
+
+.aspectButtonActive {
+  background: var(--color-primary-soft);
+  color: var(--color-primary);
+}
+
+.aspectButton:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.cropStage {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cropStageImg {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  user-select: none;
+  -webkit-user-drag: none;
+  pointer-events: none;
+}
+
+.cropDim {
+  position: absolute;
+  background: rgba(0, 0, 0, 0.55);
+  pointer-events: none;
+}
+
+.cropRect {
+  position: absolute;
+  border: 2px solid rgba(255, 255, 255, 0.95);
+  box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.001);
+  cursor: move;
+  touch-action: none;
+  pointer-events: auto;
+}
+
+.cropGrid {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.cropGridV, .cropGridH {
+  position: absolute;
+  background: rgba(255, 255, 255, 0.35);
+}
+
+.cropGridV {
+  top: 0;
+  bottom: 0;
+  width: 1px;
+}
+
+.cropGridH {
+  left: 0;
+  right: 0;
+  height: 1px;
+}
+
+.cropHandle {
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  background: #ffffff;
+  border: 2px solid var(--color-primary);
+  border-radius: 50%;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+  pointer-events: auto;
+  touch-action: none;
+}
+
+.cropHandle_nw { top: -10px; left: -10px; cursor: nw-resize; }
+.cropHandle_n  { top: -10px; left: 50%; margin-left: -10px; cursor: n-resize; }
+.cropHandle_ne { top: -10px; right: -10px; cursor: ne-resize; }
+.cropHandle_e  { top: 50%; margin-top: -10px; right: -10px; cursor: e-resize; }
+.cropHandle_se { bottom: -10px; right: -10px; cursor: se-resize; }
+.cropHandle_s  { bottom: -10px; left: 50%; margin-left: -10px; cursor: s-resize; }
+.cropHandle_sw { bottom: -10px; left: -10px; cursor: sw-resize; }
+.cropHandle_w  { top: 50%; margin-top: -10px; left: -10px; cursor: w-resize; }
