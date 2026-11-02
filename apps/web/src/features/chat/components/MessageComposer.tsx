@@ -304,7 +304,7 @@ export const MessageComposer: React.FC<MessageComposerProps> = ({
           initialQuality="hd"
           onCancel={() => setPendingMedia(null)}
           onConfirm={(result) => {
-            setPendingMedia(null);
+            if (result.isLast) setPendingMedia(null);
             if (result.file.type.startsWith('video/')) {
               onSendVideo(result.file, result.quality, result.caption);
             } else if (result.file.type.startsWith('image/')) {

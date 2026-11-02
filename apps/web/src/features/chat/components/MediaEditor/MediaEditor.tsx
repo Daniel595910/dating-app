@@ -12,6 +12,7 @@ export interface MediaEditorResult {
   file: File;
   quality: 'hd' | 'sd';
   caption: string;
+  isLast: boolean;
 }
 
 interface MediaEditorProps {
@@ -106,7 +107,7 @@ export const MediaEditor: React.FC<MediaEditorProps> = ({
           markup: null,
         });
       }
-      onConfirm({ file: finalFile, quality, caption: caption.trim() });
+      onConfirm({ file: finalFile, quality, caption: caption.trim(), isLast: true });
     } catch (err) {
       console.error('[MediaEditor] Send failed:', err);
       setSending(false);
