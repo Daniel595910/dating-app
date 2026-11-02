@@ -67,7 +67,10 @@ export const MediaGroup: React.FC<MediaGroupProps> = ({ messages, isOwn, showSen
   const imageMessages = messages.filter((m) => m.type === 'image');
   const imageUrls = imageMessages.map((m) => m.metadata?.imageUrl || '').filter(Boolean);
 
-  const captionMessage = messages.slice().reverse().find((m) => (m.content || '').trim().length > 0);
+  const captionMessage = messages.slice().reverse().find((m) => {
+    const c = (m.content || '').trim();
+    return c.length > 0 && c !== 'Photo' && c !== 'Video';
+  });
   const caption = captionMessage ? captionMessage.content : '';
 
   const count = messages.length;
