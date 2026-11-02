@@ -1,13 +1,12 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { X, Send, Timer, Sliders, Crop, Pencil } from 'lucide-react';
 import { AdjustmentPanel } from './AdjustmentPanel';
-import { Adjustments, DEFAULT_ADJUSTMENTS, isDefaultAdjustments, cssFilterFromAdjustments, exportImage, Stroke, BrushType, TrimRange } from '../../utils/mediaEditor';
+import { Adjustments, DEFAULT_ADJUSTMENTS, isDefaultAdjustments, cssFilterFromAdjustments, exportImage, Stroke, BrushType } from '../../utils/mediaEditor';
 import { CaptionInput } from './CaptionInput';
 import styles from './MediaEditor.module.css';
 import { CropModal } from './CropModal';
 import { MarkupCanvas, MarkupCanvasHandle } from './MarkupCanvas';
 import { MarkupToolbar } from './MarkupToolbar';
-import { TrimStrip } from './TrimStrip';
 
 export interface MediaEditorResult {
   file: File;
@@ -258,22 +257,65 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ src }) => {
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [showChrome, setShowChrome] = useState(true);
-  const [trimRange, setTrimRange] = useState<TrimRange>({ start: 0, end: 0 });
+  const [loadState, setLoadState] = useState<'loading' | 'ready' | 'error'>('loading');
+  const [errorMessage, setErrorMessage] = useState('');
   const hideChromeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Auto-play muted on mount (matches previous behaviour)
+  // Attach src via useEffect — some browsers (iOS Safari) need this after mount
   useEffect(() => {
     const v = videoRef.current;
     if (!v) return;
-    v.currentTime = 0;
-    v.muted = true;
-    v.play().then(() => setPlaying(true)).catch(() => setPlaying(false));
+    setLoadState('loading');
+    setErrorMessage('');
+    setDuration(0);
+    setCurrentTime(0);
+    setPlaying(false);
+
+    v.pause();
+    v.removeAttribute('src');
+    v.load();
+    v.src = src;
+    v.load();
+
+    const onLoadedMetadata = () => {
+      const d = v.duration;
+      if (Number.isFinite(d) && d > 0) {
+        setDuration(d);
+      }
+      setLoadState('ready');
+      v.muted = true;
+      v.play().then(() => setPlaying(true)).catch(() => setPlaying(false));
+    };
+
+    const onError = () => {
+      const err = v.error;
+      let msg = 'This video format is not supported on this device.';
+      if (err) {
+        switch (err.code) {
+          case 1: msg = 'Video loading was aborted.'; break;
+          case 2: msg = 'Network error while loading video.'; break;
+          case 3: msg = 'This video format is not supported on this device.'; break;
+          case 4: msg = 'This video cannot be played — try a different file.'; break;
+        }
+      }
+      setErrorMessage(msg);
+      setLoadState('error');
+    };
+
+    v.addEventListener('loadedmetadata', onLoadedMetadata);
+    v.addEventListener('error', onError);
+
+    return () => {
+      v.removeEventListener('loadedmetadata', onLoadedMetadata);
+      v.removeEventListener('error', onError);
+      try { v.pause(); } catch { /* ignore */ }
+    };
   }, [src]);
 
-  // Fade out chrome while playing — user can tap video to bring it back
+  // Fade out chrome while playing
   useEffect(() => {
     if (hideChromeTimer.current) clearTimeout(hideChromeTimer.current);
-    if (playing) {
+    if (playing && loadState === 'ready') {
       hideChromeTimer.current = setTimeout(() => setShowChrome(false), 2000);
     } else {
       setShowChrome(true);
@@ -281,11 +323,11 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ src }) => {
     return () => {
       if (hideChromeTimer.current) clearTimeout(hideChromeTimer.current);
     };
-  }, [playing]);
+  }, [playing, loadState]);
 
   const handlePlayPause = () => {
     const v = videoRef.current;
-    if (!v) return;
+    if (!v || loadState !== 'ready') return;
     if (v.paused) {
       v.play().then(() => setPlaying(true)).catch(() => setPlaying(false));
     } else {
@@ -297,29 +339,12 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ src }) => {
   const handleTimeUpdate = () => {
     const v = videoRef.current;
     if (!v) return;
-    // If playhead has passed the trim end, loop back to trim start
-    if (v.currentTime >= trimRange.end && trimRange.end > 0) {
-      v.pause();
-      v.currentTime = trimRange.start;
-      setCurrentTime(trimRange.start);
-      setPlaying(false);
-      return;
-    }
     setCurrentTime(v.currentTime);
   };
 
-  const handleLoadedMetadata = () => {
-    const v = videoRef.current;
-    if (!v) return;
-    const d = v.duration || 0;
-    setDuration(d);
-    setTrimRange({ start: 0, end: Math.min(d, 60) });
-  };
-
   const handleVideoClick = () => {
-    // Toggle play/pause
+    if (loadState !== 'ready') return;
     handlePlayPause();
-    // Show chrome briefly on any click
     setShowChrome(true);
     if (hideChromeTimer.current) clearTimeout(hideChromeTimer.current);
     if (!videoRef.current?.paused) {
@@ -329,7 +354,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ src }) => {
 
   const seekTo = (e: React.PointerEvent<HTMLDivElement>) => {
     const v = videoRef.current;
-    if (!v || !duration) return;
+    if (!v || !duration || loadState !== 'ready') return;
     const rect = e.currentTarget.getBoundingClientRect();
     const x = Math.max(0, Math.min(e.clientX - rect.left, rect.width));
     const ratio = x / rect.width;
@@ -357,58 +382,75 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ src }) => {
 
   const progress = duration > 0 ? (currentTime / duration) * 100 : 0;
 
+  if (loadState === 'error') {
+    return (
+      <div className={styles.videoPlayerWrapper}>
+        <div className={styles.videoErrorState}>
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="12" cy="12" r="10" />
+            <line x1="12" y1="8" x2="12" y2="12" />
+            <line x1="12" y1="16" x2="12.01" y2="16" />
+          </svg>
+          <div className={styles.videoErrorMessage}>{errorMessage}</div>
+          <div className={styles.videoErrorHint}>Try sending a different video or a photo instead.</div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className={styles.videoPlayerWrapper}>
       <video
         ref={videoRef}
-        src={src}
         className={styles.videoElement}
         playsInline
         muted
-        preload="metadata"
+        preload="auto"
         onTimeUpdate={handleTimeUpdate}
-        onLoadedMetadata={handleLoadedMetadata}
         onEnded={() => setPlaying(false)}
         onClick={handleVideoClick}
       />
 
-      {/* Play/pause overlay button */}
-      <button
-        type="button"
-        className={`${styles.videoCenterBtn} ${playing && !showChrome ? styles.videoCenterBtnHidden : ''}`}
-        onClick={handlePlayPause}
-        aria-label={playing ? 'Pause' : 'Play'}
-      >
-        {playing ? (
-          <svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="5" width="4" height="14" /><rect x="14" y="5" width="4" height="14" /></svg>
-        ) : (
-          <svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z" /></svg>
-        )}
-      </button>
+      {loadState === 'loading' && (
+        <div className={styles.videoLoadingOverlay}>
+          <div className={styles.videoLoadingSpinner} />
+        </div>
+      )}
 
-      {/* Duration badge */}
-      <div className={`${styles.videoDurationBadge} ${playing && !showChrome ? styles.videoDurationBadgeHidden : ''}`}>
-        {formatTime(currentTime)} / {formatTime(duration)}
-      </div>
+      {loadState === 'ready' && (
+        <button
+          type="button"
+          className={`${styles.videoCenterBtn} ${playing && !showChrome ? styles.videoCenterBtnHidden : ''}`}
+          onClick={handlePlayPause}
+          aria-label={playing ? 'Pause' : 'Play'}
+        >
+          {playing ? (
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="5" width="4" height="14" /><rect x="14" y="5" width="4" height="14" /></svg>
+          ) : (
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z" /></svg>
+          )}
+        </button>
+      )}
 
-      {/* Trim strip (replaces scrub bar) */}
-      {duration > 0 && (
-        <TrimStrip
-          videoUrl={src}
-          duration={duration}
-          trimRange={trimRange}
-          currentTime={currentTime}
-          onChange={setTrimRange}
-          onSeek={(t) => {
-            const v = videoRef.current;
-            if (v) {
-              v.currentTime = t;
-              setCurrentTime(t);
-            }
-          }}
-          disabled={false}
-          maxTrimSeconds={60}
-        />
+      {loadState === 'ready' && (
+        <div className={`${styles.videoDurationBadge} ${playing && !showChrome ? styles.videoDurationBadgeHidden : ''}`}>
+          {formatTime(currentTime)} / {formatTime(duration)}
+        </div>
+      )}
+
+      {loadState === 'ready' && (
+        <div
+          className={styles.videoProgressBar}
+          onPointerDown={handleScrubDown}
+          onPointerMove={handleScrubMove}
+          onPointerUp={handleScrubUp}
+          onPointerCancel={handleScrubUp}
+        >
+          <div className={styles.videoProgressTrack}>
+            <div className={styles.videoProgressFill} style={{ width: `${progress}%` }} />
+            <div className={styles.videoProgressThumb} style={{ left: `${progress}%` }} />
+          </div>
+        </div>
       )}
     </div>
   );

@@ -1196,3 +1196,214 @@
   pointer-events: none;
   transition: left 0.05s linear;
 }
+/* ============================================================ */
+/* TRIM STRIP (Phase 2B)                                         */
+/* ============================================================ */
+
+.trimStripWrapper {
+  position: absolute;
+  bottom: 12px;
+  left: 12px;
+  right: 12px;
+  height: 56px;
+  z-index: 4;
+  user-select: none;
+  touch-action: none;
+  display: flex;
+  align-items: stretch;
+}
+
+.trimStripFilmstrip {
+  position: relative;
+  flex: 1;
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.6);
+  overflow: hidden;
+  display: flex;
+  align-items: stretch;
+}
+
+.trimStripFrame {
+  flex: 1;
+  background-size: cover;
+  background-position: center;
+  border-right: 1px solid rgba(0, 0, 0, 0.3);
+  opacity: 0.85;
+}
+.trimStripFrame:last-child { border-right: none; }
+
+.trimStripFallback {
+  flex: 1;
+  background: repeating-linear-gradient(
+    45deg,
+    rgba(255, 255, 255, 0.1),
+    rgba(255, 255, 255, 0.1) 8px,
+    rgba(255, 255, 255, 0.15) 8px,
+    rgba(255, 255, 255, 0.15) 16px
+  );
+}
+
+.trimStripExtracting {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 12px;
+  font-weight: 500;
+  background: rgba(0, 0, 0, 0.6);
+}
+
+/* Dimmed portions outside trim range */
+.trimStripDim {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.65);
+  pointer-events: none;
+  transition: width 0.05s ease;
+}
+
+/* Selection highlight border between handles */
+.trimStripSelection {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  border-top: 3px solid var(--color-primary);
+  border-bottom: 3px solid var(--color-primary);
+  pointer-events: none;
+  transition: left 0.05s ease, width 0.05s ease;
+}
+
+/* Playhead inside the selection */
+.trimStripPlayhead {
+  position: absolute;
+  top: -2px;
+  bottom: -2px;
+  width: 2px;
+  background: #ffffff;
+  box-shadow: 0 0 4px rgba(0, 0, 0, 0.8);
+  pointer-events: none;
+  transform: translateX(-50%);
+  z-index: 3;
+}
+
+/* Draggable handles */
+.trimHandle {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 16px;
+  background: var(--color-primary);
+  cursor: ew-resize;
+  z-index: 5;
+  touch-action: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.1s ease;
+}
+
+.trimHandle:active {
+  transform: scale(1.05);
+}
+
+.trimHandleLeft {
+  border-radius: 8px 0 0 8px;
+  margin-left: -2px;
+}
+
+.trimHandleRight {
+  transform: translateX(-100%);
+  border-radius: 0 8px 8px 0;
+  margin-right: -2px;
+}
+
+/* Handle grip lines (visual) */
+.trimHandle::after {
+  content: '';
+  width: 2px;
+  height: 20px;
+  background: rgba(255, 255, 255, 0.8);
+  border-radius: 1px;
+  box-shadow: 4px 0 0 rgba(255, 255, 255, 0.8), -4px 0 0 rgba(255, 255, 255, 0.8);
+}
+
+/* Trim info label — top-right corner of the video */
+.trimInfoBadge {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  padding: 4px 10px;
+  border-radius: 9999px;
+  background: rgba(0, 0, 0, 0.6);
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  z-index: 3;
+  pointer-events: none;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  transition: opacity 0.3s ease;
+}
+
+.trimInfoBadgeHidden {
+  opacity: 0;
+}
+
+/* ============================================================ */
+/* VIDEO LOADING + ERROR STATES                                  */
+/* ============================================================ */
+
+.videoLoadingOverlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.3);
+  z-index: 3;
+  pointer-events: none;
+}
+
+.videoLoadingSpinner {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 3px solid rgba(255, 255, 255, 0.2);
+  border-top-color: #ffffff;
+  animation: videoSpin 0.8s linear infinite;
+}
+
+@keyframes videoSpin {
+  to { transform: rotate(360deg); }
+}
+
+.videoErrorState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 32px 24px;
+  text-align: center;
+  color: rgba(255, 255, 255, 0.75);
+  width: 100%;
+  height: 100%;
+}
+
+.videoErrorMessage {
+  font-size: 14px;
+  font-weight: 600;
+  color: #ffffff;
+  max-width: 320px;
+  line-height: 1.4;
+}
+
+.videoErrorHint {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.55);
+  max-width: 320px;
+  line-height: 1.4;
+}

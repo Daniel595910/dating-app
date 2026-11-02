@@ -6,6 +6,41 @@ import styles from '../styles/MessageComposer.module.css';
 import { MediaEditor } from './MediaEditor/MediaEditor';
 import { useSettings } from '@/hooks/useSettings';
 
+const MAX_VIDEO_DURATION_SECONDS = 180; // 3 minutes
+const MAX_VIDEO_SIZE_BYTES = 100 * 1024 * 1024; // 100MB
+const MAX_IMAGE_SIZE_BYTES = 20 * 1024 * 1024; // 20MB
+
+/**
+ * Load the video file into an off-screen <video> element and wait for
+ * metadata so we can read its duration. Times out at 3s to avoid hanging.
+ */
+const probeVideoDuration = (file: File): Promise<number> => {
+  return new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(file);
+    const video = document.createElement('video');
+    video.preload = 'metadata';
+    video.muted = true;
+    const cleanup = () => {
+      video.removeAttribute('src');
+      video.load();
+      URL.revokeObjectURL(url);
+    };
+    const timeout = setTimeout(() => { cleanup(); reject(new Error('timeout')); }, 3000);
+    video.onloadedmetadata = () => {
+      clearTimeout(timeout);
+      const d = video.duration;
+      cleanup();
+      resolve(Number.isFinite(d) ? d : 0);
+    };
+    video.onerror = () => {
+      clearTimeout(timeout);
+      cleanup();
+      reject(new Error('failed to load'));
+    };
+    video.src = url;
+  });
+};
+
 interface MessageComposerProps {
   conversationId: string;
   userId: string;
@@ -44,6 +79,8 @@ export const MessageComposer: React.FC<MessageComposerProps> = ({
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const mediaFileInputRef = useRef<HTMLInputElement>(null);
   const [pendingMedia, setPendingMedia] = useState<File | null>(null);
+  const [toast, setToast] = useState<string | null>(null);
+  const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastTypingBroadcastRef = useRef<number>(0);
@@ -103,13 +140,56 @@ export const MessageComposer: React.FC<MessageComposerProps> = ({
     }, 2500);
   };
 
-  const handleMediaSelect = (files: FileList | null) => {
+  const showToast = (msg: string) => {
+    setToast(msg);
+    if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
+    toastTimerRef.current = setTimeout(() => setToast(null), 3500);
+  };
+
+  const handleMediaSelect = async (files: FileList | null) => {
     if (!files || files.length === 0) return;
     const file = files[0];
     if (!file) return;
+
+    // Reset the input so the same file can be picked again after an error
     if (mediaFileInputRef.current) mediaFileInputRef.current.value = '';
     setAttachmentMenuOpen(false);
-    if (file.type.startsWith('video/') || file.type.startsWith('image/')) {
+
+    const isVideoFile = file.type.startsWith('video/');
+    const isImageFile = file.type.startsWith('image/');
+    if (!isVideoFile && !isImageFile) return;
+
+    // ── Image validation ──
+    if (isImageFile) {
+      if (file.size > 20 * 1024 * 1024) {
+        showToast('Image is too large. Please use images under 20MB.');
+        return;
+      }
+      setPendingMedia(file);
+      return;
+    }
+
+    // ── Video validation ──
+    if (isVideoFile) {
+      // Size check (100MB cap)
+      if (file.size > 100 * 1024 * 1024) {
+        showToast('Video file is too large. Please send videos under 100MB.');
+        return;
+      }
+
+      // Duration check (180s = 3 minutes cap) — probe metadata
+      try {
+        const duration = await probeVideoDuration(file);
+        if (duration && duration > 180) {
+          const mins = Math.floor(duration / 60);
+          const secs = Math.floor(duration % 60);
+          showToast(`Video is too long (${mins}:${secs.toString().padStart(2, '0')}). Please send videos under 3 minutes.`);
+          return;
+        }
+      } catch {
+        // If we can't read duration, let it through — MediaEditor will fail gracefully
+      }
+
       setPendingMedia(file);
     }
   };
@@ -206,6 +286,14 @@ export const MessageComposer: React.FC<MessageComposerProps> = ({
           <Send size={18} />
         </button>
       </div>
+
+      {/* Rejection toast */}
+      {toast && (
+        <div className={styles.toast}>
+          <span className={styles.toastIcon}>⚠️</span>
+          <span className={styles.toastText}>{toast}</span>
+        </div>
+      )}
 
       {pendingMedia && (
         <MediaEditor
