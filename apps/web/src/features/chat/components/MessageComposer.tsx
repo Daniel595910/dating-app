@@ -187,9 +187,12 @@ export const MessageComposer: React.FC<MessageComposerProps> = ({
           return;
         }
       } catch {
-        // If we can't read duration, let it through — MediaEditor will fail gracefully
+        // Probe failed — reject the file. Do not open MediaEditor with an unreadable video.
+        showToast('Could not read this video file. Please try a different video.');
+        return;
       }
 
+      // Duration confirmed under 3 minutes — safe to open editor
       setPendingMedia(file);
     }
   };
