@@ -218,7 +218,7 @@ export const MediaEditor: React.FC<MediaEditorProps> = ({
         onConfirm({
           file: finalFile,
           quality,
-          caption: caption.trim(),
+          caption: i === files.length - 1 ? caption.trim() : '',
           isLast: i === files.length - 1,
         });
       }
