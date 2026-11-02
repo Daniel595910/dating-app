@@ -14,6 +14,13 @@ interface ChatListProps {
   onSelectConversation ? : (conversationId: string) => void;
 }
 
+const formatPreview = (preview: string | null): string => {
+  if (!preview) return '';
+  if (preview === 'Photo') return '📷 Photo';
+  if (preview === 'Video') return '🎬 Video';
+  return preview;
+};
+
 export const ChatList: React.FC < ChatListProps > = ({ onSelectConversation }) => {
   const [conversations, setConversations] = useState < Conversation[] > ([]);
   const [loading, setLoading] = useState(true);
@@ -80,7 +87,7 @@ export const ChatList: React.FC < ChatListProps > = ({ onSelectConversation }) =
               )}
             </div>
             {conversation.last_message_preview && (
-              <p className={styles.preview}>{conversation.last_message_preview}</p>
+              <p className={styles.preview}>{formatPreview(conversation.last_message_preview)}</p>
             )}
           </div>
         </button>
