@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ChatMessage } from '../types/chat.types';
 import { ImagePreviewModal } from '../../community/components/ImagePreviewModal';
 import styles from './MediaGroup.module.css';
@@ -21,6 +21,43 @@ export const canGroupWith = (prev: ChatMessage, next: ChatMessage): boolean => {
   if (prev.metadata?.replyToId || next.metadata?.replyToId) return false;
   const delta = Math.abs(new Date(next.createdAt).getTime() - new Date(prev.createdAt).getTime());
   return delta <= 30000;
+};
+
+const VideoThumb: React.FC<{ src: string }> = ({ src }) => {
+  const [thumbUrl, setThumbUrl] = useState('');
+  useEffect(() => {
+    if (!src) return;
+    let cancelled = false;
+    const v = document.createElement('video');
+    v.preload = 'metadata';
+    v.muted = true;
+    v.playsInline = true;
+    let settled = false;
+    const fail = () => { if (!settled && !cancelled) { settled = true; setThumbUrl(''); } };
+    v.onloadeddata = () => { v.currentTime = 0.1; };
+    v.onseeked = () => {
+      if (cancelled || settled) return;
+      try {
+        const canvas = document.createElement('canvas');
+        canvas.width = v.videoWidth || 320;
+        canvas.height = v.videoHeight || 240;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) { fail(); return; }
+        ctx.drawImage(v, 0, 0, canvas.width, canvas.height);
+        settled = true;
+        setThumbUrl(canvas.toDataURL('image/jpeg', 0.7));
+      } catch { fail(); }
+    };
+    v.onerror = fail;
+    setTimeout(fail, 3000);
+    v.src = src;
+    return () => { cancelled = true; };
+  }, [src]);
+
+  if (!thumbUrl) {
+    return <video src={src} className={styles.cellVideo} preload="metadata" muted playsInline />;
+  }
+  return <img src={thumbUrl} alt="" className={styles.cellVideo} />;
 };
 
 export const MediaGroup: React.FC<MediaGroupProps> = ({ messages, isOwn, showSenderName, onOpenActionSheet }) => {
@@ -72,13 +109,7 @@ export const MediaGroup: React.FC<MediaGroupProps> = ({ messages, isOwn, showSen
             )}
             {m.type === 'video' && (
               <div className={styles.cellVideoWrap}>
-                <video
-                  src={m.metadata?.videoUrl}
-                  className={styles.cellVideo}
-                  preload="metadata"
-                  muted
-                  playsInline
-                />
+                <VideoThumb src={m.metadata?.videoUrl || ''} />
                 <div className={styles.playBadge}>&#9654;</div>
               </div>
             )}
