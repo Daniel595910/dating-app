@@ -1407,3 +1407,32 @@
   max-width: 320px;
   line-height: 1.4;
 }
+/* Mute toggle on video player */
+.videoMuteBtn {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.6);
+  color: #ffffff;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 5;
+  transition: opacity 0.2s, transform 0.15s;
+}
+
+.videoMuteBtn:hover {
+  background: rgba(0, 0, 0, 0.8);
+  transform: scale(1.05);
+}
+
+.videoMuteBtnHidden {
+  opacity: 0;
+  pointer-events: none;
+}
+

@@ -277,6 +277,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ src }) => {
   const [showChrome, setShowChrome] = useState(true);
   const [loadState, setLoadState] = useState<'loading' | 'ready' | 'error'>('loading');
   const [errorMessage, setErrorMessage] = useState('');
+  const [muted, setMuted] = useState(true);
   const hideChromeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Attach src via useEffect — some browsers (iOS Safari) need this after mount
@@ -301,7 +302,6 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ src }) => {
         setDuration(d);
       }
       setLoadState('ready');
-      v.muted = true;
       v.play().then(() => setPlaying(true)).catch(() => setPlaying(false));
     };
 
@@ -422,7 +422,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ src }) => {
         ref={videoRef}
         className={styles.videoElement}
         playsInline
-        muted
+        muted={muted}
         preload="auto"
         onTimeUpdate={handleTimeUpdate}
         onEnded={() => setPlaying(false)}
@@ -454,6 +454,33 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ src }) => {
         <div className={`${styles.videoDurationBadge} ${playing && !showChrome ? styles.videoDurationBadgeHidden : ''}`}>
           {formatTime(currentTime)} / {formatTime(duration)}
         </div>
+      )}
+
+      {loadState === 'ready' && (
+        <button
+          type="button"
+          className={`${styles.videoMuteBtn} ${playing && !showChrome ? styles.videoMuteBtnHidden : ''}`}
+          onClick={(e) => {
+            e.stopPropagation();
+            const next = !muted;
+            setMuted(next);
+            if (videoRef.current) videoRef.current.muted = next;
+          }}
+          aria-label={muted ? 'Unmute' : 'Mute'}
+        >
+          {muted ? (
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+              <line x1="23" y1="9" x2="17" y2="15" />
+              <line x1="17" y1="9" x2="23" y2="15" />
+            </svg>
+          ) : (
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+              <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07" />
+            </svg>
+          )}
+        </button>
       )}
 
       {loadState === 'ready' && (
