@@ -45,8 +45,8 @@ interface MessageComposerProps {
   conversationId: string;
   userId: string;
   onSend: (content: string) => void;
-  onSendImage: (file: File, quality?: 'hd' | 'sd', caption?: string) => void;
-  onSendVideo: (file: File, quality?: 'hd' | 'sd', caption?: string) => void;
+  onSendImage: (file: File, quality?: 'hd' | 'sd', caption?: string) => Promise<void>;
+  onSendVideo: (file: File, quality?: 'hd' | 'sd', caption?: string) => Promise<void>;
   onTypingChange: (isTyping: boolean) => void;
   replyingTo?: ChatMessage | null;
   onCancelReply?: () => void;
@@ -310,12 +310,16 @@ export const MessageComposer: React.FC<MessageComposerProps> = ({
           file={pendingMedia}
           initialQuality="hd"
           onCancel={() => setPendingMedia(null)}
-          onConfirm={(result) => {
-            if (result.isLast) setPendingMedia(null);
-            if (result.file.type.startsWith('video/')) {
-              onSendVideo(result.file, result.quality, result.caption);
-            } else if (result.file.type.startsWith('image/')) {
-              onSendImage(result.file, result.quality, result.caption);
+          onConfirm={async (result) => {
+            try {
+              if (result.file.type.startsWith('video/')) {
+                await onSendVideo(result.file, result.quality, result.caption);
+              } else if (result.file.type.startsWith('image/')) {
+                await onSendImage(result.file, result.quality, result.caption);
+              }
+              if (result.isLast) setPendingMedia(null);
+            } catch (err) {
+              console.error('[MessageComposer] Send failed:', err);
             }
           }}
         />

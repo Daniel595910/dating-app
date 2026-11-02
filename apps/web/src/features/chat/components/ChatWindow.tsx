@@ -535,6 +535,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
     } catch (err) {
       console.error('Failed to send image:', err);
       setMessages((prev) => prev.map((m) => (m.id === tempId ? { ...m, status: 'failed' as const } : m)));
+      throw err;
     }
   };
 
@@ -608,6 +609,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
     } catch (err) {
       console.error('Failed to send video:', err);
       setMessages((prev) => prev.map((m) => (m.id === tempId ? { ...m, status: 'failed' as const } : m)));
+      throw err;
     }
   };
 
