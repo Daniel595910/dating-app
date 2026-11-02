@@ -180,10 +180,10 @@ export const MessageComposer: React.FC<MessageComposerProps> = ({
       // Duration check (180s = 3 minutes cap) — probe metadata
       try {
         const duration = await probeVideoDuration(file);
-        if (duration && duration > 180) {
+        if (duration && duration > 600) {
           const mins = Math.floor(duration / 60);
           const secs = Math.floor(duration % 60);
-          showToast(`Video is too long (${mins}:${secs.toString().padStart(2, '0')}). Please send videos under 3 minutes.`);
+          showToast(`Video is too long (${mins}:${secs.toString().padStart(2, '0')}). Please send videos under 10 minutes.`);
           return;
         }
       } catch {
