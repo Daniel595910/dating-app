@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { X, Send, Timer, Sliders, Crop, Pencil } from 'lucide-react';
+import { X, Send, Timer, Sliders, Crop, Pencil, Plus } from 'lucide-react';
 import { AdjustmentPanel } from './AdjustmentPanel';
 import { Adjustments, DEFAULT_ADJUSTMENTS, isDefaultAdjustments, cssFilterFromAdjustments, exportImage, Stroke, BrushType } from '../../utils/mediaEditor';
 import { CaptionInput } from './CaptionInput';
@@ -45,6 +45,27 @@ export const MediaEditor: React.FC<MediaEditorProps> = ({
   const [markupBrush, setMarkupBrush] = useState<BrushType>('pen');
   const [markupSize, setMarkupSize] = useState(8);
   const markupCanvasRef = useRef<MarkupCanvasHandle>(null);
+  const [files, setFiles] = useState<File[]>([file]);
+  const [activeIndex, setActiveIndex] = useState(0);
+  const addMoreInputRef = useRef<HTMLInputElement>(null);
+
+  const handleAddMore = (picked: FileList | null) => {
+    if (!picked || picked.length === 0) return;
+    const room = 4 - files.length;
+    if (room <= 0) return;
+    const toAdd: File[] = [];
+    for (let i = 0; i < picked.length && toAdd.length < room; i++) {
+      const f = picked[i];
+      const isVideo = f.type.startsWith('video/') || /\\.(mp4|webm|mov|m4v|quicktime|avi|mkv)$/i.test(f.name);
+      const isImage = f.type.startsWith('image/') || /\\.(jpe?g|png|webp|gif)$/i.test(f.name);
+      if (!isVideo && !isImage) continue;
+      if (isImage && f.size > 20 * 1024 * 1024) continue;
+      if (isVideo && f.size > 100 * 1024 * 1024) continue;
+      toAdd.push(f);
+    }
+    if (toAdd.length > 0) setFiles(prev => [...prev, ...toAdd]);
+    if (addMoreInputRef.current) addMoreInputRef.current.value = '';
+  };
 
   const isVideo = file.type.startsWith('video/') || /\.(mp4|webm|mov|m4v|quicktime|avi|mkv)$/i.test(file.name);
   const prevUrlRef = useRef<string>('');
@@ -217,6 +238,23 @@ export const MediaEditor: React.FC<MediaEditorProps> = ({
             <div className={styles.footer}>
               <div className={styles.captionRow}>
                 <CaptionInput value={caption} onChange={setCaption} disabled={sending} />
+                <button
+                  type="button"
+                  className={styles.addMoreBtn}
+                  onClick={() => addMoreInputRef.current?.click()}
+                  disabled={sending || files.length >= 4}
+                  aria-label="Add more media"
+                >
+                  <Plus size={20} />
+                </button>
+                <input
+                  ref={addMoreInputRef}
+                  type="file"
+                  multiple
+                  accept="image/*,video/*"
+                  onChange={(e) => handleAddMore(e.target.files)}
+                  style={{ display: 'none' }}
+                />
                 <button type="button" className={styles.inlineSendBtn} onClick={handleConfirm} disabled={sending || !currentDims} aria-label="Send">
                   {sending ? (
                     <div className={styles.spinner} />
