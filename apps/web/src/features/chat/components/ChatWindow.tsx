@@ -8,6 +8,7 @@ import { ChatMessage, MessageCursor, MessageReactionSummary } from '../types/cha
 import { ChatHeader } from './ChatHeader';
 import { ChatClosedBanner } from './ChatClosedBanner';
 import { MessageBubble } from './MessageBubble';
+import { MediaGroup, canGroupWith } from './MediaGroup';
 import { StoryViewer } from '../../community/components/StoryViewer';
 import { MessageComposer } from './MessageComposer';
 import { TypingIndicator } from './TypingIndicator';
@@ -815,35 +816,71 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
             <p>Say hello to {targetUserName}!</p>
           </div>
         ) : (
-          messages.map((message, idx) => {
-            const prev = idx > 0 ? messages[idx - 1] : null;
-            const isGrouped = Boolean(
-              prev &&
-              prev.senderId === message.senderId &&
-              new Date(message.createdAt).getTime() - new Date(prev.createdAt).getTime() < 5 * 60 * 1000
-            );
-            const showSenderName = message.senderId !== user?.id && !isGrouped;
-            return (
-            <MessageBubble
-              key={message.id}
-              message={message}
-              id={`message-${message.id}`}
-              isOwn={message.senderId === user?.id}
-              showSenderName={showSenderName}
-              isGrouped={isGrouped}
-              onReply={handleReply}
-              onReact={handleReact}
-              onEdit={handleEdit}
-              onDelete={handleDelete}
-              onForward={handleForward}
-              onPin={handlePin}
-              reactions={reactionMap.get(message.id) || []}
-              isPinned={pinnedMessageIds.has(message.id)}
-              onOpenActionSheet={setActionSheetMessage}
-              onOpenStory={setStoryViewerStoryId}
-            />
-            );
-          })
+          (() => {
+            const rendered: React.ReactNode[] = [];
+            let i = 0;
+            while (i < messages.length) {
+              const message = messages[i];
+              const isMediaMsg = (message.type === 'image' || message.type === 'video') && Boolean(message.metadata?.imageUrl || message.metadata?.videoUrl);
+              if (isMediaMsg) {
+                const run: typeof messages = [message];
+                let j = i + 1;
+                while (j < messages.length && run.length < 4 && canGroupWith(run[run.length - 1], messages[j])) {
+                  run.push(messages[j]);
+                  j++;
+                }
+                if (run.length >= 2) {
+                  const prev = i > 0 ? messages[i - 1] : null;
+                  const isGrouped = Boolean(
+                    prev &&
+                    prev.senderId === message.senderId &&
+                    new Date(message.createdAt).getTime() - new Date(prev.createdAt).getTime() < 5 * 60 * 1000
+                  );
+                  const showSenderName = message.senderId !== user?.id && !isGrouped;
+                  rendered.push(
+                    <MediaGroup
+                      key={`media-group-${message.id}`}
+                      messages={run}
+                      isOwn={message.senderId === user?.id}
+                      showSenderName={showSenderName}
+                      onOpenActionSheet={setActionSheetMessage}
+                    />
+                  );
+                  i = j;
+                  continue;
+                }
+              }
+              const prev = i > 0 ? messages[i - 1] : null;
+              const isGrouped = Boolean(
+                prev &&
+                prev.senderId === message.senderId &&
+                new Date(message.createdAt).getTime() - new Date(prev.createdAt).getTime() < 5 * 60 * 1000
+              );
+              const showSenderName = message.senderId !== user?.id && !isGrouped;
+              rendered.push(
+                <MessageBubble
+                  key={message.id}
+                  message={message}
+                  id={`message-${message.id}`}
+                  isOwn={message.senderId === user?.id}
+                  showSenderName={showSenderName}
+                  isGrouped={isGrouped}
+                  onReply={handleReply}
+                  onReact={handleReact}
+                  onEdit={handleEdit}
+                  onDelete={handleDelete}
+                  onForward={handleForward}
+                  onPin={handlePin}
+                  reactions={reactionMap.get(message.id) || []}
+                  isPinned={pinnedMessageIds.has(message.id)}
+                  onOpenActionSheet={setActionSheetMessage}
+                  onOpenStory={setStoryViewerStoryId}
+                />
+              );
+              i++;
+            }
+            return rendered;
+          })()
         )}
 
         {isTyping && <TypingIndicator userName={targetUserName} />}
