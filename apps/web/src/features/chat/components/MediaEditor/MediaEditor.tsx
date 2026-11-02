@@ -139,16 +139,25 @@ export const MediaEditor: React.FC<MediaEditorProps> = ({
     if (sending) return;
     setSending(true);
     try {
-      let finalFile = currentFile;
-      if (!isVideo && !isDefaultAdjustments(adjustments)) {
-        finalFile = await exportImage(currentFile, {
-          crop: null,
-          rotation: 0,
-          adjustments,
-          markup: null,
+      for (let i = 0; i < files.length; i++) {
+        const f = files[i];
+        const fIsVideo = f.type.startsWith('video/') || /\.(mp4|webm|mov|m4v|quicktime|avi|mkv)$/i.test(f.name);
+        let finalFile = f;
+        if (!fIsVideo && !isDefaultAdjustments(adjustments)) {
+          finalFile = await exportImage(f, {
+            crop: null,
+            rotation: 0,
+            adjustments,
+            markup: null,
+          });
+        }
+        onConfirm({
+          file: finalFile,
+          quality,
+          caption: caption.trim(),
+          isLast: i === files.length - 1,
         });
       }
-      onConfirm({ file: finalFile, quality, caption: caption.trim(), isLast: true });
     } catch (err) {
       console.error('[MediaEditor] Send failed:', err);
       setSending(false);
