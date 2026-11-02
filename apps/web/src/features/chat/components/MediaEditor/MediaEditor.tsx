@@ -32,6 +32,7 @@ export const MediaEditor: React.FC<MediaEditorProps> = ({
   const [quality, setQuality] = useState<'hd' | 'sd'>(initialQuality);
   const [sending, setSending] = useState(false);
   const [adjustments, setAdjustments] = useState<Adjustments>({ ...DEFAULT_ADJUSTMENTS });
+  const [edits, setEdits] = useState<Record<number, { file: File; adjustments: Adjustments }>>({});
   const [activeTab, setActiveTab] = useState<'adjust' | 'crop' | 'markup' | null>(null);
 
   const [currentFile, setCurrentFile] = useState<File>(file);
@@ -132,9 +133,11 @@ export const MediaEditor: React.FC<MediaEditorProps> = ({
 
   useEffect(() => {
     if (activeIndex >= 0 && activeIndex < files.length) {
-      setCurrentFile(files[activeIndex]);
+      const saved = edits[activeIndex];
+      setCurrentFile(saved?.file || files[activeIndex]);
+      setAdjustments(saved?.adjustments || { ...DEFAULT_ADJUSTMENTS });
     }
-  }, [activeIndex, files]);
+  }, [activeIndex, files, edits]);
 
   const handleRemoveFile = (i: number) => {
     if (files.length <= 1) {
@@ -142,6 +145,15 @@ export const MediaEditor: React.FC<MediaEditorProps> = ({
       return;
     }
     const next = files.slice(0, i).concat(files.slice(i + 1));
+    setEdits((prev) => {
+      const remapped: typeof prev = {};
+      for (const key of Object.keys(prev)) {
+        const k = Number(key);
+        if (k < i) remapped[k] = prev[k];
+        else if (k > i) remapped[k - 1] = prev[k];
+      }
+      return remapped;
+    });
     if (i < activeIndex) {
       setActiveIndex(activeIndex - 1);
     } else if (i === activeIndex) {
@@ -204,14 +216,16 @@ export const MediaEditor: React.FC<MediaEditorProps> = ({
     setSending(true);
     try {
       for (let i = 0; i < files.length; i++) {
-        const f = files[i];
+        const edited = edits[i];
+        const f = edited?.file || files[i];
+        const adj = edited?.adjustments || { ...DEFAULT_ADJUSTMENTS };
         const fIsVideo = f.type.startsWith('video/') || /\.(mp4|webm|mov|m4v|quicktime|avi|mkv)$/i.test(f.name);
         let finalFile = f;
-        if (!fIsVideo && !isDefaultAdjustments(adjustments)) {
+        if (!fIsVideo && !isDefaultAdjustments(adj)) {
           finalFile = await exportImage(f, {
             crop: null,
             rotation: 0,
-            adjustments,
+            adjustments: adj,
             markup: null,
           });
         }
@@ -265,6 +279,10 @@ export const MediaEditor: React.FC<MediaEditorProps> = ({
                   });
                   setCurrentFile(markedUpFile);
                   setStrokes([]);
+                  setEdits((prev) => ({
+                    ...prev,
+                    [activeIndex]: { file: markedUpFile, adjustments: { ...adjustments } },
+                  }));
                 } catch (err) {
                   console.error('Markup export failed', err);
                 }
@@ -285,7 +303,13 @@ export const MediaEditor: React.FC<MediaEditorProps> = ({
         <AdjustmentPanel
           imageUrl={currentUrl}
           adjustments={adjustments}
-          onChange={setAdjustments}
+          onChange={(adj) => {
+            setAdjustments(adj);
+            setEdits((prev) => ({
+              ...prev,
+              [activeIndex]: { file: currentFile, adjustments: adj },
+            }));
+          }}
           onDone={() => setActiveTab(null)}
           disabled={sending}
         />
@@ -296,6 +320,10 @@ export const MediaEditor: React.FC<MediaEditorProps> = ({
           imageUrl={currentUrl}
                 onCropComplete={(croppedFile) => {
                   setCurrentFile(croppedFile);
+                  setEdits((prev) => ({
+                    ...prev,
+                    [activeIndex]: { file: croppedFile, adjustments: { ...adjustments } },
+                  }));
                   setActiveTab(null);
                 }}
           onCancel={() => setActiveTab(null)}
