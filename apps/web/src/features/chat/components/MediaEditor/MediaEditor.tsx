@@ -28,8 +28,6 @@ export const MediaEditor: React.FC<MediaEditorProps> = ({
   onCancel,
   onConfirm,
 }) => {
-  console.log('[MediaEditor] received file:', file?.name, 'type:', file?.type, 'size:', file?.size);
-  console.error('[MediaEditor MOUNT] file.name=', file?.name, 'file.type=', file?.type, 'file.size=', file?.size);
   const [caption, setCaption] = useState('');
   const [quality, setQuality] = useState<'hd' | 'sd'>(initialQuality);
   const [sending, setSending] = useState(false);
