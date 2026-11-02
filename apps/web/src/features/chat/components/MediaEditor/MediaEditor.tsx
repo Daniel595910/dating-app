@@ -67,6 +67,26 @@ export const MediaEditor: React.FC<MediaEditorProps> = ({
     if (addMoreInputRef.current) addMoreInputRef.current.value = '';
   };
 
+  useEffect(() => {
+    if (activeIndex >= 0 && activeIndex < files.length) {
+      setCurrentFile(files[activeIndex]);
+    }
+  }, [activeIndex, files]);
+
+  const handleRemoveFile = (i: number) => {
+    if (files.length <= 1) {
+      onCancel();
+      return;
+    }
+    const next = files.slice(0, i).concat(files.slice(i + 1));
+    if (i < activeIndex) {
+      setActiveIndex(activeIndex - 1);
+    } else if (i === activeIndex) {
+      setActiveIndex(Math.min(activeIndex, next.length - 1));
+    }
+    setFiles(next);
+  };
+
   const isVideo = file.type.startsWith('video/') || /\.(mp4|webm|mov|m4v|quicktime|avi|mkv)$/i.test(file.name);
   const prevUrlRef = useRef<string>('');
 
@@ -235,6 +255,28 @@ export const MediaEditor: React.FC<MediaEditorProps> = ({
                 />
               )}
             </div>
+            {files.length > 1 && (
+              <div className={styles.thumbStrip}>
+                {files.map((f, i) => (
+                  <div
+                    key={i}
+                      className={`${styles.thumb} ${i === activeIndex ? styles.thumbActive : ''}`}
+                    onClick={() => setActiveIndex(i)}
+                  >
+                    <Thumb file={f} />
+                    <button
+                      type="button"
+                      className={styles.thumbRemove}
+                      onClick={(e) => { e.stopPropagation(); handleRemoveFile(i); }}
+                      disabled={sending}
+                      aria-label="Remove"
+                    >
+                      ×
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
             <div className={styles.footer}>
               <div className={styles.captionRow}>
                 <CaptionInput value={caption} onChange={setCaption} disabled={sending} />
@@ -538,4 +580,16 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ src }) => {
       )}
     </div>
   );
+};
+
+
+const Thumb: React.FC<{ file: File }> = ({ file }) => {
+  const [url, setUrl] = useState('');
+  useEffect(() => {
+    const u = URL.createObjectURL(file);
+    setUrl(u);
+    return () => URL.revokeObjectURL(u);
+  }, [file]);
+  if (!url) return null;
+  return <img src={url} alt="" className={styles.thumbImg} />;
 };
