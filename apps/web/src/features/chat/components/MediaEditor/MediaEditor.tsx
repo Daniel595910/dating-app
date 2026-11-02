@@ -27,6 +27,8 @@ export const MediaEditor: React.FC<MediaEditorProps> = ({
   onCancel,
   onConfirm,
 }) => {
+  console.log('[MediaEditor] received file:', file?.name, 'type:', file?.type, 'size:', file?.size);
+  console.error('[MediaEditor MOUNT] file.name=', file?.name, 'file.type=', file?.type, 'file.size=', file?.size);
   const [caption, setCaption] = useState('');
   const [quality, setQuality] = useState<'hd' | 'sd'>(initialQuality);
   const [sending, setSending] = useState(false);
@@ -43,36 +45,64 @@ export const MediaEditor: React.FC<MediaEditorProps> = ({
   const [markupSize, setMarkupSize] = useState(8);
   const markupCanvasRef = useRef<MarkupCanvasHandle>(null);
 
-  const isVideo = file.type.startsWith('video/');
+  const isVideo = file.type.startsWith('video/') || /\.(mp4|webm|mov|m4v|quicktime|avi|mkv)$/i.test(file.name);
   const prevUrlRef = useRef<string>('');
 
   useEffect(() => {
-    const url = URL.createObjectURL(currentFile);
-    setCurrentUrl(url);
+    let cancelled = false;
 
-    if (isVideo) {
-      const video = document.createElement('video');
-      video.preload = 'metadata';
-      video.muted = true;
-      video.onloadedmetadata = () => {
-        if (video.videoWidth > 0 && video.videoHeight > 0) {
-          setCurrentDims({ w: video.videoWidth, h: video.videoHeight });
-        } else {
-          setCurrentDims({ w: 1, h: 1 });
-        }
-      };
-      video.onerror = () => {
-        setCurrentDims({ w: 1, h: 1 });
-      };
-      video.src = url;
-      video.load();
-    } else {
-      const img = new Image();
-      img.onload = () => setCurrentDims({ w: img.naturalWidth, h: img.naturalHeight });
-      img.src = url;
-    }
+    // Use FileReader → data URL instead of blob URL.
+    // Some browsers (iOS Safari, some Android Chrome) silently fail to
+    // render <img src="blob:..."> or <video src="blob:..."> even though
+    // the blob is valid. data: URLs decode reliably everywhere.
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      if (cancelled) return;
+      const dataUrl = e.target?.result as string;
+      setCurrentUrl(dataUrl);
+    };
+    reader.onerror = () => {
+      if (cancelled) return;
+      console.error('[MediaEditor] FileReader failed:', reader.error);
+    };
+    reader.readAsDataURL(currentFile);
 
-    // No URL.revokeObjectURL — let GC handle it. Revoking causes ERR_FILE_NOT_FOUND.
+    // Probe dimensions so the Send button can enable
+    reader.onloadend = () => {
+      if (cancelled) return;
+      const dataUrl = reader.result as string;
+      if (!dataUrl) return;
+
+      if (isVideo) {
+        const video = document.createElement('video');
+        video.preload = 'metadata';
+        video.muted = true;
+        video.onloadedmetadata = () => {
+          if (!cancelled && video.videoWidth > 0 && video.videoHeight > 0) {
+            setCurrentDims({ w: video.videoWidth, h: video.videoHeight });
+          }
+        };
+        video.onerror = () => {
+          if (!cancelled) setCurrentDims({ w: 1, h: 1 });
+        };
+        video.src = dataUrl;
+        video.load();
+      } else {
+        const img = new Image();
+        img.onload = () => {
+          if (!cancelled) setCurrentDims({ w: img.naturalWidth, h: img.naturalHeight });
+        };
+        img.onerror = () => {
+          if (!cancelled) {
+            console.error('[MediaEditor] Image failed to decode. File may be HEIC or corrupt.');
+            setCurrentDims({ w: 1, h: 1 });
+          }
+        };
+        img.src = dataUrl;
+      }
+    };
+
+    return () => { cancelled = true; };
   }, [currentFile, isVideo]);
 
   const handleConfirm = async () => {

@@ -88,7 +88,6 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
   const [disappearingDuration, setDisappearingDuration] = useState(24);
   
   // Media quality state (persists across chats; resets on full reload)
-  const [mediaQuality, setMediaQuality] = useState<'hd' | 'sd'>('sd');
   
   // Refs
   const cursorRef = useRef<MessageCursor | null>(null);
@@ -921,8 +920,6 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
           onOpenGift={() => setGiftPickerOpen(true)}
           onOpenStickerPicker={() => setStickerPickerOpen(true)}
           disabled={readOnly}
-          quality={mediaQuality}
-          onQualityChange={setMediaQuality}
         />
         </>
       )}

@@ -301,7 +301,7 @@ export const MessageComposer: React.FC<MessageComposerProps> = ({
       {pendingMedia && (
         <MediaEditor
           file={pendingMedia}
-          initialQuality={quality}
+          initialQuality="hd"
           onCancel={() => setPendingMedia(null)}
           onConfirm={(result) => {
             setPendingMedia(null);
