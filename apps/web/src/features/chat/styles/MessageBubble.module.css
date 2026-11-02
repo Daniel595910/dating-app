@@ -1571,3 +1571,15 @@
 .ownWrapper .storyReplyText {
   color: rgba(255,255,255,0.85);
 }
+
+/* Caption below image / video message */
+.imageMessageContainer .caption,
+.videoMessageContainer .caption {
+  font-size: 0.875rem;
+  line-height: 1.35;
+  color: inherit;
+  margin-top: 6px;
+  padding: 0 4px;
+  word-wrap: break-word;
+  white-space: pre-wrap;
+}

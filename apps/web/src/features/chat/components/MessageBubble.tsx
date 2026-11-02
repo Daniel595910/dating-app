@@ -148,6 +148,9 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
       return (
         <div className={styles.imageMessageContainer}>
           <img src={message.metadata.thumbnailUrl || message.metadata.imageUrl} alt="" loading="lazy" className={styles.imageMessage} onClick={() => setImagePreviewOpen(true)} />
+          {message.content && message.content !== 'Photo' && message.content.trim() && (
+            <p className={styles.caption}>{message.content}</p>
+          )}
         </div>
       );
     }
@@ -174,6 +177,9 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
           </div>
           {videoDuration && (
             <span className={styles.videoDurationBadge}>{videoDuration}</span>
+          )}
+          {message.content && message.content !== 'Video' && message.content.trim() && (
+            <p className={styles.caption}>{message.content}</p>
           )}
         </div>
       );
