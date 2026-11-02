@@ -52,8 +52,20 @@ export const MediaEditor: React.FC<MediaEditorProps> = ({
 
     if (isVideo) {
       const video = document.createElement('video');
+      video.preload = 'metadata';
+      video.muted = true;
+      video.onloadedmetadata = () => {
+        if (video.videoWidth > 0 && video.videoHeight > 0) {
+          setCurrentDims({ w: video.videoWidth, h: video.videoHeight });
+        } else {
+          setCurrentDims({ w: 1, h: 1 });
+        }
+      };
+      video.onerror = () => {
+        setCurrentDims({ w: 1, h: 1 });
+      };
       video.src = url;
-      video.onloadedmetadata = () => setCurrentDims({ w: video.videoWidth, h: video.videoHeight });
+      video.load();
     } else {
       const img = new Image();
       img.onload = () => setCurrentDims({ w: img.naturalWidth, h: img.naturalHeight });
@@ -163,18 +175,16 @@ export const MediaEditor: React.FC<MediaEditorProps> = ({
         <div className={styles.overlay} onClick={() => { if (!sending) onCancel(); }}>
           <div className={styles.container} onClick={(e) => e.stopPropagation()}>
             <div className={styles.header}>
+              <div style={{ width: 36, height: 36 }} />
+              <span className={styles.headerTitle}>Send Media</span>
               <button type="button" className={styles.cancelBtn} onClick={() => { if (!sending) onCancel(); }} aria-label="Cancel">
                 <X size={20} />
-              </button>
-              <span className={styles.headerTitle}>Send Media</span>
-              <button type="button" className={styles.sendBtn} onClick={handleConfirm} disabled={sending || !currentDims} aria-label="Send">
-                {sending ? 'Sending...' : <><Send size={16} /><span>Send</span></>}
               </button>
             </div>
 
             <div className={styles.previewArea}>
               {isVideo ? (
-                <video src={currentUrl} className={styles.media} controls playsInline autoPlay muted />
+                <video key={currentUrl} src={currentUrl} className={styles.media} controls playsInline autoPlay muted preload="metadata" />
               ) : (
                 <img
                   key={currentUrl}
@@ -185,20 +195,17 @@ export const MediaEditor: React.FC<MediaEditorProps> = ({
                 />
               )}
             </div>
-
-      {/* ADJUST SUB-MODAL */}
-      {activeTab === 'adjust' && !isVideo && (
-        <AdjustmentPanel
-          imageUrl={currentUrl}
-          adjustments={adjustments}
-          onChange={setAdjustments}
-          onDone={() => setActiveTab(null)}
-          disabled={sending}
-        />
-      )}
-
             <div className={styles.footer}>
-              <CaptionInput value={caption} onChange={setCaption} disabled={sending} />
+              <div className={styles.captionRow}>
+                <CaptionInput value={caption} onChange={setCaption} disabled={sending} />
+                <button type="button" className={styles.inlineSendBtn} onClick={handleConfirm} disabled={sending || !currentDims} aria-label="Send">
+                  {sending ? (
+                    <div className={styles.spinner} />
+                  ) : (
+                    <Send size={18} />
+                  )}
+                </button>
+              </div>
 
               <div className={styles.tabBar}>
                 <button type="button" className={`${styles.tabButton} ${activeTab === 'adjust' ? styles.tabButtonActive : ''}`} onClick={() => setActiveTab(activeTab === 'adjust' ? null : 'adjust')} disabled={sending || isVideo}>
