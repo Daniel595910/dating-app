@@ -119,8 +119,10 @@ export const MediaEditor: React.FC<MediaEditorProps> = ({
     const toAdd: File[] = [];
     for (let i = 0; i < picked.length && toAdd.length < room; i++) {
       const f = picked[i];
-      const isVideo = f.type.startsWith('video/') || /\\.(mp4|webm|mov|m4v|quicktime|avi|mkv)$/i.test(f.name);
-      const isImage = f.type.startsWith('image/') || /\\.(jpe?g|png|webp|gif)$/i.test(f.name);
+      const isVideo = f.type.startsWith('video/') || /\.(mp4|webm|mov|m4v|quicktime|avi|mkv)$/i.test(f.name);
+      const isImage = f.type.startsWith('image/') || /\.(jpe?g|png|webp|gif)$/i.test(f.name);
+      const isHeic = /\.(heic|heif)$/i.test(f.name) || f.type === 'image/heic' || f.type === 'image/heif';
+      if (isHeic) continue;
       if (!isVideo && !isImage) continue;
       if (isImage && f.size > 20 * 1024 * 1024) continue;
       if (isVideo && f.size > 100 * 1024 * 1024) continue;

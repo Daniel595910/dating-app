@@ -159,6 +159,13 @@ export const MessageComposer: React.FC<MessageComposerProps> = ({
     const isImageFile = file.type.startsWith('image/');
     if (!isVideoFile && !isImageFile) return;
 
+    // HEIC/HEIF rejection — Chrome cannot decode these
+    const isHeic = /\.(heic|heif)$/i.test(file.name) || file.type === 'image/heic' || file.type === 'image/heif';
+    if (isHeic) {
+      showToast('HEIC photos are not supported. Please use JPG or PNG, or convert in Photos app first.');
+      return;
+    }
+
     // ── Image validation ──
     if (isImageFile) {
       if (file.size > 20 * 1024 * 1024) {
