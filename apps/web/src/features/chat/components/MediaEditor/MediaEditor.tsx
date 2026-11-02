@@ -1,12 +1,13 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { X, Send, Timer, Sliders, Crop, Pencil } from 'lucide-react';
 import { AdjustmentPanel } from './AdjustmentPanel';
-import { Adjustments, DEFAULT_ADJUSTMENTS, isDefaultAdjustments, cssFilterFromAdjustments, exportImage, Stroke, BrushType } from '../../utils/mediaEditor';
+import { Adjustments, DEFAULT_ADJUSTMENTS, isDefaultAdjustments, cssFilterFromAdjustments, exportImage, Stroke, BrushType, TrimRange } from '../../utils/mediaEditor';
 import { CaptionInput } from './CaptionInput';
 import styles from './MediaEditor.module.css';
 import { CropModal } from './CropModal';
 import { MarkupCanvas, MarkupCanvasHandle } from './MarkupCanvas';
 import { MarkupToolbar } from './MarkupToolbar';
+import { TrimStrip } from './TrimStrip';
 
 export interface MediaEditorResult {
   file: File;
@@ -257,6 +258,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ src }) => {
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [showChrome, setShowChrome] = useState(true);
+  const [trimRange, setTrimRange] = useState<TrimRange>({ start: 0, end: 0 });
   const hideChromeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Auto-play muted on mount (matches previous behaviour)
@@ -295,13 +297,23 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ src }) => {
   const handleTimeUpdate = () => {
     const v = videoRef.current;
     if (!v) return;
+    // If playhead has passed the trim end, loop back to trim start
+    if (v.currentTime >= trimRange.end && trimRange.end > 0) {
+      v.pause();
+      v.currentTime = trimRange.start;
+      setCurrentTime(trimRange.start);
+      setPlaying(false);
+      return;
+    }
     setCurrentTime(v.currentTime);
   };
 
   const handleLoadedMetadata = () => {
     const v = videoRef.current;
     if (!v) return;
-    setDuration(v.duration || 0);
+    const d = v.duration || 0;
+    setDuration(d);
+    setTrimRange({ start: 0, end: Math.min(d, 60) });
   };
 
   const handleVideoClick = () => {
@@ -379,19 +391,25 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ src }) => {
         {formatTime(currentTime)} / {formatTime(duration)}
       </div>
 
-      {/* Scrub bar */}
-      <div
-        className={styles.videoProgressBar}
-        onPointerDown={handleScrubDown}
-        onPointerMove={handleScrubMove}
-        onPointerUp={handleScrubUp}
-        onPointerCancel={handleScrubUp}
-      >
-        <div className={styles.videoProgressTrack}>
-          <div className={styles.videoProgressFill} style={{ width: `${progress}%` }} />
-          <div className={styles.videoProgressThumb} style={{ left: `${progress}%` }} />
-        </div>
-      </div>
+      {/* Trim strip (replaces scrub bar) */}
+      {duration > 0 && (
+        <TrimStrip
+          videoUrl={src}
+          duration={duration}
+          trimRange={trimRange}
+          currentTime={currentTime}
+          onChange={setTrimRange}
+          onSeek={(t) => {
+            const v = videoRef.current;
+            if (v) {
+              v.currentTime = t;
+              setCurrentTime(t);
+            }
+          }}
+          disabled={false}
+          maxTrimSeconds={60}
+        />
+      )}
     </div>
   );
 };
