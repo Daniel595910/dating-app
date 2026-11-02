@@ -48,6 +48,69 @@ export const MediaEditor: React.FC<MediaEditorProps> = ({
   const [files, setFiles] = useState<File[]>([file]);
   const [activeIndex, setActiveIndex] = useState(0);
   const addMoreInputRef = useRef<HTMLInputElement>(null);
+  const [thumbUrls, setThumbUrls] = useState<string[]>([]);
+
+  useEffect(() => {
+    let cancelled = false;
+    const isVid = (f: File) => f.type.startsWith('video/') || /\.(mp4|webm|mov|m4v|quicktime|avi|mkv)$/i.test(f.name);
+    const extract = (f: File): Promise<string> => {
+      if (!isVid(f)) {
+        return Promise.resolve(URL.createObjectURL(f));
+      }
+      return new Promise<string>((resolve) => {
+        const videoUrl = URL.createObjectURL(f);
+        const v = document.createElement('video');
+        v.preload = 'metadata';
+        v.muted = true;
+        v.playsInline = true;
+        let settled = false;
+        const finish = (result: string) => {
+          if (settled) return;
+          settled = true;
+          URL.revokeObjectURL(videoUrl);
+          resolve(result);
+        };
+        const fail = () => {
+          if (settled) return;
+          settled = true;
+          URL.revokeObjectURL(videoUrl);
+          resolve('');
+        };
+        v.onloadeddata = () => {
+          v.currentTime = 0.1;
+        };
+        v.onseeked = () => {
+          try {
+            const canvas = document.createElement('canvas');
+            canvas.width = v.videoWidth || 320;
+            canvas.height = v.videoHeight || 240;
+            const ctx = canvas.getContext('2d');
+            if (!ctx) { fail(); return; }
+            ctx.drawImage(v, 0, 0, canvas.width, canvas.height);
+            const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
+            finish(dataUrl);
+          } catch {
+            fail();
+          }
+        };
+        v.onerror = fail;
+        setTimeout(fail, 3000);
+        v.src = videoUrl;
+      });
+    };
+    Promise.all(files.map(extract)).then((results) => {
+      if (!cancelled) setThumbUrls(results);
+    });
+    return () => {
+      cancelled = true;
+      setThumbUrls((prev) => {
+        prev.forEach((u) => {
+          if (u && u.startsWith('blob:')) URL.revokeObjectURL(u);
+        });
+        return [];
+      });
+    };
+  }, [files]);
 
   const handleAddMore = (picked: FileList | null) => {
     if (!picked || picked.length === 0) return;
@@ -88,6 +151,7 @@ export const MediaEditor: React.FC<MediaEditorProps> = ({
   };
 
   const isVideo = file.type.startsWith('video/') || /\.(mp4|webm|mov|m4v|quicktime|avi|mkv)$/i.test(file.name);
+  const currentIsVideo = currentFile.type.startsWith('video/') || /\.(mp4|webm|mov|m4v|quicktime|avi|mkv)$/i.test(currentFile.name);
   const prevUrlRef = useRef<string>('');
 
   useEffect(() => {
@@ -98,7 +162,7 @@ export const MediaEditor: React.FC<MediaEditorProps> = ({
     const objectUrl = URL.createObjectURL(currentFile);
     setCurrentUrl(objectUrl);
 
-    if (isVideo) {
+    if (currentIsVideo) {
       const video = document.createElement('video');
       video.preload = 'metadata';
       video.muted = true;
@@ -133,7 +197,7 @@ export const MediaEditor: React.FC<MediaEditorProps> = ({
       cancelled = true;
       URL.revokeObjectURL(objectUrl);
     };
-  }, [currentFile, isVideo]);
+  }, [currentFile, currentIsVideo]);
 
   const handleConfirm = async () => {
     if (sending) return;
@@ -167,7 +231,7 @@ export const MediaEditor: React.FC<MediaEditorProps> = ({
   return (
     <>
       {/* 1. MARKUP STUDIO (full-screen) */}
-      {activeTab === 'markup' && !isVideo && currentDims && (
+      {activeTab === 'markup' && !currentIsVideo && currentDims && (
         <div className={styles.markupFullscreenOverlay}>
           <div className={styles.markupImageContainer}>
               <MarkupCanvas
@@ -217,7 +281,7 @@ export const MediaEditor: React.FC<MediaEditorProps> = ({
 
       {/* 1b. ADJUST SUB-MODAL (bottom sheet) */}
       {/* ADJUST SUB-MODAL */}
-      {activeTab === 'adjust' && !isVideo && (
+      {activeTab === 'adjust' && !currentIsVideo && (
         <AdjustmentPanel
           imageUrl={currentUrl}
           adjustments={adjustments}
@@ -227,7 +291,7 @@ export const MediaEditor: React.FC<MediaEditorProps> = ({
         />
       )}
       {/* 2. CROP MODAL (full-screen, sibling to everything else) */}
-      {activeTab === 'crop' && !isVideo && currentDims && (
+      {activeTab === 'crop' && !currentIsVideo && currentDims && (
         <CropModal
           imageUrl={currentUrl}
                 onCropComplete={(croppedFile) => {
@@ -252,8 +316,8 @@ export const MediaEditor: React.FC<MediaEditorProps> = ({
             </div>
 
             <div className={styles.previewArea}>
-              {isVideo ? (
-                <VideoPlayer src={currentUrl} />
+              {currentIsVideo ? (
+                <VideoPlayer key={currentUrl} src={currentUrl} />
               ) : (
                 <img
                   key={currentUrl}
@@ -272,7 +336,9 @@ export const MediaEditor: React.FC<MediaEditorProps> = ({
                       className={`${styles.thumb} ${i === activeIndex ? styles.thumbActive : ''}`}
                     onClick={() => setActiveIndex(i)}
                   >
-                    <Thumb file={f} />
+                    {thumbUrls[i] && (
+                      <img src={thumbUrls[i]} alt="" className={styles.thumbImg} />
+                    )}
                     <button
                       type="button"
                       className={styles.thumbRemove}
@@ -316,13 +382,13 @@ export const MediaEditor: React.FC<MediaEditorProps> = ({
               </div>
 
               <div className={styles.tabBar}>
-                <button type="button" className={`${styles.tabButton} ${activeTab === 'adjust' ? styles.tabButtonActive : ''}`} onClick={() => setActiveTab(activeTab === 'adjust' ? null : 'adjust')} disabled={sending || isVideo}>
+                <button type="button" className={`${styles.tabButton} ${activeTab === 'adjust' ? styles.tabButtonActive : ''}`} onClick={() => setActiveTab(activeTab === 'adjust' ? null : 'adjust')} disabled={sending || currentIsVideo}>
                   <Sliders size={14} /><span>Adjust</span>
                 </button>
-                <button type="button" className={`${styles.tabButton} ${activeTab === 'crop' ? styles.tabButtonActive : ''}`} onClick={() => setActiveTab(activeTab === 'crop' ? null : 'crop')} disabled={sending || isVideo}>
+                <button type="button" className={`${styles.tabButton} ${activeTab === 'crop' ? styles.tabButtonActive : ''}`} onClick={() => setActiveTab(activeTab === 'crop' ? null : 'crop')} disabled={sending || currentIsVideo}>
                   <Crop size={14} /><span>Crop</span>
                 </button>
-                <button type="button" className={`${styles.tabButton} ${activeTab === 'markup' ? styles.tabButtonActive : ''}`} onClick={() => setActiveTab('markup')} disabled={sending || isVideo}>
+                <button type="button" className={`${styles.tabButton} ${activeTab === 'markup' ? styles.tabButtonActive : ''}`} onClick={() => setActiveTab('markup')} disabled={sending || currentIsVideo}>
                   <Pencil size={14} /><span>Markup</span>
                 </button>
               </div>
@@ -592,13 +658,3 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ src }) => {
 };
 
 
-const Thumb: React.FC<{ file: File }> = ({ file }) => {
-  const [url, setUrl] = useState('');
-  useEffect(() => {
-    const u = URL.createObjectURL(file);
-    setUrl(u);
-    return () => URL.revokeObjectURL(u);
-  }, [file]);
-  if (!url) return null;
-  return <img src={url} alt="" className={styles.thumbImg} />;
-};
