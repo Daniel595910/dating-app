@@ -184,7 +184,7 @@ export const MediaEditor: React.FC<MediaEditorProps> = ({
 
             <div className={styles.previewArea}>
               {isVideo ? (
-                <video key={currentUrl} src={currentUrl} className={styles.media} controls playsInline autoPlay muted preload="metadata" />
+                <VideoPlayer src={currentUrl} />
               ) : (
                 <img
                   key={currentUrl}
@@ -233,5 +233,165 @@ export const MediaEditor: React.FC<MediaEditorProps> = ({
         </div>
       )}
     </>
+  );
+};
+
+// ============================================================================
+// VideoPlayer sub-component (Phase 1 — custom controls, no trim yet)
+// ============================================================================
+
+interface VideoPlayerProps {
+  src: string;
+}
+
+const formatTime = (seconds: number): string => {
+  if (!Number.isFinite(seconds) || seconds < 0) return '0:00';
+  const m = Math.floor(seconds / 60);
+  const s = Math.floor(seconds % 60);
+  return `${m}:${s.toString().padStart(2, '0')}`;
+};
+
+const VideoPlayer: React.FC<VideoPlayerProps> = ({ src }) => {
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const [playing, setPlaying] = useState(false);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(0);
+  const [showChrome, setShowChrome] = useState(true);
+  const hideChromeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Auto-play muted on mount (matches previous behaviour)
+  useEffect(() => {
+    const v = videoRef.current;
+    if (!v) return;
+    v.currentTime = 0;
+    v.muted = true;
+    v.play().then(() => setPlaying(true)).catch(() => setPlaying(false));
+  }, [src]);
+
+  // Fade out chrome while playing — user can tap video to bring it back
+  useEffect(() => {
+    if (hideChromeTimer.current) clearTimeout(hideChromeTimer.current);
+    if (playing) {
+      hideChromeTimer.current = setTimeout(() => setShowChrome(false), 2000);
+    } else {
+      setShowChrome(true);
+    }
+    return () => {
+      if (hideChromeTimer.current) clearTimeout(hideChromeTimer.current);
+    };
+  }, [playing]);
+
+  const handlePlayPause = () => {
+    const v = videoRef.current;
+    if (!v) return;
+    if (v.paused) {
+      v.play().then(() => setPlaying(true)).catch(() => setPlaying(false));
+    } else {
+      v.pause();
+      setPlaying(false);
+    }
+  };
+
+  const handleTimeUpdate = () => {
+    const v = videoRef.current;
+    if (!v) return;
+    setCurrentTime(v.currentTime);
+  };
+
+  const handleLoadedMetadata = () => {
+    const v = videoRef.current;
+    if (!v) return;
+    setDuration(v.duration || 0);
+  };
+
+  const handleVideoClick = () => {
+    // Toggle play/pause
+    handlePlayPause();
+    // Show chrome briefly on any click
+    setShowChrome(true);
+    if (hideChromeTimer.current) clearTimeout(hideChromeTimer.current);
+    if (!videoRef.current?.paused) {
+      hideChromeTimer.current = setTimeout(() => setShowChrome(false), 2000);
+    }
+  };
+
+  const seekTo = (e: React.PointerEvent<HTMLDivElement>) => {
+    const v = videoRef.current;
+    if (!v || !duration) return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = Math.max(0, Math.min(e.clientX - rect.left, rect.width));
+    const ratio = x / rect.width;
+    v.currentTime = ratio * duration;
+    setCurrentTime(v.currentTime);
+  };
+
+  const handleScrubDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    seekTo(e);
+    e.currentTarget.setPointerCapture(e.pointerId);
+    setShowChrome(true);
+    if (hideChromeTimer.current) clearTimeout(hideChromeTimer.current);
+  };
+
+  const handleScrubMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!e.currentTarget.hasPointerCapture(e.pointerId)) return;
+    seekTo(e);
+  };
+
+  const handleScrubUp = () => {
+    if (!videoRef.current?.paused) {
+      hideChromeTimer.current = setTimeout(() => setShowChrome(false), 2000);
+    }
+  };
+
+  const progress = duration > 0 ? (currentTime / duration) * 100 : 0;
+
+  return (
+    <div className={styles.videoPlayerWrapper}>
+      <video
+        ref={videoRef}
+        src={src}
+        className={styles.videoElement}
+        playsInline
+        muted
+        preload="metadata"
+        onTimeUpdate={handleTimeUpdate}
+        onLoadedMetadata={handleLoadedMetadata}
+        onEnded={() => setPlaying(false)}
+        onClick={handleVideoClick}
+      />
+
+      {/* Play/pause overlay button */}
+      <button
+        type="button"
+        className={`${styles.videoCenterBtn} ${playing && !showChrome ? styles.videoCenterBtnHidden : ''}`}
+        onClick={handlePlayPause}
+        aria-label={playing ? 'Pause' : 'Play'}
+      >
+        {playing ? (
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="5" width="4" height="14" /><rect x="14" y="5" width="4" height="14" /></svg>
+        ) : (
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z" /></svg>
+        )}
+      </button>
+
+      {/* Duration badge */}
+      <div className={`${styles.videoDurationBadge} ${playing && !showChrome ? styles.videoDurationBadgeHidden : ''}`}>
+        {formatTime(currentTime)} / {formatTime(duration)}
+      </div>
+
+      {/* Scrub bar */}
+      <div
+        className={styles.videoProgressBar}
+        onPointerDown={handleScrubDown}
+        onPointerMove={handleScrubMove}
+        onPointerUp={handleScrubUp}
+        onPointerCancel={handleScrubUp}
+      >
+        <div className={styles.videoProgressTrack}>
+          <div className={styles.videoProgressFill} style={{ width: `${progress}%` }} />
+          <div className={styles.videoProgressThumb} style={{ left: `${progress}%` }} />
+        </div>
+      </div>
+    </div>
   );
 };

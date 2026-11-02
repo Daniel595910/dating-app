@@ -1069,3 +1069,130 @@
 @keyframes spin {
   to { transform: rotate(360deg); }
 }
+/* ============================================================ */
+/* CUSTOM VIDEO PLAYER (Phase 1)                                 */
+/* ============================================================ */
+
+.videoPlayerWrapper {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #000;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.videoElement {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  display: block;
+}
+
+/* Center play/pause button — large, TikTok style */
+.videoCenterBtn {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.55);
+  border: none;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  pointer-events: auto;
+  transition: opacity 0.2s ease, transform 0.15s ease, background 0.15s ease;
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  z-index: 3;
+}
+
+.videoCenterBtn:hover {
+  background: rgba(0, 0, 0, 0.7);
+  transform: translate(-50%, -50%) scale(1.05);
+}
+
+.videoCenterBtn:active {
+  transform: translate(-50%, -50%) scale(0.95);
+}
+
+.videoCenterBtnHidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Duration badge — top-left corner */
+.videoDurationBadge {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  padding: 4px 10px;
+  border-radius: 9999px;
+  background: rgba(0, 0, 0, 0.6);
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  z-index: 3;
+  pointer-events: none;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  transition: opacity 0.3s ease;
+  opacity: 1;
+}
+
+.videoDurationBadgeHidden {
+  opacity: 0;
+}
+
+/* Progress bar — bottom, draggable */
+.videoProgressBar {
+  position: absolute;
+  bottom: 12px;
+  left: 12px;
+  right: 12px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  z-index: 3;
+  touch-action: none;
+}
+
+.videoProgressTrack {
+  width: 100%;
+  height: 4px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.25);
+  overflow: hidden;
+  position: relative;
+}
+
+.videoProgressFill {
+  height: 100%;
+  background: var(--color-primary);
+  transition: width 0.05s linear;
+  pointer-events: none;
+}
+
+.videoProgressThumb {
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--color-primary);
+  border: 2px solid #ffffff;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+  pointer-events: none;
+  transition: left 0.05s linear;
+}
