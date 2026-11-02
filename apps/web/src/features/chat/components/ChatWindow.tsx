@@ -397,7 +397,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
     if (!user || !content.trim()) return;
     if (readOnly) return;
     const trimmed = content.trim();
-    const tempId = `temp-${Date.now()}`;
+    const tempId = `temp-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 
     const metadata = replyingTo ? {
       replyToId: replyingTo.id,
@@ -439,7 +439,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
     
     console.log('Starting voice message send:', { blobSize: audioBlob.size, duration, userId: user.id });
     
-    const tempId = `temp-${Date.now()}`;
+    const tempId = `temp-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
     const metadata = {
       durationMs: duration * 1000,
       audioUrl: '',
@@ -501,7 +501,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
   const handleSendImage = async (file: File, quality: 'hd' | 'sd' = 'sd', caption?: string) => {
     if (!user || readOnly) return;
     
-    const tempId = `temp-${Date.now()}`;
+    const tempId = `temp-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 
     setMessages((prev) => [...prev, {
       id: tempId,
@@ -542,7 +542,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
   const handleSendSticker = async (url: string, name: string, isPremium: boolean) => {
     if (!user || readOnly) return;
 
-    const tempId = `temp-${Date.now()}`;
+    const tempId = `temp-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 
     setMessages((prev) => [...prev, {
       id: tempId,
@@ -575,7 +575,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
   const handleSendVideo = async (file: File, quality: 'hd' | 'sd' = 'sd', caption?: string) => {
     if (!user || readOnly) return;
     
-    const tempId = `temp-${Date.now()}`;
+    const tempId = `temp-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 
     setMessages((prev) => [...prev, {
       id: tempId,
@@ -616,7 +616,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
   const handleSendGift = async (gift: { id: string; name: string; icon: string }) => {
     if (!user || readOnly) return;
     
-    const tempId = `temp-${Date.now()}`;
+    const tempId = `temp-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 
     setMessages((prev) => [...prev, {
       id: tempId,
