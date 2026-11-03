@@ -1534,3 +1534,407 @@
   background: rgba(0, 0, 0, 0.9);
 }
 
+
+
+/* ============================================================================ */
+/* PREMIUM POLISH PASS — appended overrides (C: premium minimal)                  */
+/* Non-destructive: overrides via cascade. Delete this block to revert.          */
+/* ============================================================================ */
+
+/* 1. MOTION SYSTEM --------------------------------------------------------- */
+.overlay, .cropFullscreenOverlay, .markupFullscreenOverlay {
+  animation: overlayFadeIn 160ms ease-out;
+}
+@keyframes overlayFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.container {
+  animation: containerEnter 220ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+@keyframes containerEnter {
+  from { opacity: 0; transform: translateY(8px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .overlay, .container, .cropFullscreenOverlay, .markupFullscreenOverlay {
+    animation: none;
+  }
+}
+
+/* 2. GLOBAL TRANSITIONS ---------------------------------------------------- */
+.cancelBtn, .sendBtn, .inlineSendBtn, .tabButton, .qualityOption, .thumb, .thumbRemove, .addMoreBtn, .videoMuteBtn, .videoCenterBtn, .markupIconBtn, .markupDoneBtn, .markupToolBtn, .cropIconBtn, .cropDoneBtn, .cropAspectBtn, .cropRotateBtn {
+  transition: background-color 150ms ease-out, color 150ms ease-out, border-color 150ms ease-out, transform 120ms ease-out, box-shadow 150ms ease-out, opacity 150ms ease-out;
+}
+
+/* 3. FOCUS RINGS ----------------------------------------------------------- */
+.cancelBtn:focus-visible,
+.sendBtn:focus-visible,
+.inlineSendBtn:focus-visible,
+.tabButton:focus-visible,
+.qualityOption:focus-visible,
+.addMoreBtn:focus-visible,
+.thumb:focus-visible,
+.markupIconBtn:focus-visible,
+.markupDoneBtn:focus-visible,
+.cropIconBtn:focus-visible,
+.cropDoneBtn:focus-visible {
+  outline: 2px solid var(--color-primary, #8b5cf6);
+  outline-offset: 2px;
+}
+
+/* 4. OVERLAY BACKDROP ------------------------------------------------------ */
+.overlay {
+  background: rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+
+.cropFullscreenOverlay,
+.markupFullscreenOverlay {
+  background: rgba(0, 0, 0, 0.95);
+}
+
+/* 5. CONTAINER ------------------------------------------------------------- */
+.container {
+  border-radius: 16px;
+  box-shadow: 0 24px 48px -12px rgba(0, 0, 0, 0.7),
+              0 8px 16px -4px rgba(0, 0, 0, 0.4),
+              0 0 0 1px rgba(255, 255, 255, 0.04);
+}
+
+/* 6. HEADER --------------------------------------------------------------- */
+.header {
+  padding: 16px 20px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+.headerTitle {
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: #ffffff;
+}
+.cancelBtn {
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 10px;
+}
+.cancelBtn:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+.cancelBtn:active {
+  transform: scale(0.94);
+}
+
+/* 7. PREVIEW AREA --------------------------------------------------------- */
+.previewArea {
+  background: rgba(0, 0, 0, 0.35);
+  padding: 12px;
+}
+.media {
+  border-radius: 12px;
+  box-shadow: 0 4px 16px -4px rgba(0, 0, 0, 0.5);
+}
+
+/* 8. FOOTER --------------------------------------------------------------- */
+.footer {
+  padding: 16px 20px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+/* 9. CAPTION ROW --------------------------------------------------------- */
+.captionRow {
+  gap: 10px;
+  margin-bottom: 14px;
+}
+.captionRow > textarea,
+.captionRow > input[type="text"] {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 10px 14px;
+  color: #ffffff;
+  font-size: 14px;
+  transition: background-color 150ms, border-color 150ms;
+}
+.captionRow > textarea:focus,
+.captionRow > input[type="text"]:focus {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: var(--color-primary, #8b5cf6);
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.15);
+}
+
+/* 10. SEND BUTTON --------------------------------------------------------- */
+.inlineSendBtn {
+  background: linear-gradient(135deg, var(--color-primary, #8b5cf6) 0%, var(--color-primary-hover, #7c3aed) 100%);
+  box-shadow: 0 4px 12px -2px rgba(139, 92, 246, 0.4);
+  transition: transform 120ms ease-out, box-shadow 150ms ease-out, opacity 150ms ease-out;
+}
+.inlineSendBtn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px -2px rgba(139, 92, 246, 0.55);
+}
+.inlineSendBtn:active:not(:disabled) {
+  transform: translateY(0) scale(0.94);
+  box-shadow: 0 2px 6px -2px rgba(139, 92, 246, 0.4);
+}
+.inlineSendBtn:disabled {
+  background: rgba(255, 255, 255, 0.08);
+  box-shadow: none;
+}
+
+/* 11. ADD MORE (+) BUTTON ------------------------------------------------- */
+.addMoreBtn {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.15);
+}
+.addMoreBtn:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.3);
+  transform: scale(1.05);
+}
+.addMoreBtn:active:not(:disabled) {
+  transform: scale(0.95);
+}
+
+/* 12. TABS ---------------------------------------------------------------- */
+.tabBar {
+  gap: 6px;
+  padding: 4px;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 12px;
+}
+.tabButton {
+  border-radius: 9px;
+  padding: 8px 12px;
+  font-weight: 500;
+  font-size: 13px;
+}
+.tabButton:hover:not(:disabled):not(.tabButtonActive) {
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.9);
+}
+.tabButtonActive {
+  background: rgba(139, 92, 246, 0.18);
+  color: var(--color-primary, #a78bfa);
+}
+
+/* 13. QUALITY TOGGLE ------------------------------------------------------ */
+.qualityToggle {
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 10px;
+  padding: 3px;
+  gap: 2px;
+}
+.qualityOption {
+  border-radius: 7px;
+  padding: 6px 14px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+.qualityOption:hover:not(.qualityOptionActive) {
+  background: rgba(255, 255, 255, 0.06);
+}
+.qualityOptionActive {
+  background: rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+/* 14. DISAPPEAR HINT ------------------------------------------------------ */
+.disappearHint {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.5);
+  letter-spacing: 0.01em;
+}
+
+/* 15. THUMBNAIL STRIP ----------------------------------------------------- */
+.thumbStrip {
+  padding: 10px 12px;
+  gap: 8px;
+  background: rgba(0, 0, 0, 0.2);
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+.thumb {
+  border-radius: 10px;
+  border: 2px solid transparent;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+  transition: transform 120ms ease-out, border-color 150ms ease-out, box-shadow 150ms ease-out;
+}
+.thumb:hover {
+  transform: scale(1.04);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+}
+.thumbActive {
+  border-color: var(--color-primary, #8b5cf6);
+  box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.25), 0 4px 12px rgba(139, 92, 246, 0.3);
+}
+.thumbRemove {
+  width: 20px;
+  height: 20px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
+  transition: transform 120ms ease-out, background-color 120ms;
+}
+.thumbRemove:hover {
+  background: rgba(220, 38, 38, 0.9);
+  transform: scale(1.1);
+}
+
+/* 16. VIDEO PLAYER CHROME ------------------------------------------------- */
+.videoPlayerWrapper {
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 4px 16px -4px rgba(0, 0, 0, 0.5);
+}
+.videoMuteBtn {
+  width: 36px;
+  height: 36px;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+.videoMuteBtn:hover {
+  background: rgba(0, 0, 0, 0.85);
+  transform: scale(1.08);
+}
+.videoCenterBtn {
+  width: 64px;
+  height: 64px;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+}
+.videoCenterBtn:hover {
+  background: rgba(0, 0, 0, 0.8);
+  transform: translate(-50%, -50%) scale(1.08);
+}
+.videoDurationBadge {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+  letter-spacing: 0.02em;
+  font-weight: 500;
+  background: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  border-radius: 6px;
+  padding: 3px 8px;
+}
+.videoProgressBar {
+  padding: 8px 12px 12px;
+}
+.videoProgressTrack {
+  height: 4px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.2);
+}
+.videoProgressFill {
+  background: var(--color-primary, #8b5cf6);
+  border-radius: 2px;
+}
+.videoProgressThumb {
+  width: 12px;
+  height: 12px;
+  background: #ffffff;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+  transition: transform 120ms ease-out;
+}
+.videoProgressBar:hover .videoProgressThumb {
+  transform: translate(-50%, -50%) scale(1.3);
+}
+
+/* 17. SPINNER ------------------------------------------------------------- */
+.spinner,
+.videoLoadingSpinner {
+  border-color: rgba(255, 255, 255, 0.2);
+  border-top-color: var(--color-primary, #8b5cf6);
+}
+
+/* 18. MARKUP & CROP POLISH ------------------------------------------------ */
+.markupIconBtn, .cropIconBtn {
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+}
+.markupIconBtn:hover, .cropIconBtn:hover {
+  background: rgba(255, 255, 255, 0.15);
+  transform: scale(1.05);
+}
+.markupDoneBtn, .cropDoneBtn {
+  background: var(--color-primary, #8b5cf6);
+  border-radius: 10px;
+  font-weight: 600;
+  box-shadow: 0 4px 12px -2px rgba(139, 92, 246, 0.4);
+  transition: transform 120ms, box-shadow 150ms;
+}
+.markupDoneBtn:hover, .cropDoneBtn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px -2px rgba(139, 92, 246, 0.55);
+}
+.markupDoneBtn:active, .cropDoneBtn:active {
+  transform: translateY(0) scale(0.96);
+}
+.markupToolBtn {
+  border-radius: 8px;
+}
+.markupToolBtnActive {
+  background: rgba(139, 92, 246, 0.2);
+  color: var(--color-primary, #a78bfa);
+}
+.cropAspectBtn {
+  border-radius: 8px;
+  transition: background-color 120ms, transform 120ms;
+}
+.cropAspectBtnActive {
+  background: rgba(139, 92, 246, 0.2);
+  color: var(--color-primary, #a78bfa);
+}
+
+/* 19. ADJUST SLIDERS ------------------------------------------------------ */
+.sliderRow {
+  padding: 8px 0;
+}
+.sliderHeader {
+  margin-bottom: 6px;
+}
+.sliderLabel {
+  font-size: 13px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.85);
+}
+.sliderValue {
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+  color: rgba(255, 255, 255, 0.55);
+  letter-spacing: 0.02em;
+}
+.sliderResetBtn {
+  transition: opacity 120ms, transform 120ms;
+}
+.sliderResetBtn:hover {
+  transform: scale(1.1);
+}
+.resetAllBtn {
+  border-radius: 8px;
+  transition: background-color 120ms, color 120ms;
+}
+
+/* 20. ERROR STATE --------------------------------------------------------- */
+.videoErrorState {
+  padding: 32px 24px;
+}
+.videoErrorMessage {
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: -0.005em;
+}
+.videoErrorHint {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.55);
+  line-height: 1.4;
+}
