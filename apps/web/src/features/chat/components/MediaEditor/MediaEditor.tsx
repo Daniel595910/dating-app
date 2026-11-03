@@ -120,6 +120,19 @@ export const MediaEditor: React.FC<MediaEditorProps> = ({
     };
   }, [files]);
 
+  const convertHeicToJpeg = async (f: File): Promise<File | null> => {
+    try {
+      const heic2any = (await import('heic2any')).default;
+      const result = await heic2any({ blob: f, toType: 'image/jpeg', quality: 0.85 });
+      const blob = Array.isArray(result) ? result[0] : result;
+      const newName = f.name.replace(/\.heic$/i, '.jpg').replace(/\.heif$/i, '.jpg');
+      return new File([blob], newName, { type: 'image/jpeg' });
+    } catch (err) {
+      console.error('[MediaEditor] HEIC conversion failed:', err);
+      return null;
+    }
+  };
+
   const materializeFile = async (f: File): Promise<File> => {
     try {
       const buf = await f.arrayBuffer();
@@ -140,7 +153,13 @@ export const MediaEditor: React.FC<MediaEditorProps> = ({
       const isVideo = f.type.startsWith('video/') || /\.(mp4|webm|mov|m4v|quicktime|avi|mkv)$/i.test(f.name);
       const isImage = f.type.startsWith('image/') || /\.(jpe?g|png|webp|gif|heic|heif)$/i.test(f.name);
       const isHeic = /\.(heic|heif)$/i.test(f.name) || f.type === 'image/heic' || f.type === 'image/heif';
-      if (isHeic) continue;
+      if (isHeic) {
+        const converted = await convertHeicToJpeg(f);
+        if (!converted) continue;
+        const materializedHeic = await materializeFile(converted);
+        toAdd.push(materializedHeic);
+        continue;
+      }
       if (!isVideo && !isImage) continue;
       if (isImage && f.size > 20 * 1024 * 1024) continue;
       if (isVideo && f.size > 100 * 1024 * 1024) continue;

@@ -146,6 +146,19 @@ export const MessageComposer: React.FC<MessageComposerProps> = ({
     toastTimerRef.current = setTimeout(() => setToast(null), 3500);
   };
 
+  const convertHeicToJpeg = async (f: File): Promise<File | null> => {
+    try {
+      const heic2any = (await import('heic2any')).default;
+      const result = await heic2any({ blob: f, toType: 'image/jpeg', quality: 0.85 });
+      const blob = Array.isArray(result) ? result[0] : result;
+      const newName = f.name.replace(/\.heic$/i, '.jpg').replace(/\.heif$/i, '.jpg');
+      return new File([blob], newName, { type: 'image/jpeg' });
+    } catch (err) {
+      console.error('[MessageComposer] HEIC conversion failed:', err);
+      return null;
+    }
+  };
+
   const materializeFile = async (f: File): Promise<File> => {
     try {
       const buf = await f.arrayBuffer();
@@ -172,7 +185,14 @@ export const MessageComposer: React.FC<MessageComposerProps> = ({
     // HEIC/HEIF rejection — Chrome cannot decode these
     const isHeic = /\.(heic|heif)$/i.test(file.name) || file.type === 'image/heic' || file.type === 'image/heif';
     if (isHeic) {
-      showToast('HEIC photos are not supported. Please use JPG or PNG, or convert in Photos app first.');
+      showToast('Converting HEIC photo...');
+      const converted = await convertHeicToJpeg(file);
+      if (!converted) {
+        showToast('Could not convert this HEIC photo. Please try a JPG or PNG.');
+        return;
+      }
+      const materializedHeic = await materializeFile(converted);
+      setPendingMedia(materializedHeic);
       return;
     }
 
