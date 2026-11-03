@@ -42,6 +42,7 @@ export interface ChatMessage {
       expired: boolean;
     };
   };
+  deleted_for_users?: string[];
   status: 'sending' | 'sent' | 'delivered' | 'read' | 'failed';
   createdAt: string;
   edited_at?: string;

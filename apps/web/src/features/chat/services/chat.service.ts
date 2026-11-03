@@ -123,6 +123,7 @@ class ChatService {
         metadata: parsedMetadata || undefined,
         status: m.status,
         createdAt: m.created_at,
+        deleted_for_users: m.deleted_for_users || undefined,
       };
     });
 
@@ -231,6 +232,13 @@ class ChatService {
       status: 'sent' as const,
       createdAt: message.created_at,
     };
+  }
+
+  async clearChat(conversationId: string): Promise<void> {
+    const { error } = await supabase.rpc('clear_chat_for_user', {
+      p_conversation_id: conversationId,
+    });
+    if (error) throw error;
   }
 
   async updateMessageStatus(messageId: string, status: string): Promise<void> {

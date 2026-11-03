@@ -236,9 +236,16 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
 
     try {
       const result = await chatService.getMessages(conversationId, 50, reset ? null : cursorRef.current);
+
+      // Filter out messages this user has cleared
+      const filteredMessages = result.messages.filter((m: any) => {
+        const clearedFor = m.deleted_for_users;
+        if (!clearedFor || !Array.isArray(clearedFor)) return true;
+        return !clearedFor.includes(user.id);
+      });
       
       if (reset) {
-        setMessages(result.messages);
+        setMessages(filteredMessages);
         if (showLoading) {
           scrollToBottom(false);
         }
@@ -249,7 +256,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
       } else {
         setMessages((prev) => {
           const existingIds = new Set(prev.map((m) => m.id));
-          return [...result.messages.filter((m) => !existingIds.has(m.id)), ...prev];
+          return [...filteredMessages.filter((m) => !existingIds.has(m.id)), ...prev];
         });
       }
       
@@ -776,6 +783,17 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
     setChatWallpaper(null);
   };
 
+  const handleClearChat = async () => {
+    if (!user) return;
+    try {
+      await chatService.clearChat(conversationId);
+      setMessages([]);
+      setSettingsOpen(false);
+    } catch (err) {
+      console.error('Failed to clear chat:', err);
+    }
+  };
+
   const handleSetDisappearing = async (enabled: boolean, durationHours: number) => {
     const success = await messageService.setDisappearingMessages(conversationId, enabled, durationHours);
     if (success) {
@@ -1057,6 +1075,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
         currentWallpaper={chatWallpaper?.wallpaperColor || null}
         disappearingEnabled={disappearingEnabled}
         disappearingDuration={disappearingDuration}
+        onClearChat={handleClearChat}
       />
 
       <GiftPicker open={giftPickerOpen} onClose={() => setGiftPickerOpen(false)} onSelectGift={handleSendGift} />

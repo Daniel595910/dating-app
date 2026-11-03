@@ -14,6 +14,7 @@ interface ChatSettingsSheetProps {
   onBlockUser?: () => void;
   onReportUser?: () => void;
   onViewProfile?: () => void;
+  onClearChat?: () => void;
   currentWallpaper: string | null;
   currentTheme?: 'light' | 'dark';
   disappearingEnabled: boolean;
@@ -46,6 +47,7 @@ export const ChatSettingsSheet: React.FC<ChatSettingsSheetProps> = ({
   onBlockUser,
   onReportUser,
   onViewProfile,
+  onClearChat,
   currentWallpaper,
   currentTheme = 'light',
   disappearingEnabled,
@@ -53,6 +55,7 @@ export const ChatSettingsSheet: React.FC<ChatSettingsSheetProps> = ({
 }) => {
   const [muted, setMuted] = useState(false);
   const [showOnlineStatus, setShowOnlineStatus] = useState(true);
+  const [confirmClearOpen, setConfirmClearOpen] = useState(false);
   const { user } = useAuthStore();
 
   // Load current show_online_status when sheet opens
@@ -221,6 +224,21 @@ export const ChatSettingsSheet: React.FC<ChatSettingsSheetProps> = ({
             </p>
           </div>
 
+          {/* Clear Chat */}
+          {onClearChat && (
+            <div className={styles.section}>
+              <h3 className={styles.sectionTitle}>
+                <Trash2 size={16} /> Clear Chat
+              </h3>
+              <button
+                className={styles.dangerButton}
+                onClick={() => setConfirmClearOpen(true)}
+              >
+                <Trash2 size={16} /> Clear Chat History
+              </button>
+            </div>
+          )}
+
           {/* Safety */}
           {(onBlockUser || onReportUser) && (
             <div className={styles.section}>
@@ -241,6 +259,32 @@ export const ChatSettingsSheet: React.FC<ChatSettingsSheetProps> = ({
           )}
         </div>
       </div>
+
+      {/* Clear chat confirmation */}
+      {confirmClearOpen && (
+        <div className={styles.confirmOverlay} onClick={() => setConfirmClearOpen(false)}>
+          <div className={styles.confirmCard} onClick={(e) => e.stopPropagation()}>
+            <h3 className={styles.confirmTitle}>Clear this chat?</h3>
+            <p className={styles.confirmText}>
+              All messages will be deleted from your view. The other person will still see their copy.
+            </p>
+            <div className={styles.confirmActions}>
+              <button className={styles.confirmCancel} onClick={() => setConfirmClearOpen(false)}>
+                Cancel
+              </button>
+              <button
+                className={styles.confirmDanger}
+                onClick={() => {
+                  setConfirmClearOpen(false);
+                  onClearChat();
+                }}
+              >
+                Clear
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
