@@ -120,7 +120,17 @@ export const MediaEditor: React.FC<MediaEditorProps> = ({
     };
   }, [files]);
 
-  const handleAddMore = (picked: FileList | null) => {
+  const materializeFile = async (f: File): Promise<File> => {
+    try {
+      const buf = await f.arrayBuffer();
+      return new File([buf], f.name, { type: f.type || 'application/octet-stream', lastModified: f.lastModified });
+    } catch (err) {
+      console.warn('[MediaEditor] File materialize failed, using original', err);
+      return f;
+    }
+  };
+
+  const handleAddMore = async (picked: FileList | null) => {
     if (!picked || picked.length === 0) return;
     const room = 4 - files.length;
     if (room <= 0) return;
@@ -128,13 +138,14 @@ export const MediaEditor: React.FC<MediaEditorProps> = ({
     for (let i = 0; i < picked.length && toAdd.length < room; i++) {
       const f = picked[i];
       const isVideo = f.type.startsWith('video/') || /\.(mp4|webm|mov|m4v|quicktime|avi|mkv)$/i.test(f.name);
-      const isImage = f.type.startsWith('image/') || /\.(jpe?g|png|webp|gif)$/i.test(f.name);
+      const isImage = f.type.startsWith('image/') || /\.(jpe?g|png|webp|gif|heic|heif)$/i.test(f.name);
       const isHeic = /\.(heic|heif)$/i.test(f.name) || f.type === 'image/heic' || f.type === 'image/heif';
       if (isHeic) continue;
       if (!isVideo && !isImage) continue;
       if (isImage && f.size > 20 * 1024 * 1024) continue;
       if (isVideo && f.size > 100 * 1024 * 1024) continue;
-      toAdd.push(f);
+      const materialized = await materializeFile(f);
+      toAdd.push(materialized);
     }
     if (toAdd.length > 0) setFiles(prev => [...prev, ...toAdd]);
     if (addMoreInputRef.current) addMoreInputRef.current.value = '';

@@ -146,6 +146,16 @@ export const MessageComposer: React.FC<MessageComposerProps> = ({
     toastTimerRef.current = setTimeout(() => setToast(null), 3500);
   };
 
+  const materializeFile = async (f: File): Promise<File> => {
+    try {
+      const buf = await f.arrayBuffer();
+      return new File([buf], f.name, { type: f.type || 'application/octet-stream', lastModified: f.lastModified });
+    } catch (err) {
+      console.warn('[MessageComposer] File materialize failed, using original', err);
+      return f;
+    }
+  };
+
   const handleMediaSelect = async (files: FileList | null) => {
     if (!files || files.length === 0) return;
     const file = files[0];
@@ -172,7 +182,8 @@ export const MessageComposer: React.FC<MessageComposerProps> = ({
         showToast('Image is too large. Please use images under 20MB.');
         return;
       }
-      setPendingMedia(file);
+      const materialized = await materializeFile(file);
+      setPendingMedia(materialized);
       return;
     }
 
@@ -200,7 +211,8 @@ export const MessageComposer: React.FC<MessageComposerProps> = ({
       }
 
       // Duration confirmed under 3 minutes — safe to open editor
-      setPendingMedia(file);
+      const materialized = await materializeFile(file);
+      setPendingMedia(materialized);
     }
   };
 
