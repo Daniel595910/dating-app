@@ -207,3 +207,87 @@
   font-style: italic;
   font-weight: 500;
 }
+
+
+/* ===== Pin UI (Commit 3) ===== */
+.pinSlot {
+  display: inline-flex;
+  align-items: center;
+  margin-left: 6px;
+  margin-right: 6px;
+}
+
+.pinButton {
+  background: transparent;
+  border: none;
+  padding: 4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  border-radius: 6px;
+  color: var(--color-text-secondary);
+  opacity: 0;
+  transition: opacity 0.15s ease, color 0.15s ease, background 0.15s ease;
+}
+
+.conversationItem:hover .pinButton {
+  opacity: 1;
+}
+
+.pinButton:hover {
+  background: var(--color-surface-alt);
+  color: var(--color-text-primary);
+}
+
+.pinButtonActive {
+  opacity: 1;
+  color: var(--color-primary);
+}
+
+.pinButtonActive:hover {
+  color: var(--color-primary);
+}
+
+@media (hover: none) {
+  .pinButton {
+    opacity: 0.5;
+  }
+  .pinButtonActive {
+    opacity: 1;
+  }
+}
+
+.pinnedDivider {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 16px 6px;
+  color: var(--color-text-secondary);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-weight: 600;
+}
+
+.pinnedDivider::before,
+.pinnedDivider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--color-border);
+}
+
+.toast {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  margin: 8px 16px;
+  padding: 10px 14px;
+  background: var(--color-surface-alt);
+  color: var(--color-text-primary);
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  font-size: 13px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}

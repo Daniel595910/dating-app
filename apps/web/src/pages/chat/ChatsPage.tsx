@@ -6,7 +6,7 @@ import { useStoryRings } from '../../features/community/hooks/useStoryRings';
 import { chatService } from '../../features/chat/services/chat.service';
 import { usePresence } from '../../features/chat/hooks/usePresence';
 import { Conversation } from '../../features/chat/types/chat.types';
-import { MessageCircle, ArrowRight, ArrowLeft, Search, X } from 'lucide-react';
+import { MessageCircle, ArrowRight, ArrowLeft, Search, X, Pin } from 'lucide-react';
 import styles from './ChatsPage.module.css';
 
 export const ChatsPage: React.FC = () => {
@@ -16,6 +16,44 @@ export const ChatsPage: React.FC = () => {
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+  const [toast, setToast] = useState<string | null>(null);
+  const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const showToast = (msg: string) => {
+    setToast(msg);
+    if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
+    toastTimerRef.current = setTimeout(() => setToast(null), 3000);
+  };
+
+  const handleTogglePin = async (conversationId: string, nextPinned: boolean) => {
+    const prev = conversations;
+    const flipped = prev.map((c) =>
+      c.id === conversationId
+        ? { ...c, isPinned: nextPinned, pinnedAt: nextPinned ? new Date().toISOString() : null }
+        : c
+    );
+    const sorted = [...flipped].sort((a, b) => {
+      if (a.isPinned !== b.isPinned) return a.isPinned ? -1 : 1;
+      if (a.isPinned && b.isPinned) {
+        const at = a.pinnedAt ? new Date(a.pinnedAt).getTime() : 0;
+        const bt = b.pinnedAt ? new Date(b.pinnedAt).getTime() : 0;
+        return bt - at;
+      }
+      const at = a.lastMessageAt ? new Date(a.lastMessageAt).getTime() : 0;
+      const bt = b.lastMessageAt ? new Date(b.lastMessageAt).getTime() : 0;
+      return bt - at;
+    });
+    setConversations(sorted);
+    try {
+      if (nextPinned) await chatService.pinChat(conversationId);
+      else await chatService.unpinChat(conversationId);
+    } catch (err: any) {
+      setConversations(prev);
+      const msg = String(err?.message || '');
+      if (msg.includes('Maximum 3')) showToast('You can pin at most 3 chats. Unpin one to add another.');
+      else showToast('Could not update pin. Please try again.');
+    }
+  };
   const { isUserOnline, onlineUsers } = usePresence(user?.id || null);
 
   // Typing state per conversation
@@ -116,6 +154,7 @@ export const ChatsPage: React.FC = () => {
       supabase.removeChannel(stateChannel);
       if (typingChannel) supabase.removeChannel(typingChannel);
       typingTimeoutsRef.current.forEach((t) => clearTimeout(t));
+      if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
       typingTimeoutsRef.current.clear();
     };
   }, [user]);
@@ -185,6 +224,7 @@ export const ChatsPage: React.FC = () => {
       </div>
 
       <div className={styles.conversationList}>
+        {toast && <div className={styles.toast}>{toast}</div>}
         {filteredConversations.length === 0 ? (
           <div className={styles.emptyState}>
             <div className={styles.emptyIcon}>
@@ -204,13 +244,21 @@ export const ChatsPage: React.FC = () => {
             )}
           </div>
         ) : (
-          filteredConversations.map((conv) => {
+          filteredConversations.map((conv, index) => {
+            const prev = index > 0 ? filteredConversations[index - 1] : null;
+            const showPinnedDivider = prev !== null && prev.isPinned && !conv.isPinned;
             const otherUserId = conv.participantIds.find((id) => id !== user?.id);
             const otherUserName = otherUserId ? conv.participantNames[otherUserId] : 'User';
             const otherUserAvatar = otherUserId ? conv.participantAvatars[otherUserId] : null;
             const isOnline = otherUserId ? isUserOnline(otherUserId) : false;
 
             return (
+              <React.Fragment key={conv.id}>
+              {showPinnedDivider && (
+                <div className={styles.pinnedDivider} aria-hidden="true">
+                  <span>Pinned</span>
+                </div>
+              )}
               <button
                 key={conv.id}
                 className={`${styles.conversationItem} ${conv.unreadCount > 0 ? styles.unreadItem : ''}`}
@@ -243,6 +291,18 @@ export const ChatsPage: React.FC = () => {
                 <div className={styles.conversationInfo}>
                   <div className={styles.conversationHeader}>
                     <span className={styles.conversationName}>{otherUserName}</span>
+                    <span className={styles.pinSlot}>
+                      <button
+                        className={styles.pinButton + (conv.isPinned ? ' ' + styles.pinButtonActive : '')}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleTogglePin(conv.id, !conv.isPinned);
+                        }}
+                        aria-label={conv.isPinned ? 'Unpin chat' : 'Pin chat'}
+                      >
+                        <Pin size={14} fill={conv.isPinned ? 'currentColor' : 'none'} />
+                      </button>
+                    </span>
                     {conv.lastMessageAt && (
                       <span className={styles.timestamp}>{timeAgo(conv.lastMessageAt)}</span>
                     )}
@@ -265,6 +325,7 @@ export const ChatsPage: React.FC = () => {
                   </div>
                 </div>
               </button>
+              </React.Fragment>
             );
           })
         )}
