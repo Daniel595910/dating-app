@@ -1,4 +1,4 @@
-﻿import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/config/supabase.client';
 import { chatService } from '../services/chat.service';
 
@@ -120,9 +120,15 @@ export function usePresence(userId: string | null) {
     };
   }, [userId]);
 
+  // Consider a user online only if heartbeat is recent (<60s)
   const isUserOnline = useCallback((targetUserId: string): boolean => {
-    return onlineUsers.has(targetUserId);
-  }, [onlineUsers]);
+    if (!onlineUsers.has(targetUserId)) return false;
+    const lastSeenIso = lastSeenMap.get(targetUserId);
+    if (!lastSeenIso) return false;
+    const lastSeenMs = new Date(lastSeenIso).getTime();
+    if (isNaN(lastSeenMs)) return false;
+    return Date.now() - lastSeenMs < 60000;
+  }, [onlineUsers, lastSeenMap]);
 
   const getLastSeen = useCallback((targetUserId: string): string | null => {
     return lastSeenMap.get(targetUserId) || null;
