@@ -649,3 +649,15 @@
 [data-theme="dark"] .wallpaperGroupLabel {
   color: #9ca3af;
 }
+
+/* Active Status description (small, muted helper text) */
+.sectionDescription {
+  font-size: 12px;
+  color: #6b7280;
+  margin: 8px 0 0;
+  line-height: 1.4;
+}
+
+[data-theme="dark"] .sectionDescription {
+  color: #9ca3af;
+}

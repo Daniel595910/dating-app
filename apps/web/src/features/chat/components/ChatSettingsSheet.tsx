@@ -214,7 +214,7 @@ export const ChatSettingsSheet: React.FC<ChatSettingsSheetProps> = ({
                 <span className={styles.toggleThumb} />
               </button>
             </div>
-            <p style={{ fontSize: 12, color: '#6b7280', margin: '6px 0 0', lineHeight: 1.4 }}>
+            <p className={styles.sectionDescription}>
               {showOnlineStatus
                   ? "Others can see when you're online."
                 : 'Others will see "Last seen recently" instead of your activity.'}
