@@ -19,6 +19,11 @@ export const ChatsPage: React.FC = () => {
   const [toast, setToast] = useState<string | null>(null);
   const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // Swipe state (Commit 4)
+  const [openRowId, setOpenRowId] = useState<string | null>(null);
+  const swipeStateRef = useRef<{ id: string | null; startX: number; startY: number; dx: number; dy: number; active: boolean; axis: 'h' | 'v' | null }>({ id: null, startX: 0, startY: 0, dx: 0, dy: 0, active: false, axis: null });
+  const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
+
   const showToast = (msg: string) => {
     setToast(msg);
     if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
@@ -54,6 +59,85 @@ export const ChatsPage: React.FC = () => {
       else showToast('Could not update pin. Please try again.');
     }
   };
+  const handleArchive = async (conversationId: string) => {
+    const prev = conversations;
+    setConversations((cs) => cs.filter((c) => c.id !== conversationId));
+    setOpenRowId(null);
+    try {
+      await chatService.archiveChat(conversationId);
+      showToast('Chat archived');
+    } catch (err: any) {
+      setConversations(prev);
+      showToast('Could not archive. Please try again.');
+    }
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!pendingDeleteId) return;
+    const targetId = pendingDeleteId;
+    const prev = conversations;
+    setConversations((cs) => cs.filter((c) => c.id !== targetId));
+    setPendingDeleteId(null);
+    setOpenRowId(null);
+    try {
+      await chatService.deleteChat(targetId);
+      showToast('Chat deleted');
+    } catch (err: any) {
+      setConversations(prev);
+      showToast('Could not delete. Please try again.');
+    }
+  };
+
+  const onRowPointerDown = (id: string) => (e: React.PointerEvent) => {
+    if (openRowId && openRowId !== id) { setOpenRowId(null); return; }
+    swipeStateRef.current = { id, startX: e.clientX, startY: e.clientY, dx: 0, dy: 0, active: true, axis: null };
+    (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+  };
+
+  const onRowPointerMove = (e: React.PointerEvent) => {
+    const s = swipeStateRef.current;
+    if (!s.active || !s.id) return;
+    const dx = e.clientX - s.startX;
+    const dy = e.clientY - s.startY;
+    s.dx = dx; s.dy = dy;
+    if (s.axis === null) {
+      if (Math.abs(dx) > 8 || Math.abs(dy) > 8) {
+        s.axis = Math.abs(dx) > Math.abs(dy) ? 'h' : 'v';
+      }
+    }
+    if (s.axis !== 'h') return;
+    const offset = Math.max(0, Math.min(160, -dx));
+    const surface = (e.currentTarget as HTMLElement);
+    surface.style.transition = 'none';
+    surface.style.transform = 'translateX(' + (-offset) + 'px)';
+  };
+
+  const onRowPointerUp = (id: string) => (e: React.PointerEvent) => {
+    const s = swipeStateRef.current;
+    if (!s.active) return;
+    s.active = false;
+    const surface = (e.currentTarget as HTMLElement);
+    surface.style.transition = 'transform 0.25s cubic-bezier(0.32, 0.72, 0, 1)';
+    if (s.axis !== 'h') {
+      surface.style.transform = openRowId === id ? 'translateX(-160px)' : 'translateX(0)';
+      return;
+    }
+    const offset = Math.max(0, Math.min(160, -s.dx));
+    if (offset >= 80) {
+      surface.style.transform = 'translateX(-160px)';
+      setOpenRowId(id);
+    } else {
+      surface.style.transform = 'translateX(0)';
+      if (openRowId === id) setOpenRowId(null);
+    }
+  };
+
+  const onRowClick = (id: string) => {
+    if (openRowId === id) { setOpenRowId(null); return; }
+    if (openRowId) { setOpenRowId(null); return; }
+    handleSelectConversation(id);
+  };
+
   const { isUserOnline, onlineUsers } = usePresence(user?.id || null);
 
   // Typing state per conversation
@@ -62,6 +146,7 @@ export const ChatsPage: React.FC = () => {
 
   const hasLoadedRef = useRef(false);
   const refetchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
 
   useEffect(() => {
     if (!user) return;
@@ -259,12 +344,21 @@ export const ChatsPage: React.FC = () => {
                   <span>Pinned</span>
                 </div>
               )}
-              <div
+              <div className={styles.rowContainer}>
+                <div className={styles.actionsRight}>
+                  <button className={styles.archiveBtn} onClick={() => handleArchive(conv.id)} aria-label="Archive chat">Archive</button>
+                  <button className={styles.deleteBtn} onClick={() => setPendingDeleteId(conv.id)} aria-label="Delete chat">Delete</button>
+                </div>
+                <div
                 role="button"
                 tabIndex={0}
                 key={conv.id}
                 className={`${styles.conversationItem} ${conv.unreadCount > 0 ? styles.unreadItem : ''}`}
-                onClick={() => handleSelectConversation(conv.id)}
+                onClick={() => onRowClick(conv.id)}
+                onPointerDown={onRowPointerDown(conv.id)}
+                onPointerMove={onRowPointerMove}
+                onPointerUp={onRowPointerUp(conv.id)}
+                onPointerCancel={onRowPointerUp(conv.id)}
                 onKeyDown={(ev) => {
                   if (ev.key === 'Enter' || ev.key === ' ') {
                     ev.preventDefault();
@@ -333,11 +427,25 @@ export const ChatsPage: React.FC = () => {
                   </div>
                 </div>
               </div>
+              </div>
               </React.Fragment>
             );
           })
         )}
       </div>
+
+      {pendingDeleteId && (
+        <div className={styles.confirmOverlay} onClick={() => setPendingDeleteId(null)}>
+          <div className={styles.confirmModal} onClick={(e) => e.stopPropagation()}>
+            <h3 className={styles.confirmTitle}>Delete chat?</h3>
+            <p className={styles.confirmText}>This chat will be removed from your list. The other person will still see it.</p>
+            <div className={styles.confirmActions}>
+              <button className={styles.confirmCancel} onClick={() => setPendingDeleteId(null)}>Cancel</button>
+              <button className={styles.confirmDelete} onClick={handleConfirmDelete}>Delete</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
