@@ -54,7 +54,16 @@ export const MediaEditor: React.FC<MediaEditorProps> = ({
     const isVid = (f: File) => f.type.startsWith('video/') || /\.(mp4|webm|mov|m4v|quicktime|avi|mkv)$/i.test(f.name);
     const extract = (f: File): Promise<string> => {
       if (!isVid(f)) {
-        return Promise.resolve(URL.createObjectURL(f));
+        // Images: use FileReader data URL (reliable on iOS Safari)
+        return new Promise<string>((resolve) => {
+          const reader = new FileReader();
+          reader.onload = (e) => {
+            const dataUrl = e.target?.result as string;
+            resolve(dataUrl || '');
+          };
+          reader.onerror = () => resolve('');
+          reader.readAsDataURL(f);
+        });
       }
       return new Promise<string>((resolve) => {
         const videoUrl = URL.createObjectURL(f);
@@ -171,10 +180,11 @@ export const MediaEditor: React.FC<MediaEditorProps> = ({
     setCurrentUrl('');
     setCurrentDims(null);
 
-    const objectUrl = URL.createObjectURL(currentFile);
-    setCurrentUrl(objectUrl);
-
     if (currentIsVideo) {
+      // Videos: use object URL (fast, memory-safe for large files)
+      const objectUrl = URL.createObjectURL(currentFile);
+      setCurrentUrl(objectUrl);
+
       const video = document.createElement('video');
       video.preload = 'metadata';
       video.muted = true;
@@ -191,24 +201,47 @@ export const MediaEditor: React.FC<MediaEditorProps> = ({
       };
       video.src = objectUrl;
       video.load();
-    } else {
-      const img = new Image();
-      img.onload = () => {
-        if (!cancelled) setCurrentDims({ w: img.naturalWidth, h: img.naturalHeight });
-      };
-      img.onerror = () => {
-        if (!cancelled) {
-          console.error('[MediaEditor] Image failed to decode. File may be HEIC or corrupt.');
-          setCurrentDims({ w: 1, h: 1 });
-        }
-      };
-      img.src = objectUrl;
-    }
 
-    return () => {
-      cancelled = true;
-      URL.revokeObjectURL(objectUrl);
-    };
+      return () => {
+        cancelled = true;
+        URL.revokeObjectURL(objectUrl);
+      };
+    } else {
+      // Images: use FileReader data URL (reliable on iOS Safari
+      // where blob URLs sometimes fail before the file is copied)
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        if (cancelled) return;
+        const dataUrl = e.target?.result as string;
+        if (dataUrl) setCurrentUrl(dataUrl);
+      };
+      reader.onerror = () => {
+        if (cancelled) return;
+        console.error('[MediaEditor] FileReader failed:', reader.error);
+        setCurrentDims({ w: 1, h: 1 });
+      };
+      reader.onloadend = () => {
+        if (cancelled) return;
+        const dataUrl = reader.result as string;
+        if (!dataUrl) return;
+        const img = new Image();
+        img.onload = () => {
+          if (!cancelled) setCurrentDims({ w: img.naturalWidth, h: img.naturalHeight });
+        };
+        img.onerror = () => {
+          if (!cancelled) {
+            console.error('[MediaEditor] Image failed to decode. File may be HEIC or corrupt.');
+            setCurrentDims({ w: 1, h: 1 });
+          }
+        };
+        img.src = dataUrl;
+      };
+      reader.readAsDataURL(currentFile);
+
+      return () => {
+        cancelled = true;
+      };
+    }
   }, [currentFile, currentIsVideo]);
 
   const handleConfirm = async () => {
@@ -497,7 +530,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ src }) => {
           case 1: msg = 'Video loading was aborted.'; break;
           case 2: msg = 'Network error while loading video.'; break;
           case 3: msg = 'This video format is not supported on this device.'; break;
-          case 4: msg = 'This video format is not supported by your browser (likely H.265/HEVC or MOV). Try converting to MP4 (H.264) first.'; break;
+          case 4: msg = "This video can't be played on this device. Try a different video."; break;
         }
       }
       setErrorMessage(msg);
