@@ -1,5 +1,7 @@
-import React, { useState } from 'react';
-import { X, Image, Timer, Trash2, UserX, Flag, Bell, User, Sparkles } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { X, Image, Timer, Trash2, UserX, Flag, Bell, User, Sparkles, Eye, EyeOff } from 'lucide-react';
+import { supabase } from '@/config/supabase.client';
+import { useAuthStore } from '@/store/auth.store';
 import styles from '../styles/ChatSettingsSheet.module.css';
 
 interface ChatSettingsSheetProps {
@@ -50,6 +52,31 @@ export const ChatSettingsSheet: React.FC<ChatSettingsSheetProps> = ({
   disappearingDuration,
 }) => {
   const [muted, setMuted] = useState(false);
+  const [showOnlineStatus, setShowOnlineStatus] = useState(true);
+  const { user } = useAuthStore();
+
+  // Load current show_online_status when sheet opens
+  useEffect(() => {
+    if (!open || !user) return;
+    (async () => {
+      const { data } = await supabase
+        .from('profiles')
+        .select('show_online_status')
+        .eq('user_id', user.id)
+        .maybeSingle();
+      if (data) setShowOnlineStatus(data.show_online_status !== false);
+    })();
+  }, [open, user]);
+
+  const handleToggleShowStatus = async () => {
+    if (!user) return;
+    const newValue = !showOnlineStatus;
+    setShowOnlineStatus(newValue);
+    await supabase
+      .from('profiles')
+      .update({ show_online_status: newValue })
+      .eq('user_id', user.id);
+  };
 
   if (!open) return null;
 
@@ -171,6 +198,27 @@ export const ChatSettingsSheet: React.FC<ChatSettingsSheetProps> = ({
                 ))}
               </div>
             )}
+          </div>
+
+          {/* Active Status Privacy */}
+          <div className={styles.section}>
+            <h3 className={styles.sectionTitle}>
+              {showOnlineStatus ? <Eye size={16} /> : <EyeOff size={16} />} Active Status
+            </h3>
+            <div className={styles.toggleRow}>
+              <span className={styles.toggleLabel}>Show my active status</span>
+              <button
+                className={`${styles.toggle} ${showOnlineStatus ? styles.toggleActive : ''}`}
+                onClick={handleToggleShowStatus}
+              >
+                <span className={styles.toggleThumb} />
+              </button>
+            </div>
+            <p style={{ fontSize: 12, color: '#6b7280', margin: '6px 0 0', lineHeight: 1.4 }}>
+              {showOnlineStatus
+                  ? "Others can see when you're online."
+                : 'Others will see "Last seen recently" instead of your activity.'}
+            </p>
           </div>
 
           {/* Safety */}
