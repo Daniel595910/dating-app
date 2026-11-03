@@ -132,6 +132,30 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
     setPinnedMessageIds(new Set(pinned));
   }, [conversationId]);
 
+  // Subscribe to reaction changes (realtime)
+  useEffect(() => {
+    if (!user) return;
+
+    const channel = supabase
+      .channel(`reactions:${conversationId}`)
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'message_reactions' },
+        async (payload) => {
+          const changed = (payload.new || payload.old) as any;
+          const messageId = changed?.message_id;
+          if (!messageId) return;
+          const reactions = await messageService.getReactions([messageId], user.id);
+          setReactionMap((prev) => new Map(prev).set(messageId, reactions.get(messageId) || []));
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [conversationId, user]);
+
   // Load wallpaper
   const loadWallpaper = useCallback(async () => {
     if (!user) return;
