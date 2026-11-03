@@ -429,3 +429,147 @@
   color: #f1f5f9;
   box-shadow: 0 4px 12px rgba(0,0,0,0.4);
 }
+
+
+/* ============================================================ */
+/* Premium polish — scrollbars, motion, shadows, focus           */
+/* Non-destructive: no background/color changes. Purely additive */
+/* ============================================================ */
+
+/* 1. Refined scrollbar (WebKit) — thin, subtle, fades on hover */
+.messagesContainer::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.messagesContainer::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.messagesContainer::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.15);
+  border-radius: 9999px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+  transition: background 0.15s ease;
+}
+
+.messagesContainer::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.3);
+  background-clip: content-box;
+}
+
+[data-theme="dark"] .messagesContainer::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+  background-clip: content-box;
+}
+
+[data-theme="dark"] .messagesContainer::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
+  background-clip: content-box;
+}
+
+/* Firefox scrollbar */
+.messagesContainer {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 0, 0, 0.15) transparent;
+  scroll-behavior: smooth;
+}
+
+[data-theme="dark"] .messagesContainer {
+  scrollbar-color: rgba(255, 255, 255, 0.15) transparent;
+}
+
+/* 2. Scroll-down button — refined shadow + lift */
+.scrollDownButton {
+  transition: transform 150ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 150ms ease, opacity 150ms ease;
+  animation: scrollBtnIn 200ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.scrollDownButton:hover {
+  transform: translateY(-2px) scale(1.05);
+}
+
+.scrollDownButton:active {
+  transform: translateY(0) scale(0.95);
+}
+
+@keyframes scrollBtnIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* 3. Pinned banner — refined shadow, subtle entrance */
+.pinnedBanner {
+  transition: box-shadow 150ms ease, transform 150ms ease;
+  animation: pinnedIn 220ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.pinnedBanner:hover {
+  transform: translateY(-1px);
+}
+
+@keyframes pinnedIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* 4. Edit bar — refine shadow + focus ring */
+.editBar {
+  animation: editBarIn 180ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes editBarIn {
+  from { opacity: 0; transform: translateY(-6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.editBar input:focus-visible {
+  outline: 2px solid var(--color-primary, #ef4444);
+  outline-offset: 1px;
+}
+
+/* 5. Load more button — refined hover + press */
+.loadMore {
+  transition: transform 150ms ease, box-shadow 150ms ease, background-color 150ms ease;
+}
+
+.loadMore:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+
+.loadMore:active:not(:disabled) {
+  transform: translateY(0) scale(0.98);
+}
+
+/* 6. Highlight animation (pinned scroll-to) — softer */
+@keyframes highlightPulse {
+  0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
+  50% { box-shadow: 0 0 0 6px rgba(239, 68, 68, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+}
+
+.highlightMessage {
+  animation: highlightPulse 1.5s ease;
+}
+
+/* 7. Focus rings on interactive elements */
+.scrollDownButton:focus-visible,
+.loadMore:focus-visible,
+.pinnedBannerButton:focus-visible,
+.pinnedBannerClose:focus-visible {
+  outline: 2px solid var(--color-primary, #ef4444);
+  outline-offset: 2px;
+}
+
+/* 8. Respect prefers-reduced-motion */
+@media (prefers-reduced-motion: reduce) {
+  .messagesContainer {
+    scroll-behavior: auto;
+  }
+  .scrollDownButton,
+  .pinnedBanner,
+  .editBar {
+    animation: none;
+  }
+}
