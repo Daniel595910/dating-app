@@ -97,6 +97,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isInitialLoadRef = useRef(true);
   const typingChannelRef = useRef<any>(null);
+  const typingUserChannelRef = useRef<any>(null);
 
   // Scroll state
   const [showScrollDown, setShowScrollDown] = useState(false);
@@ -286,6 +287,24 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
       return () => clearTimeout(timer);
     }
   }, [loading, messages.length, scrollToBottom]);
+
+  // Persistent channel for typing events to receiver ChatList
+  useEffect(() => {
+    if (!user || !targetUserId) return;
+    if (typingUserChannelRef.current) {
+      supabase.removeChannel(typingUserChannelRef.current);
+      typingUserChannelRef.current = null;
+    }
+    const channel = supabase.channel(`typing-user:${targetUserId}`);
+    channel.subscribe();
+    typingUserChannelRef.current = channel;
+    return () => {
+      if (typingUserChannelRef.current) {
+        supabase.removeChannel(typingUserChannelRef.current);
+        typingUserChannelRef.current = null;
+      }
+    };
+  }, [user, targetUserId]);
 
   // Subscribe to typing events
   useEffect(() => {
@@ -975,6 +994,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
           conversationId={conversationId}
           userId={user?.id || ''}
           targetUserId={targetUserId}
+          typingUserChannel={typingUserChannelRef.current}
           onSend={handleSend}
           onSendImage={handleSendImage}
           onSendVideo={handleSendVideo}

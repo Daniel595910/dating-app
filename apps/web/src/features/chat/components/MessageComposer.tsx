@@ -48,6 +48,7 @@ interface MessageComposerProps {
   onSendImage: (file: File, quality?: 'hd' | 'sd', caption?: string) => Promise<void>;
   onSendVideo: (file: File, quality?: 'hd' | 'sd', caption?: string) => Promise<void>;
   targetUserId?: string;
+  typingUserChannel?: any;
   onTypingChange: (isTyping: boolean) => void;
   replyingTo?: ChatMessage | null;
   onCancelReply?: () => void;
@@ -65,6 +66,7 @@ export const MessageComposer: React.FC<MessageComposerProps> = ({
   onSendImage,
   onSendVideo,
   targetUserId,
+  typingUserChannel,
   onTypingChange,
   replyingTo,
   onCancelReply,
@@ -104,14 +106,17 @@ export const MessageComposer: React.FC<MessageComposerProps> = ({
         payload: { userId, conversationId },
       });
 
-      // Also broadcast to the receiver-specific channel so ChatList can see typing.
-      if (targetUserId) {
-        const userChannel = supabase.channel(`typing-user:${targetUserId}`);
-        await userChannel.send({
-          type: 'broadcast',
-          event: isTyping ? 'typing' : 'stop_typing',
-          payload: { userId, conversationId },
-        });
+      // Broadcast to receiver's user channel (for ChatList indicator)
+      if (typingUserChannel) {
+        try {
+          await typingUserChannel.send({
+            type: 'broadcast',
+            event: isTyping ? 'typing' : 'stop_typing',
+            payload: { userId, conversationId },
+          });
+        } catch (err) {
+          console.warn('[MessageComposer] typing-user broadcast failed:', err);
+        }
       }
     } catch {
       // Ignore
