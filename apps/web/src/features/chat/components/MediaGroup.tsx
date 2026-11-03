@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { ChatMessage } from '../types/chat.types';
 import { ImagePreviewModal } from '../../community/components/ImagePreviewModal';
 import styles from './MediaGroup.module.css';
+import { GroupVideoViewer } from './GroupVideoViewer';
 
 interface MediaGroupProps {
   messages: ChatMessage[];
@@ -132,18 +133,19 @@ export const MediaGroup: React.FC<MediaGroupProps> = ({ messages, isOwn, showSen
         />
       )}
 
-      {videoIndex !== null && messages[videoIndex]?.metadata?.videoUrl && (
-        <div className={styles.videoModal} onClick={() => setVideoIndex(null)}>
-          <video
-            src={messages[videoIndex].metadata?.videoUrl}
-            controls
-            autoPlay
-            playsInline
-            className={styles.videoModalPlayer}
-            onClick={(e) => e.stopPropagation()}
+      {videoIndex !== null && (() => {
+        const videoMessages = messages.filter((m) => m.type === 'video' && m.metadata?.videoUrl);
+        const clicked = messages[videoIndex];
+        const startIdx = clicked ? videoMessages.findIndex((m) => m.id === clicked.id) : 0;
+        if (videoMessages.length === 0) return null;
+        return (
+          <GroupVideoViewer
+            videos={videoMessages.map((m) => m.metadata!.videoUrl!)}
+            initialIndex={Math.max(0, startIdx)}
+            onClose={() => setVideoIndex(null)}
           />
-        </div>
-      )}
+        );
+      })()}
     </div>
   );
 };
