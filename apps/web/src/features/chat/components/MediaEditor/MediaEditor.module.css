@@ -1938,3 +1938,133 @@
   color: rgba(255, 255, 255, 0.55);
   line-height: 1.4;
 }
+
+
+/* ============================================================ */
+/* SMALL SCREENS — scale everything down for phones              */
+/* ============================================================ */
+@media (max-width: 480px) {
+
+  /* Header — tighter */
+  .header {
+    padding: 10px 12px;
+    min-height: 48px;
+  }
+  .headerTitle {
+    font-size: 14px;
+  }
+  .cancelBtn {
+    width: 32px;
+    height: 32px;
+  }
+
+  /* Preview — less padding */
+  .previewArea {
+    padding: 6px;
+  }
+
+  /* Footer — tighter */
+  .footer {
+    padding: 10px 12px 12px;
+    gap: 8px;
+  }
+
+  /* Caption row — smaller input and send */
+  .captionRow {
+    gap: 6px;
+    margin-bottom: 8px;
+  }
+  .caption,
+  .captionRow > textarea,
+  .captionRow > input[type="text"] {
+    padding: 8px 12px;
+    font-size: 13px;
+    min-height: 36px;
+    border-radius: 18px;
+  }
+
+  /* Send button — smaller */
+  .inlineSendBtn {
+    width: 36px;
+    height: 36px;
+    min-width: 36px;
+    min-height: 36px;
+  }
+  .inlineSendBtn svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  /* + (add more) — smaller */
+  .addMoreBtn {
+    width: 36px;
+    height: 36px;
+  }
+  .addMoreBtn svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  /* Tab bar — smaller */
+  .tabBar {
+    gap: 2px;
+    padding: 3px;
+  }
+  .tabButton {
+    padding: 6px 8px;
+    font-size: 11px;
+    gap: 4px;
+  }
+  .tabButton svg {
+    width: 12px;
+    height: 12px;
+  }
+
+  /* Quality toggle — smaller */
+  .qualityToggle {
+    height: 26px;
+  }
+  .qualityOption {
+    font-size: 10px;
+    padding: 4px 8px;
+    min-width: 32px;
+  }
+
+  /* Disappear hint — smaller */
+  .disappearHint {
+    font-size: 10px;
+  }
+
+  /* Thumbnails — smaller */
+  .thumbStrip {
+    padding: 6px 8px;
+    gap: 5px;
+  }
+  .thumb {
+    width: 44px;
+    height: 44px;
+  }
+  .thumbRemove {
+    width: 16px;
+    height: 16px;
+    font-size: 10px;
+  }
+
+  /* Video chrome — smaller */
+  .videoCenterBtn {
+    width: 52px;
+    height: 52px;
+  }
+  .videoMuteBtn {
+    width: 32px;
+    height: 32px;
+    top: 10px;
+    right: 10px;
+  }
+  .videoDurationBadge {
+    font-size: 10px;
+    padding: 2px 6px;
+    top: 8px;
+    left: 8px;
+  }
+}
