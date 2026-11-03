@@ -5,6 +5,7 @@ import { chatService } from '../services/chat.service';
 export function usePresence(userId: string | null) {
   const [onlineUsers, setOnlineUsers] = useState<Set<string>>(new Set());
   const [lastSeenMap, setLastSeenMap] = useState<Map<string, string>>(new Map());
+  const [hiddenUsers, setHiddenUsers] = useState<Set<string>>(new Set());
   const presenceChannelRef = useRef<any>(null);
   const heartbeatIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -50,6 +51,18 @@ export function usePresence(userId: string | null) {
         const { data: presenceData, error } = await supabase
           .from('presence')
           .select('user_id, is_online, last_seen_at');
+
+        // Fetch users who have hidden their online status
+        const { data: profilesData } = await supabase
+          .from('profiles')
+          .select('user_id, show_online_status')
+          .eq('show_online_status', false);
+
+        const hidden = new Set<string>();
+        (profilesData || []).forEach((p: any) => {
+          if (p.user_id) hidden.add(p.user_id);
+        });
+        setHiddenUsers(hidden);
 
         if (error) {
           console.error('Failed to fetch presence:', error);
@@ -120,24 +133,57 @@ export function usePresence(userId: string | null) {
     };
   }, [userId]);
 
+  // Subscribe to show_online_status changes (realtime)
+  useEffect(() => {
+    if (!userId) return;
+    const channel = supabase
+      .channel('profiles_presence_settings')
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'profiles' },
+        (payload) => {
+          const changed = payload.new as any;
+          if (!changed?.user_id) return;
+          setHiddenUsers((prev) => {
+            const next = new Set(prev);
+            if (changed.show_online_status === false) {
+              next.add(changed.user_id);
+            } else {
+              next.delete(changed.user_id);
+            }
+            return next;
+          });
+        }
+      )
+      .subscribe();
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [userId]);
+
   // Consider a user online only if heartbeat is recent (<60s)
   const isUserOnline = useCallback((targetUserId: string): boolean => {
+    // Respect the target user's hide-status preference
+    if (hiddenUsers.has(targetUserId)) return false;
     if (!onlineUsers.has(targetUserId)) return false;
     const lastSeenIso = lastSeenMap.get(targetUserId);
     if (!lastSeenIso) return false;
     const lastSeenMs = new Date(lastSeenIso).getTime();
     if (isNaN(lastSeenMs)) return false;
     return Date.now() - lastSeenMs < 60000;
-  }, [onlineUsers, lastSeenMap]);
+  }, [onlineUsers, lastSeenMap, hiddenUsers]);
 
   const getLastSeen = useCallback((targetUserId: string): string | null => {
+    if (hiddenUsers.has(targetUserId)) return null;
     return lastSeenMap.get(targetUserId) || null;
-  }, [lastSeenMap]);
+  }, [lastSeenMap, hiddenUsers]);
 
   return {
     isUserOnline,
     getLastSeen,
     onlineUsers,
+    hiddenUsers,
+    isHidden: (id: string) => hiddenUsers.has(id),
   };
 }
 
