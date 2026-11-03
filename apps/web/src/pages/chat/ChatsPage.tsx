@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+﻿import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '@/store/auth.store';
 import { supabase } from '@/config/supabase.client';
@@ -259,10 +259,18 @@ export const ChatsPage: React.FC = () => {
                   <span>Pinned</span>
                 </div>
               )}
-              <button
+              <div
+                role="button"
+                tabIndex={0}
                 key={conv.id}
                 className={`${styles.conversationItem} ${conv.unreadCount > 0 ? styles.unreadItem : ''}`}
                 onClick={() => handleSelectConversation(conv.id)}
+                onKeyDown={(ev) => {
+                  if (ev.key === 'Enter' || ev.key === ' ') {
+                    ev.preventDefault();
+                    handleSelectConversation(conv.id);
+                  }
+                }}
               >
                 <div className={styles.avatarWrapper}>
                   {otherUserId && ringState[otherUserId] ? (
@@ -324,7 +332,7 @@ export const ChatsPage: React.FC = () => {
                     )}
                   </div>
                 </div>
-              </button>
+              </div>
               </React.Fragment>
             );
           })
