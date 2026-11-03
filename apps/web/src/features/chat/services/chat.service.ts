@@ -6,12 +6,17 @@ class ChatService {
   async getUserConversations(userId: string): Promise<Conversation[]> {
     const { data: conversations } = await supabase
       .from('conversations')
-      .select('*')
+      .select('*, conversation_user_state(is_pinned, is_archived, is_deleted, pinned_at)')
       .contains('participant_ids', [userId])
       .order('last_message_at', { ascending: false, nullsFirst: false })
       .limit(50);
 
     if (!conversations || conversations.length === 0) return [];
+
+    const stateFor = (conv: any) => {
+      const raw = conv.conversation_user_state;
+      return Array.isArray(raw) ? raw[0] : raw;
+    };
 
     const otherUserIds = conversations
       .flatMap((c: any) => c.participant_ids)
@@ -47,7 +52,24 @@ class ChatService {
         unreadCount: conv.unread_counts?.[userId] || 0,
         isOnline: presenceMap.get(otherUserId) || false,
         lastSeen: lastSeenMap.get(otherUserId) || null,
+        isPinned: stateFor(conv)?.is_pinned === true,
+        pinnedAt: stateFor(conv)?.pinned_at ?? null,
       };
+    })
+    .filter((_c, i) => {
+      const s = stateFor((conversations as any[])[i]);
+      return !s?.is_deleted && !s?.is_archived;
+    })
+    .sort((a, b) => {
+      if (a.isPinned !== b.isPinned) return a.isPinned ? -1 : 1;
+      if (a.isPinned && b.isPinned) {
+        const at = a.pinnedAt ? new Date(a.pinnedAt).getTime() : 0;
+        const bt = b.pinnedAt ? new Date(b.pinnedAt).getTime() : 0;
+        return bt - at;
+      }
+      const at = a.lastMessageAt ? new Date(a.lastMessageAt).getTime() : 0;
+      const bt = b.lastMessageAt ? new Date(b.lastMessageAt).getTime() : 0;
+      return bt - at;
     });
   }
 
@@ -82,7 +104,7 @@ class ChatService {
       return { messages: [], nextCursor: null, hasMore: false };
     }
 
-    // Exclude expired disappearing messages (defensive — cron runs hourly)
+    // Exclude expired disappearing messages (defensive Ã¢â‚¬â€ cron runs hourly)
     const nowIso2 = new Date().toISOString();
     const notExpired = (messages as any[]).filter((m) => !m.expires_at || m.expires_at > nowIso2);
     const hasMore = notExpired.length > limit;
@@ -252,6 +274,31 @@ class ChatService {
     await supabase.rpc('update_presence', {
       p_is_online: isOnline,
     });
+  }
+
+  async pinChat(conversationId: string): Promise<void> {
+    const { error } = await supabase.rpc('pin_conversation', { p_conversation_id: conversationId });
+    if (error) throw error;
+  }
+
+  async unpinChat(conversationId: string): Promise<void> {
+    const { error } = await supabase.rpc('unpin_conversation', { p_conversation_id: conversationId });
+    if (error) throw error;
+  }
+
+  async archiveChat(conversationId: string): Promise<void> {
+    const { error } = await supabase.rpc('archive_conversation', { p_conversation_id: conversationId });
+    if (error) throw error;
+  }
+
+  async unarchiveChat(conversationId: string): Promise<void> {
+    const { error } = await supabase.rpc('unarchive_conversation', { p_conversation_id: conversationId });
+    if (error) throw error;
+  }
+
+  async deleteChat(conversationId: string): Promise<void> {
+    const { error } = await supabase.rpc('delete_conversation_for_user', { p_conversation_id: conversationId });
+    if (error) throw error;
   }
 
   subscribeToMessages(

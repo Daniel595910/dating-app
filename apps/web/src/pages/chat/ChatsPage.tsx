@@ -59,6 +59,15 @@ export const ChatsPage: React.FC = () => {
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'conversations' }, () => scheduleRefetch())
       .subscribe();
 
+    const stateChannel = supabase
+      .channel(`chats_page_state:${user.id}`)
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'conversation_user_state', filter: `user_id=eq.${user.id}` },
+        () => scheduleRefetch()
+      )
+      .subscribe();
+
     // Typing indicator subscription
     (async () => {
       typingChannel = supabase
@@ -104,6 +113,7 @@ export const ChatsPage: React.FC = () => {
       cancelled = true;
       if (refetchTimerRef.current) clearTimeout(refetchTimerRef.current);
       supabase.removeChannel(convsChannel);
+      supabase.removeChannel(stateChannel);
       if (typingChannel) supabase.removeChannel(typingChannel);
       typingTimeoutsRef.current.forEach((t) => clearTimeout(t));
       typingTimeoutsRef.current.clear();

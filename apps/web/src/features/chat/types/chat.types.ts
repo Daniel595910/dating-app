@@ -9,6 +9,8 @@ export interface Conversation {
   unreadCount: number;
   isOnline: boolean;
   lastSeen?: string | null;
+  isPinned: boolean;
+  pinnedAt: string | null;
 }
 
 export interface ChatMessage {
