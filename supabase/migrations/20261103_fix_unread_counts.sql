@@ -1,4 +1,6 @@
 -- Fix send_chat_message: increment recipient's unread_counts when a message is sent.
+-- Uses array indexing (not unnest) for deterministic recipient detection.
+
 CREATE OR REPLACE FUNCTION public.send_chat_message(
     p_conversation_id uuid,
     p_client_message_id uuid,
@@ -16,6 +18,7 @@ DECLARE
     v_existing_message RECORD;
     v_message_type message_type;
     v_recipient_id UUID;
+    v_participants UUID[];
 BEGIN
     IF v_sender_id IS NULL THEN
         RAISE EXCEPTION 'Not authenticated';
@@ -45,11 +48,19 @@ BEGIN
         RAISE EXCEPTION 'Not a conversation participant';
     END IF;
 
-    SELECT unnest(participant_ids) INTO v_recipient_id
+    SELECT participant_ids INTO v_participants
     FROM conversations
-    WHERE id = p_conversation_id
-      AND unnest(participant_ids) != v_sender_id
-    LIMIT 1;
+    WHERE id = p_conversation_id;
+
+    IF v_participants IS NULL OR array_length(v_participants, 1) < 2 THEN
+        RAISE EXCEPTION 'Conversation has fewer than 2 participants';
+    END IF;
+
+    IF v_participants[1] = v_sender_id THEN
+        v_recipient_id := v_participants[2];
+    ELSE
+        v_recipient_id := v_participants[1];
+    END IF;
 
     INSERT INTO messages (
         conversation_id,
