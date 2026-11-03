@@ -974,6 +974,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
         <MessageComposer
           conversationId={conversationId}
           userId={user?.id || ''}
+          targetUserId={targetUserId}
           onSend={handleSend}
           onSendImage={handleSendImage}
           onSendVideo={handleSendVideo}

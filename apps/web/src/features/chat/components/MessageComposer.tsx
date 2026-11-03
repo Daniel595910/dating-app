@@ -47,6 +47,7 @@ interface MessageComposerProps {
   onSend: (content: string) => void;
   onSendImage: (file: File, quality?: 'hd' | 'sd', caption?: string) => Promise<void>;
   onSendVideo: (file: File, quality?: 'hd' | 'sd', caption?: string) => Promise<void>;
+  targetUserId?: string;
   onTypingChange: (isTyping: boolean) => void;
   replyingTo?: ChatMessage | null;
   onCancelReply?: () => void;
@@ -63,6 +64,7 @@ export const MessageComposer: React.FC<MessageComposerProps> = ({
   onSend,
   onSendImage,
   onSendVideo,
+  targetUserId,
   onTypingChange,
   replyingTo,
   onCancelReply,
@@ -99,8 +101,18 @@ export const MessageComposer: React.FC<MessageComposerProps> = ({
       await channel.send({
         type: 'broadcast',
         event: isTyping ? 'typing' : 'stop_typing',
-        payload: { userId },
+        payload: { userId, conversationId },
       });
+
+      // Also broadcast to the receiver-specific channel so ChatList can see typing.
+      if (targetUserId) {
+        const userChannel = supabase.channel(`typing-user:${targetUserId}`);
+        await userChannel.send({
+          type: 'broadcast',
+          event: isTyping ? 'typing' : 'stop_typing',
+          payload: { userId, conversationId },
+        });
+      }
     } catch {
       // Ignore
     }

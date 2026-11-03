@@ -23,6 +23,7 @@ const formatPreview = (preview: string | null): string => {
 
 export const ChatList: React.FC < ChatListProps > = ({ onSelectConversation }) => {
   const [conversations, setConversations] = useState < Conversation[] > ([]);
+  const [typingConvIds, setTypingConvIds] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState < string | null > (null);
   
@@ -50,6 +51,57 @@ export const ChatList: React.FC < ChatListProps > = ({ onSelectConversation }) =
     fetchConversations();
   }, []);
   
+  // Subscribe to typing events from other users
+  useEffect(() => {
+    let cancelled = false;
+    let currentUserId: string | null = null;
+    let channel: any = null;
+
+    (async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user || cancelled) return;
+      currentUserId = user.id;
+
+      channel = supabase
+        .channel(`typing-user:${user.id}`)
+        .on(
+          'broadcast',
+          { event: 'typing' },
+          (payload) => {
+            const convId = payload.payload?.conversationId;
+            if (!convId || payload.payload?.userId === currentUserId) return;
+            setTypingConvIds((prev) => new Set(prev).add(convId));
+            setTimeout(() => {
+              setTypingConvIds((prev) => {
+                const next = new Set(prev);
+                next.delete(convId);
+                return next;
+              });
+            }, 3000);
+          }
+        )
+        .on(
+          'broadcast',
+          { event: 'stop_typing' },
+          (payload) => {
+            const convId = payload.payload?.conversationId;
+            if (!convId) return;
+            setTypingConvIds((prev) => {
+              const next = new Set(prev);
+              next.delete(convId);
+              return next;
+            });
+          }
+        )
+        .subscribe();
+    })();
+
+    return () => {
+      cancelled = true;
+      if (channel) supabase.removeChannel(channel);
+    };
+  }, []);
+
   if (loading) {
     return <LoadingScreen message="Loading conversations..." />;
   }
@@ -86,9 +138,11 @@ export const ChatList: React.FC < ChatListProps > = ({ onSelectConversation }) =
                 </span>
               )}
             </div>
-            {conversation.last_message_preview && (
+            {typingConvIds.has(conversation.id) ? (
+              <p className={styles.preview} style={{ color: '#22c55e', fontStyle: 'italic' }}>typing...</p>
+            ) : conversation.last_message_preview ? (
               <p className={styles.preview}>{formatPreview(conversation.last_message_preview)}</p>
-            )}
+            ) : null}
           </div>
         </button>
       ))}
