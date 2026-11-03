@@ -157,3 +157,156 @@ body {
 @media (prefers-reduced-motion: reduce) {
   html, body { transition: none; }
 }
+
+
+/* ============================================================ */
+/* GLOBAL PREMIUM POLISH — appended, non-destructive            */
+/* Fixes accessibility issues + adds mobile polish              */
+/* ============================================================ */
+
+/* 1. Tap highlight removal — no blue/grey flash on touch      */
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* 2. Refined text selection — matches app accent red          */
+::selection {
+  background-color: rgba(239, 68, 68, 0.22);
+  color: inherit;
+}
+
+::-moz-selection {
+  background-color: rgba(239, 68, 68, 0.22);
+  color: inherit;
+}
+
+/* 3. RESTORE keyboard focus (overrides earlier *:focus rules) */
+/* Mouse/touch focus: no outline                                */
+button:focus:not(:focus-visible),
+a:focus:not(:focus-visible),
+[role="button"]:focus:not(:focus-visible),
+input:focus:not(:focus-visible),
+textarea:focus:not(:focus-visible),
+select:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* Keyboard focus (Tab key): visible, refined ring              */
+button:focus-visible,
+a:focus-visible,
+[role="button"]:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+/* 4. Restore input focus visual feedback (was killed)          */
+input:focus,
+textarea:focus,
+select:focus {
+  border-color: var(--color-primary) !important;
+}
+
+/* 5. Mobile-safe font sizes with clamp                         */
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+/* 6. Safe-area padding helpers (mobile notches)               */
+body {
+  padding-bottom: env(safe-area-inset-bottom);
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* 7. Prevent iOS auto-zoom on input focus (16px minimum)       */
+@media screen and (max-width: 480px) {
+  input, textarea, select {
+    font-size: 16px !important;
+  }
+}
+
+/* 8. Minimum tap target (44px per Apple HIG)                   */
+button,
+[role="button"],
+a {
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+/* 9. Refined button press feedback (replaces default flash)    */
+button:active:not(:disabled),
+[role="button"]:active:not(:disabled) {
+  transition: transform 80ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* 10. Dark mode focus ring contrast                            */
+[data-theme="dark"] button:focus-visible,
+[data-theme="dark"] a:focus-visible,
+[data-theme="dark"] [role="button"]:focus-visible,
+[data-theme="dark"] input:focus-visible,
+[data-theme="dark"] textarea:focus-visible,
+[data-theme="dark"] select:focus-visible {
+  outline-color: var(--color-primary);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.15);
+}
+
+/* 11. Refined disabled state                                   */
+button:disabled,
+[role="button"][aria-disabled="true"] {
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* 12. Smooth theme transition (respects reduced motion)        */
+@media (prefers-reduced-motion: no-preference) {
+  button, a, input, textarea, select {
+    transition: background-color 150ms ease, color 150ms ease, border-color 150ms ease, box-shadow 150ms ease, transform 120ms ease;
+  }
+}
+
+/* 13. Refined scrollbar defaults (global)                      */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 0, 0, 0.15) transparent;
+}
+
+[data-theme="dark"] * {
+  scrollbar-color: rgba(255, 255, 255, 0.15) transparent;
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.15);
+  border-radius: 9999px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.3);
+  background-clip: content-box;
+}
+
+[data-theme="dark"] ::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+  background-clip: content-box;
+}
+
+[data-theme="dark"] ::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
+  background-clip: content-box;
+}
