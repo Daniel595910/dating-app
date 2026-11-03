@@ -200,3 +200,10 @@
   from { transform: rotate(0deg); }
   to   { transform: rotate(360deg); }
 }
+
+/* Typing indicator in conversation preview */
+.typingPreview {
+  color: #22c55e;
+  font-style: italic;
+  font-weight: 500;
+}

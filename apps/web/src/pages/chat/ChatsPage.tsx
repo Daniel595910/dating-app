@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '@/store/auth.store';
 import { supabase } from '@/config/supabase.client';
@@ -18,23 +18,96 @@ export const ChatsPage: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const { isUserOnline, onlineUsers } = usePresence(user?.id || null);
 
+  // Typing state per conversation
+  const [typingConvIds, setTypingConvIds] = useState<Set<string>>(new Set());
+  const typingTimeoutsRef = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
+
+  const hasLoadedRef = useRef(false);
+  const refetchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   useEffect(() => {
-    const loadConversations = async () => {
-      if (!user) return;
-      setLoading(true);
-      const convs = await chatService.getUserConversations(user.id);
-      setConversations(convs);
-      setLoading(false);
+    if (!user) return;
+    let cancelled = false;
+    let typingChannel: any = null;
+
+    const loadConversations = async (showSpinner: boolean) => {
+      if (!user || cancelled) return;
+      if (showSpinner) setLoading(true);
+      try {
+        const convs = await chatService.getUserConversations(user.id);
+        if (!cancelled) {
+          setConversations(convs);
+          hasLoadedRef.current = true;
+        }
+      } finally {
+        if (!cancelled && showSpinner) setLoading(false);
+      }
     };
 
-    loadConversations();
+    // Initial load with spinner
+    loadConversations(true);
 
-    const channel = supabase
+    // Debounced silent refetch on conversations UPDATE
+    const scheduleRefetch = () => {
+      if (!hasLoadedRef.current) return;
+      if (refetchTimerRef.current) clearTimeout(refetchTimerRef.current);
+      refetchTimerRef.current = setTimeout(() => loadConversations(false), 300);
+    };
+
+    const convsChannel = supabase
       .channel('chats_page_updates')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'conversations' }, () => loadConversations())
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'conversations' }, () => scheduleRefetch())
       .subscribe();
 
-    return () => channel.unsubscribe();
+    // Typing indicator subscription
+    (async () => {
+      typingChannel = supabase
+        .channel(`typing-user:${user.id}`)
+        .on(
+          'broadcast',
+          { event: 'typing' },
+          (payload) => {
+            const convId = payload.payload?.conversationId;
+            if (!convId || payload.payload?.userId === user.id) return;
+            setTypingConvIds((prev) => new Set(prev).add(convId));
+            const existing = typingTimeoutsRef.current.get(convId);
+            if (existing) clearTimeout(existing);
+            typingTimeoutsRef.current.set(
+              convId,
+              setTimeout(() => {
+                setTypingConvIds((prev) => {
+                  const next = new Set(prev);
+                  next.delete(convId);
+                  return next;
+                });
+              }, 3000)
+            );
+          }
+        )
+        .on(
+          'broadcast',
+          { event: 'stop_typing' },
+          (payload) => {
+            const convId = payload.payload?.conversationId;
+            if (!convId) return;
+            setTypingConvIds((prev) => {
+              const next = new Set(prev);
+              next.delete(convId);
+              return next;
+            });
+          }
+        )
+        .subscribe();
+    })();
+
+    return () => {
+      cancelled = true;
+      if (refetchTimerRef.current) clearTimeout(refetchTimerRef.current);
+      supabase.removeChannel(convsChannel);
+      if (typingChannel) supabase.removeChannel(typingChannel);
+      typingTimeoutsRef.current.forEach((t) => clearTimeout(t));
+      typingTimeoutsRef.current.clear();
+    };
   }, [user]);
 
   const filteredConversations = conversations.filter((conv) => {
@@ -165,7 +238,11 @@ export const ChatsPage: React.FC = () => {
                     )}
                   </div>
                   <div className={styles.lastMessageRow}>
-                    {conv.lastMessage && (
+                    {typingConvIds.has(conv.id) ? (
+                      <p className={`${styles.lastMessage} ${styles.typingPreview}`}>
+                        typing...
+                      </p>
+                    ) : conv.lastMessage && (
                       <p className={`${styles.lastMessage} ${conv.unreadCount > 0 ? styles.unreadMessage : ''}`}>
                         {conv.lastMessage}
                       </p>
