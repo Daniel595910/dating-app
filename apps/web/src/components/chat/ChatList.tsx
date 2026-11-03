@@ -69,7 +69,9 @@ export const ChatList: React.FC < ChatListProps > = ({ onSelectConversation }) =
           { event: 'typing' },
           (payload) => {
             const convId = payload.payload?.conversationId;
-            if (!convId || payload.payload?.userId === currentUserId) return;
+            if (!convId || payload.payload?.userId === currentUserId) {
+              return;
+            }
             setTypingConvIds((prev) => new Set(prev).add(convId));
             setTimeout(() => {
               setTypingConvIds((prev) => {
@@ -93,7 +95,11 @@ export const ChatList: React.FC < ChatListProps > = ({ onSelectConversation }) =
             });
           }
         )
-        .subscribe();
+        .subscribe((status: string) => {
+          if (status === 'SUBSCRIBED') {
+            console.log('[ChatList] typing channel subscribed');
+          }
+        });
     })();
 
     return () => {

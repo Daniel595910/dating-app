@@ -97,7 +97,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isInitialLoadRef = useRef(true);
   const typingChannelRef = useRef<any>(null);
-  const typingUserChannelRef = useRef<any>(null);
+  const [typingUserChannel, setTypingUserChannel] = useState<any>(null);
 
   // Scroll state
   const [showScrollDown, setShowScrollDown] = useState(false);
@@ -288,21 +288,25 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
     }
   }, [loading, messages.length, scrollToBottom]);
 
-  // Persistent channel for typing events to receiver ChatList
+  // Persistent channel for typing events to receiver ChatList.
+  // Wait for SUBSCRIBED before exposing the channel — otherwise the first
+  // send() fires before the WebSocket is joined and gets silently dropped.
   useEffect(() => {
     if (!user || !targetUserId) return;
-    if (typingUserChannelRef.current) {
-      supabase.removeChannel(typingUserChannelRef.current);
-      typingUserChannelRef.current = null;
-    }
+    let cancelled = false;
     const channel = supabase.channel(`typing-user:${targetUserId}`);
-    channel.subscribe();
-    typingUserChannelRef.current = channel;
-    return () => {
-      if (typingUserChannelRef.current) {
-        supabase.removeChannel(typingUserChannelRef.current);
-        typingUserChannelRef.current = null;
+    channel.subscribe((status) => {
+      if (cancelled) return;
+      if (status === 'SUBSCRIBED') {
+        setTypingUserChannel(channel);
+      } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
+        console.warn('[ChatWindow] typing-user channel:', status);
       }
+    });
+    return () => {
+      cancelled = true;
+      supabase.removeChannel(channel);
+      setTypingUserChannel(null);
     };
   }, [user, targetUserId]);
 
@@ -994,7 +998,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
           conversationId={conversationId}
           userId={user?.id || ''}
           targetUserId={targetUserId}
-          typingUserChannel={typingUserChannelRef.current}
+          typingUserChannel={typingUserChannel}
           onSend={handleSend}
           onSendImage={handleSendImage}
           onSendVideo={handleSendVideo}
