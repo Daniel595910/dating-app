@@ -155,8 +155,8 @@ export const MessageComposer: React.FC<MessageComposerProps> = ({
     if (mediaFileInputRef.current) mediaFileInputRef.current.value = '';
     setAttachmentMenuOpen(false);
 
-    const isVideoFile = file.type.startsWith('video/');
-    const isImageFile = file.type.startsWith('image/');
+    const isVideoFile = file.type.startsWith('video/') || /\.(mp4|webm|mov|m4v|quicktime|avi|mkv)$/i.test(file.name);
+    const isImageFile = file.type.startsWith('image/') || /\.(jpe?g|png|webp|gif|heic|heif|bmp|tiff?)$/i.test(file.name);
     if (!isVideoFile && !isImageFile) return;
 
     // HEIC/HEIF rejection — Chrome cannot decode these
@@ -195,8 +195,8 @@ export const MessageComposer: React.FC<MessageComposerProps> = ({
         }
       } catch {
         // Probe failed — reject the file. Do not open MediaEditor with an unreadable video.
-        showToast('Could not read this video file. Please try a different video.');
-        return;
+        console.warn('[MessageComposer] Video probe failed, accepting file anyway');
+        // no return - fall through to setPendingMedia(file)
       }
 
       // Duration confirmed under 3 minutes — safe to open editor
@@ -264,7 +264,7 @@ export const MessageComposer: React.FC<MessageComposerProps> = ({
         <input
           ref={mediaFileInputRef}
           type="file"
-          accept="image/jpeg,image/png,image/webp,image/gif,video/mp4,video/webm,video/quicktime"
+          accept="image/*,video/*"
           onChange={(e) => handleMediaSelect(e.target.files)}
           style={{ display: 'none' }}
         />
