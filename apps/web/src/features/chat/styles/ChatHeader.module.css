@@ -278,3 +278,12 @@
 [data-theme="dark"] .moreButton:hover {
   color: #f5f5f7;
 }
+
+/* Prevent header layout push when last seen is long */
+.status {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
+  min-width: 0;
+}

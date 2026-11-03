@@ -17,6 +17,22 @@ interface ChatHeaderProps {
   onSearchClick?: () => void;
 }
 
+const formatLastSeen = (iso: string | null | undefined): string => {
+  if (!iso) return 'Offline';
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return 'Offline';
+  const diffMs = Date.now() - d.getTime();
+  if (diffMs < 0) return 'Last seen just now';
+  const mins = Math.floor(diffMs / 60000);
+  if (mins < 1) return 'Last seen just now';
+  if (mins < 60) return 'Last seen ' + mins + ' min ago';
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) return 'Last seen ' + hours + 'h ago';
+  const days = Math.floor(hours / 24);
+  if (days < 7) return 'Last seen ' + days + 'd ago';
+  return 'Last seen ' + d.toLocaleDateString([], { month: 'short', day: 'numeric' });
+};
+
 export const ChatHeader: React.FC<ChatHeaderProps> = ({
   userName,
   userAvatar,
@@ -63,7 +79,7 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({
             )}
           </div>
           <span className={`${styles.status} ${isOnline ? styles.statusOnline : styles.statusOffline}`}>
-            {isTyping ? 'Typing...' : isOnline ? 'Active now' : lastSeen ? `Last seen ${lastSeen}` : 'Offline'}
+            {isTyping ? 'Typing...' : isOnline ? 'Active now' : formatLastSeen(lastSeen)}
           </span>
         </div>
       </button>
