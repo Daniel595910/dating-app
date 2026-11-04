@@ -880,7 +880,10 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
 
         {messages.length === 0 ? (
           <div className={styles.emptyState}>
-            <p>Say hello to {targetUserName}!</p>
+            <div className={styles.emptyStateWave}>👋</div>
+            <p className={styles.emptyStateTitle}>Say hello to</p>
+            <p className={styles.emptyStateName}>{targetUserName}!</p>
+            <p className={styles.emptyStateHint}>Break the ice with a message, a gift, or a sticker.</p>
           </div>
         ) : (
           (() => {
