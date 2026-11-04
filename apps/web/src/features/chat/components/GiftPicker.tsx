@@ -20,6 +20,7 @@ interface GiftItem {
 export const GiftPicker: React.FC<GiftPickerProps> = ({ open, onClose, onSelectGift }) => {
   const [gifts, setGifts] = useState<GiftItem[]>([]);
   const [loading, setLoading] = useState(false);
+  const [search, setSearch] = useState('');
 
   useEffect(() => {
     if (open) {
@@ -56,26 +57,41 @@ export const GiftPicker: React.FC<GiftPickerProps> = ({ open, onClose, onSelectG
         {loading ? (
           <p className={styles.loading}>Loading gifts...</p>
         ) : (
-          <div className={styles.giftGrid}>
-            {gifts.map((gift) => (
-              <button
-                key={gift.id}
-                className={styles.giftItem}
-                onClick={() => {
-                  onSelectGift({ id: gift.id, name: gift.name, icon: gift.icon });
-                  onClose();
-                }}
-              >
-                <span className={styles.giftIcon}>{gift.icon}</span>
-                <span className={styles.giftName}>{gift.name}</span>
-                {gift.price_units > 0 ? (
-                  <span className={styles.giftPrice}>{gift.price_units} pts</span>
-                ) : (
-                  <span className={styles.giftFree}>Free</span>
-                )}
-              </button>
-            ))}
-          </div>
+          <>
+            <input
+              type="text"
+              className={styles.searchInput}
+              placeholder="Search 300+ gifts..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+            <div className={styles.giftGrid}>
+              {gifts
+                .filter((g) =>
+                  !search.trim() ||
+                  g.name.toLowerCase().includes(search.toLowerCase()) ||
+                  (g.description && g.description.toLowerCase().includes(search.toLowerCase()))
+                )
+                .map((gift) => (
+                  <button
+                    key={gift.id}
+                    className={styles.giftItem}
+                    onClick={() => {
+                      onSelectGift({ id: gift.id, name: gift.name, icon: gift.icon });
+                      onClose();
+                    }}
+                  >
+                    <span className={styles.giftIcon}>{gift.icon}</span>
+                    <span className={styles.giftName}>{gift.name}</span>
+                    {gift.price_units > 0 ? (
+                      <span className={styles.giftPrice}>{gift.price_units} pts</span>
+                    ) : (
+                      <span className={styles.giftFree}>Free</span>
+                    )}
+                  </button>
+                ))}
+            </div>
+          </>
         )}
       </div>
     </div>
