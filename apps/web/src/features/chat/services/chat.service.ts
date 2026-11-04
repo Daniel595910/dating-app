@@ -1,4 +1,4 @@
-import { supabase } from '@/config/supabase.client';
+﻿import { supabase } from '@/config/supabase.client';
 import { generateUUID } from '../utils/uuid';
 import { Conversation, ChatMessage, MessageCursor } from '../types/chat.types';
 
@@ -73,6 +73,59 @@ class ChatService {
     });
   }
 
+  async getArchivedConversations(userId: string): Promise<Conversation[]> {
+    const { data: conversations } = await supabase
+      .from('conversations')
+      .select('*, conversation_user_state(is_pinned, is_archived, is_deleted, pinned_at)')
+      .contains('participant_ids', [userId])
+      .order('last_message_at', { ascending: false, nullsFirst: false })
+      .limit(50);
+
+    if (!conversations || conversations.length === 0) return [];
+
+    const stateFor = (conv: any) => {
+      const raw = conv.conversation_user_state;
+      return Array.isArray(raw) ? raw[0] : raw;
+    };
+
+    const otherUserIds = conversations
+      .flatMap((c: any) => c.participant_ids)
+      .filter((id: string) => id !== userId);
+
+    const { data: profiles } = await supabase
+      .from('profiles')
+      .select('user_id, display_name, avatar_url')
+      .in('user_id', otherUserIds);
+
+    const profileMap = new Map((profiles || []).map((p: any) => [p.user_id, p]));
+
+    return conversations
+      .filter((conv: any) => stateFor(conv)?.is_archived === true && !stateFor(conv)?.is_deleted)
+      .map((conv: any) => {
+        const otherUserId = conv.participant_ids.find((id: string) => id !== userId);
+        const profile = profileMap.get(otherUserId);
+        return {
+          id: conv.id,
+          matchId: conv.match_id,
+          participantIds: conv.participant_ids,
+          participantNames: { [otherUserId]: profile?.display_name || 'User' },
+          participantAvatars: { [otherUserId]: profile?.avatar_url || null },
+          lastMessage: conv.last_message_preview || null,
+          lastMessageAt: conv.last_message_at || null,
+          unreadCount: conv.unread_counts?.[userId] || 0,
+          isOnline: false,
+          lastSeen: null,
+          isPinned: false,
+          pinnedAt: null,
+        };
+      })
+      .sort((a, b) => {
+        const at = a.lastMessageAt ? new Date(a.lastMessageAt).getTime() : 0;
+        const bt = b.lastMessageAt ? new Date(b.lastMessageAt).getTime() : 0;
+        return bt - at;
+      });
+  }
+
   async getMessages(
     conversationId: string,
     limit: number = 50,
@@ -104,7 +157,7 @@ class ChatService {
       return { messages: [], nextCursor: null, hasMore: false };
     }
 
-    // Exclude expired disappearing messages (defensive Ã¢â‚¬â€ cron runs hourly)
+    // Exclude expired disappearing messages (defensive ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â cron runs hourly)
     const nowIso2 = new Date().toISOString();
     const notExpired = (messages as any[]).filter((m) => !m.expires_at || m.expires_at > nowIso2);
     const hasMore = notExpired.length > limit;

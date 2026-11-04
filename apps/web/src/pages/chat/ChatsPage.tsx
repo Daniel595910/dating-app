@@ -24,6 +24,11 @@ export const ChatsPage: React.FC = () => {
   const swipeStateRef = useRef<{ id: string | null; startX: number; startY: number; dx: number; dy: number; active: boolean; axis: 'h' | 'v' | null }>({ id: null, startX: 0, startY: 0, dx: 0, dy: 0, active: false, axis: null });
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
 
+  // Archived modal state (Commit 5)
+  const [archivedChats, setArchivedChats] = useState<Conversation[]>([]);
+  const [showArchivedModal, setShowArchivedModal] = useState(false);
+  const [archivedLoading, setArchivedLoading] = useState(false);
+
   const showToast = (msg: string) => {
     setToast(msg);
     if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
@@ -85,6 +90,37 @@ export const ChatsPage: React.FC = () => {
     } catch (err: any) {
       setConversations(prev);
       showToast('Could not delete. Please try again.');
+    }
+  };
+
+  const loadArchived = async () => {
+    if (!user) return;
+    setArchivedLoading(true);
+    try {
+      const list = await chatService.getArchivedConversations(user.id);
+      setArchivedChats(list);
+    } catch {
+      setArchivedChats([]);
+    } finally {
+      setArchivedLoading(false);
+    }
+  };
+
+  const handleOpenArchived = async () => {
+    setShowArchivedModal(true);
+    await loadArchived();
+  };
+
+  const handleUnarchive = async (conversationId: string) => {
+    const prev = archivedChats;
+    setArchivedChats((cs) => cs.filter((c) => c.id !== conversationId));
+    try {
+      await chatService.unarchiveChat(conversationId);
+      showToast('Chat unarchived');
+      if (archivedChats.length <= 1) setShowArchivedModal(false);
+    } catch {
+      setArchivedChats(prev);
+      showToast('Could not unarchive. Please try again.');
     }
   };
 
@@ -244,6 +280,21 @@ export const ChatsPage: React.FC = () => {
     };
   }, [user]);
 
+  // Load archived chat count for the pill on mount / when state changes
+  useEffect(() => {
+    if (!user) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const list = await chatService.getArchivedConversations(user.id);
+        if (!cancelled) setArchivedChats(list);
+      } catch {
+        if (!cancelled) setArchivedChats([]);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [user, conversations]);
+
   const filteredConversations = conversations.filter((conv) => {
     if (!searchQuery.trim()) return true;
     const otherUserId = conv.participantIds.find((id) => id !== user?.id);
@@ -307,6 +358,13 @@ export const ChatsPage: React.FC = () => {
           )}
         </div>
       </div>
+
+      {archivedChats.length > 0 && (
+        <button className={styles.archivedPill} onClick={handleOpenArchived}>
+          <span>Archived ({archivedChats.length})</span>
+        </button>
+      )}
+
 
       <div className={styles.conversationList}>
         {toast && <div className={styles.toast}>{toast}</div>}
@@ -442,6 +500,46 @@ export const ChatsPage: React.FC = () => {
             <div className={styles.confirmActions}>
               <button className={styles.confirmCancel} onClick={() => setPendingDeleteId(null)}>Cancel</button>
               <button className={styles.confirmDelete} onClick={handleConfirmDelete}>Delete</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showArchivedModal && (
+        <div className={styles.archivedOverlay} onClick={() => setShowArchivedModal(false)}>
+          <div className={styles.archivedModal} onClick={(e) => e.stopPropagation()}>
+            <div className={styles.archivedHeader}>
+              <h2 className={styles.archivedTitle}>Archived</h2>
+              <button className={styles.archivedClose} onClick={() => setShowArchivedModal(false)} aria-label="Close">×</button>
+            </div>
+            <div className={styles.archivedList}>
+              {archivedLoading ? (
+                <div className={styles.archivedEmpty}>Loading...</div>
+              ) : archivedChats.length === 0 ? (
+                <div className={styles.archivedEmpty}>No archived chats</div>
+              ) : (
+                archivedChats.map((conv) => {
+                  const otherUserId = conv.participantIds.find((id) => id !== user?.id);
+                  const otherUserName = otherUserId ? conv.participantNames[otherUserId] : 'User';
+                  const otherUserAvatar = otherUserId ? conv.participantAvatars[otherUserId] : null;
+                  return (
+                    <div key={conv.id} className={styles.archivedRow}>
+                      <div className={styles.archivedAvatar}>
+                        {otherUserAvatar ? (
+                          <img src={otherUserAvatar} alt={otherUserName} />
+                        ) : (
+                          otherUserName?.charAt(0).toUpperCase() || '?'
+                        )}
+                      </div>
+                      <div className={styles.archivedInfo}>
+                        <span className={styles.archivedName}>{otherUserName}</span>
+                        <span className={styles.archivedPreview}>{conv.lastMessage || 'No messages yet'}</span>
+                      </div>
+                      <button className={styles.unarchiveBtn} onClick={() => handleUnarchive(conv.id)}>Unarchive</button>
+                    </div>
+                  );
+                })
+              )}
             </div>
           </div>
         </div>
