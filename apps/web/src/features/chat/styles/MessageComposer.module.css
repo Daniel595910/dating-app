@@ -1,4 +1,4 @@
-.composerWrapper {
+﻿.composerWrapper {
   border-top: 1px solid var(--color-border);
   background: var(--color-surface);
   padding-bottom: env(safe-area-inset-bottom);
@@ -280,13 +280,13 @@
 }
 
 /* ============================================================ */
-/* ChatHeader style unification — frosted glass + tighter buttons */
+/* ChatHeader style unification â€” frosted glass + tighter buttons */
 /* ============================================================ */
 
 /* Frosted translucent composer wrapper to match ChatHeader */
 .composerWrapper {
   background: rgba(255, 255, 255, 0.98);
-  /* backdrop-filter removed — caused containing-block bug for MediaEditor overlay */
+  /* backdrop-filter removed â€” caused containing-block bug for MediaEditor overlay */
   border-top: 1px solid rgba(0, 0, 0, 0.06);
 }
 
@@ -356,4 +356,23 @@
 
 [data-theme="dark"] .input:focus {
   background: rgba(255, 255, 255, 0.08);
+}
+
+
+/* ===== Attachment Menu Dark Mode ===== */
+[data-theme="dark"] .attachmentMenu {
+  background: #202023; /* Matches --color-surface-alt */
+  border-top-color: #2a2a2e; /* Matches --color-border */
+}
+
+[data-theme="dark"] .attachmentOption {
+  background: #2a2a2e; /* Slightly lighter than the menu to stand out */
+  border-color: #3a3a3e;
+  color: #f5f5f7; /* Light text */
+}
+
+[data-theme="dark"] .attachmentOption:hover {
+  background: rgba(239, 68, 68, 0.15); /* Red soft background */
+  border-color: rgba(239, 68, 68, 0.3);
+  color: #f87171; /* Light red text */
 }
