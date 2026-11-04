@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback } from 'react';
+﻿import React, { useState, useRef, useCallback } from 'react';
 import { Check, CheckCheck, AlertCircle, RotateCcw, Reply, Copy, Flag, ExternalLink, Play, Pause, Heart, Pencil, Trash2, Pin, Forward, Smile, X } from 'lucide-react';
 import { ChatMessage } from '../../types/chat.types';
 import { ImagePreviewModal } from '../../community/components/ImagePreviewModal';
@@ -24,7 +24,7 @@ interface MessageBubbleProps {
   onOpenStory?: (storyId: string) => void;
 }
 
-const QUICK_REACTIONS = ['❤️', '😂', '😮', '😢', '👍'];
+const QUICK_REACTIONS = ['â¤ï¸', 'ðŸ˜‚', 'ðŸ˜®', 'ðŸ˜¢', 'ðŸ‘'];
 
 export const MessageBubble: React.FC<MessageBubbleProps> = ({
   message,
@@ -148,7 +148,7 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
       return (
         <div className={styles.imageMessageContainer}>
           <img src={message.metadata.thumbnailUrl || message.metadata.imageUrl} alt="" loading="lazy" className={styles.imageMessage} onClick={() => setImagePreviewOpen(true)} />
-          {message.content && message.content !== 'Photo' && message.content.trim() && (
+          {!message.metadata?.isSticker && message.content && message.content !== 'Photo' && message.content.trim() && (
             <p className={styles.caption}>{message.content}</p>
           )}
         </div>
@@ -178,7 +178,7 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
           {videoDuration && (
             <span className={styles.videoDurationBadge}>{videoDuration}</span>
           )}
-          {message.content && message.content !== 'Video' && message.content.trim() && (
+          {!message.metadata?.isSticker && message.content && message.content !== 'Video' && message.content.trim() && (
             <p className={styles.caption}>{message.content}</p>
           )}
         </div>
@@ -412,7 +412,7 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
                   }
                 }
               }}>
-                <span className={styles.videoModalFullscreenIcon}>⛶</span>
+                <span className={styles.videoModalFullscreenIcon}>â›¶</span>
               </button>
             </div>
           </div>
