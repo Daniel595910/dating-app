@@ -143,14 +143,23 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
         'postgres_changes',
         { event: '*', schema: 'public', table: 'message_reactions' },
         async (payload) => {
-          const changed = (payload.new || payload.old) as any;
+          const isDelete = payload.eventType === 'DELETE';
+          const changed = (isDelete ? payload.old : payload.new) as any;
           const messageId = changed?.message_id;
           if (!messageId) return;
+
+          // Delay allows the read replica to catch up before we refetch
+          await new Promise((r) => setTimeout(r, 250));
+
           const reactions = await messageService.getReactions([messageId], user.id);
           setReactionMap((prev) => new Map(prev).set(messageId, reactions.get(messageId) || []));
         }
       )
-      .subscribe();
+      .subscribe((status: string) => {
+        if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+          console.warn('[Reactions realtime] subscription issue:', status);
+        }
+      });
 
     return () => {
       supabase.removeChannel(channel);
@@ -802,13 +811,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
     }
   };
 
-  if (loading) {
-    return (
-      <div className={styles.loading}>
-        <div className={styles.spinner} />
-      </div>
-    );
-  }
+
 
   return (
     <div className={styles.chatWindow} data-theme={chatWallpaper?.theme || 'light'} style={chatWallpaper?.wallpaperColor ? { backgroundColor: chatWallpaper.wallpaperColor } : undefined}>
