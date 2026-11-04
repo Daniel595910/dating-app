@@ -80,6 +80,7 @@ export const MessageComposer: React.FC<MessageComposerProps> = ({
   const maxMessageLength = useSettings((s) => s.settings['general.max_message_length']) || 10000;
   const [sending, setSending] = useState(false);
   const [attachmentMenuOpen, setAttachmentMenuOpen] = useState(false);
+  const attachmentMenuRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const mediaFileInputRef = useRef<HTMLInputElement>(null);
   const [pendingMedia, setPendingMedia] = useState<File | null>(null);
@@ -254,6 +255,20 @@ export const MessageComposer: React.FC<MessageComposerProps> = ({
   };
 
 
+  useEffect(() => {
+    if (!attachmentMenuOpen) return;
+
+    const handleClickOutside = (event: MouseEvent) => {
+      if (attachmentMenuRef.current && !attachmentMenuRef.current.contains(event.target as Node)) {
+        setAttachmentMenuOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [attachmentMenuOpen]);
 
   return (
     <div className={styles.composerWrapper}>
@@ -271,7 +286,7 @@ export const MessageComposer: React.FC<MessageComposerProps> = ({
 
       {/* Attachment menu */}
       {attachmentMenuOpen && (
-        <div className={styles.attachmentMenu}>
+        <div className={styles.attachmentMenu} ref={attachmentMenuRef}>
           <button className={styles.attachmentOption} onClick={() => mediaFileInputRef.current?.click()}>
             <ImageIcon size={18} />
             <span>Media</span>
