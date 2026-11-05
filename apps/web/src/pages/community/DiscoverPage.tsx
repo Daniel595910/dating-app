@@ -14,7 +14,7 @@ import { BottomNav } from '../../features/community/components/BottomNav';
 import { 
   BadgeCheck, MapPin, Heart, X, Play, Pause, Video, Upload, 
   Loader, ArrowLeft, Grid3x3, Plus, Clock, CheckCircle2, XCircle,
-  Trash2, Eye, EyeOff, Volume2, VolumeX, Check,
+  Trash2, Eye, EyeOff, Check,
   MessageSquare, Send, Maximize2, TrendingUp
 } from 'lucide-react';
 import styles from './DiscoverPage.module.css';
@@ -40,7 +40,7 @@ export const DiscoverPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [isMuted, setIsMuted] = useState(true);
+  const [audioUnlocked, setAudioUnlocked] = useState(false);
   const [videoIsLandscape, setVideoIsLandscape] = useState(false);
   const [swipe, setSwipe] = useState<SwipeState>({
     isDragging: false,
@@ -109,7 +109,7 @@ export const DiscoverPage: React.FC = () => {
 
   useEffect(() => {
     if (videoRef.current && currentIndex < candidates.length) {
-      videoRef.current.muted = false;
+      videoRef.current.muted = !audioUnlocked;
       
       // Track view
       const currentVideo = candidates[currentIndex];
@@ -422,6 +422,7 @@ export const DiscoverPage: React.FC = () => {
         setIsPlaying(false);
       } else {
         videoRef.current.muted = false;
+        setAudioUnlocked(true);
         videoRef.current.play().catch(() => {
           videoRef.current.muted = true;
           videoRef.current.play();
@@ -431,12 +432,6 @@ export const DiscoverPage: React.FC = () => {
     }
   };
 
-  const toggleMute = () => {
-    if (videoRef.current) {
-      videoRef.current.muted = !videoRef.current.muted;
-      setIsMuted(videoRef.current.muted);
-    }
-  };
 
   const handleTimeUpdate = () => {
     if (videoRef.current && videoRef.current.duration > 0 && !isSeeking) {
@@ -602,9 +597,6 @@ export const DiscoverPage: React.FC = () => {
         <div style={{ display: 'flex', gap: 8, marginLeft: 'auto' }}>
           <button className={styles.headerButton} onClick={(e) => { e.stopPropagation(); setShowMyVideos(true); }} aria-label="My Videos">
             <Grid3x3 size={20} />
-          </button>
-          <button className={styles.headerButton} onClick={(e) => { e.stopPropagation(); videoInputRef.current?.click(); }} aria-label="Upload">
-            <Upload size={20} />
           </button>
         </div>
       </header>
@@ -795,9 +787,6 @@ export const DiscoverPage: React.FC = () => {
           
 
 
-          <button onClick={toggleMute} className={styles.volumeButton}>
-            {isMuted ? <VolumeX size={16} /> : <Volume2 size={16} />}
-          </button>
           <div className={styles.infoOverlay}>
             <div className={styles.infoNameRow}>
               <span className={styles.infoName}>
