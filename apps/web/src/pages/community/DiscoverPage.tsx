@@ -1017,11 +1017,26 @@ export const DiscoverPage: React.FC = () => {
           }));
           const clickedIdx = mapped.findIndex((m) => m.videoId === video.video_id);
 
-          // Populate likeCounts from the search results so the heart
-          // number shows correctly when opening a video from the Pop grid
-          const newCounts: Record<string, number> = {};
-          allResults.forEach((v) => { newCounts[v.video_id] = v.like_count || 0; });
-          setLikeCounts(newCounts);
+          // Populate likeCounts from the search results
+          const newLikeCounts: Record<string, number> = {};
+          allResults.forEach((v) => { newLikeCounts[v.video_id] = v.like_count || 0; });
+          setLikeCounts(newLikeCounts);
+
+          // Fetch comment counts for all search results in one query
+          const videoIds = mapped.map((m) => m.videoId);
+          if (videoIds.length > 0) {
+            supabase
+              .from('discover_videos')
+              .select('id, comment_count')
+              .in('id', videoIds)
+              .then(({ data }) => {
+                if (data) {
+                  const newCommentCounts: Record<string, number> = {};
+                  data.forEach((row: any) => { newCommentCounts[row.id] = row.comment_count || 0; });
+                  setCommentCounts((prev) => ({ ...prev, ...newCommentCounts }));
+                }
+              });
+          }
 
           setCandidates(mapped);
           setCurrentIndex(clickedIdx >= 0 ? clickedIdx : 0);
