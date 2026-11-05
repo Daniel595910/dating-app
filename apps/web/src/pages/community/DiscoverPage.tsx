@@ -783,7 +783,7 @@ export const DiscoverPage: React.FC = () => {
             </button>
           )}
           {showHeartPop && <Heart size={120} className={styles.heartPop} fill="#f97316" />}
-          {!isPlaying && <button className={styles.playOverlay} onClick={togglePlay}><Play size={32} /></button>}
+          {!isPlaying && <button className={styles.playOverlay} onClick={togglePlay}><Play size={24} /></button>}
           
 
 
