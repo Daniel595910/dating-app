@@ -147,7 +147,7 @@ sw.addEventListener('push', (event) => {
     body: data.body || '',
     icon: data.icon || '/icons/icon-192x192.png',
     badge: '/icons/icon-192x192.png',
-    image: data.image,
+    // image: data.image, (removed to match WhatsApp)
     data: {
       ...(data.data || {}),
       type,

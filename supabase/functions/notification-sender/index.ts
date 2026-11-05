@@ -203,13 +203,17 @@ serve(async (req: Request) => {
       const pushPayload = JSON.stringify({
         title: payload.title,
         body: payload.body,
-        // Rich fields — passed through to the SW push handler
-        image: payload.image || avatarUrl,
+        // Only use the sender's avatar as the small icon.
+        // Do NOT pass 'image' — Android will render it as a huge banner,
+        // which makes it look messy. WhatsApp only uses 'icon'.
         icon: payload.icon || avatarUrl,
-        tag: payload.tag,
-        renotify: payload.renotify,
-        vibrate: payload.vibrate,
-        actions: payload.actions,
+        tag: payload.tag || chat- + (payload.data?.conversation_id || 'msg'),
+        renotify: payload.renotify !== undefined ? payload.renotify : true,
+        vibrate: payload.vibrate || [200, 100, 200],
+        actions: payload.actions || [
+          { action: 'reply', title: 'Reply' },
+          { action: 'mark-read', title: 'Mark read' }
+        ],
         data: {
           url: payload.action_url || '/',
           type: payload.type,
