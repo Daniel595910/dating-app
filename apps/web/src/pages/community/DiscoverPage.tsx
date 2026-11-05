@@ -988,38 +988,36 @@ export const DiscoverPage: React.FC = () => {
       <DiscoverSearchModal
         open={searchModalOpen}
         onClose={() => setSearchModalOpen(false)}
-        onVideoSelect={(video) => {
-          const idx = candidates.findIndex((c) => c.videoId === video.video_id);
-          if (idx >= 0) {
-            setCurrentIndex(idx);
-          } else {
-            const synthetic: DiscoverCandidate = {
-              userId: video.user_id,
-              videoId: video.video_id,
-              displayName: video.display_name,
-              avatarUrl: video.avatar_url,
-              videoUrl: video.video_url,
-              thumbnailUrl: video.thumbnail_url,
-              bio: video.caption || null,
-              age: null,
-              city: null,
-              state: null,
-              relationshipIntent: null,
-              interests: [],
-              isVerified: video.is_verified,
-              verificationBadge: video.is_verified ? 'verified' : '',
-              distanceKm: 0,
-              hashtags: video.hashtags || [],
-              locationText: video.location_text,
-              allowComments: true,
-              allowDuet: true,
-              likeCount: video.like_count,
-              userLiked: false,
-              commentCount: 0,
-            };
-            setCandidates((prev) => [synthetic, ...prev]);
-            setCurrentIndex(0);
-          }
+        onVideoSelect={(video, allResults) => {
+          // Convert ALL search results to DiscoverCandidate format,
+          // so swiping up/down steps through the full search list.
+          const mapped: DiscoverCandidate[] = allResults.map((v) => ({
+            userId: v.user_id,
+            videoId: v.video_id,
+            displayName: v.display_name,
+            avatarUrl: v.avatar_url,
+            videoUrl: v.video_url,
+            thumbnailUrl: v.thumbnail_url,
+            bio: v.caption || null,
+            age: null,
+            city: null,
+            state: null,
+            relationshipIntent: null,
+            interests: [],
+            isVerified: v.is_verified,
+            verificationBadge: v.is_verified ? 'verified' : '',
+            distanceKm: 0,
+            hashtags: v.hashtags || [],
+            locationText: v.location_text,
+            allowComments: true,
+            allowDuet: true,
+            likeCount: v.like_count,
+            userLiked: false,
+            commentCount: 0,
+          }));
+          const clickedIdx = mapped.findIndex((m) => m.videoId === video.video_id);
+          setCandidates(mapped);
+          setCurrentIndex(clickedIdx >= 0 ? clickedIdx : 0);
         }}
       />
 

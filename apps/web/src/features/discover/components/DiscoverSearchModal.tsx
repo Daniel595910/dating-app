@@ -7,7 +7,7 @@ import styles from './DiscoverSearchModal.module.css';
 interface DiscoverSearchModalProps {
   open: boolean;
   onClose: () => void;
-  onVideoSelect: (video: SearchResult) => void;
+  onVideoSelect: (video: SearchResult, allResults: SearchResult[]) => void;
 }
 
 const formatCount = (n: number): string => {
@@ -154,7 +154,7 @@ export const DiscoverSearchModal: React.FC<DiscoverSearchModalProps> = ({
                   key={item.video_id} 
                   className={styles.card}
                   onClick={() => {
-                    onVideoSelect(item);
+                    onVideoSelect(item, results);
                     onClose();
                   }}
                 >
