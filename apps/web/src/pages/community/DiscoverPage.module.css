@@ -440,7 +440,7 @@
 
 .volumeButton {
   position: absolute;
-  top: calc(80px + env(safe-area-inset-top));
+  top: calc(160px + env(safe-area-inset-top));
   right: max(12px, env(safe-area-inset-right));
   width: clamp(32px, 9vw, 36px);
   height: clamp(32px, 9vw, 36px);
@@ -487,13 +487,13 @@
 
 @media (max-height: 700px) {
   .volumeButton {
-    top: calc(64px + env(safe-area-inset-top));
+    top: calc(160px + env(safe-area-inset-top));
   }
 }
 
 @media (max-height: 640px) {
   .volumeButton {
-    top: calc(60px + env(safe-area-inset-top));
+    top: calc(160px + env(safe-area-inset-top));
   }
   .rightActionButton,
   .rightAvatarButton {
@@ -941,7 +941,7 @@
 /* --- Volume button: top right, subtle --- */
 .volumeButton {
   position: absolute;
-  top: calc(20px + env(safe-area-inset-top));
+  top: calc(160px + env(safe-area-inset-top));
   right: max(12px, env(safe-area-inset-right));
   width: 36px;
   height: 36px;
