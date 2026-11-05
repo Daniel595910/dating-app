@@ -107,6 +107,7 @@ export function useNotifications(userId ? : string): UseNotificationsReturn {
     if (!userId) return;
     
     const unsubscribe = notificationService.subscribeToNotifications(userId, (newNotification) => {
+      console.log('[HOOK] realtime event received:', newNotification);
       const notifData = (newNotification as any)?.data;
       const notifConvId = notifData?.conversation_id;
 

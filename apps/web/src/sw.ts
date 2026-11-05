@@ -85,6 +85,7 @@ async function handleStaticRequest(request: Request) {
 
 // ==================== PUSH ====================
 sw.addEventListener('push', (event) => {
+  event.waitUntil((async () => {
   let data: any = {};
   try {
     data = event.data ? event.data.json() : {};
@@ -93,6 +94,23 @@ sw.addEventListener('push', (event) => {
   }
 
   const type = data.data?.type || 'system';
+  const pushConversationId = data.data?.conversation_id;
+  console.log('[SW PUSH DEBUG] received payload:', JSON.stringify(data));
+
+  // Skip notification if user is already viewing this exact chat
+  if (pushConversationId) {
+    try {
+      const clients = await sw.clients.matchAll({ type: 'window', includeUncontrolled: true });
+      const isInChat = clients.some((c: any) => c.url && c.url.includes('/chats/' + pushConversationId));
+      const isVisible = clients.some((c: any) => c.visibilityState === 'visible');
+      if (isInChat && isVisible) {
+        console.log('[SW] Suppressing push, user is in chat:', pushConversationId);
+        return;
+      }
+    } catch (err) {
+      console.warn('[SW] Client check failed:', err);
+    }
+  }
 
   // Default vibrate patterns per notification type
   const vibrateByType: Record<string, number[]> = {
@@ -143,7 +161,8 @@ sw.addEventListener('push', (event) => {
     silent: false,
   };
 
-  event.waitUntil(sw.registration.showNotification(title, options));
+  await sw.registration.showNotification(title, options);
+  })());
 });
 
 // ==================== NOTIFICATION CLICK ====================
