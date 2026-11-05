@@ -65,6 +65,19 @@ export const NotificationBell: React.FC<NotificationBellProps> = ({ userId, butt
         { event: 'INSERT', schema: 'public', table: 'notifications', filter: `user_id=eq.${userId}` },
         (payload) => {
           const newNotification = payload.new;
+          const notifData = newNotification?.data || {};
+          const notifConvId = notifData?.conversation_id;
+
+          const currentPath = window.location.pathname;
+          const currentConvMatch = currentPath.match(/\/chats\/([a-f0-9-]{36})/);
+          const currentConvId = currentConvMatch ? currentConvMatch[1] : null;
+
+          // If user is already viewing this exact chat, silently mark as read (no badge)
+          if (notifConvId && currentConvId && notifConvId === currentConvId) {
+            supabase.from('notifications').update({ status: 'read', read_at: new Date().toISOString() }).eq('id', newNotification.id);
+            return;
+          }
+
           setNotifications((prev) => [
             {
               id: newNotification.id,
