@@ -460,7 +460,7 @@
 
 .progressBarWrapper {
   position: absolute;
-  bottom: calc(57px + env(safe-area-inset-bottom));
+  bottom: calc(75px + env(safe-area-inset-bottom));
   left: 0;
   right: 0;
   padding: 0 max(12px, env(safe-area-inset-left)) 0 max(12px, env(safe-area-inset-right));
@@ -1134,4 +1134,89 @@
 
 .popInlineButton:active {
   transform: scale(0.95);
+}
+
+/* ===== Premium Caught-Up Card ===== */
+.caughtUpCard {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: calc(100% - 48px);
+  max-width: 340px;
+  padding: 32px 24px;
+  background: rgba(20, 20, 22, 0.92);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border-radius: 24px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow:
+    0 20px 60px rgba(0, 0, 0, 0.5),
+    0 0 0 1px rgba(255, 255, 255, 0.05) inset;
+  text-align: center;
+  z-index: 25;
+  animation: caughtUpIn 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes caughtUpIn {
+  from { opacity: 0; transform: translate(-50%, -45%) scale(0.95); }
+  to   { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+}
+
+.caughtUpIcon {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.2), rgba(239, 68, 68, 0.08));
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 20px;
+  color: #ef4444;
+}
+
+.caughtUpTitle {
+  font-size: 20px;
+  font-weight: 700;
+  color: #fff;
+  margin: 0 0 10px;
+  letter-spacing: -0.02em;
+}
+
+.caughtUpText {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.65);
+  margin: 0 0 24px;
+  line-height: 1.5;
+}
+
+.caughtUpButton {
+  width: 100%;
+  padding: 14px 20px;
+  background: #ef4444;
+  color: #fff;
+  border: none;
+  border-radius: 14px;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  transition: background 0.15s ease, transform 0.1s ease, box-shadow 0.15s ease;
+  box-shadow: 0 4px 16px rgba(239, 68, 68, 0.35);
+}
+
+.caughtUpButton:hover:not(:disabled) {
+  background: #dc2626;
+  box-shadow: 0 6px 20px rgba(239, 68, 68, 0.5);
+  transform: translateY(-1px);
+}
+
+.caughtUpButton:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+.caughtUpButton:disabled {
+  opacity: 0.6;
+  cursor: wait;
 }

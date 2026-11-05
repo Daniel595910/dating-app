@@ -187,6 +187,7 @@ export const DiscoverPage: React.FC = () => {
     if (!user) return;
     setLoadingMore(true);
     setFeedExhausted(false);
+    setActiveCategory('popular');
     try {
       const popular = await discoverService.getCandidates(20, 'popular', 0);
       if (popular.length > 0) {
@@ -592,7 +593,7 @@ export const DiscoverPage: React.FC = () => {
           <span className={styles.swipeMetaDivider} />
           <button
             className={styles.popInlineButton}
-            onClick={(e) => { e.stopPropagation(); setSearchModalOpen(true); }}
+            onClick={(e) => { e.stopPropagation(); setActiveCategory('popular'); setSearchModalOpen(true); }}
             aria-label="Popular videos"
           >
             Pop
@@ -1062,7 +1063,7 @@ export const DiscoverPage: React.FC = () => {
         </div>
       )}
 
-      {feedExhausted && current && currentIndex >= candidates.length - 1 && (
+      {feedExhausted && activeCategory === 'new' && current && currentIndex >= candidates.length - 1 && (
         <div className={styles.caughtUpCard}>
           <div className={styles.caughtUpIcon}>
             <Heart size={32} fill="#f97316" />
