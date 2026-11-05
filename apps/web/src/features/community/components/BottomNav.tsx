@@ -27,6 +27,7 @@ export const BottomNav: React.FC = () => {
       return null;
     }
   });
+  const [unreadCount, setUnreadCount] = useState(0);
 
   useEffect(() => {
     if (!user?.id) return;
@@ -50,6 +51,30 @@ export const BottomNav: React.FC = () => {
       .catch(() => {});
     return () => { cancelled = true; };
   }, [user?.id, cacheKey]);
+
+  useEffect(() => {
+    if (!user?.id) return;
+    let cancelled = false;
+    const fetchUnread = () => {
+      supabase
+        .from('notifications')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', user.id)
+        .eq('status', 'unread')
+        .then(({ count }) => {
+          if (!cancelled) setUnreadCount(count || 0);
+        });
+    };
+    fetchUnread();
+    const channel = supabase
+      .channel('nav-unread:' + user.id)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'notifications', filter: 'user_id=eq.' + user.id }, fetchUnread)
+      .subscribe();
+    return () => {
+      cancelled = true;
+      supabase.removeChannel(channel);
+    };
+  }, [user?.id]);
 
   const items = [
     { id: 'community', label: 'Community', path: '/community', icon: Home },
@@ -78,7 +103,7 @@ export const BottomNav: React.FC = () => {
   };
 
   return (
-    <nav className={styles.bottomNav} aria-label="Main navigation">
+    <nav className={`${styles.bottomNav} ${location.pathname.startsWith('/discover') ? styles.bottomNavDiscover : ''}`} aria-label="Main navigation">
       {items.map((item) => {
         const isActive = location.pathname === item.path;
         const Icon = item.icon;
@@ -91,6 +116,11 @@ export const BottomNav: React.FC = () => {
             aria-label={item.label}
             aria-current={isActive ? 'page' : undefined}
           >
+            {item.id === 'chats' && unreadCount > 0 && (
+              <span className={styles.navBadge}>
+                {unreadCount > 99 ? '99+' : unreadCount}
+              </span>
+            )}
             {isProfile ? renderProfileVisual(isActive) : <Icon size={22} />}
             <span className={styles.navLabel}>{item.label}</span>
           </button>
