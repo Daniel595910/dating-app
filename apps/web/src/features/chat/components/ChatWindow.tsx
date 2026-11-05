@@ -134,7 +134,26 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
   }, [conversationId]);
 
   // Subscribe to reaction changes (realtime)
+  
+  // NEW: Tell the database we are actively in this chat
   useEffect(() => {
+    if (!user?.id || !conversationId) return;
+
+    // Mark as active
+    supabase.from('presence').upsert({
+      user_id: user.id,
+      active_conversation_id: conversationId,
+      is_online: true,
+      last_seen_at: new Date().toISOString()
+    }, { onConflict: 'user_id' }).then();
+
+    // Clear on unmount (when leaving the chat)
+    return () => {
+      supabase.from('presence').update({ active_conversation_id: null })
+        .eq('user_id', user.id).then();
+    };
+  }, [user?.id, conversationId]);
+useEffect(() => {
     if (!user) return;
 
     const channel = supabase
