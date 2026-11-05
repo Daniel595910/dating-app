@@ -20,7 +20,7 @@
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 10px 16px;
+  padding: 10px 8px;
   padding-top: calc(10px + env(safe-area-inset-top));
   position: absolute;
   top: 0;
@@ -441,7 +441,7 @@
 .volumeButton {
   position: absolute;
   top: calc(160px + env(safe-area-inset-top));
-  right: max(12px, env(safe-area-inset-right));
+  right: max(4px, env(safe-area-inset-right));
   width: clamp(32px, 9vw, 36px);
   height: clamp(32px, 9vw, 36px);
   background: rgba(0,0,0,0.2);
@@ -645,34 +645,8 @@
 }
 
 /* --- Bottom gradient overlay for text readability --- */
-.videoCard::before {
-  content: '';
-  position: absolute;
-  inset: auto 0 0 0;
-  height: 60%;
-  background: linear-gradient(to top,
-    rgba(0, 0, 0, 0.9) 0%,
-    rgba(0, 0, 0, 0.65) 25%,
-    rgba(0, 0, 0, 0.35) 55%,
-    rgba(0, 0, 0, 0.1) 80%,
-    transparent 100%);
-  z-index: 2;
-  pointer-events: none;
-}
 
 /* --- Top gradient behind header --- */
-.videoCard::after {
-  content: '';
-  position: absolute;
-  inset: 0 0 auto 0;
-  height: 140px;
-  background: linear-gradient(to bottom,
-    rgba(0, 0, 0, 0.75) 0%,
-    rgba(0, 0, 0, 0.4) 50%,
-    transparent 100%);
-  z-index: 2;
-  pointer-events: none;
-}
 
 /* --- Header: floating over top gradient --- */
 .header {
@@ -744,7 +718,7 @@
 .infoOverlay {
   position: absolute;
   bottom: calc(86px + env(safe-area-inset-bottom));
-  left: 16px;
+  left: 8px;
   right: 88px;
   z-index: 8;
   display: flex;
@@ -805,19 +779,19 @@
 /* --- Right action column: glass buttons with depth --- */
 .rightActions {
   position: absolute;
-  right: max(12px, env(safe-area-inset-right));
+  right: max(4px, env(safe-area-inset-right));
   bottom: calc(86px + env(safe-area-inset-bottom));
   z-index: 10;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 18px;
+  gap: 14px;
 }
 
 /* Glass action buttons: 48px, subtle border + shadow */
 .rightActionButton {
-  width: 48px;
-  height: 48px;
+  width: 40px;
+  height: 40px;
   border-radius: 50%;
   background: rgba(0, 0, 0, 0.45);
   backdrop-filter: blur(20px);
@@ -854,8 +828,8 @@
 
 /* Avatar button: larger, red ring */
 .rightAvatarButton {
-  width: 64px;
-  height: 64px;
+  width: 48px;
+  height: 48px;
   border-radius: 50%;
   border: 3px solid #ef4444;
   background: #000;
@@ -942,7 +916,7 @@
 .volumeButton {
   position: absolute;
   top: calc(160px + env(safe-area-inset-top));
-  right: max(12px, env(safe-area-inset-right));
+  right: max(4px, env(safe-area-inset-right));
   width: 36px;
   height: 36px;
   background: rgba(0, 0, 0, 0.4);
