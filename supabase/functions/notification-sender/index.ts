@@ -207,7 +207,7 @@ serve(async (req: Request) => {
         // Do NOT pass 'image' — Android will render it as a huge banner,
         // which makes it look messy. WhatsApp only uses 'icon'.
         icon: payload.icon || avatarUrl,
-        tag: payload.tag || chat- + (payload.data?.conversation_id || 'msg'),
+        tag: payload.tag || 'chat-' + (payload.data?.conversation_id || 'msg'),
         renotify: payload.renotify !== undefined ? payload.renotify : true,
         vibrate: payload.vibrate || [200, 100, 200],
         actions: payload.actions || [
