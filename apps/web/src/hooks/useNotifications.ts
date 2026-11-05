@@ -107,6 +107,18 @@ export function useNotifications(userId ? : string): UseNotificationsReturn {
     if (!userId) return;
     
     const unsubscribe = notificationService.subscribeToNotifications(userId, (newNotification) => {
+      const notifData = (newNotification as any)?.data;
+      const notifConvId = notifData?.conversation_id;
+
+      const currentPath = window.location.pathname;
+      const currentConvMatch = currentPath.match(/\/chats\/([a-f0-9-]{36})/);
+      const currentConvId = currentConvMatch ? currentConvMatch[1] : null;
+
+      if (notifConvId && currentConvId && notifConvId === currentConvId) {
+        notificationService.markAsRead(newNotification.id);
+        return;
+      }
+
       setNotifications((prev) => [newNotification, ...prev]);
       setUnreadCount((prev) => prev + 1);
     });
