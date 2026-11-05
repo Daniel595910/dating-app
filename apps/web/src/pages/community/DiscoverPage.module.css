@@ -460,7 +460,7 @@
 
 .progressBarWrapper {
   position: absolute;
-  bottom: calc(75px + env(safe-area-inset-bottom));
+  bottom: calc(60px + env(safe-area-inset-bottom));
   left: 0;
   right: 0;
   padding: 0 max(12px, env(safe-area-inset-left)) 0 max(12px, env(safe-area-inset-right));
@@ -962,7 +962,7 @@
 /* --- Progress bar: refined, thin with thumb --- */
 .progressBarWrapper {
   position: absolute;
-  bottom: calc(env(safe-area-inset-bottom) + 12px);
+  bottom: calc(60px + env(safe-area-inset-bottom));
   left: 0;
   right: 0;
   padding: 0 max(12px, env(safe-area-inset-left)) 0 max(12px, env(safe-area-inset-right));
@@ -995,7 +995,7 @@
 /* --- Landscape expand button --- */
 .landscapeExpandButton {
   position: absolute;
-  bottom: calc(90px + env(safe-area-inset-bottom));
+  bottom: calc(250px + env(safe-area-inset-bottom));
   left: 50%;
   transform: translateX(-50%);
   width: 40px;
@@ -1028,7 +1028,7 @@
 /* Small iPhones (SE) */
 @media (max-width: 375px) and (max-height: 700px) {
   .infoOverlay {
-    bottom: calc(90px + env(safe-area-inset-bottom));
+    bottom: calc(250px + env(safe-area-inset-bottom));
     right: 72px;
   }
   .infoName { font-size: 15px; }
