@@ -7,8 +7,8 @@
 const sw = self as unknown as ServiceWorkerGlobalScope;
 
 // Service Worker for Dating App PWA — caching + push notifications
-const CACHE_NAME = 'dating-app-v5';
-const RUNTIME_CACHE = 'dating-app-runtime-v5';
+const CACHE_NAME = 'dating-app-v6';
+const RUNTIME_CACHE = 'dating-app-runtime-v6';
 
 // VitePWA replaces this exact token with the precache manifest.
 // DO NOT rename, wrap, or move `self.__WB_MANIFEST` — workbox-build
