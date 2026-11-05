@@ -852,10 +852,7 @@ export const DiscoverPage: React.FC = () => {
               <div style={{ width: videoProgress + '%', height: '100%', backgroundColor: '#ef4444', borderRadius: 9999, transition: isSeeking ? 'none' : 'width 0.1s linear' }} />
               <div style={{ position: 'absolute', left: videoProgress + '%', top: '50%', transform: 'translate(-50%, -50%)', width: 14, height: 14, backgroundColor: '#ffffff', borderRadius: '50%', boxShadow: '0 2px 4px rgba(0,0,0,0.3)' }} />
             </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 4, fontSize: 10, color: 'rgba(255,255,255,0.8)' }}>
-              <span>{formatTime(videoRef.current?.currentTime || 0)}</span>
-              <span>{formatTime(videoDuration)}</span>
-            </div>
+
           </div>
 
           <div className={styles.rightActions}>

@@ -116,7 +116,7 @@
 
 .infoOverlay {
   position: absolute;
-  bottom: calc(73px + env(safe-area-inset-bottom));
+  bottom: calc(66px + env(safe-area-inset-bottom));
   left: 14px;
   right: clamp(70px, 18vw, 92px);
   z-index: 8;
@@ -177,17 +177,17 @@
 .rightActions {
   position: absolute;
   right: max(10px, env(safe-area-inset-right));
-  bottom: calc(78px + env(safe-area-inset-bottom));
+  bottom: calc(66px + env(safe-area-inset-bottom));
   z-index: 10;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: clamp(12px, 3vh, 20px);
+  gap: clamp(8px, 1.5vh, 12px);
 }
 
 .rightActionButton {
-  width: clamp(40px, 12vw, 52px);
-  height: clamp(40px, 12vw, 52px);
+  width: clamp(38px, 10vw, 44px);
+  height: clamp(38px, 10vw, 44px);
   border-radius: 50%;
   border: none;
   cursor: pointer;
@@ -221,10 +221,10 @@
 }
 
 .rightAvatarButton {
-  width: clamp(56px, 16vw, 72px);
-  height: clamp(56px, 16vw, 72px);
+  width: clamp(44px, 12vw, 56px);
+  height: clamp(44px, 12vw, 56px);
   border-radius: 50%;
-  border: 2.5px solid #f97316;
+  border: 2px solid #ef4444;
   cursor: pointer;
   padding: 0;
   overflow: hidden;
@@ -256,9 +256,9 @@
   font-weight: 700;
   color: #ffffff;
   text-shadow: 0 1px 4px rgba(0,0,0,0.75);
-  margin-top: -14px;
+  margin-top: -8px;
   text-align: center;
-  min-width: clamp(40px, 12vw, 52px);
+  min-width: clamp(38px, 10vw, 44px);
   pointer-events: none;
   letter-spacing: 0.02em;
 }
@@ -460,7 +460,7 @@
 
 .progressBarWrapper {
   position: absolute;
-  bottom: calc(60px + env(safe-area-inset-bottom));
+  bottom: calc(72px + env(safe-area-inset-bottom));
   left: 0;
   right: 0;
   padding: 0 max(12px, env(safe-area-inset-left)) 0 max(12px, env(safe-area-inset-right));
@@ -507,7 +507,7 @@
   }
   .rightActions {
     gap: 10px;
-    bottom: calc(72px + env(safe-area-inset-bottom));
+    bottom: calc(66px + env(safe-area-inset-bottom));
   }
   .categoryTabs {
     margin-top: 4px;
@@ -899,7 +899,7 @@
 /* --- Category tabs: horizontal pill at bottom center --- */
 .categoryTabs {
   position: absolute;
-  bottom: calc(78px + env(safe-area-inset-bottom));
+  bottom: calc(66px + env(safe-area-inset-bottom));
   left: 50%;
   transform: translateX(-50%);
   display: flex;
@@ -1039,7 +1039,7 @@
     gap: 14px;
     bottom: calc(100px + env(safe-area-inset-bottom));
   }
-  .categoryTabs { bottom: calc(72px + env(safe-area-inset-bottom)); }
+  .categoryTabs { bottom: calc(66px + env(safe-area-inset-bottom)); }
 }
 
 /* Small landscape phones */
