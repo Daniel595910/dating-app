@@ -616,3 +616,522 @@
 .landscapeExpandButton:active {
   transform: translateX(-50%) scale(0.95);
 }
+
+
+/* ============================================================
+   PREMIUM POLISH OVERRIDE — TikTok/Reels style
+   Red theme (#ef4444 primary), edge-to-edge video, glass UI
+   ============================================================ */
+
+/* --- Container: full screen, no safe-area padding (video goes behind nav) --- */
+.discoverPage {
+  position: fixed;
+  inset: 0;
+  background-color: #000;
+  max-width: 480px;
+  margin: 0 auto;
+  overflow: hidden;
+  touch-action: none;
+}
+
+/* --- Video card: full height, no padding --- */
+.videoCard {
+  position: relative;
+  width: 100%;
+  height: 100dvh;
+  overflow: hidden;
+  background: #000;
+  padding-bottom: 0;
+}
+
+/* --- Bottom gradient overlay for text readability --- */
+.videoCard::before {
+  content: '';
+  position: absolute;
+  inset: auto 0 0 0;
+  height: 60%;
+  background: linear-gradient(to top,
+    rgba(0, 0, 0, 0.9) 0%,
+    rgba(0, 0, 0, 0.65) 25%,
+    rgba(0, 0, 0, 0.35) 55%,
+    rgba(0, 0, 0, 0.1) 80%,
+    transparent 100%);
+  z-index: 2;
+  pointer-events: none;
+}
+
+/* --- Top gradient behind header --- */
+.videoCard::after {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 140px;
+  background: linear-gradient(to bottom,
+    rgba(0, 0, 0, 0.75) 0%,
+    rgba(0, 0, 0, 0.4) 50%,
+    transparent 100%);
+  z-index: 2;
+  pointer-events: none;
+}
+
+/* --- Header: floating over top gradient --- */
+.header {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: max(12px, env(safe-area-inset-top)) 16px 14px;
+}
+
+/* Header buttons: 40px tap target, subtle glass */
+.backButton,
+.headerButton {
+  width: 40px;
+  height: 40px;
+  background: rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 50%;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  cursor: pointer;
+  transition: transform 0.15s ease, background 0.15s ease;
+}
+
+.backButton:hover,
+.headerButton:hover {
+  background: rgba(0, 0, 0, 0.5);
+  transform: scale(1.05);
+}
+
+.backButton:active,
+.headerButton:active {
+  transform: scale(0.95);
+}
+
+/* Swipe meta: pill with glass */
+.swipeMeta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 9999px;
+  font-size: 11px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.85);
+  letter-spacing: 0.02em;
+  text-shadow: none;
+}
+
+.swipeRemaining {
+  color: #34d399;
+  font-weight: 700;
+}
+
+/* --- Info overlay: bottom left, gradient-backed text --- */
+.infoOverlay {
+  position: absolute;
+  bottom: calc(100px + env(safe-area-inset-bottom));
+  left: 16px;
+  right: 88px;
+  z-index: 8;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-width: calc(100vw - 32px - 88px);
+}
+
+.infoNameRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 2px;
+}
+
+.infoName {
+  font-size: 17px;
+  font-weight: 700;
+  color: #fff;
+  letter-spacing: -0.02em;
+  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.8);
+}
+
+.infoCaption {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.95);
+  line-height: 1.5;
+  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.8);
+  margin: 0;
+  word-break: break-word;
+}
+
+.infoHashtag {
+  font-size: 13px;
+  font-weight: 600;
+  color: #ef4444;
+  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.8);
+}
+
+.infoLocation {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  background: rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 9999px;
+  font-size: 11px;
+  font-weight: 500;
+  color: #fff;
+  align-self: flex-start;
+  margin-top: 2px;
+  text-shadow: none;
+}
+
+/* --- Right action column: glass buttons with depth --- */
+.rightActions {
+  position: absolute;
+  right: max(12px, env(safe-area-inset-right));
+  bottom: calc(110px + env(safe-area-inset-bottom));
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+}
+
+/* Glass action buttons: 48px, subtle border + shadow */
+.rightActionButton {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  cursor: pointer;
+  transition: transform 0.15s ease, background 0.15s ease;
+}
+
+.rightActionButton:hover {
+  background: rgba(0, 0, 0, 0.6);
+  transform: scale(1.08);
+}
+
+.rightActionButton:active {
+  transform: scale(0.92);
+}
+
+.rightActionButton.liked {
+  background: rgba(239, 68, 68, 0.25);
+  border-color: rgba(239, 68, 68, 0.4);
+}
+
+.rightActionButton.liked svg {
+  fill: #ef4444;
+  stroke: #ef4444;
+}
+
+/* Avatar button: larger, red ring */
+.rightAvatarButton {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  border: 3px solid #ef4444;
+  background: #000;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  cursor: pointer;
+  font-weight: 700;
+  font-size: 16px;
+  color: #fff;
+  transition: transform 0.15s ease;
+  margin-bottom: 6px;
+}
+
+.rightAvatarButton:hover {
+  transform: scale(1.06);
+}
+
+.rightAvatarButton img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Count labels: high contrast on gradient */
+.likeCount {
+  font-size: 12px;
+  font-weight: 700;
+  color: #fff;
+  margin-top: -12px;
+  text-align: center;
+  min-width: 48px;
+  pointer-events: none;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.9);
+  letter-spacing: 0.02em;
+}
+
+/* --- Category tabs: horizontal pill at bottom center --- */
+.categoryTabs {
+  position: absolute;
+  bottom: calc(78px + env(safe-area-inset-bottom));
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: row;
+  gap: 2px;
+  padding: 4px;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 9999px;
+  z-index: 15;
+  margin-top: 0;
+}
+
+.categoryTab {
+  padding: 6px 16px;
+  background: transparent;
+  border: none;
+  border-radius: 9999px;
+  font-size: 12px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.7);
+  cursor: pointer;
+  transition: background 0.2s ease, color 0.2s ease;
+  letter-spacing: 0.02em;
+}
+
+.categoryTab:hover {
+  color: #fff;
+}
+
+.categoryTabActive {
+  background: #ef4444;
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.4);
+}
+
+/* --- Volume button: top right, subtle --- */
+.volumeButton {
+  position: absolute;
+  top: calc(20px + env(safe-area-inset-top));
+  right: max(12px, env(safe-area-inset-right));
+  width: 36px;
+  height: 36px;
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 50%;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 15;
+  padding: 0;
+}
+
+/* --- Progress bar: refined, thin with thumb --- */
+.progressBarWrapper {
+  position: absolute;
+  bottom: calc(env(safe-area-inset-bottom) + 12px);
+  left: 0;
+  right: 0;
+  padding: 0 max(12px, env(safe-area-inset-left)) 0 max(12px, env(safe-area-inset-right));
+  z-index: 20;
+  cursor: pointer;
+}
+
+/* --- Play overlay: centered, subtle --- */
+.playOverlay {
+  width: 72px;
+  height: 72px;
+  background: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 50%;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 5;
+  transition: transform 0.15s ease;
+}
+
+.playOverlay:hover {
+  transform: translate(-50%, -50%) scale(1.05);
+}
+
+/* --- Landscape expand button --- */
+.landscapeExpandButton {
+  position: absolute;
+  bottom: calc(90px + env(safe-area-inset-bottom));
+  left: 50%;
+  transform: translateX(-50%);
+  width: 40px;
+  height: 40px;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 50%;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 12;
+}
+
+/* ============ RESPONSIVE ============ */
+
+/* iPad / larger screens */
+@media (min-width: 768px) {
+  .infoName { font-size: 19px; }
+  .infoCaption { font-size: 15px; }
+  .rightActionButton { width: 54px; height: 54px; }
+  .rightAvatarButton { width: 72px; height: 72px; }
+  .rightActions { gap: 20px; }
+  .categoryTab { padding: 8px 20px; font-size: 13px; }
+}
+
+/* Small iPhones (SE) */
+@media (max-width: 375px) and (max-height: 700px) {
+  .infoOverlay {
+    bottom: calc(90px + env(safe-area-inset-bottom));
+    right: 72px;
+  }
+  .infoName { font-size: 15px; }
+  .infoCaption { font-size: 13px; }
+  .rightActionButton { width: 42px; height: 42px; }
+  .rightAvatarButton { width: 56px; height: 56px; }
+  .rightActions {
+    gap: 14px;
+    bottom: calc(100px + env(safe-area-inset-bottom));
+  }
+  .categoryTabs { bottom: calc(72px + env(safe-area-inset-bottom)); }
+}
+
+/* Small landscape phones */
+@media (max-height: 500px) {
+  .infoOverlay { bottom: calc(80px + env(safe-area-inset-bottom)); }
+  .rightActions {
+    gap: 10px;
+    bottom: calc(80px + env(safe-area-inset-bottom));
+  }
+  .categoryTabs { bottom: calc(64px + env(safe-area-inset-bottom)); }
+}
+
+/* Pop button in header */
+.popHeaderButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  background: #ef4444;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 9999px;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  box-shadow: 0 2px 10px rgba(239, 68, 68, 0.45);
+  transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+  flex-shrink: 0;
+}
+.popHeaderButton:hover {
+  background: #dc2626;
+  transform: scale(1.05);
+}
+.popHeaderButton:active {
+  transform: scale(0.96);
+}
+@media (max-width: 375px) {
+  .popHeaderButton { padding: 7px 12px; font-size: 11px; }
+}
+
+/* ============================================================
+   Pop inline button inside swipe pill
+   ============================================================ */
+
+/* Make the swipe pill a flex row with proper padding */
+.swipeMeta {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 4px 4px 14px;
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 9999px;
+  font-size: 11px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.85);
+  letter-spacing: 0.02em;
+}
+
+.swipeMetaDivider {
+  width: 1px;
+  height: 16px;
+  background: rgba(255, 255, 255, 0.2);
+  display: inline-block;
+  margin: 0 2px;
+}
+
+.popInlineButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 5px 12px;
+  background: #ef4444;
+  border: none;
+  border-radius: 9999px;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  cursor: pointer;
+  transition: background 0.15s ease, transform 0.15s ease;
+  flex-shrink: 0;
+  line-height: 1;
+}
+
+.popInlineButton:hover {
+  background: #dc2626;
+}
+
+.popInlineButton:active {
+  transform: scale(0.95);
+}

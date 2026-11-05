@@ -15,7 +15,7 @@ import {
   BadgeCheck, MapPin, Heart, X, Play, Pause, Video, Upload, 
   Loader, ArrowLeft, Grid3x3, Plus, Clock, CheckCircle2, XCircle,
   Trash2, Eye, EyeOff, Volume2, VolumeX, Check,
-  MessageSquare, Send, Maximize2
+  MessageSquare, Send, Maximize2, TrendingUp
 } from 'lucide-react';
 import styles from './DiscoverPage.module.css';
 
@@ -589,6 +589,14 @@ export const DiscoverPage: React.FC = () => {
         <div className={styles.swipeMeta}>
           <span>{swipeCount}/{dailyLimit} swipes</span>
           <span className={styles.swipeRemaining}>{swipesRemaining} remaining</span>
+          <span className={styles.swipeMetaDivider} />
+          <button
+            className={styles.popInlineButton}
+            onClick={(e) => { e.stopPropagation(); setSearchModalOpen(true); }}
+            aria-label="Popular videos"
+          >
+            Pop
+          </button>
         </div>
         <div style={{ display: 'flex', gap: 8, marginLeft: 'auto' }}>
           <button className={styles.headerButton} onClick={(e) => { e.stopPropagation(); setShowMyVideos(true); }} aria-label="My Videos">
@@ -919,10 +927,6 @@ export const DiscoverPage: React.FC = () => {
             >
               <Send size={22} />
             </button>
-            <div className={styles.categoryTabs}>
-              <button className={`${styles.categoryTab} ${activeCategory === 'new' ? styles.categoryTabActive : ''}`} onClick={() => setActiveCategory('new')}>New</button>
-              <button className={`${styles.categoryTab} ${activeCategory === 'popular' ? styles.categoryTabActive : ''}`} onClick={() => setSearchModalOpen(true)}>Pop</button>
-            </div>
           </div>
         </div>
       )}
