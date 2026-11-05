@@ -1016,6 +1016,13 @@ export const DiscoverPage: React.FC = () => {
             commentCount: 0,
           }));
           const clickedIdx = mapped.findIndex((m) => m.videoId === video.video_id);
+
+          // Populate likeCounts from the search results so the heart
+          // number shows correctly when opening a video from the Pop grid
+          const newCounts: Record<string, number> = {};
+          allResults.forEach((v) => { newCounts[v.video_id] = v.like_count || 0; });
+          setLikeCounts(newCounts);
+
           setCandidates(mapped);
           setCurrentIndex(clickedIdx >= 0 ? clickedIdx : 0);
         }}
