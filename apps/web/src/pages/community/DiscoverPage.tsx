@@ -790,9 +790,9 @@ export const DiscoverPage: React.FC = () => {
           <div className={styles.infoOverlay}>
             <div className={styles.infoNameRow}>
               <span className={styles.infoName}>
-                {current.displayName}{current.age ? ', ' + current.age : ''}
+                {current.displayName}{current.age ? ", " + current.age : ""}
               </span>
-              {current.isVerified && <BadgeCheck size={16} style={{ color: '#3b82f6' }} />}
+              {current.isVerified && <BadgeCheck size={14} style={{ color: "#3b82f6", verticalAlign: "middle", marginLeft: 4 }} />}
             </div>
             {current.bio && (() => {
               const expanded = expandedCaptions.has(current.videoId);
@@ -807,19 +807,14 @@ export const DiscoverPage: React.FC = () => {
                 });
               };
               return (
-                <>
-                  <p
-                    className={styles.infoCaption + (isLong && !expanded ? " " + styles.infoCaptionCollapsed : "")}
-                    onClick={toggle}
-                  >
-                    {current.bio}
-                  </p>
+                <p className={isLong && !expanded ? styles.infoCaption + " " + styles.infoCaptionCollapsed : styles.infoCaption} onClick={toggle}>
+                  {current.bio}
                   {isLong && (
-                    <span className={styles.infoCaptionExpandHint} onClick={toggle}>
-                      {expanded ? "Show less" : "Read more"}
+                    <span className={styles.infoCaptionExpandHint} onClick={(e) => { e.stopPropagation(); toggle(); }}>
+                      {expanded ? " Show less" : " Read more"}
                     </span>
                   )}
-                </>
+                </p>
               );
             })()}
             {current.hashtags && current.hashtags.length > 0 && (
@@ -832,7 +827,7 @@ export const DiscoverPage: React.FC = () => {
             {(current.locationText || current.city) && (
               <div className={styles.infoLocation}>
                 <MapPin size={11} />
-                <span>{current.locationText || [current.city, current.state].filter(Boolean).join(', ')}</span>
+                <span>{current.locationText || [current.city, current.state].filter(Boolean).join(", ")}</span>
               </div>
             )}
           </div>
