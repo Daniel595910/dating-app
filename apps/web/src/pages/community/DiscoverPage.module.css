@@ -589,7 +589,7 @@
 
 .landscapeExpandButton {
   position: absolute;
-  bottom: calc(80px + env(safe-area-inset-bottom));
+  bottom: calc(76px + env(safe-area-inset-bottom));
   left: 50%;
   transform: translateX(-50%);
   width: 36px;
@@ -743,7 +743,7 @@
 /* --- Info overlay: bottom left, gradient-backed text --- */
 .infoOverlay {
   position: absolute;
-  bottom: calc(100px + env(safe-area-inset-bottom));
+  bottom: calc(86px + env(safe-area-inset-bottom));
   left: 16px;
   right: 88px;
   z-index: 8;
@@ -806,7 +806,7 @@
 .rightActions {
   position: absolute;
   right: max(12px, env(safe-area-inset-right));
-  bottom: calc(110px + env(safe-area-inset-bottom));
+  bottom: calc(86px + env(safe-area-inset-bottom));
   z-index: 10;
   display: flex;
   flex-direction: column;
@@ -1037,17 +1037,17 @@
   .rightAvatarButton { width: 56px; height: 56px; }
   .rightActions {
     gap: 14px;
-    bottom: calc(100px + env(safe-area-inset-bottom));
+    bottom: calc(76px + env(safe-area-inset-bottom));
   }
   .categoryTabs { bottom: calc(66px + env(safe-area-inset-bottom)); }
 }
 
 /* Small landscape phones */
 @media (max-height: 500px) {
-  .infoOverlay { bottom: calc(80px + env(safe-area-inset-bottom)); }
+  .infoOverlay { bottom: calc(76px + env(safe-area-inset-bottom)); }
   .rightActions {
     gap: 10px;
-    bottom: calc(80px + env(safe-area-inset-bottom));
+    bottom: calc(76px + env(safe-area-inset-bottom));
   }
   .categoryTabs { bottom: calc(64px + env(safe-area-inset-bottom)); }
 }
