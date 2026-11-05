@@ -1194,3 +1194,192 @@
   opacity: 0.6;
   cursor: wait;
 }
+
+/* ===== TIKTOK CAPTION RESTYLE ===== */
+
+/* Name: thinner weight, subtle shadow, no border */
+.infoName {
+  font-size: 15px;
+  font-weight: 600;
+  color: #ffffff;
+  letter-spacing: -0.01em;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.85);
+}
+
+/* Caption text: regular weight, comfortable line-height, no border */
+.infoCaption {
+  font-size: 13.5px;
+  font-weight: 400;
+  color: rgba(255, 255, 255, 0.95);
+  line-height: 1.4;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.85);
+  margin: 0;
+}
+
+/* Hashtags: inline with caption, no separate block margin */
+.infoHashtags {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 2px;
+}
+
+.infoHashtag {
+  font-size: 13px;
+  font-weight: 500;
+  color: #fe2c55;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.85);
+}
+
+/* Read more: subtle, TikTok-style */
+.infoCaptionExpandHint {
+  font-size: 12px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.7);
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.85);
+  cursor: pointer;
+  margin-top: 2px;
+  pointer-events: auto;
+}
+
+/* Location: smaller, cleaner pill */
+.infoLocation {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 3px 8px;
+  background: rgba(255, 255, 255, 0.15);
+  border: none;
+  border-radius: 9999px;
+  font-size: 11px;
+  font-weight: 500;
+  color: #ffffff;
+  align-self: flex-start;
+  margin-top: 4px;
+}
+
+.infoLocation svg {
+  width: 10px;
+  height: 10px;
+}
+
+/* Remove any borders on info block */
+.infoOverlay {
+  border: none !important;
+  outline: none !important;
+}
+
+/* Ensure the name row doesn't have weird spacing */
+.infoNameRow {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 4px;
+}
+
+/* ===== TIKTOK CAPTION FINAL OVERRIDE (FORCE) ===== */
+
+.infoNameRow {
+  margin-bottom: 2px !important;
+}
+
+.infoName {
+  font-size: 14px !important;
+  font-weight: 600 !important;
+  color: #ffffff !important;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.9) !important;
+  letter-spacing: -0.01em !important;
+}
+
+.infoCaption {
+  font-size: 13px !important;
+  font-weight: 400 !important;
+  line-height: 1.35 !important;
+  color: rgba(255, 255, 255, 0.95) !important;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.9) !important;
+  border: none !important;
+  outline: none !important;
+  margin: 0 !important;
+}
+
+.infoHashtags {
+  margin-top: 2px !important;
+}
+
+.infoHashtag {
+  font-size: 13px !important;
+  color: #fe2c55 !important;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.9) !important;
+}
+
+.infoCaptionExpandHint {
+  font-size: 11px !important;
+  font-weight: 500 !important;
+  color: rgba(255, 255, 255, 0.6) !important;
+  text-shadow: none !important;
+  margin-top: 1px !important;
+}
+
+/* ===== TIGHTEN CAPTION SPACING (v2) ===== */
+.infoOverlay {
+  gap: 2px !important;
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+.infoNameRow {
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+.infoCaption {
+  margin-top: 0 !important;
+  padding-top: 0 !important;
+  margin-bottom: 4px !important; /* small gap before hashtags */
+}
+
+.infoHashtags {
+  margin-top: 0 !important;
+}
+
+/* ===== FIX GLUED CAPTION ===== */
+
+/* Force the caption to act like a block element (drops to next line) */
+.infoCaption {
+  display: block !important;
+  margin-top: 2px !important; /* Tiny gap */
+}
+
+/* Make sure the name takes up its own space */
+.infoName {
+  display: inline-block !important;
+}
+
+/* Ensure the name row drops to its own line */
+.infoNameRow {
+  display: block !important;
+  width: 100% !important;
+}
+
+/* ===== FINAL CAPTION WEIGHT & SIZE FIX ===== */
+.infoName {
+  font-size: 14px !important;
+  font-weight: 600 !important; /* Not 700 (bold), just semibold */
+  color: #ffffff !important;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8) !important;
+  letter-spacing: -0.01em !important;
+}
+
+.infoCaption {
+  font-size: 14px !important;
+  font-weight: 400 !important;
+  line-height: 1.35 !important;
+  color: rgba(255, 255, 255, 0.95) !important;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8) !important;
+  margin: 2px 0 4px 0 !important; /* tiny gap above and below */
+}
+
+.infoNameRow {
+  margin-bottom: 0 !important;
+  padding-bottom: 0 !important;
+}
