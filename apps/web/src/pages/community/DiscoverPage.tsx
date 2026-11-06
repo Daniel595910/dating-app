@@ -874,6 +874,16 @@ export const DiscoverPage: React.FC = () => {
               {current.avatarUrl
                 ? <img src={current.avatarUrl} alt={current.displayName} />
                 : <span>{current.displayName.charAt(0)}</span>}
+              {current && ringState[current.userId] && (
+                <span
+                  className={styles.profilePlusBadge}
+                  onClick={(e) => { e.stopPropagation(); navigate('/profile/' + current.userId); }}
+                  role="button"
+                  aria-label="View profile"
+                >
+                  <Plus />
+                </span>
+              )}
             </button>
             <button
               className={styles.rightActionButton + (likedIds.has(current.videoId) ? ' ' + styles.liked : '')}

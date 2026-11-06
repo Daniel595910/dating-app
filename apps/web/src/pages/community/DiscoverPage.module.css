@@ -1751,3 +1751,116 @@
   height: 100%;
   object-fit: cover;
 }
+/* ===== AVATAR + BADGE WRAPPER ===== */
+/* The wrapper holds the avatar and the plus badge side by side (not nested) */
+.discoverPage .avatarWrapper {
+  position: relative !important;
+  display: inline-block !important;
+  width: 44px !important;
+  height: 44px !important;
+  margin-bottom: 8px !important;
+  overflow: visible !important;
+}
+
+/* Avatar inside the wrapper: fills it */
+.discoverPage .avatarWrapper .rightAvatarButton {
+  width: 44px !important;
+  height: 44px !important;
+  margin: 0 !important;
+  position: relative !important;
+}
+
+/* Plus badge: anchored to bottom-right of the WRAPPER */
+.discoverPage .profilePlusBadge {
+  position: absolute !important;
+  bottom: -2px !important;
+  right: -2px !important;
+  width: 20px !important;
+  height: 20px !important;
+  min-width: 20px !important;
+  min-height: 20px !important;
+  border-radius: 50% !important;
+  background: #ef4444 !important;
+  background-color: #ef4444 !important;
+  border: none !important;
+  box-shadow: 0 0 0 2px #000 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  z-index: 30 !important;
+  cursor: pointer !important;
+  line-height: 1 !important;
+  box-sizing: border-box !important;
+  transform: none !important;
+}
+
+.discoverPage .profilePlusBadge svg {
+  width: 12px !important;
+  height: 12px !important;
+  min-width: 12px !important;
+  min-height: 12px !important;
+  stroke: #ffffff !important;
+  stroke-width: 3.5 !important;
+  fill: none !important;
+  color: #ffffff !important;
+  display: block !important;
+  pointer-events: none !important;
+}
+
+.discoverPage .profilePlusBadge:active {
+  transform: scale(0.9) !important;
+}
+/* ===== FINAL PLUS BADGE POSITIONING ===== */
+/* Remove all old badge styles and set the perfect bottom-right anchor */
+.discoverPage .rightAvatarButton {
+  position: relative !important;
+  overflow: visible !important;
+}
+
+.discoverPage .profilePlusBadge {
+  position: absolute !important;
+  bottom: 0 !important;
+  right: 0 !important;
+  transform: translate(35%, 35%) !important; /* Anchors perfectly to the corner */
+  
+  width: 20px !important;
+  height: 20px !important;
+  min-width: 20px !important;
+  min-height: 20px !important;
+  border-radius: 50% !important;
+  
+  background: #ef4444 !important;
+  background-color: #ef4444 !important;
+  border: none !important;      /* NO BLACK BORDER */
+  box-shadow: none !important;  /* NO SHADOWS */
+  
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  z-index: 30 !important;
+  cursor: pointer !important;
+  line-height: 1 !important;
+  box-sizing: border-box !important;
+}
+
+/* Center the plus icon perfectly inside */
+.discoverPage .profilePlusBadge svg {
+  width: 12px !important;
+  height: 12px !important;
+  min-width: 12px !important;
+  min-height: 12px !important;
+  stroke: #ffffff !important;
+  stroke-width: 3 !important;
+  fill: none !important;
+  color: #ffffff !important;
+  display: block !important;
+  pointer-events: none !important;
+}
+
+.discoverPage .profilePlusBadge:active {
+  transform: translate(35%, 35%) scale(0.9) !important;
+}
