@@ -885,7 +885,7 @@ export const DiscoverPage: React.FC = () => {
               }}
               aria-label={likedIds.has(current.videoId) ? 'Unlike' : 'Like'}
             >
-              <svg width="36" height="36" viewBox="0 0 24 24" fill={likedIds.has(current.videoId) ? "#fe2c55" : "#ffffff"} style={{ filter: "drop-shadow(0 2px 4px rgba(0,0,0,0.4))" }}><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+              <svg width="28" height="28" viewBox="0 0 24 24" fill={likedIds.has(current.videoId) ? "#fe2c55" : "#ffffff"}><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
             </button>
             <div className={styles.likeCount}>
               {formatCount(likeCounts[current.videoId] || 0)}
@@ -897,7 +897,7 @@ export const DiscoverPage: React.FC = () => {
                 className={styles.rightActionButton}
                 aria-label="Comment"
               >
-                <svg width="32" height="32" viewBox="0 0 24 24" fill="#ffffff" ><path d="M 6 2.5 L 18 2.5 A 4.5 4.5 0 0 1 22.5 7 L 22.5 15.5 A 4.5 4.5 0 0 1 18 20 L 12.5 20 L 7.5 24 A 1.5 1.5 0 0 1 6 22.5 L 6 20 A 4.5 4.5 0 0 1 1.5 15.5 L 1.5 7 A 4.5 4.5 0 0 1 6 2.5 Z" fill="currentColor" /><circle cx="7.5" cy="11.25" r="1.4" fill="#000000" /><circle cx="12" cy="11.25" r="1.4" fill="#000000" /><circle cx="16.5" cy="11.25" r="1.4" fill="#000000" /></svg>
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="#ffffff"><path fill-rule="evenodd" clip-rule="evenodd" d="M12 2.5C6.5 2.5 2 6.5 2 11.5c0 2.9 1.5 5.5 3.9 7.2V22l3.5-2.3c.8.2 1.7.3 2.6.3 5.5 0 10-4 10-9s-4.5-9.5-10-9.5zM7 11.5c0 .8-.7 1.5-1.5 1.5S4 12.3 4 11.5 4.7 10 5.5 10 7 10.7 7 11.5zM12 13c-.8 0-1.5-.7-1.5-1.5S11.2 10 12 10s1.5.7 1.5 1.5S12.8 13 12 13zM18.5 13c-.8 0-1.5-.7-1.5-1.5S17.7 10 18.5 10 20 10.7 20 11.5 19.3 13 18.5 13z"/></svg>
               </button>
               <div className={styles.likeCount}>
                 {formatCount(commentCounts[current.videoId] !== undefined ? commentCounts[current.videoId] : (current.commentCount || 0))}
@@ -926,7 +926,7 @@ export const DiscoverPage: React.FC = () => {
               }}
               aria-label="Share"
             >
-              <svg width="30" height="30" viewBox="0 0 24 24" fill="#ffffff" ><path d="M 10.5 12 L 18.5 6.5 M 10.5 12 L 18.5 17.5" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" /><circle cx="4" cy="12" r="4.5" fill="currentColor" /><circle cx="19.5" cy="5.5" r="4.5" fill="currentColor" /><circle cx="19.5" cy="18.5" r="4.5" fill="currentColor" /></svg>
+              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
             </button>
             <div className={styles.likeCount}>
               {formatCount(shareCounts[current.videoId] || 0)}
@@ -936,15 +936,7 @@ export const DiscoverPage: React.FC = () => {
               onClick={(e) => { e.stopPropagation(); handleDownloadClick(); }}
               aria-label="Download video"
             >
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="50" height="50" style={{ filter: "drop-shadow(0 2px 4px rgba(0,0,0,0.4))" }}>
-                {/* Uncomment the circle below for the black-disc variant */}
-                {/* <circle cx="50" cy="50" r="45" fill="#000000" /> */}
-                <g fill="#ffffff">
-                  <rect x="45" y="22" width="10" height="30" rx="4" />
-                  <path d="M 35 44 L 50 60 L 65 44 A 5 5 0 0 1 72 52 L 56 68 A 8 8 0 0 1 44 68 L 28 52 A 5 5 0 0 1 35 44 Z" />
-                  <rect x="34" y="76" width="32" height="8" rx="4" />
-                </g>
-              </svg>
+<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
             </button>
           </div>
         </div>

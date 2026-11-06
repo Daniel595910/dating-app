@@ -1580,3 +1580,100 @@
 .discoverPage .rightActions {
   right: max(16px, env(safe-area-inset-right)) !important;
 }
+/* ===== FINAL ICON RESET ===== */
+/* Forces transparent backgrounds and removes all shadows/borders */
+.discoverPage .rightActionButton {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  width: 44px !important;
+  height: 44px !important;
+}
+
+/* Standardize the gap between icons so they are evenly spaced */
+.discoverPage .rightActions {
+  gap: 16px !important;
+  right: max(16px, env(safe-area-inset-right)) !important;
+}
+
+/* Fix count labels spacing so they don't push the next icon */
+.discoverPage .likeCount {
+  margin-top: -8px !important;
+  margin-bottom: 0 !important;
+  font-size: 12px !important;
+  line-height: 1 !important;
+}
+
+/* Ensure the avatar doesn't have weird margins */
+.discoverPage .rightAvatarButton {
+  margin-top: 0 !important;
+  margin-bottom: 8px !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+/* ===== ZERO BORDERS ON ICONS ===== */
+/* Removes all borders, rings, outlines, and shadows from the right column */
+.discoverPage .rightAvatarButton,
+.discoverPage .rightAvatarButton img,
+.discoverPage .rightActionButton,
+.discoverPage .rightActionButton svg {
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+  ring: 0 !important;
+  -webkit-tap-highlight-color: transparent !important;
+}
+
+/* Ensure the avatar image itself doesn't have a ring */
+.discoverPage .rightAvatarButton::after,
+.discoverPage .rightAvatarButton::before {
+  display: none !important;
+  content: none !important;
+}
+/* ===== ABSOLUTE SHADOW REMOVAL ===== */
+/* Kills every shadow, filter, background, and border in the right column */
+
+/* 1. Remove box-shadows and backgrounds from the buttons */
+.discoverPage .rightActionButton,
+.discoverPage .rightAvatarButton {
+  box-shadow: none !important;
+  filter: none !important;
+  -webkit-filter: none !important;
+  background: transparent !important;
+  border: none !important;
+  text-shadow: none !important;
+}
+
+/* 2. Remove drop-shadows and filters from the SVG elements themselves */
+.discoverPage .rightActionButton svg,
+.discoverPage .rightAvatarButton svg,
+.discoverPage .rightActionButton img,
+.discoverPage .rightAvatarButton img {
+  box-shadow: none !important;
+  filter: none !important;
+  -webkit-filter: none !important;
+  text-shadow: none !important;
+}
+
+/* 3. Remove shadows from the count labels (the numbers below the icons) */
+.discoverPage .likeCount {
+  text-shadow: none !important;
+  box-shadow: none !important;
+  filter: none !important;
+  -webkit-filter: none !important;
+}
+
+/* 4. Remove any pseudo-element shadows or backgrounds */
+.discoverPage .rightActionButton::before,
+.discoverPage .rightActionButton::after,
+.discoverPage .rightAvatarButton::before,
+.discoverPage .rightAvatarButton::after {
+  box-shadow: none !important;
+  filter: none !important;
+  background: transparent !important;
+  display: none !important;
+}
