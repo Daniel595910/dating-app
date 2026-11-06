@@ -912,7 +912,7 @@ export const DiscoverPage: React.FC = () => {
                 className={styles.rightActionButton}
                 aria-label="Comment"
               >
-                <svg width="28" height="28" viewBox="0 0 24 24" fill="#ffffff"><path fill-rule="evenodd" clip-rule="evenodd" d="M12 2.5C6.5 2.5 2 6.5 2 11.5c0 2.9 1.5 5.5 3.9 7.2V22l3.5-2.3c.8.2 1.7.3 2.6.3 5.5 0 10-4 10-9s-4.5-9.5-10-9.5zM7 11.5c0 .8-.7 1.5-1.5 1.5S4 12.3 4 11.5 4.7 10 5.5 10 7 10.7 7 11.5zM12 13c-.8 0-1.5-.7-1.5-1.5S11.2 10 12 10s1.5.7 1.5 1.5S12.8 13 12 13zM18.5 13c-.8 0-1.5-.7-1.5-1.5S17.7 10 18.5 10 20 10.7 20 11.5 19.3 13 18.5 13z"/></svg>
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="#ffffff"><path fillRule="evenodd" clipRule="evenodd" d="M12 2.5C6.5 2.5 2 6.5 2 11.5c0 2.9 1.5 5.5 3.9 7.2V22l3.5-2.3c.8.2 1.7.3 2.6.3 5.5 0 10-4 10-9s-4.5-9.5-10-9.5zM7 11.5c0 .8-.7 1.5-1.5 1.5S4 12.3 4 11.5 4.7 10 5.5 10 7 10.7 7 11.5zM12 13c-.8 0-1.5-.7-1.5-1.5S11.2 10 12 10s1.5.7 1.5 1.5S12.8 13 12 13zM18.5 13c-.8 0-1.5-.7-1.5-1.5S17.7 10 18.5 10 20 10.7 20 11.5 19.3 13 18.5 13z"/></svg>
               </button>
               <div className={styles.likeCount}>
                 {formatCount(commentCounts[current.videoId] !== undefined ? commentCounts[current.videoId] : (current.commentCount || 0))}
@@ -941,7 +941,7 @@ export const DiscoverPage: React.FC = () => {
               }}
               aria-label="Share"
             >
-              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#ffffff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
             </button>
             <div className={styles.likeCount}>
               {formatCount(shareCounts[current.videoId] || 0)}
@@ -951,7 +951,7 @@ export const DiscoverPage: React.FC = () => {
               onClick={(e) => { e.stopPropagation(); handleDownloadClick(); }}
               aria-label="Download video"
             >
-<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#ffffff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
             </button>
           </div>
         </div>
