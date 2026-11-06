@@ -1707,3 +1707,8 @@
   width: 44px !important; /* Keep avatar slightly larger than icons */
   height: 44px !important;
 }
+/* ===== CLOSER TO EDGE ===== */
+/* Brings the icons back closer to the right edge of the screen */
+.discoverPage .rightActions {
+  right: max(8px, env(safe-area-inset-right)) !important;
+}
