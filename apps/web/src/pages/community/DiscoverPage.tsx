@@ -566,6 +566,11 @@ export const DiscoverPage: React.FC = () => {
     return (n / 1000000).toFixed(1).replace(/\.0$/, '') + 'M';
   };
 
+  const handleDownloadClick = () => {
+    // Commit C will read download_enabled from the video row; stub is blocked.
+    alert("Can't download this video at this time — download for this video is restricted.");
+  };
+
   if (loading) {
     return (
       <div className={styles.loadingContainer}>
@@ -925,6 +930,21 @@ export const DiscoverPage: React.FC = () => {
             <div className={styles.likeCount}>
               {formatCount(shareCounts[current.videoId] || 0)}
             </div>
+            <button
+              className={styles.rightActionButton}
+              onClick={(e) => { e.stopPropagation(); handleDownloadClick(); }}
+              aria-label="Download video"
+            >
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="38" height="38" style={{ filter: "drop-shadow(0 2px 4px rgba(0,0,0,0.4))" }}>
+                {/* Uncomment the circle below for the black-disc variant */}
+                {/* <circle cx="50" cy="50" r="45" fill="#000000" /> */}
+                <g fill="#ffffff">
+                  <rect x="45" y="22" width="10" height="30" rx="4" />
+                  <path d="M 35 44 L 50 60 L 65 44 A 5 5 0 0 1 72 52 L 56 68 A 8 8 0 0 1 44 68 L 28 52 A 5 5 0 0 1 35 44 Z" />
+                  <rect x="34" y="76" width="32" height="8" rx="4" />
+                </g>
+              </svg>
+            </button>
           </div>
         </div>
       )}
@@ -1090,7 +1110,6 @@ export const DiscoverPage: React.FC = () => {
     </div>
   );
 };
-
 
 
 
