@@ -10,6 +10,7 @@ import { PublishDetails } from '../../features/discover/types/discover.types';
 import { PostDetailsModal } from '../../features/discover/components/PostDetailsModal';
 import { DiscoverCommentsSheet } from '../../features/discover/components/DiscoverCommentsSheet';
 import { DiscoverSearchModal } from '../../features/discover/components/DiscoverSearchModal';
+import { DownloadModal } from '../../features/discover/components/DownloadModal';
 import { BottomNav } from '../../features/community/components/BottomNav';
 import { 
   BadgeCheck, MapPin, Heart, X, Play, Pause, Video, Upload, 
@@ -80,6 +81,7 @@ export const DiscoverPage: React.FC = () => {
   const [commentsVideoId, setCommentsVideoId] = useState<string | null>(null);
   const [showPostedToast, setShowPostedToast] = useState(false);
   const [searchModalOpen, setSearchModalOpen] = useState(false);
+  const [downloadModalOpen, setDownloadModalOpen] = useState(false);
   
   const videoRef = useRef<HTMLVideoElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -566,27 +568,8 @@ export const DiscoverPage: React.FC = () => {
     return (n / 1000000).toFixed(1).replace(/\.0$/, '') + 'M';
   };
 
-  const handleDownloadClick = async () => {
-    const isAllowed = current?.downloadEnabled ?? false;
-    if (!isAllowed) {
-      alert("Cannot download this video at this time - download for this video is restricted.");
-      return;
-    }
-    try {
-      const response = await fetch(current.videoUrl);
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = "discover-" + current.videoId + ".mp4";
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      window.URL.revokeObjectURL(url);
-    } catch (err) {
-      console.error("Download failed:", err);
-      alert("Failed to download video. Please try again.");
-    }
+  const handleDownloadClick = () => {
+    setDownloadModalOpen(true);
   };
 
   if (loading) {
@@ -966,6 +949,15 @@ export const DiscoverPage: React.FC = () => {
           </div>
         </div>
       )}
+
+      <DownloadModal
+        open={downloadModalOpen}
+        videoUrl={current?.videoUrl || null}
+        thumbnailUrl={current?.thumbnailUrl || null}
+        videoId={current?.videoId || null}
+        downloadEnabled={current?.downloadEnabled ?? false}
+        onClose={() => setDownloadModalOpen(false)}
+      />
 
       <DiscoverCommentsSheet
         open={commentsOpen}
