@@ -1575,3 +1575,8 @@
 .discoverPage .rightActions {
   bottom: calc(86px + env(safe-area-inset-bottom)) !important;
 }
+/* ===== PULL RIGHT ACTIONS AWAY FROM EDGE ===== */
+/* Bumps the right margin from 8px to 16px so it doesn't hug the screen edge */
+.discoverPage .rightActions {
+  right: max(16px, env(safe-area-inset-right)) !important;
+}
