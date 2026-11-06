@@ -1468,3 +1468,51 @@
     opacity: 0;
   }
 }
+
+/* ===== TIGHT ACTION GAPS ===== */
+.rightActions {
+  gap: 14px !important;
+}
+
+/* Count labels: closer to the icons */
+.likeCount {
+  margin-top: -12px !important;
+  font-size: 12px !important;
+  line-height: 1 !important;
+}
+
+/* Optional: slightly smaller right action button padding so the icon + count block stays compact */
+.rightActionButton {
+  margin-bottom: 0 !important;
+}
+
+/* ===== NUCLEAR GAP FIX ===== */
+/* Overrides every previous rule for the action column. */
+
+.rightActions {
+  gap: 10px !important;
+  right: max(8px, env(safe-area-inset-right)) !important;
+}
+
+.rightActionButton {
+  width: 36px !important;
+  height: 36px !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+.rightAvatarButton {
+  width: 36px !important;
+  height: 36px !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  border: 1.5px solid rgba(254, 44, 85, 0.85) !important;
+}
+
+.likeCount {
+  margin-top: -6px !important;
+  margin-bottom: 0 !important;
+  min-width: 36px !important;
+  font-size: 11px !important;
+  line-height: 1 !important;
+}
