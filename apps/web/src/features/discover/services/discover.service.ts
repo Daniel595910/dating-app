@@ -35,9 +35,11 @@ class DiscoverService {
       locationText: c.location_text || null,
       allowComments: c.allow_comments !== false,
       allowDuet: c.allow_duet !== false,
+      downloadEnabled: c.download_enabled !== false,
       likeCount: c.like_count || 0,
       userLiked: false,
       commentCount: c.comment_count || 0,
+      shareCount: c.share_count || 0,
     }));
   }
 
@@ -72,6 +74,7 @@ class DiscoverService {
       p_location_text: details ? details.locationText : null,
       p_allow_comments: details ? details.allowComments : true,
       p_allow_duet: details ? details.allowDuet : true,
+      p_download_enabled: details ? details.downloadEnabled : true,
       p_visibility: details ? details.visibility : 'public',
     });
 

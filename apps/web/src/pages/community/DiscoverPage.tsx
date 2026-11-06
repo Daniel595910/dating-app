@@ -566,9 +566,27 @@ export const DiscoverPage: React.FC = () => {
     return (n / 1000000).toFixed(1).replace(/\.0$/, '') + 'M';
   };
 
-  const handleDownloadClick = () => {
-    // Commit C will read download_enabled from the video row; stub is blocked.
-    alert("Can't download this video at this time — download for this video is restricted.");
+  const handleDownloadClick = async () => {
+    const isAllowed = current?.downloadEnabled ?? false;
+    if (!isAllowed) {
+      alert("Cannot download this video at this time - download for this video is restricted.");
+      return;
+    }
+    try {
+      const response = await fetch(current.videoUrl);
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = "discover-" + current.videoId + ".mp4";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error("Download failed:", err);
+      alert("Failed to download video. Please try again.");
+    }
   };
 
   if (loading) {
@@ -935,7 +953,7 @@ export const DiscoverPage: React.FC = () => {
               onClick={(e) => { e.stopPropagation(); handleDownloadClick(); }}
               aria-label="Download video"
             >
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="38" height="38" style={{ filter: "drop-shadow(0 2px 4px rgba(0,0,0,0.4))" }}>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="42" height="42" style={{ filter: "drop-shadow(0 2px 4px rgba(0,0,0,0.4))" }}>
                 {/* Uncomment the circle below for the black-disc variant */}
                 {/* <circle cx="50" cy="50" r="45" fill="#000000" /> */}
                 <g fill="#ffffff">

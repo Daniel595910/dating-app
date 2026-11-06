@@ -78,6 +78,7 @@ export const PostDetailsModal: React.FC<PostDetailsModalProps> = ({
   const [locationText, setLocationText] = useState('');
   const [allowComments, setAllowComments] = useState(true);
   const [allowDuet, setAllowDuet] = useState(true);
+  const [downloadEnabled, setDownloadEnabled] = useState(true);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [isMuted, setIsMuted] = useState(true);
   const [suggestions, setSuggestions] = useState<Array<{ hashtag: string; usageCount: number }>>([]);
@@ -95,6 +96,7 @@ export const PostDetailsModal: React.FC<PostDetailsModalProps> = ({
       setLocationText('');
       setAllowComments(true);
       setAllowDuet(true);
+      setDownloadEnabled(true);
       setErrorMsg(null);
     }
   }, [open]);
@@ -400,6 +402,10 @@ export const PostDetailsModal: React.FC<PostDetailsModalProps> = ({
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: 14, color: 'var(--color-text)' }}>
               <span>Allow duet</span>
               <Toggle checked={allowDuet} onChange={setAllowDuet} disabled={uploading} label="Allow duet" />
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: 14, color: 'var(--color-text)', marginTop: 12 }}>
+              <span>Allow downloads</span>
+              <Toggle checked={downloadEnabled} onChange={setDownloadEnabled} disabled={uploading} label="Allow downloads" />
             </div>
           </div>
 
