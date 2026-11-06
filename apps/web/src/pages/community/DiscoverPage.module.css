@@ -1712,3 +1712,42 @@
 .discoverPage .rightActions {
   right: max(8px, env(safe-area-inset-right)) !important;
 }
+/* ===== STORY RING ON AVATAR ===== */
+/* Instagram/TikTok-style gradient ring. Applied via .hasStory class on the avatar button. */
+.discoverPage .rightAvatarButton.hasStory {
+  position: relative;
+  padding: 2px !important;
+  background: conic-gradient(
+    from 0deg,
+    #feda75,
+    #fa7e1e,
+    #d62976,
+    #962fbf,
+    #4f5bd5,
+    #feda75
+  ) !important;
+  border: none !important;
+  overflow: visible !important;
+}
+
+/* Inner black ring to separate the gradient from the image */
+.discoverPage .rightAvatarButton.hasStory::before {
+  content: '' !important;
+  position: absolute;
+  inset: 2px;
+  border-radius: 50%;
+  background: #000;
+  z-index: 0;
+  display: block !important;
+}
+
+/* Avatar image sits on top of the inner black ring */
+.discoverPage .rightAvatarButton.hasStory img,
+.discoverPage .rightAvatarButton.hasStory span {
+  position: relative;
+  z-index: 1;
+  border-radius: 50%;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}

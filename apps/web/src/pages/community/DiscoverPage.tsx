@@ -11,6 +11,8 @@ import { PostDetailsModal } from '../../features/discover/components/PostDetails
 import { DiscoverCommentsSheet } from '../../features/discover/components/DiscoverCommentsSheet';
 import { DiscoverSearchModal } from '../../features/discover/components/DiscoverSearchModal';
 import { DownloadModal } from '../../features/discover/components/DownloadModal';
+import { useStoryRings } from '../../features/community/hooks/useStoryRings';
+import { StoryViewer } from '../../features/community/components/StoryViewer';
 import { BottomNav } from '../../features/community/components/BottomNav';
 import { 
   BadgeCheck, MapPin, Heart, X, Play, Pause, Video, Upload, 
@@ -82,6 +84,9 @@ export const DiscoverPage: React.FC = () => {
   const [showPostedToast, setShowPostedToast] = useState(false);
   const [searchModalOpen, setSearchModalOpen] = useState(false);
   const [downloadModalOpen, setDownloadModalOpen] = useState(false);
+  const { ringState } = useStoryRings(true);
+  const [storyViewerOpen, setStoryViewerOpen] = useState(false);
+  const [storyViewerAuthorId, setStoryViewerAuthorId] = useState<string | null>(null);
   
   const videoRef = useRef<HTMLVideoElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -862,8 +867,8 @@ export const DiscoverPage: React.FC = () => {
 
           <div className={styles.rightActions}>
             <button
-              className={styles.rightAvatarButton}
-              onClick={(e) => { e.stopPropagation(); navigate('/profile/' + current.userId); }}
+              className={styles.rightAvatarButton + (current && ringState[current.userId] ? ' ' + styles.hasStory : '')}
+              onClick={(e) => { e.stopPropagation(); if (current && ringState[current.userId]) { setStoryViewerAuthorId(current.userId); setStoryViewerOpen(true); } else { navigate('/profile/' + current.userId); } }}
               aria-label={'View ' + current.displayName + ' profile'}
             >
               {current.avatarUrl
@@ -942,6 +947,11 @@ export const DiscoverPage: React.FC = () => {
         </div>
       )}
 
+      <StoryViewer
+        open={storyViewerOpen}
+        onClose={() => { setStoryViewerOpen(false); setStoryViewerAuthorId(null); }}
+        initialAuthorId={storyViewerAuthorId}
+      />
       <DownloadModal
         open={downloadModalOpen}
         videoUrl={current?.videoUrl || null}
