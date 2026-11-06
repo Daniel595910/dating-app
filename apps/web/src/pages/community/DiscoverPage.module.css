@@ -1516,3 +1516,17 @@
   font-size: 11px !important;
   line-height: 1 !important;
 }
+
+/* ===== AVATAR SIZE & GAP FIX ===== */
+.rightAvatarButton {
+  width: 44px !important;
+  height: 44px !important;
+  margin-bottom: 6px !important;
+  border: 1.5px solid rgba(254, 44, 85, 0.85) !important;
+}
+
+/* ===== PUSH AVATAR UP ===== */
+.rightAvatarButton {
+  margin-top: -16px !important; /* Pulls avatar up slightly */
+  margin-bottom: 10px !important; /* Pushes heart down a bit */
+}
