@@ -1864,3 +1864,91 @@
 .discoverPage .profilePlusBadge:active {
   transform: translate(35%, 35%) scale(0.9) !important;
 }
+/* ===== FINAL BADGE FIX (overflow + ring + position) ===== */
+/* THIS IS THE LAST RULE IN THE FILE. It wins by source order. */
+
+/* 1. Avatar must allow the badge to overflow outside its box */
+.discoverPage .rightAvatarButton {
+  position: relative !important;
+  overflow: visible !important;
+}
+
+/* 2. Restore the story ring's ::before (was killed by earlier patches) */
+.discoverPage .rightAvatarButton.hasStory::before {
+  content: '' !important;
+  position: absolute !important;
+  inset: 2px !important;
+  border-radius: 50% !important;
+  background: #000 !important;
+  z-index: 0 !important;
+  display: block !important;
+}
+
+/* 3. Kill the ::after (we don't use it) */
+.discoverPage .rightAvatarButton::after {
+  display: none !important;
+  content: none !important;
+}
+
+/* 4. FINAL plus badge — bottom-right, red circle, white plus, no border */
+.discoverPage .profilePlusBadge {
+  position: absolute !important;
+  bottom: 0 !important;
+  right: 0 !important;
+  transform: translate(30%, 30%) !important;
+  width: 20px !important;
+  height: 20px !important;
+  min-width: 20px !important;
+  min-height: 20px !important;
+  border-radius: 50% !important;
+  background: #ef4444 !important;
+  background-color: #ef4444 !important;
+  border: none !important;
+  box-shadow: none !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  z-index: 30 !important;
+  cursor: pointer !important;
+  line-height: 1 !important;
+  box-sizing: border-box !important;
+}
+
+.discoverPage .profilePlusBadge svg {
+  width: 12px !important;
+  height: 12px !important;
+  stroke: #ffffff !important;
+  stroke-width: 3 !important;
+  fill: none !important;
+  display: block !important;
+  pointer-events: none !important;
+}
+
+.discoverPage .profilePlusBadge:active {
+  transform: translate(30%, 30%) scale(0.9) !important;
+}
+/* ===== SHIFT BADGE TO BOTTOM-LEFT ===== */
+.discoverPage .profilePlusBadge {
+  left: 0 !important;
+  right: auto !important;
+  bottom: 0 !important;
+  transform: translate(-35%, 30%) !important; /* Pushes it out to the left */
+}
+
+.discoverPage .profilePlusBadge:active {
+  transform: translate(-35%, 30%) scale(0.9) !important;
+}
+/* ===== BADGE TO BOTTOM-CENTER ===== */
+/* Centers the badge perfectly on the bottom edge of the avatar */
+.discoverPage .profilePlusBadge {
+  left: 12px !important;        /* (44px avatar - 20px badge) / 2 = 12px */
+  right: auto !important;
+  bottom: 0 !important;
+  transform: translate(0, 30%) !important; /* No horizontal shift, only vertical */
+}
+
+.discoverPage .profilePlusBadge:active {
+  transform: translate(0, 30%) scale(0.9) !important;
+}
