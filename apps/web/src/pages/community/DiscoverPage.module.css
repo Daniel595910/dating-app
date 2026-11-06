@@ -1952,3 +1952,310 @@
 .discoverPage .profilePlusBadge:active {
   transform: translate(0, 30%) scale(0.9) !important;
 }
+/* ===== FINAL BADGE FIX (small, no ring) ===== */
+/* THIS IS THE LAST RULE AND WINS BY SOURCE ORDER */
+
+/* 1. Force the avatar to ALWAYS be a perfect circle, whether or not it has a story */
+.discoverPage .rightAvatarButton {
+  border-radius: 50% !important;
+  overflow: visible !important;
+}
+
+.discoverPage .rightAvatarButton img,
+.discoverPage .rightAvatarButton span:not(.profilePlusBadge) {
+  border-radius: 50% !important;
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
+  display: block !important;
+}
+
+/* 2. Small, clean plus badge — no black ring, no bloat, bottom-right corner */
+.discoverPage .profilePlusBadge {
+  position: absolute !important;
+  bottom: 0 !important;
+  right: 0 !important;
+  transform: translate(30%, 30%) !important;
+
+  width: 16px !important;
+  height: 16px !important;
+  min-width: 16px !important;
+  min-height: 16px !important;
+
+  border-radius: 50% !important;
+  background: #ef4444 !important;
+  background-color: #ef4444 !important;
+  border: none !important;
+  box-shadow: none !important;
+  outline: none !important;
+
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  z-index: 30 !important;
+  cursor: pointer !important;
+  line-height: 1 !important;
+  box-sizing: border-box !important;
+}
+
+/* 3. Plus icon inside the badge (small, white, centered) */
+.discoverPage .profilePlusBadge svg {
+  width: 10px !important;
+  height: 10px !important;
+  min-width: 10px !important;
+  min-height: 10px !important;
+  stroke: #ffffff !important;
+  stroke-width: 3.5 !important;
+  fill: none !important;
+  color: #ffffff !important;
+  display: block !important;
+  pointer-events: none !important;
+}
+
+.discoverPage .profilePlusBadge:active {
+  transform: translate(30%, 30%) scale(0.9) !important;
+}
+/* ===== RESTORE ORIGINAL BADGE POSITION ===== */
+/* Same anchor as before the last patch: bottom-right with -2px offset, no transform */
+.discoverPage .profilePlusBadge {
+  bottom: -2px !important;
+  right: -2px !important;
+  left: auto !important;
+  transform: none !important;
+}
+
+.discoverPage .profilePlusBadge:active {
+  transform: scale(0.9) !important;
+}
+/* ===== STORY RING + PLUS BADGE (clean) ===== */
+
+/* Avatar: remove the base red border, allow badge to overflow, keep it circular */
+.discoverPage .rightAvatarButton {
+  border: none !important;
+  overflow: visible !important;
+  border-radius: 50% !important;
+  position: relative !important;
+}
+
+/* Avatar image inside stays circular */
+.discoverPage .rightAvatarButton img {
+  border-radius: 50% !important;
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
+}
+
+/* When the user has a story, add the gradient ring via box-shadow (no ::before needed) */
+.discoverPage .rightAvatarButton.hasStory {
+  box-shadow: 0 0 0 2px #000, 0 0 0 4px #ef4444 !important;
+}
+
+/* Plus badge: small red circle with white plus, bottom-right corner */
+.discoverPage .profilePlusBadge {
+  position: absolute !important;
+  bottom: -4px !important;
+  right: -4px !important;
+  width: 18px !important;
+  height: 18px !important;
+  min-width: 18px !important;
+  min-height: 18px !important;
+  border-radius: 50% !important;
+  background: #ef4444 !important;
+  border: 2px solid #000 !important;
+  box-shadow: none !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  z-index: 20 !important;
+  cursor: pointer !important;
+  line-height: 1 !important;
+  box-sizing: border-box !important;
+}
+
+/* Plus icon inside */
+.discoverPage .profilePlusBadge svg {
+  width: 10px !important;
+  height: 10px !important;
+  stroke: #ffffff !important;
+  stroke-width: 3 !important;
+  fill: none !important;
+  display: block !important;
+  pointer-events: none !important;
+}
+/* ===== OVERRIDE: NO BLACK BORDERS, EXACT GIT SIZES ===== */
+
+/* 1. Ensure the avatar is the exact size from git, with no border */
+.discoverPage .rightAvatarButton {
+  width: clamp(44px, 12vw, 56px) !important;
+  height: clamp(44px, 12vw, 56px) !important;
+  border: none !important;
+  border-radius: 50% !important;
+  overflow: visible !important; /* allow badge to stick out */
+  position: relative !important;
+}
+
+/* 2. Story Ring - clean, no ::before */
+.discoverPage .rightAvatarButton.hasStory {
+  /* A 2px gap (avatar border) + 3px red ring */
+  box-shadow: 0 0 0 2px #000, 0 0 0 5px #ef4444 !important;
+}
+
+/* 3. Plus Badge - exact size, NO BLACK BORDERS */
+.discoverPage .profilePlusBadge {
+  position: absolute !important;
+  bottom: 0 !important;
+  right: 0 !important;
+  transform: translate(30%, 30%) !important; /* Perfectly on the corner */
+  
+  width: 18px !important;
+  height: 18px !important;
+  min-width: 18px !important;
+  min-height: 18px !important;
+  border-radius: 50% !important;
+  
+  background: #ef4444 !important;
+  background-color: #ef4444 !important;
+  border: none !important;      /* NO BLACK BORDER */
+  box-shadow: none !important;  /* NO SHADOWS */
+  
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  z-index: 20 !important;
+  cursor: pointer !important;
+  line-height: 1 !important;
+  box-sizing: border-box !important;
+}
+
+/* 4. Plus icon inside - perfectly centered */
+.discoverPage .profilePlusBadge svg {
+  width: 10px !important;
+  height: 10px !important;
+  min-width: 10px !important;
+  min-height: 10px !important;
+  stroke: #ffffff !important;
+  stroke-width: 3 !important;
+  fill: none !important;
+  display: block !important;
+  pointer-events: none !important;
+}
+/* ===== CENTER BADGE ON BOTTOM EDGE ===== */
+.discoverPage .profilePlusBadge {
+  left: 13px !important;       /* (44px avatar - 18px badge) / 2 = 13px */
+  right: auto !important;      /* Clear the right anchor */
+  bottom: 0 !important;
+  transform: translate(0, 30%) !important; /* No horizontal shift, just 30% down */
+}
+
+.discoverPage .profilePlusBadge:active {
+  transform: translate(0, 30%) scale(0.9) !important;
+}
+/* ===== NUDGE BADGE RIGHT ===== */
+.discoverPage .profilePlusBadge {
+  left: 18px !important; /* Nudged 5px to the right from center */
+  right: auto !important;
+  bottom: 0 !important;
+  transform: translate(0, 30%) !important;
+}
+
+.discoverPage .profilePlusBadge:active {
+  transform: translate(0, 30%) scale(0.9) !important;
+}
+/* ===== NUDGE BADGE LEFT ===== */
+.discoverPage .profilePlusBadge {
+  left: 15px !important; /* Moved slightly left from 18px */
+  right: auto !important;
+  bottom: 0 !important;
+  transform: translate(0, 30%) !important;
+}
+
+.discoverPage .profilePlusBadge:active {
+  transform: translate(0, 30%) scale(0.9) !important;
+}
+/* ===== FINAL BADGE NUDGE RIGHT ===== */
+.discoverPage .profilePlusBadge {
+  left: 16px !important; /* Nudged 1px right from 15px */
+  right: auto !important;
+  bottom: 0 !important;
+  transform: translate(0, 30%) !important;
+}
+
+.discoverPage .profilePlusBadge:active {
+  transform: translate(0, 30%) scale(0.9) !important;
+}
+/* ===== PERFECT MATHEMATICAL CENTERING ===== */
+/* Centers the badge perfectly regardless of the avatar's responsive size */
+.discoverPage .profilePlusBadge {
+  left: 50% !important;
+  right: auto !important;
+  bottom: 0 !important;
+  transform: translate(-50%, 30%) !important;
+}
+
+.discoverPage .profilePlusBadge:active {
+  transform: translate(-50%, 30%) scale(0.9) !important;
+}
+/* ===== RESTORE MULTI-COLOR STORY RING ===== */
+/* Remove the solid red box-shadow we added earlier */
+.discoverPage .rightAvatarButton.hasStory {
+  box-shadow: none !important;
+  padding: 3px !important; /* Creates the gap for the ring */
+  background: conic-gradient(
+    from 45deg,
+    #feda75,
+    #fa7e1e,
+    #d62976,
+    #962fbf,
+    #4f5bd5,
+    #feda75
+  ) !important;
+}
+
+/* The inner black circle to separate the gradient from the image */
+.discoverPage .rightAvatarButton.hasStory::before {
+  content: '' !important;
+  position: absolute !important;
+  inset: 2px !important; /* Thickness of the black gap */
+  border-radius: 50% !important;
+  background: #000 !important;
+  z-index: 0 !important;
+  display: block !important;
+}
+
+/* Ensure the avatar image sits above the black ring */
+.discoverPage .rightAvatarButton.hasStory img,
+.discoverPage .rightAvatarButton.hasStory span:not(.profilePlusBadge) {
+  position: relative !important;
+  z-index: 1 !important;
+  border-radius: 50% !important;
+}
+/* ===== SEEN STORY RING (GRAY) ===== */
+/* Applies to users whose stories have all been viewed. Ring stays, but dims to gray. */
+.discoverPage .rightAvatarButton.hasStorySeen {
+  box-shadow: none !important;
+  padding: 3px !important;
+  background: #555555 !important; /* Solid muted gray */
+}
+
+.discoverPage .rightAvatarButton.hasStorySeen::before {
+  content: '' !important;
+  position: absolute !important;
+  inset: 2px !important;
+  border-radius: 50% !important;
+  background: #000 !important;
+  z-index: 0 !important;
+  display: block !important;
+}
+
+.discoverPage .rightAvatarButton.hasStorySeen img,
+.discoverPage .rightAvatarButton.hasStorySeen span:not(.profilePlusBadge) {
+  position: relative !important;
+  z-index: 1 !important;
+  border-radius: 50% !important;
+}

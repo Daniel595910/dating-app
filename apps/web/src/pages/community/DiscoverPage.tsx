@@ -867,14 +867,14 @@ export const DiscoverPage: React.FC = () => {
 
           <div className={styles.rightActions}>
             <button
-              className={styles.rightAvatarButton + (current && ringState[current.userId] ? ' ' + styles.hasStory : '')}
+              className={styles.rightAvatarButton + (current && ringState[current.userId] ? ' ' + (ringState[current.userId] === 'unseen' ? styles.hasStory : styles.hasStorySeen) : '')}
               onClick={(e) => { e.stopPropagation(); if (current && ringState[current.userId]) { setStoryViewerAuthorId(current.userId); setStoryViewerOpen(true); } else { navigate('/profile/' + current.userId); } }}
               aria-label={'View ' + current.displayName + ' profile'}
             >
               {current.avatarUrl
                 ? <img src={current.avatarUrl} alt={current.displayName} />
                 : <span>{current.displayName.charAt(0)}</span>}
-              {current && ringState[current.userId] && (
+              {current && (
                 <span
                   className={styles.profilePlusBadge}
                   onClick={(e) => { e.stopPropagation(); navigate('/profile/' + current.userId); }}
