@@ -1536,3 +1536,37 @@
   border: none !important;
   box-shadow: none !important;
 }
+/* ===== FULL-BLEED PROGRESS BAR (edge-to-edge, mobile) ===== */
+.discoverPage .progressBarWrapper {
+  left: 0 !important;
+  right: 0 !important;
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+  margin: 0 !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+/* Inner track fills the wrapper edge-to-edge (no side gaps) */
+.discoverPage .progressBarWrapper > div {
+  width: 100% !important;
+  border-radius: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+/* Thumb stays visible but the track itself is flat/edge-to-edge */
+.discoverPage .progressBarWrapper > div > div:first-child {
+  border-radius: 0 !important;
+}
+/* ===== PLAY OVERLAY — TRANSPARENT BACKGROUND ===== */
+.playOverlay {
+  background: transparent !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  border: none !important;
+  box-shadow: none !important;
+}
