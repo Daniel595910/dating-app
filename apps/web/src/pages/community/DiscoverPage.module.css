@@ -1677,3 +1677,33 @@
   background: transparent !important;
   display: none !important;
 }
+/* ===== TIGHTEN ICON SPACING ===== */
+/* Fixes the huge gaps and pulls the counts closer to the icons */
+
+/* 1. Reduce the gap between the action rows */
+.discoverPage .rightActions {
+  gap: 0px !important; /* Let the buttons and margins handle the spacing */
+}
+
+/* 2. Make the buttons exactly the size of the icons so there's no empty padding */
+.discoverPage .rightActionButton {
+  width: 32px !important;
+  height: 32px !important;
+  margin-top: 8px !important; /* Tight gap between icons */
+  margin-bottom: 0px !important;
+}
+
+/* 3. Pull the counts (numbers) directly up under the icons */
+.discoverPage .likeCount {
+  margin-top: 2px !important;   /* Closer to the icon above it */
+  margin-bottom: 6px !important; /* Gap before the next icon */
+  font-size: 12px !important;
+  line-height: 1 !important;
+}
+
+/* 4. Avatar spacing at the very top */
+.discoverPage .rightAvatarButton {
+  margin-bottom: 8px !important;
+  width: 44px !important; /* Keep avatar slightly larger than icons */
+  height: 44px !important;
+}
