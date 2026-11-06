@@ -828,10 +828,10 @@
 
 /* Avatar button: larger, red ring */
 .rightAvatarButton {
-  width: 48px;
-  height: 48px;
+  width: 40px;
+  height: 40px;
   border-radius: 50%;
-  border: 3px solid #ef4444;
+  border: 1.5px solid rgba(254, 44, 85, 0.85);
   background: #000;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
   overflow: hidden;
@@ -994,7 +994,7 @@
   .infoName { font-size: 19px; }
   .infoCaption { font-size: 15px; }
   .rightActionButton { width: 54px; height: 54px; }
-  .rightAvatarButton { width: 72px; height: 72px; }
+  .rightAvatarButton { width: 56px; height: 56px; }
   .rightActions { gap: 20px; }
   .categoryTab { padding: 8px 20px; font-size: 13px; }
 }
