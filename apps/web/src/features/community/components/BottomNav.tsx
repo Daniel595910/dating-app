@@ -55,20 +55,26 @@ export const BottomNav: React.FC = () => {
   useEffect(() => {
     if (!user?.id) return;
     let cancelled = false;
-    const fetchUnread = () => {
-      supabase
-        .from('notifications')
-        .select('*', { count: 'exact', head: true })
-        .eq('user_id', user.id)
-        .eq('status', 'unread')
-        .then(({ count }) => {
-          if (!cancelled) setUnreadCount(count || 0);
-        });
+    const fetchUnread = async () => {
+      const { data } = await supabase
+        .from('conversations')
+        .select('unread_counts')
+        .contains('participant_ids', [user.id]);
+      if (cancelled || !data) return;
+      const total = data.reduce((sum, row) => {
+        const v = (row.unread_counts as Record<string, number> | null)?.[user.id];
+        return sum + (typeof v === 'number' ? v : 0);
+      }, 0);
+      setUnreadCount(total);
     };
     fetchUnread();
     const channel = supabase
       .channel('nav-unread:' + user.id)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'notifications', filter: 'user_id=eq.' + user.id }, fetchUnread)
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'conversations' },
+        fetchUnread
+      )
       .subscribe();
     return () => {
       cancelled = true;
