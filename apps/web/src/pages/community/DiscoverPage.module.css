@@ -1383,3 +1383,48 @@
   margin-bottom: 0 !important;
   padding-bottom: 0 !important;
 }
+
+/* ===== TIKTOK BARE ACTION ICONS (NO BACKGROUND) ===== */
+
+.rightActionButton {
+  width: 44px !important;
+  height: 44px !important;
+  background: transparent !important;
+  border: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  box-shadow: none !important;
+  color: #ffffff !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 0 !important;
+  cursor: pointer !important;
+  transition: transform 0.15s ease !important;
+}
+
+.rightActionButton:hover {
+  background: transparent !important;
+  transform: scale(1.1) !important;
+}
+
+.rightActionButton:active {
+  transform: scale(0.9) !important;
+}
+
+/* Liked state: TikTok red */
+.rightActionButton.liked {
+  background: transparent !important;
+  color: #fe2c55 !important;
+}
+
+.rightActionButton.liked svg {
+  fill: #fe2c55 !important;
+  stroke: #fe2c55 !important;
+}
+
+/* Shadow on the SVG itself so it remains visible on bright videos */
+.rightActionButton svg {
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.5)) !important;
+  stroke-width: 2px !important;
+}
