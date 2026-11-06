@@ -1530,3 +1530,9 @@
   margin-top: -16px !important; /* Pulls avatar up slightly */
   margin-bottom: 10px !important; /* Pushes heart down a bit */
 }
+
+/* ===== REMOVE AVATAR BORDER ENTIRELY ===== */
+.rightAvatarButton {
+  border: none !important;
+  box-shadow: none !important;
+}
