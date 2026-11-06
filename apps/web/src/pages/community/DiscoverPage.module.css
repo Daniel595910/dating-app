@@ -1428,3 +1428,43 @@
   filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.5)) !important;
   stroke-width: 2px !important;
 }
+
+/* ===== Double-tap like animation (TikTok style) ===== */
+.likeAnimation {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(0.3);
+  z-index: 25;
+  pointer-events: none;
+  animation: doubleTapHeart 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.likeAnimation svg {
+  width: 100px;
+  height: 100px;
+  filter: drop-shadow(0 4px 16px rgba(254, 44, 85, 0.6));
+}
+
+@keyframes doubleTapHeart {
+  0% {
+    transform: translate(-50%, -50%) scale(0.3);
+    opacity: 0;
+  }
+  15% {
+    transform: translate(-50%, -50%) scale(1.1);
+    opacity: 1;
+  }
+  30% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 1;
+  }
+  70% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(1.4);
+    opacity: 0;
+  }
+}

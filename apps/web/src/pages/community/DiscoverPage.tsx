@@ -610,7 +610,7 @@ export const DiscoverPage: React.FC = () => {
       {/* Double-tap Like Animation */}
       {showLikeAnimation && (
         <div className={styles.likeAnimation}>
-          <Heart size={80} fill="#ef4444" />
+          <Heart size={100} fill="#fe2c55" />
         </div>
       )}
 
@@ -786,7 +786,7 @@ export const DiscoverPage: React.FC = () => {
               <Maximize2 size={16} />
             </button>
           )}
-          {showHeartPop && <Heart size={120} className={styles.heartPop} fill="#f97316" />}
+          {showHeartPop && <Heart size={60} className={styles.heartPop} fill="#fe2c55" />}
           {!isPlaying && <button className={styles.playOverlay} onClick={togglePlay}><Play size={24} /></button>}
           
 
