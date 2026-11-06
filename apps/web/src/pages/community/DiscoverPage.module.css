@@ -1570,3 +1570,8 @@
   border: none !important;
   box-shadow: none !important;
 }
+/* ===== PUSH RIGHT ACTIONS UP FOR DOWNLOAD ROW ===== */
+/* Resetting back to original bottom position */
+.discoverPage .rightActions {
+  bottom: calc(86px + env(safe-area-inset-bottom)) !important;
+}
