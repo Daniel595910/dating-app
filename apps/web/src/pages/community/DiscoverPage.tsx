@@ -885,7 +885,7 @@ export const DiscoverPage: React.FC = () => {
               }}
               aria-label={likedIds.has(current.videoId) ? 'Unlike' : 'Like'}
             >
-              <svg width="32" height="32" viewBox="0 0 24 24" fill={likedIds.has(current.videoId) ? "#fe2c55" : "#ffffff"} style={{ filter: "drop-shadow(0 2px 4px rgba(0,0,0,0.4))" }}><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+              <svg width="36" height="36" viewBox="0 0 24 24" fill={likedIds.has(current.videoId) ? "#fe2c55" : "#ffffff"} style={{ filter: "drop-shadow(0 2px 4px rgba(0,0,0,0.4))" }}><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
             </button>
             <div className={styles.likeCount}>
               {formatCount(likeCounts[current.videoId] || 0)}
@@ -897,7 +897,7 @@ export const DiscoverPage: React.FC = () => {
                 className={styles.rightActionButton}
                 aria-label="Comment"
               >
-                <svg width="28" height="28" viewBox="0 0 24 24" fill="#ffffff" ><path d="M 6 2.5 L 18 2.5 A 4.5 4.5 0 0 1 22.5 7 L 22.5 15.5 A 4.5 4.5 0 0 1 18 20 L 12.5 20 L 7.5 24 A 1.5 1.5 0 0 1 6 22.5 L 6 20 A 4.5 4.5 0 0 1 1.5 15.5 L 1.5 7 A 4.5 4.5 0 0 1 6 2.5 Z" fill="currentColor" /><circle cx="7.5" cy="11.25" r="1.4" fill="#000000" /><circle cx="12" cy="11.25" r="1.4" fill="#000000" /><circle cx="16.5" cy="11.25" r="1.4" fill="#000000" /></svg>
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="#ffffff" ><path d="M 6 2.5 L 18 2.5 A 4.5 4.5 0 0 1 22.5 7 L 22.5 15.5 A 4.5 4.5 0 0 1 18 20 L 12.5 20 L 7.5 24 A 1.5 1.5 0 0 1 6 22.5 L 6 20 A 4.5 4.5 0 0 1 1.5 15.5 L 1.5 7 A 4.5 4.5 0 0 1 6 2.5 Z" fill="currentColor" /><circle cx="7.5" cy="11.25" r="1.4" fill="#000000" /><circle cx="12" cy="11.25" r="1.4" fill="#000000" /><circle cx="16.5" cy="11.25" r="1.4" fill="#000000" /></svg>
               </button>
               <div className={styles.likeCount}>
                 {formatCount(commentCounts[current.videoId] !== undefined ? commentCounts[current.videoId] : (current.commentCount || 0))}
@@ -926,7 +926,7 @@ export const DiscoverPage: React.FC = () => {
               }}
               aria-label="Share"
             >
-              <svg width="26" height="26" viewBox="0 0 24 24" fill="#ffffff" ><path d="M 10.5 12 L 18.5 6.5 M 10.5 12 L 18.5 17.5" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" /><circle cx="4" cy="12" r="4.5" fill="currentColor" /><circle cx="19.5" cy="5.5" r="4.5" fill="currentColor" /><circle cx="19.5" cy="18.5" r="4.5" fill="currentColor" /></svg>
+              <svg width="30" height="30" viewBox="0 0 24 24" fill="#ffffff" ><path d="M 10.5 12 L 18.5 6.5 M 10.5 12 L 18.5 17.5" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" /><circle cx="4" cy="12" r="4.5" fill="currentColor" /><circle cx="19.5" cy="5.5" r="4.5" fill="currentColor" /><circle cx="19.5" cy="18.5" r="4.5" fill="currentColor" /></svg>
             </button>
             <div className={styles.likeCount}>
               {formatCount(shareCounts[current.videoId] || 0)}
@@ -936,7 +936,7 @@ export const DiscoverPage: React.FC = () => {
               onClick={(e) => { e.stopPropagation(); handleDownloadClick(); }}
               aria-label="Download video"
             >
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="42" height="42" style={{ filter: "drop-shadow(0 2px 4px rgba(0,0,0,0.4))" }}>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="50" height="50" style={{ filter: "drop-shadow(0 2px 4px rgba(0,0,0,0.4))" }}>
                 {/* Uncomment the circle below for the black-disc variant */}
                 {/* <circle cx="50" cy="50" r="45" fill="#000000" /> */}
                 <g fill="#ffffff">
