@@ -673,6 +673,7 @@ export const DiscoverPage: React.FC = () => {
           onPublish={handlePublish}
           uploading={uploading}
           uploadProgress={uploadProgress}
+          theme={effectiveTheme}
         />
       )}
 
@@ -877,6 +878,7 @@ export const DiscoverPage: React.FC = () => {
         thumbnailUrl={current?.thumbnailUrl || null}
         videoId={current?.videoId || null}
         downloadEnabled={current?.downloadEnabled ?? false}
+        theme={effectiveTheme}
         onClose={() => setDownloadModalOpen(false)}
       />
 

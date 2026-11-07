@@ -9,6 +9,7 @@ interface DownloadModalProps {
   videoId: string | null;
   downloadEnabled: boolean;
   onClose: () => void;
+  theme?: 'light' | 'dark';
 }
 
 type Phase = 'downloading' | 'success' | 'restricted' | 'error';
@@ -16,7 +17,7 @@ type Phase = 'downloading' | 'success' | 'restricted' | 'error';
 const MAX_SAFE_BYTES = 200 * 1024 * 1024; // 200 MB memory cap
 
 export const DownloadModal: React.FC<DownloadModalProps> = ({
-  open, videoUrl, thumbnailUrl, videoId, downloadEnabled, onClose,
+  open, videoUrl, thumbnailUrl, videoId, downloadEnabled, onClose, theme,
 }) => {
   const [phase, setPhase] = useState<Phase>('downloading');
   const [progress, setProgress] = useState(0);
@@ -116,6 +117,7 @@ export const DownloadModal: React.FC<DownloadModalProps> = ({
 
   return (
     <div className={styles.backdrop} onClick={onClose}>
+    data-theme={theme || undefined}
       <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
         <button className={styles.closeBtn} onClick={onClose} aria-label="Close">
           <X size={18} />
