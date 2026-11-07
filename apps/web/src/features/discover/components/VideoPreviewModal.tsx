@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import { X, Trash2, ArrowLeft, Eye, EyeOff } from 'lucide-react';
+import { X, Trash2, ArrowLeft, Eye, EyeOff, Volume2, VolumeX } from 'lucide-react';
 import styles from './VideoPreviewModal.module.css';
 
 interface PreviewVideo {
@@ -97,6 +97,14 @@ export const VideoPreviewModal: React.FC<VideoPreviewModalProps> = ({
           aria-label="Close preview"
         >
           <ArrowLeft size={24} />
+        </button>
+
+        <button
+          className={styles.muteBtn}
+          onClick={handleToggleMute}
+          aria-label={muted ? 'Unmute video' : 'Mute video'}
+        >
+          {muted ? <VolumeX size={20} /> : <Volume2 size={20} />}
         </button>
 
         <div className={styles.actionsRow}>

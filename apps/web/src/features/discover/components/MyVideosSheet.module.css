@@ -3,6 +3,8 @@
 .backdrop {
   position: fixed;
   inset: 0;
+  overscroll-behavior: contain;
+  touch-action: none;
   background: rgba(0, 0, 0, 0.6);
   backdrop-filter: blur(6px);
   -webkit-backdrop-filter: blur(6px);
@@ -22,6 +24,8 @@
   flex-direction: column;
   border-radius: 24px 24px 0 0;
   overflow: hidden;
+  overscroll-behavior: contain;
+  touch-action: pan-y;
   box-shadow: 0 -12px 40px rgba(0, 0, 0, 0.3);
   animation: slideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
@@ -93,6 +97,9 @@
 .scrollArea {
   flex: 1;
   overflow-y: auto;
+  overscroll-behavior: contain;
+  touch-action: pan-y;
+  -webkit-overflow-scrolling: touch;
   padding: 12px;
   scrollbar-width: none;
   -ms-overflow-style: none;

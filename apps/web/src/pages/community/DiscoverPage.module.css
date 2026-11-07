@@ -1247,18 +1247,17 @@
 .infoLocation {
   display: inline-flex;
   align-items: center;
-  gap: 3px;
-  padding: 3px 8px;
-  background: rgba(255, 255, 255, 0.15);
-  border: none;
-  border-radius: 9999px;
-  font-size: 11px;
+  gap: 4px;
+  font-size: 12px;
   font-weight: 500;
-  color: #ffffff;
+  color: rgba(255, 255, 255, 0.85);
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
   align-self: flex-start;
   margin-top: 4px;
+  background: transparent;
+  border: none;
+  padding: 0;
 }
-
 .infoLocation svg {
   width: 10px;
   height: 10px;

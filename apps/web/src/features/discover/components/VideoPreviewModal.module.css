@@ -137,3 +137,31 @@
   from { opacity: 0; }
   to { opacity: 1; }
 }
+/* ===== MUTE BUTTON (top-right) ===== */
+.muteBtn {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 50%;
+  width: 44px;
+  height: 44px;
+  cursor: pointer;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+  transition: background 0.15s ease;
+}
+
+.muteBtn:hover {
+  background: rgba(0, 0, 0, 0.75);
+}
+
+.muteBtn:active {
+  transform: scale(0.94);
+}
