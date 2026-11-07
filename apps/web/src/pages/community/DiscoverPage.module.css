@@ -1426,7 +1426,7 @@
 /* Shadow on the SVG itself so it remains visible on bright videos */
 .rightActionButton svg {
   filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.5)) !important;
-  stroke-width: 2px !important;
+  stroke-width: 2.5px !important;
 }
 
 /* ===== Double-tap like animation (TikTok style) ===== */
@@ -2537,4 +2537,10 @@
 @keyframes offlineToastIn {
   from { opacity: 0; transform: translateX(-50%) translateY(-10px); }
   to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+
+/* ===== REMOVE AVATAR BORDER ENTIRELY ===== */
+.rightAvatarButton {
+  border: none !important;
+  box-shadow: none !important;
 }
