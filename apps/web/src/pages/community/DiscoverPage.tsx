@@ -757,6 +757,7 @@ export const DiscoverPage: React.FC = () => {
           <div 
             ref={progressBarRef}
             className={styles.progressBarWrapper}
+            data-seeking={isSeeking}
             onMouseDown={handleSeekStart}
             onMouseMove={handleSeekMove}
             onMouseUp={handleSeekEnd}

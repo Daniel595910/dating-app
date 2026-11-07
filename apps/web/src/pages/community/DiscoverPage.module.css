@@ -2581,3 +2581,37 @@
   font-weight: 600 !important;
   border-radius: 9999px !important;
 }
+
+/* ===== VIDEO SHIFTED UP (centered in visible area) ===== */
+/* Shifts the video up by half the nav height so its visible center aligns with
+   the space above the nav. Top and bottom of the video clip slightly (TikTok behavior). */
+.discoverPage .videoCard {
+  height: 100dvh !important;
+  top: -35px !important;
+  padding-bottom: 0 !important;
+}
+
+
+.discoverPage .rightActions {
+  bottom: calc(78px + env(safe-area-inset-bottom)) !important;
+}
+
+
+
+/* ===== PROGRESS BAR OVERRIDE ===== */
+.discoverPage .progressBarWrapper {
+  bottom: calc(30px + env(safe-area-inset-bottom)) !important;
+}
+
+
+
+
+
+/* ===== RIGHT ACTIONS ===== */
+.discoverPage .rightActions {
+  bottom: calc(43px + env(safe-area-inset-bottom)) !important;
+}
+/* ===== INFO OVERLAY ===== */
+.discoverPage .infoOverlay {
+  bottom: calc(43px + env(safe-area-inset-bottom)) !important;
+}
