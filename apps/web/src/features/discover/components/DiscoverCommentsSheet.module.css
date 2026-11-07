@@ -843,3 +843,76 @@
   height: 36px;
   padding: 0;
 }
+/* ===== THEME-AWARE FINAL OVERRIDES ===== */
+/* Replaces every hardcoded color with theme tokens. Works in both light + dark. */
+
+/* Input pill: text + placeholder + bg */
+.commentInputPill {
+  background: var(--color-surface-alt) !important;
+  color: var(--color-text) !important;
+}
+.commentInputPill::placeholder {
+  color: var(--color-text-muted) !important;
+}
+
+/* Composer sheet: bg + border */
+.composerSheet {
+  background: var(--color-surface) !important;
+  border-top: 1px solid var(--color-border-strong) !important;
+}
+
+/* Fake composer bar: bg + border */
+.fakeComposerBar {
+  background: var(--color-surface) !important;
+  border-top: 1px solid var(--color-border) !important;
+}
+
+/* Fake input: bg + text */
+.fakeInput {
+  background: var(--color-bg) !important;
+  color: var(--color-text-muted) !important;
+}
+
+/* Icon buttons (emoji/sticker/gift): color */
+.pillIconBtn {
+  color: var(--color-text-secondary) !important;
+}
+.pillIconBtn:hover {
+  background: var(--color-surface-alt) !important;
+  color: var(--color-text) !important;
+}
+.pillIconBtnActive {
+  color: var(--color-primary) !important;
+  background: var(--color-primary-soft) !important;
+}
+
+/* Send button: disabled + active */
+.inlineSendButton {
+  background: var(--color-border) !important;
+  color: var(--color-text-muted) !important;
+}
+.inlineSendButtonActive {
+  background: var(--color-primary) !important;
+  color: #ffffff !important;
+}
+.inlineSendButtonActive:hover {
+  background: var(--color-primary-hover) !important;
+}
+
+/* Composer avatar: bg + text */
+.composerAvatar {
+  background: var(--color-border) !important;
+  color: var(--color-text-secondary) !important;
+}
+
+/* Remove ALL old [data-theme=dark] overrides (tokens handle both now) */
+[data-theme="dark"] .composerSheet,
+[data-theme="dark"] .commentInputPill,
+[data-theme="dark"] .commentInputPill::placeholder,
+[data-theme="dark"] .inlineSendButton,
+[data-theme="dark"] .inlineSendButtonActive,
+[data-theme="dark"] .pillIconBtn,
+[data-theme="dark"] .pillIconBtn:hover,
+[data-theme="dark"] .pillIconBtnActive {
+  /* Reset to token values — this line alone isn't enough, see overrides above */
+}
