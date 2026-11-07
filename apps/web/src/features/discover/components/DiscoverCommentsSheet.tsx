@@ -399,21 +399,16 @@ export const DiscoverCommentsSheet: React.FC<DiscoverCommentsSheetProps> = ({
       >
         <div
           onClick={(e) => e.stopPropagation()}
-          style={{
-            width: '100%', maxWidth: 480, height: '82dvh',
-            backgroundColor: 'var(--color-surface)', borderRadius: '24px 24px 0 0',
-            display: 'flex', flexDirection: 'column', overflow: 'hidden',
-            boxShadow: '0 -12px 40px rgba(0,0,0,0.3)',
-          }}
+          className={styles.sheetContainer}
         >
-          <div style={{ position: 'relative', padding: 16, borderBottom: '1px solid var(--color-border-strong)', flexShrink: 0 }}>
-            <div style={{ width: 40, height: 4, backgroundColor: 'var(--color-border-strong)', borderRadius: 9999, position: 'absolute', left: '50%', transform: 'translateX(-50%)', top: 6 }} />
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 6 }}>
-              <h2 style={{ fontSize: 17, fontWeight: 800, margin: 0, color: 'var(--color-text)', letterSpacing: '-0.02em' }}>
-                Comments ({totalCount(comments)})
+          <div className={styles.sheetHeader}>
+            <div className={styles.grabber} />
+            <div className={styles.headerRow}>
+              <h2 className={styles.headerTitle}>
+                Comments <span className={styles.headerCount}>{totalCount(comments)}</span>
               </h2>
-              <button onClick={onClose} aria-label="Close" style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-text-secondary)', padding: 4 }}>
-                <X size={20} />
+              <button onClick={onClose} aria-label="Close" className={styles.headerClose}>
+                <X size={18} />
               </button>
             </div>
           </div>
@@ -424,10 +419,10 @@ export const DiscoverCommentsSheet: React.FC<DiscoverCommentsSheetProps> = ({
                 <Loader size={24} style={{ animation: 'spin 1s linear infinite' }} />
               </div>
             ) : comments.length === 0 ? (
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', gap: 8, textAlign: 'center', color: 'var(--color-text-secondary)' }}>
-                <MessageCircle size={48} style={{ color: 'var(--color-text-disabled)' }} />
-                <p style={{ fontSize: 14, fontWeight: 600, margin: 0, color: 'var(--color-text)' }}>No comments yet</p>
-                <p style={{ fontSize: 13, margin: 0 }}>Be the first to comment!</p>
+              <div className={styles.emptyState}>
+                <div className={styles.emptyIcon}><MessageCircle size={32} /></div>
+                <p className={styles.emptyTitle}>No comments yet</p>
+                <p className={styles.emptyText}>Be the first to comment!</p>
               </div>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
