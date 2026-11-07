@@ -1055,6 +1055,7 @@ export const DiscoverPage: React.FC = () => {
       <DiscoverSearchModal
         open={searchModalOpen}
         onClose={() => setSearchModalOpen(false)}
+        onAvatarClick={(userId) => navigate('/profile/' + userId)}
         theme={effectiveTheme}
         onVideoSelect={(video, allResults) => {
           // Convert ALL search results to DiscoverCandidate format,

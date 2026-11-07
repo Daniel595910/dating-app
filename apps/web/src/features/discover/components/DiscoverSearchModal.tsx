@@ -8,6 +8,7 @@ interface DiscoverSearchModalProps {
   open: boolean;
   onClose: () => void;
   onVideoSelect: (video: SearchResult, allResults: SearchResult[]) => void;
+  onAvatarClick?: (userId: string) => void;
   theme?: 'light' | 'dark';
 }
 
@@ -21,6 +22,7 @@ export const DiscoverSearchModal: React.FC<DiscoverSearchModalProps> = ({
   open,
   onClose,
   onVideoSelect,
+  onAvatarClick,
   theme,
 }) => {
   const [query, setQuery] = useState('');
@@ -180,6 +182,22 @@ export const DiscoverSearchModal: React.FC<DiscoverSearchModalProps> = ({
                     <div className={styles.playBadge}>
                       <Play size={10} fill="#fff" />
                     </div>
+                    {onAvatarClick && (
+                      <button
+                        className={styles.gridAvatar}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onAvatarClick(item.user_id);
+                        }}
+                        aria-label={'View ' + item.display_name + ' profile'}
+                      >
+                        {item.avatar_url ? (
+                          <img src={item.avatar_url} alt="" />
+                        ) : (
+                          <span>{item.display_name.charAt(0).toUpperCase()}</span>
+                        )}
+                      </button>
+                    )}
                   </div>
 
                   <div className={styles.info}>
