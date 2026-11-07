@@ -68,6 +68,7 @@ export const DiscoverCommentsSheet: React.FC<DiscoverCommentsSheetProps> = ({
 }) => {
   const [comments, setComments] = useState<CommentNode[]>([]);
   const [loading, setLoading] = useState(false);
+  const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
   const [sending, setSending] = useState(false);
   const [input, setInput] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -104,6 +105,7 @@ export const DiscoverCommentsSheet: React.FC<DiscoverCommentsSheetProps> = ({
     try {
       const data = await discoverService.fetchVideoComments(id);
       setComments(data as CommentNode[]);
+      setHasLoadedOnce(true);
     } catch (e: any) {
       setError(e?.message || 'Failed to load comments');
     } finally {
@@ -152,6 +154,7 @@ export const DiscoverCommentsSheet: React.FC<DiscoverCommentsSheetProps> = ({
       loadComments(videoId, true);
     }
     if (!open) {
+      setHasLoadedOnce(false);
       setReplyingTo(null);
       setInput('');
       setShowEmoji(false);
@@ -414,7 +417,7 @@ export const DiscoverCommentsSheet: React.FC<DiscoverCommentsSheetProps> = ({
           </div>
 
           <div style={{ flex: 1, overflowY: 'auto', padding: 16 }}>
-            {loading && comments.length === 0 ? (
+            {loading || !hasLoadedOnce ? (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 16, padding: '16px 0', opacity: 0.6 }}>
                 {[1, 2, 3].map((i) => (
                   <div key={i} style={{ display: 'flex', gap: 10 }}>
