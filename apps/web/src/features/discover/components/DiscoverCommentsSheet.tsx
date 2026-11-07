@@ -11,6 +11,7 @@ interface DiscoverCommentsSheetProps {
   onCommentAdded?: () => void;
   onCommentDeleted?: () => void;
   onCommentCountChange?: (videoId: string, count: number) => void;
+  theme?: 'light' | 'dark';
 }
 
 interface CommentNode {
@@ -65,6 +66,7 @@ export const DiscoverCommentsSheet: React.FC<DiscoverCommentsSheetProps> = ({
   onCommentAdded,
   onCommentDeleted,
   onCommentCountChange,
+  theme,
 }) => {
   const [comments, setComments] = useState<CommentNode[]>([]);
   const [loading, setLoading] = useState(false);
@@ -403,6 +405,7 @@ export const DiscoverCommentsSheet: React.FC<DiscoverCommentsSheetProps> = ({
         <div
           onClick={(e) => e.stopPropagation()}
           className={styles.sheetContainer}
+          data-theme={theme || undefined}
         >
           <div className={styles.sheetHeader}>
             <div className={styles.grabber} />
@@ -460,6 +463,7 @@ export const DiscoverCommentsSheet: React.FC<DiscoverCommentsSheetProps> = ({
       {composerOpen && (
         <div
           className={styles.composerOverlay}
+          data-theme={theme || undefined}
           onClick={() => setComposerOpen(false)}
           style={{
             bottom: keyboardOpen ? 'var(--spensive-kb-height)' : 0,

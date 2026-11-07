@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '@/store/auth.store';
+import { useThemeStore } from '@/store/theme.store';
 import { supabase } from '@/config/supabase.client';
 import { discoverService } from '../../features/discover/services/discover.service';
 import { mediaService } from '../../features/community/services/media.service';
@@ -35,6 +36,10 @@ interface SwipeState {
 export const DiscoverPage: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuthStore();
+  const themeMode = useThemeStore((s) => s.theme);
+  const effectiveTheme: 'light' | 'dark' = themeMode === 'system'
+    ? (typeof window !== 'undefined' && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
+    : themeMode;
   const [candidates, setCandidates] = useState<DiscoverCandidate[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [hasMore, setHasMore] = useState(true);
@@ -917,7 +922,7 @@ export const DiscoverPage: React.FC = () => {
               }}
               aria-label={likedIds.has(current.videoId) ? 'Unlike' : 'Like'}
             >
-              <svg width="28" height="28" viewBox="0 0 24 24" fill={likedIds.has(current.videoId) ? "#fe2c55" : "none"} stroke={likedIds.has(current.videoId) ? "#fe2c55" : "#ffffff"} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+              <svg width="28" height="28" viewBox="0 0 24 24" fill={likedIds.has(current.videoId) ? "#ffffff" : "none"} stroke="#ffffff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
             </button>
             <div className={styles.likeCount}>
               {formatCount(likeCounts[current.videoId] || 0)}
@@ -992,6 +997,7 @@ export const DiscoverPage: React.FC = () => {
         open={commentsOpen}
         videoId={commentsVideoId}
         currentUserId={user?.id || null}
+        theme={effectiveTheme}
         onClose={() => { setCommentsOpen(false); setCommentsVideoId(null); }}
         onCommentAdded={() => {
           const vId = commentsVideoId;
