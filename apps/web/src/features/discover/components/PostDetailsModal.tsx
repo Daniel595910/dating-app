@@ -193,6 +193,7 @@ export const PostDetailsModal: React.FC<PostDetailsModalProps> = ({
       locationText: locationText.trim() || null,
       allowComments,
       allowDuet,
+      downloadEnabled,
     });
   };
 
