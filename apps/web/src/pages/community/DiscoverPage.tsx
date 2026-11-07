@@ -15,7 +15,7 @@ import { useStoryRings } from '../../features/community/hooks/useStoryRings';
 import { StoryViewer } from '../../features/community/components/StoryViewer';
 import { BottomNav } from '../../features/community/components/BottomNav';
 import { 
-  BadgeCheck, MapPin, Heart, X, Play, Pause, Video, Upload, 
+  WifiOff, BadgeCheck, MapPin, Heart, X, Play, Pause, Video, Upload, 
   Loader, ArrowLeft, Grid3x3, Plus, Clock, CheckCircle2, XCircle,
   Trash2, Eye, EyeOff, Check,
   MessageSquare, Send, Maximize2, TrendingUp
@@ -85,6 +85,19 @@ export const DiscoverPage: React.FC = () => {
   const [searchModalOpen, setSearchModalOpen] = useState(false);
   const [downloadModalOpen, setDownloadModalOpen] = useState(false);
   const { ringState } = useStoryRings(true);
+  const [isOffline, setIsOffline] = useState(!navigator.onLine);
+  const [showOfflineToast, setShowOfflineToast] = useState(false);
+
+  useEffect(() => {
+    const handleOnline = () => { setIsOffline(false); setShowOfflineToast(false); };
+    const handleOffline = () => { setIsOffline(true); setShowOfflineToast(true); setTimeout(() => setShowOfflineToast(false), 4000); };
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
   const [storyViewerOpen, setStoryViewerOpen] = useState(false);
   const [storyViewerAuthorId, setStoryViewerAuthorId] = useState<string | null>(null);
   
@@ -584,6 +597,12 @@ export const DiscoverPage: React.FC = () => {
 
   return (
     <div ref={containerRef} className={styles.discoverPage} data-theme="dark" onTouchStart={(e) => { if (!commentsOpen && !showPublishModal) handleTouchStart(e); }} onTouchMove={(e) => { if (!commentsOpen && !showPublishModal) handleTouchMove(e); }} onTouchEnd={(e) => { if (!commentsOpen && !showPublishModal) handleTouchEnd(e); }} onTouchCancel={(e) => { if (!commentsOpen && !showPublishModal) handleTouchCancel(); }} style={{ touchAction: 'none', userSelect: 'none', WebkitUserSelect: 'none', overscrollBehavior: 'none' }}>
+      {showOfflineToast && (
+        <div className={styles.offlineToast}>
+          <WifiOff size={14} />
+          <span>You are offline. Cached videos still play.</span>
+        </div>
+      )}
       <header className={styles.header}>
         <button className={styles.backButton} onClick={() => navigate(-1)} aria-label="Back">
           <ArrowLeft size={20} />
@@ -600,6 +619,12 @@ export const DiscoverPage: React.FC = () => {
             Pop
           </button>
         </div>
+        {isOffline && (
+          <span className={styles.offlinePill}>
+            <WifiOff size={12} />
+            Offline
+          </span>
+        )}
         <div style={{ display: 'flex', gap: 8, marginLeft: 'auto' }}>
           <button className={styles.headerButton} onClick={(e) => { e.stopPropagation(); setShowMyVideos(true); }} aria-label="My Videos">
             <Grid3x3 size={20} />

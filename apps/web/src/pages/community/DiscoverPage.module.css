@@ -2480,3 +2480,61 @@
 .discoverPage .popInlineButton:active {
   transform: scale(0.95) !important;
 }
+/* ===== OFFLINE INDICATOR ===== */
+.discoverPage .offlinePill {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  padding: 5px 10px !important;
+  background: rgba(245, 158, 11, 0.2) !important;
+  border: 1px solid rgba(245, 158, 11, 0.5) !important;
+  border-radius: 9999px !important;
+  color: #fbbf24 !important;
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.02em !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  white-space: nowrap !important;
+  flex-shrink: 0 !important;
+}
+
+.discoverPage .offlinePill svg {
+  width: 12px !important;
+  height: 12px !important;
+}
+
+.discoverPage .offlineToast {
+  position: absolute !important;
+  top: calc(64px + env(safe-area-inset-top)) !important;
+  left: 50% !important;
+  transform: translateX(-50%) !important;
+  z-index: 50 !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  padding: 10px 16px !important;
+  background: rgba(0, 0, 0, 0.75) !important;
+  backdrop-filter: blur(20px) !important;
+  -webkit-backdrop-filter: blur(20px) !important;
+  border: 1px solid rgba(245, 158, 11, 0.4) !important;
+  border-radius: 9999px !important;
+  color: #ffffff !important;
+  font-size: 12px !important;
+  font-weight: 500 !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4) !important;
+  animation: offlineToastIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  pointer-events: none !important;
+}
+
+.discoverPage .offlineToast svg {
+  width: 14px !important;
+  height: 14px !important;
+  color: #fbbf24 !important;
+  flex-shrink: 0 !important;
+}
+
+@keyframes offlineToastIn {
+  from { opacity: 0; transform: translateX(-50%) translateY(-10px); }
+  to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
