@@ -9,6 +9,10 @@ const sw = self as unknown as ServiceWorkerGlobalScope;
 // Service Worker for Dating App PWA — caching + push notifications
 const CACHE_NAME = 'dating-app-v6';
 const RUNTIME_CACHE = 'dating-app-runtime-v6';
+const MEDIA_CACHE = 'dating-app-media-v1';
+const MEDIA_MAX_ENTRIES = 10;
+const MEDIA_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;
+
 
 // VitePWA replaces this exact token with the precache manifest.
 // DO NOT rename, wrap, or move `self.__WB_MANIFEST` — workbox-build
@@ -31,7 +35,7 @@ sw.addEventListener('activate', (event) => {
     caches.keys().then((cacheNames) =>
       Promise.all(
         cacheNames
-          .filter((name) => name !== CACHE_NAME && name !== RUNTIME_CACHE)
+          .filter((name) => name !== CACHE_NAME && name !== RUNTIME_CACHE && name !== MEDIA_CACHE)
           .map((name) => caches.delete(name))
       )
     )
@@ -44,6 +48,12 @@ sw.addEventListener('fetch', (event) => {
   const { request } = event;
   if (request.method !== 'GET') return;
 
+  // Media (videos, images) -> dedicated cache with LRU + age eviction
+  if (request.url.includes('/storage/v1/object/')) {
+    event.respondWith(handleMediaRequest(request));
+    return;
+  }
+
   if (request.url.includes('.supabase.co')) {
     event.respondWith(handleApiRequest(request));
     return;
@@ -51,6 +61,42 @@ sw.addEventListener('fetch', (event) => {
 
   event.respondWith(handleStaticRequest(request));
 });
+
+async function handleMediaRequest(request: Request): Promise<Response> {
+  const cache = await caches.open(MEDIA_CACHE);
+
+  const cached = await cache.match(request);
+  if (cached) return cached;
+
+  try {
+    const response = await fetch(request);
+    if (response.ok) {
+      await cache.put(request, response.clone());
+      await evictMediaCache(cache);
+    }
+    return response;
+  } catch {
+    return new Response('', { status: 503 });
+  }
+}
+
+async function evictMediaCache(cache: Cache): Promise<void> {
+  const keys = await cache.keys();
+  const now = Date.now();
+  for (const key of keys) {
+    const cached = await cache.match(key);
+    if (!cached) continue;
+    const dateHeader = cached.headers.get('date');
+    if (dateHeader && now - new Date(dateHeader).getTime() > MEDIA_MAX_AGE_MS) {
+      await cache.delete(key);
+    }
+  }
+  const remaining = await cache.keys();
+  if (remaining.length > MEDIA_MAX_ENTRIES) {
+    const toDelete = remaining.slice(0, remaining.length - MEDIA_MAX_ENTRIES);
+    await Promise.all(toDelete.map((k) => cache.delete(k)));
+  }
+}
 
 async function handleApiRequest(request: Request) {
   const cache = await caches.open(RUNTIME_CACHE);
