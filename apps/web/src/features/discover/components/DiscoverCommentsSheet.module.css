@@ -637,3 +637,38 @@
   background: #ef4444;
   color: #ffffff;
 }
+
+/* SCOPE A: BUBBLE POLISH */
+.commentBubble {
+  padding: 10px 14px !important;
+  border-radius: 16px !important;
+  font-size: 14px !important;
+  line-height: 1.5 !important;
+  max-width: 280px !important;
+}
+
+.replyBubble {
+  padding: 8px 12px !important;
+  border-radius: 14px !important;
+  font-size: 13px !important;
+  line-height: 1.45 !important;
+  max-width: 240px !important;
+}
+
+/* Composer pill — subtle polish */
+.fakeComposerBar {
+  padding: 12px 16px calc(12px + env(safe-area-inset-bottom)) !important;
+  background: var(--color-surface) !important;
+  border-top: 1px solid var(--color-border) !important;
+}
+
+.fakeInput {
+  padding: 12px 18px !important;
+  font-size: 15px !important;
+  border-radius: 24px !important;
+}
+
+/* Sheet radius — override inline style */
+[class*="composerSheet"] {
+  border-radius: 24px 24px 0 0 !important;
+}

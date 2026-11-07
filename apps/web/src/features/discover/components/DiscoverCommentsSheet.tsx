@@ -310,12 +310,12 @@ export const DiscoverCommentsSheet: React.FC<DiscoverCommentsSheetProps> = ({
     return (
       <div key={comment.id} style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
         <div style={{ display: 'flex', gap: 10 }}>
-          <div style={{ width: 36, height: 36, borderRadius: '50%', flexShrink: 0, backgroundColor: 'var(--color-border)', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, color: 'var(--color-text-secondary)', fontSize: 14 }}>
+          <div style={{ width: 40, height: 40, borderRadius: '50%', flexShrink: 0, backgroundColor: 'var(--color-border)', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, color: 'var(--color-text-secondary)', fontSize: 14 }}>
             {comment.authorAvatarUrl ? <img src={comment.authorAvatarUrl} alt={comment.authorName} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <span>{comment.authorName.charAt(0).toUpperCase()}</span>}
           </div>
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2 }}>
-              <span style={{ fontWeight: 600, fontSize: 13, color: 'var(--color-text)' }}>{comment.authorName}</span>
+              <span style={{ fontWeight: 700, fontSize: 14, color: 'var(--color-text)' }}>{comment.authorName}</span>
               <span style={{ fontSize: 11, color: 'var(--color-text-muted)' }}>{timeAgo(comment.createdAt)}</span>
             </div>
             {comment.replyingToName && <div style={{ fontSize: 11, color: '#ef4444', marginBottom: 2 }}>Replying to @{comment.replyingToName}</div>}
@@ -324,7 +324,7 @@ export const DiscoverCommentsSheet: React.FC<DiscoverCommentsSheetProps> = ({
             ) : (
               <div className={styles.commentBubble + (currentUserId === comment.authorId ? ' ' + styles.commentBubbleOwn : '')}>{comment.content}</div>
             )}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 6 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginTop: 8 }}>
               <button onClick={() => handleReact(comment.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center', gap: 4, color: comment.userReacted ? '#ef4444' : '#9ca3af', fontSize: 12, fontWeight: 600 }}>
                 <Heart size={13} fill={comment.userReacted ? '#ef4444' : 'none'} />
                 {comment.reactionCount > 0 && <span>{comment.reactionCount}</span>}
@@ -345,7 +345,7 @@ export const DiscoverCommentsSheet: React.FC<DiscoverCommentsSheetProps> = ({
           </div>
         </div>
         {isExpanded && visibleReplies.length > 0 && (
-          <div style={{ marginLeft: 46, display: 'flex', flexDirection: 'column', gap: 10, borderLeft: '2px solid var(--color-border)', paddingLeft: 12 }}>
+          <div style={{ marginLeft: 52, display: 'flex', flexDirection: 'column', gap: 12, borderLeft: '2px solid var(--color-border)', paddingLeft: 14 }}>
             {visibleReplies.map((r) => (
               <div key={r.id} style={{ display: 'flex', gap: 10 }}>
                 <div style={{ width: 28, height: 28, borderRadius: '50%', flexShrink: 0, backgroundColor: 'var(--color-border)', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, color: 'var(--color-text-secondary)', fontSize: 12 }}>
@@ -400,16 +400,16 @@ export const DiscoverCommentsSheet: React.FC<DiscoverCommentsSheetProps> = ({
         <div
           onClick={(e) => e.stopPropagation()}
           style={{
-            width: '100%', maxWidth: 480, height: '80dvh',
-            backgroundColor: 'var(--color-surface)', borderRadius: '32px 32px 0 0',
+            width: '100%', maxWidth: 480, height: '82dvh',
+            backgroundColor: 'var(--color-surface)', borderRadius: '24px 24px 0 0',
             display: 'flex', flexDirection: 'column', overflow: 'hidden',
-            boxShadow: '0 -8px 32px rgba(0,0,0,0.2)',
+            boxShadow: '0 -12px 40px rgba(0,0,0,0.3)',
           }}
         >
           <div style={{ position: 'relative', padding: 16, borderBottom: '1px solid var(--color-border-strong)', flexShrink: 0 }}>
             <div style={{ width: 40, height: 4, backgroundColor: 'var(--color-border-strong)', borderRadius: 9999, position: 'absolute', left: '50%', transform: 'translateX(-50%)', top: 6 }} />
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 6 }}>
-              <h2 style={{ fontSize: 16, fontWeight: 700, margin: 0, color: 'var(--color-text)' }}>
+              <h2 style={{ fontSize: 17, fontWeight: 800, margin: 0, color: 'var(--color-text)', letterSpacing: '-0.02em' }}>
                 Comments ({totalCount(comments)})
               </h2>
               <button onClick={onClose} aria-label="Close" style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-text-secondary)', padding: 4 }}>
