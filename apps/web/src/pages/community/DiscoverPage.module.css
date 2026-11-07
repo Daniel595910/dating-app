@@ -2259,3 +2259,31 @@
   z-index: 1 !important;
   border-radius: 50% !important;
 }
+/* ===== CAPTION LAYOUT FIX ===== */
+/* Prevents the text from colliding with the right action icons */
+
+/* 1. Give the info overlay a hard right margin so it doesn't overlap the icons */
+.discoverPage .infoOverlay {
+  right: 85px !important; /* 44px avatar + 15px gap + 26px icon = ~85px */
+  max-width: calc(100vw - 100px) !important;
+  bottom: calc(80px + env(safe-area-inset-bottom)) !important;
+  pointer-events: auto !important;
+}
+
+/* 2. Ensure the name, caption, and location wrap safely */
+.discoverPage .infoName,
+.discoverPage .infoCaption,
+.discoverPage .infoLocation {
+  word-break: break-word !important;
+  white-space: normal !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+/* 3. Force the right actions column to stay strictly on the right, above the text */
+.discoverPage .rightActions {
+  z-index: 15 !important;
+  width: 60px !important; /* Force a column width */
+  right: 0 !important;
+  bottom: calc(80px + env(safe-area-inset-bottom)) !important;
+}
