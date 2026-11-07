@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuthStore } from '@/store/auth.store';
+import { useThemeStore } from '@/store/theme.store';
 import { useCommunity } from '../../features/community/hooks/useCommunity';
 import { useCommunityFeed } from '../../features/community/hooks/useCommunityFeed';
 import { usePostInteractions } from '../../features/community/hooks/usePostInteractions';
@@ -42,6 +43,11 @@ export const CommunityPage: React.FC = () => {
   useLocation(); // retain router context
 
   const { user } = useAuthStore();
+
+  const themeMode = useThemeStore((s) => s.theme);
+  const effectiveTheme: 'light' | 'dark' = themeMode === 'system'
+    ? (typeof window !== 'undefined' && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
+    : themeMode;
   const { ringState: storyRingState, authors: storyAuthors, refresh: refreshStoryRings } = useStoryRings(Boolean(user?.id));
   const [filter, setFilter] = useState<FeedFilter>('all');
   const [createSheetOpen, setCreateSheetOpen] = useState(false);
@@ -395,6 +401,7 @@ export const CommunityPage: React.FC = () => {
         onClose={() => setCommentPostId(null)}
         postId={commentPostId || ''}
         userId={user?.id || ''}
+        theme={effectiveTheme}
       />
 
       <ProfilePreviewSheet

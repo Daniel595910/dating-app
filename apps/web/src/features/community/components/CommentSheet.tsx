@@ -9,6 +9,7 @@ interface CommentSheetProps {
   postId: string;
   userId: string;
   onCommentAdded?: () => void;
+  theme?: 'light' | 'dark';
 }
 
 interface CommentAuthor {
@@ -49,9 +50,10 @@ const QUICK_REACTIONS: string[][] = [
 
 const REPLIES_PER_PAGE = 3;
 
-export const CommentSheet: React.FC<CommentSheetProps> = ({ open, onClose, postId, userId, onCommentAdded }) => {
+export const CommentSheet: React.FC<CommentSheetProps> = ({ open, onClose, postId, userId, onCommentAdded, theme }) => {
   const [comments, setComments] = useState<CommentNode[]>([]);
   const [loading, setLoading] = useState(false);
+  const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [newComment, setNewComment] = useState('');
@@ -154,9 +156,9 @@ export const CommentSheet: React.FC<CommentSheetProps> = ({ open, onClose, postI
     return roots;
   }, [userId]);
 
-  const fetchComments = useCallback(async () => {
+  const fetchComments = useCallback(async (isBackground: boolean = false) => {
     if (!open) return;
-    setLoading(true);
+    if (!isBackground) setLoading(true);
     setError(null);
 
     try {
@@ -221,7 +223,8 @@ export const CommentSheet: React.FC<CommentSheetProps> = ({ open, onClose, postI
       console.error('Failed to fetch comments:', err);
       setError(err.message || 'Failed to load comments');
     } finally {
-      setLoading(false);
+      if (!isBackground) setLoading(false);
+      setHasLoadedOnce(true);
     }
   }, [open, postId, userId, fetchProfiles, buildTree]);
 
@@ -230,6 +233,7 @@ export const CommentSheet: React.FC<CommentSheetProps> = ({ open, onClose, postI
       fetchComments();
     }
     if (!open) {
+      setHasLoadedOnce(false);
       setShowEmoji(false);
       setShowSticker(false);
       setComposerOpen(false);
@@ -241,7 +245,7 @@ export const CommentSheet: React.FC<CommentSheetProps> = ({ open, onClose, postI
     const channel = supabase
       .channel(`comments:${postId}`)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'comments', filter: `post_id=eq.${postId}` }, () => {
-        fetchComments();
+        fetchComments(true);
       })
       .subscribe();
     return () => { channel.unsubscribe(); };
@@ -337,7 +341,7 @@ export const CommentSheet: React.FC<CommentSheetProps> = ({ open, onClose, postI
       }
 
       onCommentAdded?.();
-      await fetchComments();
+      await fetchComments(true);
     } catch (err: any) {
       setError(err.message || 'Failed to send');
     } finally {
@@ -354,7 +358,7 @@ export const CommentSheet: React.FC<CommentSheetProps> = ({ open, onClose, postI
     setCommentToDelete(null);
     try {
       await supabase.from('comments').delete().eq('id', commentId);
-      await fetchComments();
+      await fetchComments(true);
     } catch (err) {
       console.error('Delete failed:', err);
     }
@@ -545,7 +549,7 @@ export const CommentSheet: React.FC<CommentSheetProps> = ({ open, onClose, postI
 
   return (
     <div className={styles.overlay} onClick={onClose}>
-      <div className={styles.sheet} onClick={(e) => e.stopPropagation()}>
+      <div className={styles.sheet} data-theme={theme || undefined} onClick={(e) => e.stopPropagation()}>
         <div className={styles.dragHandle} />
 
         <div className={styles.header}>
@@ -554,8 +558,18 @@ export const CommentSheet: React.FC<CommentSheetProps> = ({ open, onClose, postI
         </div>
 
         <div className={styles.commentsList}>
-          {loading ? (
-            <div className={styles.loading}><div className={styles.spinner} /><span>Loading...</span></div>
+          {loading || !hasLoadedOnce ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 16, padding: 16, opacity: 0.55 }}>
+              {[1, 2, 3].map((i) => (
+                <div key={i} style={{ display: 'flex', gap: 10 }}>
+                  <div style={{ width: 40, height: 40, borderRadius: '50%', backgroundColor: 'var(--color-border)', flexShrink: 0 }} />
+                  <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 8, paddingTop: 4 }}>
+                    <div style={{ width: '40%', height: 12, backgroundColor: 'var(--color-border)', borderRadius: 4 }} />
+                    <div style={{ width: '80%', height: 14, backgroundColor: 'var(--color-border)', borderRadius: 4 }} />
+                  </div>
+                </div>
+              ))}
+            </div>
           ) : comments.length === 0 ? (
             <div className={styles.empty}>
               <MessageCircle size={48} className={styles.emptyIcon} />
