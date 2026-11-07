@@ -12,6 +12,7 @@ interface PostDetailsModalProps {
   onPublish: (details: PublishDetails) => void;
   uploading: boolean;
   uploadProgress: number;
+  theme?: 'light' | 'dark';
 }
 
 interface ToggleProps {
@@ -70,6 +71,7 @@ export const PostDetailsModal: React.FC<PostDetailsModalProps> = ({
   onPublish,
   uploading,
   uploadProgress,
+  theme,
 }) => {
   const [caption, setCaption] = useState('');
   const [hashtagInput, setHashtagInput] = useState('');
@@ -199,43 +201,33 @@ export const PostDetailsModal: React.FC<PostDetailsModalProps> = ({
 
   return (
     <div
-      style={{
-        position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.9)',
-        zIndex: 1001, display: 'flex', flexDirection: 'column',
-      }}
+      className={styles.backdrop}
+      data-theme={theme || undefined}
       onClick={() => !uploading && onClose()}
       onTouchStart={(e) => e.stopPropagation()}
       onTouchMove={(e) => e.stopPropagation()}
       onTouchEnd={(e) => e.stopPropagation()}
     >
-      <div
-        onClick={(e) => e.stopPropagation()}
-        style={{
-          width: '100%', maxWidth: 480, height: '100dvh', margin: '0 auto',
-          backgroundColor: 'var(--color-surface)', display: 'flex', flexDirection: 'column',
-        }}
-      >
+      <div className={styles.container} onClick={(e) => e.stopPropagation()}>
+
         {/* Header */}
-        <div style={{
-          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          padding: 16, borderBottom: '1px solid var(--color-border-strong)', flexShrink: 0,
-        }}>
+        <div className={styles.header}>
           <button
+            className={styles.backBtn}
             onClick={() => !uploading && onClose()}
             disabled={uploading}
             aria-label="Back"
-            style={{ background: 'none', border: 'none', cursor: uploading ? 'not-allowed' : 'pointer', color: 'var(--color-text)', padding: 4, opacity: uploading ? 0.5 : 1 }}
           >
-            <ArrowLeft size={24} />
+            <ArrowLeft size={20} />
           </button>
-          <h2 style={{ fontSize: 16, fontWeight: 700, margin: 0, color: 'var(--color-text)' }}>Post details</h2>
-          <div style={{ width: 32 }} />
+          <h2 className={styles.headerTitle}>Post details</h2>
+          <div className={styles.headerSpacer} />
         </div>
 
         {/* Scrollable body */}
-        <div style={{ flex: 1, overflowY: 'auto' }}>
+        <div className={styles.body}>
           {/* Video preview */}
-          <div style={{ position: 'relative', width: '100%', aspectRatio: '9 / 16', backgroundColor: '#000', maxHeight: 320 }}>
+          <div className={styles.videoWrapper}>
             <video
               ref={videoRef}
               src={videoUrl}
@@ -243,29 +235,20 @@ export const PostDetailsModal: React.FC<PostDetailsModalProps> = ({
               loop
               playsInline
               muted={isMuted}
-              style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+              className={styles.videoPreview}
             />
             <button
+              className={styles.muteBtn}
               onClick={() => setIsMuted((v) => !v)}
               aria-label={isMuted ? 'Unmute video' : 'Mute video'}
-              style={{
-                position: 'absolute', top: 10, right: 10,
-                background: 'rgba(0,0,0,0.6)', border: 'none',
-                borderRadius: '50%', width: 40, height: 40,
-                cursor: 'pointer', color: 'var(--color-text)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                zIndex: 5,
-              }}
             >
               {isMuted ? <VolumeX size={18} /> : <Volume2 size={18} />}
             </button>
           </div>
 
           {/* Caption */}
-          <div style={{ padding: 20, borderBottom: '1px solid var(--color-border)' }}>
-            <label style={{ fontSize: 13, fontWeight: 600, color: 'var(--color-text-secondary)', display: 'block', marginBottom: 10 }}>
-              Caption
-            </label>
+          <div className={styles.section}>
+            <label className={styles.label}>Caption</label>
             <textarea
               value={caption}
               onChange={(e) => setCaption(e.target.value.slice(0, MAX_CAPTION))}
@@ -274,37 +257,30 @@ export const PostDetailsModal: React.FC<PostDetailsModalProps> = ({
               rows={4}
               className={styles.textarea}
             />
-            <div style={{ fontSize: 11, color: 'var(--color-text-muted)', textAlign: 'right', marginTop: 4 }}>
+            <div className={styles.charCount + (caption.length > MAX_CAPTION * 0.9 ? ' ' + styles.charCountWarn : '')}>
               {caption.length} / {MAX_CAPTION}
             </div>
           </div>
 
           {/* Hashtags */}
-          <div style={{ padding: 20, borderBottom: '1px solid var(--color-border)' }}>
-            <label style={{ fontSize: 13, fontWeight: 600, color: 'var(--color-text-secondary)', display: 'block', marginBottom: 10 }}>
-              Hashtags ({hashtags.length}/{MAX_HASHTAGS})
-            </label>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 8 }}>
-              {hashtags.map((tag) => (
-                <span
-                  key={tag}
-                  style={{
-                    display: 'inline-flex', alignItems: 'center', gap: 4,
-                    backgroundColor: 'var(--color-primary-soft)', color: 'var(--color-danger)',
-                    padding: '4px 10px', borderRadius: 9999, fontSize: 13, fontWeight: 600,
-                  }}
-                >
-                  #{tag}
-                  <button
-                    onClick={() => !uploading && removeHashtag(tag)}
-                    aria-label={'Remove ' + tag}
-                    style={{ background: 'none', border: 'none', cursor: uploading ? 'not-allowed' : 'pointer', color: 'var(--color-danger)', padding: 0, display: 'flex' }}
-                  >
-                    <X size={12} />
-                  </button>
-                </span>
-              ))}
-            </div>
+          <div className={styles.section}>
+            <label className={styles.label}>Hashtags ({hashtags.length}/{MAX_HASHTAGS})</label>
+            {hashtags.length > 0 && (
+              <div className={styles.chipRow}>
+                {hashtags.map((tag) => (
+                  <span key={tag} className={styles.chip}>
+                    #{tag}
+                    <button
+                      onClick={() => !uploading && removeHashtag(tag)}
+                      aria-label={'Remove ' + tag}
+                      className={styles.chipRemove}
+                    >
+                      <X size={12} />
+                    </button>
+                  </span>
+                ))}
+              </div>
+            )}
             <div style={{ position: 'relative' }}>
               <input
                 type="text"
@@ -329,7 +305,7 @@ export const PostDetailsModal: React.FC<PostDetailsModalProps> = ({
                         addHashtag(s.hashtag);
                         setShowSuggestions(false);
                       }}
-                      className={styles.suggestionItem + (idx === activeSuggestion ? " " + styles.suggestionItemActive : "")}
+                      className={styles.suggestionItem + (idx === activeSuggestion ? ' ' + styles.suggestionItemActive : '')}
                     >
                       <span>#{s.hashtag}</span>
                       <span style={{ fontSize: 12, color: 'var(--color-text-muted)' }}>{s.usageCount}</span>
@@ -341,11 +317,9 @@ export const PostDetailsModal: React.FC<PostDetailsModalProps> = ({
           </div>
 
           {/* Visibility */}
-          <div style={{ padding: 20, borderBottom: '1px solid var(--color-border)' }}>
-            <label style={{ fontSize: 13, fontWeight: 600, color: 'var(--color-text-secondary)', display: 'block', marginBottom: 10 }}>
-              Who can see
-            </label>
-            <div style={{ display: 'flex', gap: 8 }}>
+          <div className={styles.section}>
+            <label className={styles.label}>Who can see</label>
+            <div className={styles.segmented}>
               {([
                 { value: 'public' as Visibility, label: 'Public', icon: Globe },
                 { value: 'private' as Visibility, label: 'Private', icon: Lock },
@@ -356,16 +330,9 @@ export const PostDetailsModal: React.FC<PostDetailsModalProps> = ({
                     key={value}
                     onClick={() => !uploading && setVisibility(value)}
                     disabled={uploading}
-                    style={{
-                      flex: 1, padding: '10px 8px', fontSize: 13, fontWeight: 600,
-                      border: '1px solid ' + (active ? 'var(--color-primary)' : 'var(--color-border-strong)'),
-                      backgroundColor: active ? 'var(--color-primary-soft)' : 'var(--color-surface)',
-                      color: active ? 'var(--color-primary)' : 'var(--color-text-secondary)',
-                      borderRadius: 8, cursor: uploading ? 'not-allowed' : 'pointer',
-                      display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
-                    }}
+                    className={styles.segmentBtn + (active ? ' ' + styles.segmentBtnActive : '')}
                   >
-                    <Icon size={18} />
+                    <Icon size={16} />
                     {label}
                   </button>
                 );
@@ -374,10 +341,8 @@ export const PostDetailsModal: React.FC<PostDetailsModalProps> = ({
           </div>
 
           {/* Location */}
-          <div style={{ padding: 20, borderBottom: '1px solid var(--color-border)' }}>
-            <label style={{ fontSize: 13, fontWeight: 600, color: 'var(--color-text-secondary)', display: 'block', marginBottom: 10 }}>
-              Location (optional)
-            </label>
+          <div className={styles.section}>
+            <label className={styles.label}>Location (optional)</label>
             <select
               value={locationText}
               onChange={(e) => setLocationText(e.target.value)}
@@ -392,50 +357,38 @@ export const PostDetailsModal: React.FC<PostDetailsModalProps> = ({
           </div>
 
           {/* Advanced */}
-          <div style={{ padding: 20 }}>
-            <label style={{ fontSize: 13, fontWeight: 600, color: 'var(--color-text-secondary)', display: 'block', marginBottom: 10 }}>
-              Advanced settings
-            </label>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12, fontSize: 14, color: 'var(--color-text)' }}>
+          <div className={styles.section}>
+            <label className={styles.label}>Advanced settings</label>
+            <div className={styles.toggleRow}>
               <span>Allow comments</span>
               <Toggle checked={allowComments} onChange={setAllowComments} disabled={uploading} label="Allow comments" />
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: 14, color: 'var(--color-text)' }}>
+            <div className={styles.toggleRow}>
               <span>Allow duet</span>
               <Toggle checked={allowDuet} onChange={setAllowDuet} disabled={uploading} label="Allow duet" />
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: 14, color: 'var(--color-text)', marginTop: 12 }}>
+            <div className={styles.toggleRow}>
               <span>Allow downloads</span>
               <Toggle checked={downloadEnabled} onChange={setDownloadEnabled} disabled={uploading} label="Allow downloads" />
             </div>
           </div>
 
           {errorMsg && (
-            <div style={{ padding: '0 16px 16px' }}>
-              <div style={{ backgroundColor: 'var(--color-primary-soft)', color: 'var(--color-danger)', padding: 10, borderRadius: 8, fontSize: 13 }}>
-                {errorMsg}
-              </div>
-            </div>
+            <div className={styles.errorBanner}>{errorMsg}</div>
           )}
         </div>
 
-        {/* Footer: Post button + progress */}
-        <div style={{ padding: 16, borderTop: '1px solid var(--color-border-strong)', flexShrink: 0 }}>
+        {/* Footer */}
+        <div className={styles.footer}>
           {uploading && (
-            <div style={{ width: '100%', height: 6, backgroundColor: 'var(--color-border)', borderRadius: 9999, overflow: 'hidden', marginBottom: 10 }}>
-              <div style={{ width: uploadProgress + '%', height: '100%', backgroundColor: '#ef4444', transition: 'width 0.2s' }} />
+            <div className={styles.progressWrap}>
+              <div className={styles.progressFill} style={{ width: uploadProgress + '%' }} />
             </div>
           )}
           <button
+            className={styles.postBtn}
             onClick={handlePost}
             disabled={uploading}
-            style={{
-              width: '100%', padding: 14,
-              backgroundColor: uploading ? '#fca5a5' : '#ef4444',
-              color: '#fff', border: 'none', borderRadius: 9999,
-              cursor: uploading ? 'not-allowed' : 'pointer',
-              fontSize: 16, fontWeight: 700,
-            }}
           >
             {uploading ? 'Posting... ' + Math.round(uploadProgress) + '%' : 'Post'}
           </button>
