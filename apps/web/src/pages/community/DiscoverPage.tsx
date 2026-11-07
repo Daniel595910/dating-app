@@ -603,7 +603,7 @@ export const DiscoverPage: React.FC = () => {
 
 
   return (
-    <div ref={containerRef} className={styles.discoverPage} data-theme="dark" onTouchStart={(e) => { if (!commentsOpen && !showPublishModal) handleTouchStart(e); }} onTouchMove={(e) => { if (!commentsOpen && !showPublishModal) handleTouchMove(e); }} onTouchEnd={(e) => { if (!commentsOpen && !showPublishModal) handleTouchEnd(e); }} onTouchCancel={(e) => { if (!commentsOpen && !showPublishModal) handleTouchCancel(); }} style={{ touchAction: 'none', userSelect: 'none', WebkitUserSelect: 'none', overscrollBehavior: 'none' }}>
+    <div ref={containerRef} className={styles.discoverPage} data-theme="dark" onTouchStart={(e) => { if (!commentsOpen && !showPublishModal && !showMyVideos) handleTouchStart(e); }} onTouchMove={(e) => { if (!commentsOpen && !showPublishModal && !showMyVideos) handleTouchMove(e); }} onTouchEnd={(e) => { if (!commentsOpen && !showPublishModal && !showMyVideos) handleTouchEnd(e); }} onTouchCancel={(e) => { if (!commentsOpen && !showPublishModal && !showMyVideos) handleTouchCancel(); }} style={{ touchAction: 'none', userSelect: 'none', WebkitUserSelect: 'none', overscrollBehavior: 'none' }}>
       {showOfflineToast && (
         <div className={styles.offlineToast}>
           <WifiOff size={14} />
