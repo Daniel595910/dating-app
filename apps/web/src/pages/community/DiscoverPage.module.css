@@ -2287,3 +2287,83 @@
   right: 0 !important;
   bottom: calc(80px + env(safe-area-inset-bottom)) !important;
 }
+/* ===== BATCH 1: UI POLISH ===== */
+
+/* 1. Slim progress bar */
+.discoverPage .progressBarWrapper > div {
+  height: 3px !important;
+  background-color: rgba(255, 255, 255, 0.25) !important;
+}
+
+.discoverPage .progressBarWrapper > div > div:first-child {
+  background-color: #ffffff !important; /* white fill, TikTok-style */
+}
+
+/* Hide the seek thumb (modern apps don't show it) */
+.discoverPage .progressBarWrapper > div > div:nth-child(2) {
+  display: none !important;
+}
+
+/* 2. Modern fullscreen button (bottom center, icon + text, glass pill) */
+.discoverPage .landscapeExpandButton {
+  position: absolute !important;
+  bottom: calc(90px + env(safe-area-inset-bottom)) !important;
+  left: 50% !important;
+  transform: translateX(-50%) !important;
+  width: auto !important;
+  height: auto !important;
+  padding: 6px 14px !important;
+  border-radius: 9999px !important;
+  background: rgba(0, 0, 0, 0.5) !important;
+  backdrop-filter: blur(16px) !important;
+  -webkit-backdrop-filter: blur(16px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  color: #ffffff !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.02em !important;
+  cursor: pointer !important;
+  z-index: 12 !important;
+}
+
+.discoverPage .landscapeExpandButton:hover {
+  background: rgba(0, 0, 0, 0.7) !important;
+}
+
+/* 3. Navbar overlap fix — video sits behind bottom nav */
+.discoverPage .videoCard {
+  height: 100dvh !important;
+  padding-bottom: 0 !important;
+}
+
+/* Info overlay + rightActions bottom offset to sit above the bottom nav (~65px) */
+.discoverPage .infoOverlay {
+  bottom: calc(85px + env(safe-area-inset-bottom)) !important;
+}
+
+.discoverPage .rightActions {
+  bottom: calc(85px + env(safe-area-inset-bottom)) !important;
+}
+
+/* 4. Header — icons closer to the edges */
+.discoverPage .header {
+  padding-left: max(6px, env(safe-area-inset-left)) !important;
+  padding-right: max(6px, env(safe-area-inset-right)) !important;
+}
+
+.discoverPage .backButton,
+.discoverPage .headerButton {
+  width: 36px !important;
+  height: 36px !important;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+/* 5. Loading container (fallback if loading still triggers) */
+.discoverPage .loadingContainer {
+  background: #000 !important;
+}

@@ -577,15 +577,6 @@ export const DiscoverPage: React.FC = () => {
     setDownloadModalOpen(true);
   };
 
-  if (loading) {
-    return (
-      <div className={styles.loadingContainer}>
-        <div className={styles.loadingSpinner} />
-        <p>Finding people near you...</p>
-      </div>
-    );
-  }
-
   const current = currentIndex < candidates.length ? candidates[currentIndex] : null;
   const swipesRemaining = dailyLimit - swipeCount;
 
@@ -794,7 +785,8 @@ export const DiscoverPage: React.FC = () => {
               }}
               aria-label="Expand landscape video"
             >
-              <Maximize2 size={16} />
+              <Maximize2 size={14} />
+              <span>Full screen</span>
             </button>
           )}
           {showHeartPop && <Heart size={60} className={styles.heartPop} fill="#fe2c55" />}
@@ -868,7 +860,7 @@ export const DiscoverPage: React.FC = () => {
           <div className={styles.rightActions}>
             <button
               className={styles.rightAvatarButton + (current && ringState[current.userId] ? ' ' + (ringState[current.userId] === 'unseen' ? styles.hasStory : styles.hasStorySeen) : '')}
-              onClick={(e) => { e.stopPropagation(); if (current && ringState[current.userId]) { setStoryViewerAuthorId(current.userId); setStoryViewerOpen(true); } else { navigate('/profile/' + current.userId); } }}
+              onClick={(e) => { e.stopPropagation(); if (current && ringState[current.userId]) { videoRef.current?.pause(); setStoryViewerAuthorId(current.userId); setStoryViewerOpen(true); } else { navigate('/profile/' + current.userId); } }}
               aria-label={'View ' + current.displayName + ' profile'}
             >
               {current.avatarUrl
