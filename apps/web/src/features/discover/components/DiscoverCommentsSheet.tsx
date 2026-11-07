@@ -98,8 +98,8 @@ export const DiscoverCommentsSheet: React.FC<DiscoverCommentsSheetProps> = ({
     return n;
   };
 
-  const loadComments = useCallback(async (id: string) => {
-    setLoading(true);
+  const loadComments = useCallback(async (id: string, isBackground: boolean = false) => {
+    if (!isBackground) setLoading(true);
     setError(null);
     try {
       const data = await discoverService.fetchVideoComments(id);
@@ -107,7 +107,7 @@ export const DiscoverCommentsSheet: React.FC<DiscoverCommentsSheetProps> = ({
     } catch (e: any) {
       setError(e?.message || 'Failed to load comments');
     } finally {
-      setLoading(false);
+      if (!isBackground) setLoading(false);
     }
   }, []);
 
@@ -149,7 +149,7 @@ export const DiscoverCommentsSheet: React.FC<DiscoverCommentsSheetProps> = ({
 
   useEffect(() => {
     if (open && videoId) {
-      loadComments(videoId);
+      loadComments(videoId, true);
     }
     if (!open) {
       setReplyingTo(null);
@@ -186,7 +186,7 @@ export const DiscoverCommentsSheet: React.FC<DiscoverCommentsSheetProps> = ({
       const channelName = 'comments:' + videoId + ':' + Date.now();
       const channel = supabase
         .channel(channelName)
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'discover_video_comments', filter: 'video_id=eq.' + videoId }, () => { if (!cancelled) loadComments(videoId); })
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'discover_video_comments', filter: 'video_id=eq.' + videoId }, () => { if (!cancelled) loadComments(videoId, true); })
         .subscribe();
       channelRef.current = channel;
     })();
@@ -232,7 +232,7 @@ export const DiscoverCommentsSheet: React.FC<DiscoverCommentsSheetProps> = ({
       setShowStickers(false);
       setShowGift(false);
       setComposerOpen(false);
-      await loadComments(videoId);
+      await loadComments(videoId, true);
       onCommentAdded?.();
       await refreshCount(videoId);
     } catch (e: any) {
@@ -246,7 +246,7 @@ export const DiscoverCommentsSheet: React.FC<DiscoverCommentsSheetProps> = ({
     setConfirmDelete(null);
     const ok = await discoverService.deleteVideoComment(commentId);
     if (ok) {
-      await loadComments(videoId);
+      await loadComments(videoId, true);
       onCommentDeleted?.();
       await refreshCount(videoId);
     } else {
@@ -414,9 +414,17 @@ export const DiscoverCommentsSheet: React.FC<DiscoverCommentsSheetProps> = ({
           </div>
 
           <div style={{ flex: 1, overflowY: 'auto', padding: 16 }}>
-            {loading ? (
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: 'var(--color-text-secondary)' }}>
-                <Loader size={24} style={{ animation: 'spin 1s linear infinite' }} />
+            {loading && comments.length === 0 ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 16, padding: '16px 0', opacity: 0.6 }}>
+                {[1, 2, 3].map((i) => (
+                  <div key={i} style={{ display: 'flex', gap: 10 }}>
+                    <div style={{ width: 40, height: 40, borderRadius: '50%', backgroundColor: 'var(--color-border)', flexShrink: 0 }} />
+                    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 8, paddingTop: 4 }}>
+                      <div style={{ width: '40%', height: 12, backgroundColor: 'var(--color-border)', borderRadius: 4 }} />
+                      <div style={{ width: '80%', height: 14, backgroundColor: 'var(--color-border)', borderRadius: 4 }} />
+                    </div>
+                  </div>
+                ))}
               </div>
             ) : comments.length === 0 ? (
               <div className={styles.emptyState}>
