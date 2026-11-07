@@ -611,9 +611,6 @@ export const DiscoverPage: React.FC = () => {
         </div>
       )}
       <header className={styles.header}>
-        <button className={styles.backButton} onClick={() => navigate(-1)} aria-label="Back">
-          <ArrowLeft size={20} />
-        </button>
         <div className={styles.swipeMeta}>
           <span>{swipeCount}/{dailyLimit} swipes</span>
           <span className={styles.swipeRemaining}>{swipesRemaining} remaining</span>

@@ -2545,3 +2545,10 @@
   border: none !important;
   box-shadow: none !important;
 }
+
+/* ===== HEADER LEFT PADDING (no back button) ===== */
+/* Bumps left padding from 6px to 16px since the swipe pill is now leftmost */
+.discoverPage .header {
+  padding-left: max(16px, env(safe-area-inset-left)) !important;
+  padding-right: max(16px, env(safe-area-inset-right)) !important;
+}
