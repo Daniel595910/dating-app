@@ -796,3 +796,50 @@
   margin: 0;
   color: var(--color-text-muted);
 }
+
+/* ===== COMPOSER LAYOUT V2 ===== */
+/* Column wrapper: stacks the input pill and the tools row */
+.inputColumn {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+/* Smaller composer avatar to balance the pill */
+.composerAvatar {
+  width: 32px !important;
+  height: 32px !important;
+  font-size: 12px !important;
+}
+
+/* Input pill: reserve space only for the send button, not 4 icons */
+.commentInputPill {
+  padding: 10px 44px 10px 14px !important;
+}
+
+/* Send button stays inside the pill on the right */
+.pillIcons {
+  position: absolute;
+  right: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+/* Tools row: emoji/sticker/gift below the input */
+.composerToolsRow {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0 4px;
+}
+
+.composerToolsRow .pillIconBtn {
+  width: 36px;
+  height: 36px;
+  padding: 0;
+}

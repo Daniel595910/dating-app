@@ -536,6 +536,7 @@ export const DiscoverCommentsSheet: React.FC<DiscoverCommentsSheetProps> = ({
               <div className={styles.composerAvatar}>
                 {currentUserAvatar ? <img src={currentUserAvatar} alt="" /> : <span>?</span>}
               </div>
+              <div className={styles.inputColumn}>
               <div className={styles.inputPillWrapper}>
                 <textarea
                   ref={inputRef}
@@ -549,6 +550,11 @@ export const DiscoverCommentsSheet: React.FC<DiscoverCommentsSheetProps> = ({
                   autoFocus
                 />
                 <div className={styles.pillIcons}>
+                  <button type="button" onClick={() => handleSend()} disabled={!input.trim() || sending} className={styles.inlineSendButton + (input.trim() && !sending ? ' ' + styles.inlineSendButtonActive : '')}>
+                    {sending ? <Loader size={16} /> : <Send size={16} />}
+                  </button>
+                </div>
+                <div className={styles.composerToolsRow}>
                   <button type="button" onClick={() => { setShowEmoji((v) => !v); setShowStickers(false); setShowGift(false); }} className={styles.pillIconBtn + (showEmoji ? ' ' + styles.pillIconBtnActive : '')}>
                     <Smile size={18} />
                   </button>
@@ -558,10 +564,8 @@ export const DiscoverCommentsSheet: React.FC<DiscoverCommentsSheetProps> = ({
                   <button type="button" onClick={() => { setShowGift((v) => !v); setShowEmoji(false); setShowStickers(false); }} className={styles.pillIconBtn + (showGift ? ' ' + styles.pillIconBtnActive : '')}>
                     <Gift size={18} />
                   </button>
-                  <button type="button" onClick={() => handleSend()} disabled={!input.trim() || sending} className={styles.inlineSendButton + (input.trim() && !sending ? ' ' + styles.inlineSendButtonActive : '')}>
-                    {sending ? <Loader size={16} /> : <Send size={16} />}
-                  </button>
                 </div>
+              </div>
               </div>
             </div>
           </div>
