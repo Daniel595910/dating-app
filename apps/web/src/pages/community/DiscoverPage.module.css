@@ -2367,3 +2367,116 @@
 .discoverPage .loadingContainer {
   background: #000 !important;
 }
+/* ===== HEADER SWIPE PILL FINAL POLISH ===== */
+.discoverPage .swipeMeta {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+  padding: 6px 8px 6px 16px !important;
+  background: rgba(0, 0, 0, 0.6) !important;
+  backdrop-filter: blur(24px) !important;
+  -webkit-backdrop-filter: blur(24px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  border-radius: 9999px !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  color: rgba(255, 255, 255, 0.95) !important;
+  letter-spacing: 0.01em !important;
+}
+
+.discoverPage .swipeRemaining {
+  color: #34d399 !important;
+  font-weight: 700 !important;
+}
+
+.discoverPage .swipeMetaDivider {
+  width: 1px !important;
+  height: 14px !important;
+  background: rgba(255, 255, 255, 0.25) !important;
+  display: inline-block !important;
+  margin: 0 2px !important;
+  flex-shrink: 0 !important;
+}
+
+.discoverPage .popInlineButton {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 6px 16px !important;
+  background: #ef4444 !important;
+  border: none !important;
+  border-radius: 9999px !important;
+  color: #ffffff !important;
+  font-size: 12px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.03em !important;
+  cursor: pointer !important;
+  line-height: 1 !important;
+  flex-shrink: 0 !important;
+  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.5) !important;
+  transition: background 0.15s ease, transform 0.15s ease !important;
+}
+
+.discoverPage .popInlineButton:hover {
+  background: #dc2626 !important;
+}
+
+.discoverPage .popInlineButton:active {
+  transform: scale(0.95) !important;
+}
+/* ===== HEADER PILL MINIMAL GLASS ===== */
+.discoverPage .swipeMeta {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  padding: 4px 4px 4px 12px !important; /* Small padding, tight */
+  background: rgba(0, 0, 0, 0.25) !important; /* Very transparent */
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important; /* Very subtle border */
+  border-radius: 9999px !important;
+  font-size: 11px !important; /* Smaller text */
+  font-weight: 500 !important;
+  color: rgba(255, 255, 255, 0.85) !important;
+  box-shadow: none !important; /* No heavy shadows */
+}
+
+.discoverPage .swipeRemaining {
+  color: #34d399 !important;
+  font-weight: 600 !important;
+}
+
+.discoverPage .swipeMetaDivider {
+  width: 1px !important;
+  height: 12px !important;
+  background: rgba(255, 255, 255, 0.15) !important; /* More subtle */
+  display: inline-block !important;
+  margin: 0 !important;
+  flex-shrink: 0 !important;
+}
+
+.discoverPage .popInlineButton {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 5px 12px !important; /* Smaller button */
+  background: #ef4444 !important;
+  border: none !important;
+  border-radius: 9999px !important;
+  color: #ffffff !important;
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  cursor: pointer !important;
+  line-height: 1 !important;
+  flex-shrink: 0 !important;
+  box-shadow: none !important; /* No heavy shadows */
+  transition: background 0.15s ease, transform 0.15s ease !important;
+}
+
+.discoverPage .popInlineButton:hover {
+  background: #dc2626 !important;
+}
+
+.discoverPage .popInlineButton:active {
+  transform: scale(0.95) !important;
+}
