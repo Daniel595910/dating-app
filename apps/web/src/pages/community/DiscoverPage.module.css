@@ -2552,3 +2552,33 @@
   padding-left: max(16px, env(safe-area-inset-left)) !important;
   padding-right: max(16px, env(safe-area-inset-right)) !important;
 }
+/* ===== SWIPE PILL SMALLER + MORE TRANSPARENT ===== */
+.discoverPage .swipeMeta {
+  padding: 4px 6px 4px 12px !important;
+  background: rgba(0, 0, 0, 0.18) !important;     /* More transparent */
+  backdrop-filter: blur(20px) !important;
+  -webkit-backdrop-filter: blur(20px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.06) !important;  /* Subtler border */
+  font-size: 10px !important;                       /* Smaller */
+  font-weight: 500 !important;
+  color: rgba(255, 255, 255, 0.75) !important;     /* Dimmer text */
+  gap: 6px !important;
+}
+
+.discoverPage .swipeRemaining {
+  color: #34d399 !important;
+  font-weight: 600 !important;
+}
+
+.discoverPage .swipeMetaDivider {
+  height: 10px !important;                          /* Smaller divider */
+  background: rgba(255, 255, 255, 0.12) !important; /* More subtle */
+  margin: 0 !important;
+}
+
+.discoverPage .popInlineButton {
+  padding: 4px 10px !important;                     /* Smaller button */
+  font-size: 10px !important;
+  font-weight: 600 !important;
+  border-radius: 9999px !important;
+}
