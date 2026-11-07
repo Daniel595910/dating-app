@@ -217,7 +217,8 @@
 }
 
 .rightActionButton.liked svg {
-  fill: #f97316;
+  fill: #ffffff !important;
+  stroke: #ffffff !important;
 }
 
 .rightAvatarButton {
@@ -822,8 +823,8 @@
 }
 
 .rightActionButton.liked svg {
-  fill: #ef4444;
-  stroke: #ef4444;
+  fill: #ffffff !important;
+  stroke: #ffffff !important;
 }
 
 /* Avatar button: larger, red ring */
@@ -1419,8 +1420,8 @@
 }
 
 .rightActionButton.liked svg {
-  fill: #fe2c55 !important;
-  stroke: #fe2c55 !important;
+  fill: #ffffff !important;
+  stroke: #ffffff !important;
 }
 
 /* Shadow on the SVG itself so it remains visible on bright videos */
