@@ -1,0 +1,139 @@
+/* ===== VIDEO PREVIEW MODAL ===== */
+
+.backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.95);
+  z-index: 1000;
+  display: flex;
+  animation: fadeIn 0.2s ease-out;
+}
+
+.container {
+  width: 100%;
+  max-width: 480px;
+  height: 100dvh;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+.video {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  background: #000000;
+}
+
+.playPauseBtn {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 50%;
+  width: 64px;
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: #ffffff;
+  z-index: 5;
+  transition: transform 0.15s ease;
+}
+
+.playPauseBtn:active {
+  transform: translate(-50%, -50%) scale(0.92);
+}
+
+.backBtn {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 50%;
+  width: 44px;
+  height: 44px;
+  cursor: pointer;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+  transition: background 0.15s ease;
+}
+
+.backBtn:hover {
+  background: rgba(0, 0, 0, 0.75);
+}
+
+.backBtn:active {
+  transform: scale(0.94);
+}
+
+.actionsRow {
+  position: absolute;
+  bottom: calc(24px + env(safe-area-inset-bottom));
+  left: 16px;
+  right: 16px;
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  z-index: 10;
+}
+
+.actionBtn {
+  padding: 12px 22px;
+  border: none;
+  border-radius: 9999px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  transition: transform 0.15s ease, background 0.15s ease;
+}
+
+.actionBtn:active {
+  transform: scale(0.95);
+}
+
+.hideShowBtn {
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #ffffff;
+}
+
+.hideShowBtn:hover {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+.hideShowBtnActive {
+  background: rgba(16, 185, 129, 0.85);
+  color: #ffffff;
+}
+
+.deleteBtn {
+  background: rgba(239, 68, 68, 0.85);
+  color: #ffffff;
+}
+
+.deleteBtn:hover {
+  background: rgba(239, 68, 68, 1);
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}

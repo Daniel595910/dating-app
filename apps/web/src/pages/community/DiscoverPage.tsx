@@ -12,6 +12,8 @@ import { PostDetailsModal } from '../../features/discover/components/PostDetails
 import { DiscoverCommentsSheet } from '../../features/discover/components/DiscoverCommentsSheet';
 import { DiscoverSearchModal } from '../../features/discover/components/DiscoverSearchModal';
 import { DownloadModal } from '../../features/discover/components/DownloadModal';
+import { MyVideosSheet } from '../../features/discover/components/MyVideosSheet';
+import { VideoPreviewModal } from '../../features/discover/components/VideoPreviewModal';
 import { useStoryRings } from '../../features/community/hooks/useStoryRings';
 import { StoryViewer } from '../../features/community/components/StoryViewer';
 import { BottomNav } from '../../features/community/components/BottomNav';
@@ -646,137 +648,22 @@ export const DiscoverPage: React.FC = () => {
         </div>
       )}
 
-      {showMyVideos && (
-        <div
-          style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.6)', zIndex: 999, display: 'flex', alignItems: 'flex-end', justifyContent: 'center', backdropFilter: 'blur(4px)', WebkitBackdropFilter: 'blur(4px)' }}
-          onClick={() => setShowMyVideos(false)}
-          onTouchStart={(e) => e.stopPropagation()}
-          onTouchMove={(e) => e.stopPropagation()}
-          onTouchEnd={(e) => e.stopPropagation()}
-        >
-          <div
-            onClick={(e) => e.stopPropagation()}
-            style={{
-              backgroundColor: 'var(--color-surface)',
-              width: '100%',
-              maxWidth: 480,
-              height: '80dvh',
-              display: 'flex',
-              flexDirection: 'column',
-              borderTopLeftRadius: 24,
-              borderTopRightRadius: 24,
-              overflow: 'hidden',
-              boxShadow: '0 -8px 32px rgba(0,0,0,0.2)',
-            }}
-          >
-            {/* Drag handle */}
-            <div style={{ display: 'flex', justifyContent: 'center', paddingTop: 10, paddingBottom: 4 }}>
-              <div style={{ width: 40, height: 4, borderRadius: 9999, backgroundColor: 'var(--color-border-strong)' }} />
-            </div>
+      <MyVideosSheet
+        open={showMyVideos}
+        videos={myVideos}
+        theme={effectiveTheme}
+        onClose={() => setShowMyVideos(false)}
+        onUploadClick={() => { setShowMyVideos(false); videoInputRef.current?.click(); }}
+        onVideoClick={(video) => { setPreviewVideo(video); setPreviewPlaying(true); }}
+      />
 
-            {/* Header */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 16px 12px', borderBottom: '1px solid var(--color-border)' }}>
-              <h2 style={{ fontSize: 17, fontWeight: 700, margin: 0, color: 'var(--color-text)' }}>My Videos</h2>
-              <div style={{ display: 'flex', gap: 8 }}>
-                <button
-                  onClick={() => { setShowMyVideos(false); videoInputRef.current?.click(); }}
-                  aria-label="Upload new video"
-                  style={{ width: 36, height: 36, borderRadius: '50%', border: 'none', backgroundColor: 'var(--color-primary)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
-                >
-                  <Plus size={20} />
-                </button>
-                <button
-                  onClick={() => setShowMyVideos(false)}
-                  aria-label="Close"
-                  style={{ width: 36, height: 36, borderRadius: '50%', border: 'none', backgroundColor: 'var(--color-surface-alt)', color: 'var(--color-text-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
-                >
-                  <X size={18} />
-                </button>
-              </div>
-            </div>
+      <VideoPreviewModal
+        video={previewVideo}
+        onClose={() => setPreviewVideo(null)}
+        onToggleVisibility={handleToggleVideo}
+        onDelete={handleDeleteVideo}
+      />
 
-            {/* Scrollable video grid */}
-            <div style={{ flex: 1, overflowY: 'auto', padding: 12 }}>
-              {myVideos.length === 0 ? (
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', gap: 16, padding: 24, textAlign: 'center' }}>
-                  <div style={{ width: 64, height: 64, borderRadius: '50%', backgroundColor: 'var(--color-surface-alt)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <Video size={32} style={{ color: 'var(--color-text-muted)' }} />
-                  </div>
-                  <div>
-                    <p style={{ fontSize: 16, fontWeight: 700, margin: '0 0 4px', color: 'var(--color-text)' }}>No videos yet</p>
-                    <p style={{ fontSize: 13, margin: 0, color: 'var(--color-text-secondary)' }}>Upload your first video to appear in Discover</p>
-                  </div>
-                  <button
-                    onClick={() => { setShowMyVideos(false); videoInputRef.current?.click(); }}
-                    style={{ padding: '12px 24px', backgroundColor: 'var(--color-primary)', color: '#fff', border: 'none', borderRadius: 9999, cursor: 'pointer', fontSize: 14, fontWeight: 600, marginTop: 8 }}
-                  >
-                    Upload Video
-                  </button>
-                </div>
-              ) : (
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 6 }}>
-                  {myVideos.map((video) => (
-                    <div
-                      key={video.video_id}
-                      style={{ position: 'relative', aspectRatio: '9/16', backgroundColor: 'var(--color-surface-alt)', borderRadius: 10, overflow: 'hidden', cursor: 'pointer' }}
-                      onClick={() => { setPreviewVideo(video); setPreviewPlaying(true); }}
-                    >
-                      <video src={video.video_url} muted playsInline style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                      <div style={{ position: 'absolute', top: 6, left: 6 }}>
-                        {video.status === 'approved' && (
-                          <span style={{ backgroundColor: 'rgba(16, 185, 129, 0.95)', color: '#fff', padding: '3px 8px', borderRadius: 9999, fontSize: 9, fontWeight: 700, letterSpacing: 0.02 }}>Approved</span>
-                        )}
-                        {video.status === 'pending' && (
-                          <span style={{ backgroundColor: 'rgba(245, 158, 11, 0.95)', color: '#fff', padding: '3px 8px', borderRadius: 9999, fontSize: 9, fontWeight: 700, letterSpacing: 0.02 }}>Pending</span>
-                        )}
-                        {video.status === 'removed' && (
-                          <span style={{ backgroundColor: 'rgba(107, 114, 128, 0.95)', color: '#fff', padding: '3px 8px', borderRadius: 9999, fontSize: 9, fontWeight: 700, letterSpacing: 0.02 }}>Hidden</span>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {previewVideo && (
-        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.95)', zIndex: 1000, display: 'flex' }} onClick={() => setPreviewVideo(null)}>
-          <div onClick={(e) => e.stopPropagation()} style={{ width: '100%', maxWidth: 480, height: '100dvh', display: 'flex', flexDirection: 'column', position: 'relative' }}>
-            <video 
-              ref={previewVideoRef}
-              src={previewVideo.video_url} 
-              autoPlay 
-              playsInline 
-              loop
-              muted
-              onPlay={() => setPreviewPlaying(true)}
-              onPause={() => setPreviewPlaying(false)}
-              style={{ width: '100%', height: '100%', objectFit: 'contain' }}
-            />
-            <button 
-              onClick={handlePreviewPlayPause}
-              style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', background: 'rgba(0,0,0,0.5)', border: 'none', borderRadius: '50%', width: 60, height: 60, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#fff', zIndex: 5 }}
-              aria-label="Play/Pause"
-            >
-              {previewPlaying ? <svg width="28" height="28" viewBox="0 0 24 24" fill="#ffffff" style={{ filter: "drop-shadow(0 2px 4px rgba(0,0,0,0.4))" }}><rect x="6" y="4" width="4" height="16" rx="1" /><rect x="14" y="4" width="4" height="16" rx="1" /></svg> : <svg width="28" height="28" viewBox="0 0 24 24" fill="#ffffff" style={{ filter: "drop-shadow(0 2px 4px rgba(0,0,0,0.4))" }}><path d="M8 5.14v13.72a1 1 0 0 0 1.5.87l11.13-6.86a1 1 0 0 0 0-1.74L9.5 4.27A1 1 0 0 0 8 5.14z" /></svg>}
-            </button>
-            <button onClick={() => setPreviewVideo(null)} style={{ position: 'absolute', top: 16, left: 16, background: 'rgba(0,0,0,0.5)', border: 'none', borderRadius: '50%', width: 44, height: 44, cursor: 'pointer', color: '#fff', zIndex: 10 }}>
-              <ArrowLeft size={24} />
-            </button>
-            <div style={{ position: 'absolute', bottom: 16, left: 16, right: 16, display: 'flex', gap: 12, justifyContent: 'center' }}>
-              <button onClick={() => { handleToggleVideo(previewVideo.video_id, previewVideo.status); setPreviewVideo(null); }} style={{ padding: '12px 20px', backgroundColor: previewVideo.status === 'removed' ? '#10b981' : '#6b7280', color: '#fff', border: 'none', borderRadius: 9999, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8 }}>
-                {previewVideo.status === 'removed' ? 'Show' : 'Hide'}
-              </button>
-              <button onClick={() => { handleDeleteVideo(previewVideo.video_id); setPreviewVideo(null); }} style={{ padding: '12px 20px', backgroundColor: '#ef4444', color: '#fff', border: 'none', borderRadius: 9999, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8 }}>
-                <Trash2 size={18} /> Delete
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {pendingVideo && (
         <PostDetailsModal
