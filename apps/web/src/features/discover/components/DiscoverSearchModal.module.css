@@ -319,3 +319,117 @@
 @keyframes spin {
   to { transform: rotate(360deg); }
 }
+
+/* ===== PREMIUM POLISH ===== */
+
+/* 3-column grid like TikTok search */
+.grid {
+  grid-template-columns: repeat(3, 1fr) !important;
+  gap: 4px !important;
+}
+
+/* Tighter cards — thumbnail dominant */
+.card {
+  gap: 4px !important;
+}
+
+.thumbnailWrapper {
+  border-radius: 6px !important;
+  aspect-ratio: 9 / 16 !important;   /* proper vertical video ratio */
+}
+
+/* Hide caption/author on grid cards — cleaner look */
+.info {
+  display: none !important;
+}
+
+/* Overlay: keep dark backdrop even in light mode (universal) */
+.overlay {
+  background-color: rgba(0, 0, 0, 0.85) !important;
+  backdrop-filter: blur(4px) !important;
+  -webkit-backdrop-filter: blur(4px) !important;
+}
+
+/* Container: rounded corners on desktop */
+.container {
+  background-color: var(--color-bg) !important;
+  border-radius: 20px 20px 0 0 !important;
+  box-shadow: 0 -12px 40px rgba(0, 0, 0, 0.3) !important;
+}
+
+/* Empty state — modern icon circle + typography */
+.emptyState {
+  gap: 12px !important;
+  padding: 24px !important;
+}
+
+.emptyIcon {
+  width: 80px !important;
+  height: 80px !important;
+  padding: 20px !important;
+  box-sizing: border-box !important;
+  background: var(--color-surface-alt) !important;
+  border-radius: 50% !important;
+  color: var(--color-text-muted) !important;
+  margin-bottom: 8px !important;
+}
+
+.emptyState p {
+  font-size: 17px !important;
+  font-weight: 700 !important;
+}
+
+.emptyState span {
+  font-size: 13px !important;
+  color: var(--color-text-muted) !important;
+}
+
+/* Spinner: thinner, modern */
+.spinner {
+  width: 28px !important;
+  height: 28px !important;
+  border-width: 2.5px !important;
+}
+
+/* Filter pills: more modern */
+.filterPill {
+  height: 34px !important;
+  padding: 0 14px !important;
+  border-radius: 9999px !important;
+  background: var(--color-surface-alt) !important;
+  border: none !important;
+}
+
+.filterPill:hover {
+  background: var(--color-border) !important;
+}
+
+/* Search bar: premium input */
+.searchWrapper {
+  background: var(--color-surface-alt) !important;
+  border: 1px solid var(--color-border) !important;
+  height: 42px !important;
+}
+
+.searchWrapper:focus-within {
+  border-color: var(--color-primary) !important;
+}
+
+/* Cancel button: modern */
+.cancelButton {
+  color: var(--color-primary) !important;
+  font-weight: 600 !important;
+  font-size: 15px !important;
+}
+
+/* Play badge: cleaner */
+.playBadge {
+  background: rgba(0, 0, 0, 0.75) !important;
+  border-radius: 9999px !important;
+  width: 24px !important;
+  height: 24px !important;
+  padding: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}

@@ -8,6 +8,7 @@ interface DiscoverSearchModalProps {
   open: boolean;
   onClose: () => void;
   onVideoSelect: (video: SearchResult, allResults: SearchResult[]) => void;
+  theme?: 'light' | 'dark';
 }
 
 const formatCount = (n: number): string => {
@@ -20,6 +21,7 @@ export const DiscoverSearchModal: React.FC<DiscoverSearchModalProps> = ({
   open,
   onClose,
   onVideoSelect,
+  theme,
 }) => {
   const [query, setQuery] = useState('');
   const [location, setLocation] = useState('');
@@ -78,7 +80,7 @@ export const DiscoverSearchModal: React.FC<DiscoverSearchModalProps> = ({
       onTouchMove={(e) => e.stopPropagation()}
       onTouchEnd={(e) => e.stopPropagation()}
     >
-      <div className={styles.container} onClick={(e) => e.stopPropagation()}>
+      <div className={styles.container} data-theme={theme || undefined} onClick={(e) => e.stopPropagation()}>
         
         {/* Header / Search Bar */}
         <div className={styles.header}>
