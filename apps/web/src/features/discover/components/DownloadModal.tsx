@@ -116,8 +116,7 @@ export const DownloadModal: React.FC<DownloadModalProps> = ({
   if (!open) return null;
 
   return (
-    <div className={styles.backdrop} onClick={onClose}>
-    data-theme={theme || undefined}
+    <div className={styles.backdrop} data-theme={theme || undefined} onClick={onClose}>
       <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
         <button className={styles.closeBtn} onClick={onClose} aria-label="Close">
           <X size={18} />
