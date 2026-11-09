@@ -1,4 +1,4 @@
-﻿import React, { useState } from 'react';
+import React, { useState } from 'react';
 import { LayoutGrid, Sparkles, Heart, MapPin, Users, UserRound } from 'lucide-react';
 import { FeedFilter } from '../../types/community.types';
 import styles from '../styles/FilterBar.module.css';
@@ -16,12 +16,12 @@ interface FilterItem {
 }
 
 const FILTER_ITEMS: FilterItem[] = [
-  { id: 'all', label: 'All', icon: <LayoutGrid size={14} />, description: 'Show all community posts' },
-  { id: 'new', label: 'New', icon: <Sparkles size={14} />, description: 'Posts from last 24 hours' },
-  { id: 'looking', label: 'Looking', icon: <Heart size={14} />, description: 'People looking for connections' },
-  { id: 'profiles', label: 'Profiles', icon: <UserRound size={14} />, description: 'Swipe through shared profiles' },
-  { id: 'nearby', label: 'Nearby', icon: <MapPin size={14} />, description: 'Posts from people near you' },
-  { id: 'following', label: 'Following', icon: <Users size={14} />, description: 'Posts from people you follow' },
+  { id: 'all', label: 'All', icon: <LayoutGrid size={18} />, description: 'Show all community posts' },
+  { id: 'new', label: 'New', icon: <Sparkles size={18} />, description: 'Posts from last 24 hours' },
+  { id: 'looking', label: 'Looking', icon: <Heart size={18} />, description: 'People looking for connections' },
+  { id: 'profiles', label: 'Profiles', icon: <UserRound size={18} />, description: 'Swipe through shared profiles' },
+  { id: 'nearby', label: 'Nearby', icon: <MapPin size={18} />, description: 'Posts from people near you' },
+  { id: 'following', label: 'Following', icon: <Users size={18} />, description: 'Posts from people you follow' },
 ];
 
 export const FilterBar: React.FC<FilterBarProps> = ({ activeFilter, onFilterChange }) => {

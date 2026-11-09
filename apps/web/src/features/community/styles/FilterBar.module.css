@@ -9,6 +9,7 @@
   gap: 0.125rem;
   padding: 0 0.5rem;
   overflow-x: auto;
+  scroll-snap-type: x proximity;
   white-space: nowrap;
   scrollbar-width: none;
   -webkit-overflow-scrolling: touch;
@@ -37,6 +38,7 @@
   background-color: transparent;
   color: var(--color-text-secondary, #6b7280);
   min-height: 44px;
+  scroll-snap-align: start;
 }
 
 .filterButton::after {
