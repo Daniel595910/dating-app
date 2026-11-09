@@ -1,5 +1,5 @@
-﻿import React, { useState } from 'react';
-import { X, Flag } from 'lucide-react';
+import React, { useState } from 'react';
+import { X, Flag, Check } from 'lucide-react';
 import { supabase } from '@/config/supabase.client';
 import styles from '../styles/ReportSheet.module.css';
 
@@ -39,6 +39,12 @@ export const ReportSheet: React.FC<ReportSheetProps> = ({
   const handleSubmit = async () => {
     if (!reason) {
       setError('Please select a reason');
+      return;
+    }
+
+    // Force description if the reason is 'other' OR just require it always based on your DB
+    if (!description.trim()) {
+      setError('Please add more details in the description box before submitting.');
       return;
     }
 
@@ -92,7 +98,9 @@ export const ReportSheet: React.FC<ReportSheetProps> = ({
 
         {submitted ? (
           <div className={styles.successState}>
-            <div className={styles.successIcon}>✓</div>
+            <div className={styles.successIcon}>
+              <Check size={32} strokeWidth={3} />
+            </div>
             <p className={styles.successText}>Report submitted successfully</p>
           </div>
         ) : (
@@ -115,7 +123,7 @@ export const ReportSheet: React.FC<ReportSheetProps> = ({
               className={styles.descriptionInput}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="Add more details... (optional)"
+              placeholder="Add more details... (required)"
               rows={3}
               maxLength={1000}
             />
