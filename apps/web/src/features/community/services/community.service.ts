@@ -288,6 +288,7 @@ class CommunityService {
       description?: string | null;
       rules?: string[];
       coverImageUrl?: string | null;
+      avatarUrl?: string | null;
       country?: string;
       countryCode?: string;
       state?: string | null;
@@ -301,6 +302,7 @@ class CommunityService {
     if (updates.description !== undefined) patch.description = updates.description;
     if (updates.rules !== undefined) patch.rules = updates.rules;
     if (updates.coverImageUrl !== undefined) patch.cover_image_url = updates.coverImageUrl;
+    if (updates.avatarUrl !== undefined) patch.avatar_url = updates.avatarUrl;
     if (updates.country !== undefined) patch.country = updates.country;
     if (updates.countryCode !== undefined) patch.country_code = updates.countryCode;
     if (updates.state !== undefined) patch.state = updates.state;

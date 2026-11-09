@@ -1,6 +1,7 @@
-﻿import React, { useState } from 'react';
-import { X, Globe, Lock, Users, CreditCard, Check } from 'lucide-react';
+import React, { useState } from 'react';
+import { X, Globe, Lock, Users, CreditCard, Check, Upload } from 'lucide-react';
 import { supabase } from '@/config/supabase.client';
+import { mediaService } from '../services/media.service';
 import styles from '../styles/CommunityCreationSheet.module.css';
 
 interface CommunityCreationSheetProps {
@@ -30,8 +31,19 @@ export const CommunityCreationSheet: React.FC<CommunityCreationSheetProps> = ({
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  const [avatarUploading, setAvatarUploading] = useState(false);
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
 
   const CREATION_COST = 100;
+
+  const handleAvatarPick = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setAvatarFile(file);
+    setAvatarPreview(URL.createObjectURL(file));
+  };
 
   const handleSubmit = async () => {
     if (!name.trim() || !country.trim()) {
@@ -43,6 +55,21 @@ export const CommunityCreationSheet: React.FC<CommunityCreationSheetProps> = ({
     setError(null);
 
     try {
+      // Upload logo first (if user selected one)
+      let avatarUrl: string | null = null;
+      if (avatarFile) {
+        setAvatarUploading(true);
+        const upload = await mediaService.uploadImage(avatarFile, userId, 'community_logo');
+        setAvatarUploading(false);
+        if (!upload.success || !upload.media) {
+          setError(upload.error || 'Logo upload failed');
+          setSubmitting(false);
+          return;
+        }
+        avatarUrl = upload.media.url;
+      }
+
+      // Then submit the request
       const { error: rpcError } = await supabase.rpc('request_community_creation', {
         p_name: name.trim(),
         p_description: description.trim() || null,
@@ -51,6 +78,7 @@ export const CommunityCreationSheet: React.FC<CommunityCreationSheetProps> = ({
         p_city: city || null,
         p_region_type: regionType,
         p_is_private: isPrivate,
+        p_avatar_url: avatarUrl,
       });
 
       if (rpcError) throw rpcError;
@@ -62,6 +90,8 @@ export const CommunityCreationSheet: React.FC<CommunityCreationSheetProps> = ({
         setDescription('');
         setState('');
         setCity('');
+        setAvatarFile(null);
+        setAvatarPreview(null);
         onSuccess();
         onClose();
       }, 2000);
@@ -129,6 +159,45 @@ export const CommunityCreationSheet: React.FC<CommunityCreationSheetProps> = ({
             ) : (
               <>
                 <div className={styles.form}>
+                  {/* Logo Picker */}
+                  <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1.25rem' }}>
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={avatarUploading || submitting}
+                      style={{
+                        width: 96,
+                        height: 96,
+                        borderRadius: '50%',
+                        border: '2px dashed var(--color-border-strong, #e5e7eb)',
+                        background: avatarPreview ? 'transparent' : 'var(--color-surface-alt, #f9fafb)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        cursor: avatarUploading ? 'wait' : 'pointer',
+                        overflow: 'hidden',
+                        padding: 0,
+                        position: 'relative',
+                      }}
+                    >
+                      {avatarPreview ? (
+                        <img src={avatarPreview} alt="Logo" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      ) : (
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, color: 'var(--color-text-muted, #9ca3af)' }}>
+                          <Upload size={24} />
+                          <span style={{ fontSize: 11, fontWeight: 600 }}>{avatarUploading ? 'Uploading...' : 'Add Logo'}</span>
+                        </div>
+                      )}
+                    </button>
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/*"
+                      onChange={handleAvatarPick}
+                      style={{ display: 'none' }}
+                    />
+                  </div>
+
                   <div className={styles.fieldGroup}>
                     <label className={styles.fieldLabel}>Community Name *</label>
                     <input

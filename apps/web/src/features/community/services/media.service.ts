@@ -11,7 +11,7 @@ class MediaService {
   async uploadImage(
     file: File,
     userId: string,
-    purpose: 'post_image' | 'avatar' | 'cover_photo' | 'story_image'
+    purpose: 'post_image' | 'avatar' | 'cover_photo' | 'story_image' | 'community_logo'
   ): Promise<UploadResult> {
     try {
       const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
