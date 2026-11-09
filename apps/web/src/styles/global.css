@@ -160,16 +160,16 @@ body {
 
 
 /* ============================================================ */
-/* GLOBAL PREMIUM POLISH ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â appended, non-destructive            */
+/* GLOBAL PREMIUM POLISH ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â appended, non-destructive            */
 /* Fixes accessibility issues + adds mobile polish              */
 /* ============================================================ */
 
-/* 1. Tap highlight removal ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â no blue/grey flash on touch      */
+/* 1. Tap highlight removal ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â no blue/grey flash on touch      */
 * {
   -webkit-tap-highlight-color: transparent;
 }
 
-/* 2. Refined text selection ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â matches app accent red          */
+/* 2. Refined text selection ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â matches app accent red          */
 ::selection {
   background-color: rgba(239, 68, 68, 0.22);
   color: inherit;
@@ -340,4 +340,20 @@ select:focus-visible {
   outline: none !important;
   box-shadow: none !important;
   -webkit-tap-highlight-color: transparent !important;
+}
+/* ============================================================ */
+/* Exempt community feed from global scrollbar styling          */
+/* ============================================================ */
+.feedContainer,
+[class*="feedContainer"] {
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
+}
+
+.feedContainer::-webkit-scrollbar,
+[class*="feedContainer"]::-webkit-scrollbar {
+  width: 0 !important;
+  height: 0 !important;
+  display: none !important;
+  background: transparent !important;
 }
