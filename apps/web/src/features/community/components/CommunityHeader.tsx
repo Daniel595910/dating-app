@@ -160,7 +160,7 @@ export const CommunityHeader: React.FC<CommunityHeaderProps> = ({
                 aria-label="Connections"
                 style={{ position: 'relative' }}
               >
-                <Handshake size={18} />
+                <Handshake size={22} />
                 {connectionCount > 0 && (
                   <span className={styles.actionBadge}>
                     {connectionCount > 99 ? '99+' : connectionCount}
@@ -169,7 +169,7 @@ export const CommunityHeader: React.FC<CommunityHeaderProps> = ({
               </button>
             )}
             <button className={styles.iconButton} onClick={onSearch} aria-label="Search">
-              <Search size={18} />
+              <Search size={22} />
             </button>
 
             {/* Three-dot menu */}
@@ -180,7 +180,7 @@ export const CommunityHeader: React.FC<CommunityHeaderProps> = ({
                 aria-label="More options"
                 aria-expanded={moreMenuOpen}
               >
-                <MoreVertical size={18} />
+                <MoreVertical size={22} />
               </button>
 
               {moreMenuOpen && (

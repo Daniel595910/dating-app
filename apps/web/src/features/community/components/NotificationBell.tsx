@@ -171,7 +171,7 @@ export const NotificationBell: React.FC<NotificationBellProps> = ({ userId, butt
       case 'connection': return <UserPlus size={16} className={styles.iconConnection} />;
       case 'verification': return <BadgeCheck size={16} className={styles.iconVerify} />;
       case 'vip': return <Crown size={16} className={styles.iconVip} />;
-      default: return <Bell size={16} className={styles.iconDefault} />;
+      default: return <Bell size={22} className={styles.iconDefault} />;
     }
   };
 
@@ -198,7 +198,7 @@ export const NotificationBell: React.FC<NotificationBellProps> = ({ userId, butt
         aria-label={`Notifications (${unreadCount} unread)`}
         className={buttonClassName || styles.bellButton}
       >
-        <Bell size={18} style={{ color: 'inherit', stroke: 'currentColor' }} />
+        <Bell size={22} style={{ color: 'inherit', stroke: 'currentColor' }} />
         {unreadCount > 0 && (
           <span className={styles.badge}>
             {unreadCount > 9 ? '9+' : unreadCount}
