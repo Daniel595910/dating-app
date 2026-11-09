@@ -304,35 +304,20 @@ export const SettingsPage: React.FC = () => {
           </div>
         ))}
 
-        {/* Appearance â€” theme toggle */}
+        {/* Appearance — theme toggle */}
         <div className={styles.section}>
           <h3 className={styles.sectionTitle}>Appearance</h3>
           <div className={styles.group} style={{ padding: '0.875rem 1rem' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.75rem' }}>
+            <div className={styles.themeToggleRow}>
               <span className={styles.rowIcon}><Smartphone size={18} /></span>
-              <span style={{ flex: 1, fontWeight: 500, fontSize: '0.9375rem', color: 'var(--color-text)' }}>
-                Theme
-              </span>
+              <span className={styles.themeToggleLabel}>Theme</span>
             </div>
-            <div style={{ display: 'flex', gap: '0.375rem' }}>
+            <div className={styles.themeSegmented}>
               {(['light', 'dark', 'system'] as ThemeMode[]).map((mode) => (
                 <button
                   key={mode}
                   onClick={() => setTheme(mode)}
-                  style={{
-                    flex: 1,
-                    padding: '0.5rem 0.75rem',
-                    background: theme === mode ? 'var(--color-primary)' : 'var(--color-surface-alt)',
-                    color: theme === mode ? '#ffffff' : 'var(--color-text-secondary)',
-                    border: theme === mode ? 'none' : '1px solid var(--color-border-strong)',
-                    borderRadius: '9999px',
-                    cursor: 'pointer',
-                    fontSize: '0.8125rem',
-                    fontWeight: 600,
-                    textTransform: 'capitalize',
-                    minHeight: 38,
-                    transition: 'all 0.15s ease',
-                  }}
+                  className={`${styles.themeSegment} ${theme === mode ? styles.themeSegmentActive : ''}`}
                 >
                   {mode}
                 </button>

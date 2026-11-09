@@ -1,28 +1,38 @@
 /* ============================================================
-   SettingsPage — modern mobile settings layout
+   SettingsPage â€” modern mobile settings layout
    ============================================================ */
 
 .page {
-  min-height: 100dvh;
+  height: 100dvh;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  -webkit-overflow-scrolling: touch;
   background-color: var(--color-bg);
   max-width: 480px;
   margin: 0 auto;
   padding-bottom: env(safe-area-inset-bottom);
 }
 
+.page::-webkit-scrollbar {
+  display: none;
+}
+
 .header {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  padding: 0.625rem 0.75rem;
-  padding-top: calc(0.625rem + env(safe-area-inset-top));
-  background-color: var(--color-surface);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  padding: 0.5rem 0.75rem;
+  padding-top: calc(0.5rem + env(safe-area-inset-top));
+  background-color: color-mix(in srgb, var(--color-surface) 96%, transparent);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
   border-bottom: 1px solid var(--color-border);
   position: sticky;
   top: 0;
   z-index: 20;
+  min-height: 56px;
 }
 
 .headerButton {
@@ -68,6 +78,7 @@
   text-transform: uppercase;
   letter-spacing: 0.06em;
   margin: 0 1rem 0.5rem;
+  padding-left: 0.25rem;
 }
 
 .group {
@@ -193,12 +204,12 @@
 }
 
 .modalIconDanger {
-  background: linear-gradient(135deg, #fee2e2, #fecaca);
-  color: #dc2626;
+  background: linear-gradient(135deg, var(--color-primary-soft, #fee2e2), var(--color-primary-soft-border, #fecaca));
+  color: var(--color-danger, #dc2626);
 }
 
 .modalIconNeutral {
-  background: linear-gradient(135deg, #f3f4f6, #e5e7eb);
+  background: linear-gradient(135deg, var(--color-surface-alt, #f3f4f6), var(--color-border, #e5e7eb));
   color: var(--color-text-secondary);
 }
 
@@ -257,7 +268,7 @@
 }
 
 .modalButtonDanger:disabled {
-  background-color: #fca5a5;
+  background-color: color-mix(in srgb, var(--color-primary) 50%, #ffffff);
   cursor: not-allowed;
 }
 
@@ -372,13 +383,13 @@
   border: none;
   padding: 0;
   cursor: pointer;
-  background: #d1d5db;
+  background: var(--color-border-strong, #d1d5db);
   transition: background 0.2s ease;
   flex-shrink: 0;
 }
 
 .toggleOn {
-  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  background: linear-gradient(135deg, var(--color-primary, #ef4444) 0%, var(--color-primary-hover, #dc2626) 100%);
   box-shadow: 0 2px 8px rgba(239, 68, 68, 0.25);
 }
 
@@ -412,4 +423,53 @@
 @keyframes slideUpSheet {
   from { transform: translateY(100%); }
   to { transform: translateY(0); }
+}
+/* ==================== THEME TOGGLE (segmented) ==================== */
+.themeToggleRow {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.875rem;
+}
+
+.themeToggleLabel {
+  flex: 1;
+  font-weight: 500;
+  font-size: 0.9375rem;
+  color: var(--color-text);
+}
+
+.themeSegmented {
+  display: flex;
+  gap: 0.25rem;
+  background-color: var(--color-surface-alt);
+  padding: 0.25rem;
+  border-radius: 9999px;
+  width: 100%;
+}
+
+.themeSegment {
+  flex: 1;
+  padding: 0.5rem 0.75rem;
+  background: transparent;
+  border: none;
+  border-radius: 9999px;
+  cursor: pointer;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  text-transform: capitalize;
+  min-height: 36px;
+  transition: all 0.2s ease;
+  font-family: inherit;
+}
+
+.themeSegment:hover:not(.themeSegmentActive) {
+  color: var(--color-text);
+}
+
+.themeSegmentActive {
+  background: var(--color-surface);
+  color: var(--color-text);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
 }

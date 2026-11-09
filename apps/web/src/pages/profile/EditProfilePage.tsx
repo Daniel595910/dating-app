@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '@/store/auth.store';
 import { supabase } from '@/config/supabase.client';
-import { ArrowLeft, Camera, Save, X } from 'lucide-react';
+import { ArrowLeft, Camera, Check, X } from 'lucide-react';
 import { AvatarCropper } from '../../features/profile/components/AvatarCropper';
 import { ProfileData } from '../../features/profile/types/profile.types';
 import styles from './EditProfilePage.module.css';
@@ -106,6 +106,10 @@ export const EditProfilePage: React.FC = () => {
   };
 
   const handleSave = async () => {
+    if (bio.trim().length > 200) {
+      setError('Bio cannot exceed 200 characters.');
+      return;
+    }
     if (!user) return;
     setSaving(true);
     setError(null);
@@ -166,7 +170,7 @@ export const EditProfilePage: React.FC = () => {
         </button>
         <h1 className={styles.headerTitle}>Edit Profile</h1>
         <button className={styles.saveButton} onClick={handleSave} disabled={saving || uploading}>
-          {saving ? 'Saving...' : <Save size={20} />}
+          {saving ? 'Saving...' : <Check size={22} strokeWidth={2.5} />}
         </button>
       </header>
 
@@ -235,9 +239,9 @@ export const EditProfilePage: React.FC = () => {
             onChange={(e) => setBio(e.target.value)}
             placeholder="Tell people about yourself..."
             rows={4}
-            maxLength={500}
+            maxLength={200}
           />
-          <span className={styles.charCount}>{bio.length}/500</span>
+          <span className={`${styles.charCount} ${bio.length >= 180 ? styles.charCountWarning : ''}`}>{bio.length}/200</span>
         </div>
 
         <div className={styles.fieldGroup}>

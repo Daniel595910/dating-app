@@ -1,99 +1,94 @@
+/* ============================================================
+   EditProfilePage ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â Premium Form (matches actual TSX classes)
+   ============================================================ */
+
 .editPage {
-  min-height: 100dvh;
+  height: 100dvh;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  -webkit-overflow-scrolling: touch;
   background-color: var(--color-bg, #faf9f7);
   max-width: 480px;
   margin: 0 auto;
+  padding-bottom: env(safe-area-inset-bottom);
 }
 
+.editPage::-webkit-scrollbar {
+  display: none;
+}
+
+/* ==================== HEADER ==================== */
 .header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0.625rem 0.75rem;
-  padding-top: calc(0.625rem + env(safe-area-inset-top));
-  background-color: #ffffff;
-  border-bottom: 1px solid #f3f4f6;
+  padding: 0.5rem 0.75rem;
+  padding-top: calc(0.5rem + env(safe-area-inset-top));
+  background-color: color-mix(in srgb, var(--color-surface, #ffffff) 96%, transparent);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--color-border, #f3f4f6);
   position: sticky;
   top: 0;
-  z-index: 10;
+  z-index: 100;
+  min-height: 56px;
+}
+
+.headerTitle {
+  flex: 1;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--color-text, #111827);
+  margin: 0;
+  text-align: center;
+  letter-spacing: -0.01em;
 }
 
 .headerButton {
   background: none;
   border: none;
   cursor: pointer;
-  color: #111827;
+  color: var(--color-primary, #ef4444);
+  font-size: 0.9375rem;
+  font-weight: 600;
   padding: 0.5rem;
-  border-radius: 9999px;
   display: flex;
   align-items: center;
   justify-content: center;
-  min-width: 44px;
-  min-height: 44px;
-}
-
-.headerTitle {
-  font-size: 1rem;
-  font-weight: 700;
-  color: #111827;
-  flex: 1;
-  text-align: center;
-  margin: 0;
-}
-
-.saveButton {
-  background: none;
-  border: none;
-  cursor: pointer;
-  color: #ef4444;
-  padding: 0.5rem;
+  min-width: 56px;
+  min-height: 40px;
   border-radius: 9999px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 44px;
-  min-height: 44px;
+  transition: background-color 0.15s ease;
 }
 
-.form {
-  padding: 1rem;
+.headerButton:hover:not(:disabled) {
+  background-color: var(--color-surface-alt, #f3f4f6);
 }
 
-.successBanner {
-  background-color: #d1fae5;
-  color: #065f46;
-  padding: 0.75rem 1rem;
-  border-radius: 0.5rem;
-  font-size: 0.875rem;
-  font-weight: 500;
-  margin-bottom: 1rem;
+.headerButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
-.errorBanner {
-  background-color: #fee2e2;
-  color: #991b1b;
-  padding: 0.75rem 1rem;
-  border-radius: 0.5rem;
-  font-size: 0.875rem;
-  font-weight: 500;
-  margin-bottom: 1rem;
-}
-
+/* ==================== AVATAR ==================== */
 .avatarSection {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.5rem;
-  margin-bottom: 1.5rem;
+  padding: 1.5rem 1rem;
+  gap: 0.75rem;
 }
 
 .avatarPreview {
-  width: 96px;
-  height: 96px;
+  position: relative;
+  width: 100px;
+  height: 100px;
   border-radius: 50%;
+  background: var(--color-surface-alt, #f3f4f6);
   overflow: hidden;
-  border: 3px solid #ffffff;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
 }
 
 .avatarImage {
@@ -108,104 +103,254 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #fef3c7, #fde68a);
-  font-size: 2.5rem;
+  font-size: 2rem;
   font-weight: 700;
-  color: #92400e;
-}
-
-.changePhotoButton {
-  display: flex;
-  align-items: center;
-  gap: 0.375rem;
-  padding: 0.5rem 0.875rem;
-  background: none;
-  border: 1px solid #e5e7eb;
-  border-radius: 9999px;
-  cursor: pointer;
-  font-size: 0.8125rem;
-  font-weight: 500;
-  color: #374151;
-}
-
-.fieldGroup {
-  margin-bottom: 1rem;
-}
-
-.fieldLabel {
-  display: block;
-  font-size: 0.8125rem;
-  font-weight: 600;
-  color: #374151;
-  margin-bottom: 0.375rem;
-}
-
-.fieldInput,
-.fieldTextarea,
-.fieldSelect {
-  width: 100%;
-  padding: 0.75rem 1rem;
-  border: 1px solid #e5e7eb;
-  border-radius: 0.75rem;
-  font-size: 0.9375rem;
-  font-family: inherit;
-  outline: none;
-  background-color: #ffffff;
-  color: #111827;
-  transition: border-color 0.15s ease;
-}
-
-.fieldInput:focus,
-.fieldTextarea:focus,
-.fieldSelect:focus {
-  border-color: #ef4444;
-  box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.1);
-}
-
-.fieldTextarea {
-  resize: vertical;
-  min-height: 80px;
-}
-
-.charCount {
-  display: block;
-  text-align: right;
-  font-size: 0.6875rem;
-  color: #9ca3af;
-  margin-top: 0.25rem;
-}
-
-.loadingContainer {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 50dvh;
-  color: #9ca3af;
-}
-
-.avatarPreview {
-  position: relative;
+  color: var(--color-primary, #ef4444);
+  background: var(--color-primary-soft, #fef2f2);
 }
 
 .uploadOverlay {
   position: absolute;
   inset: 0;
   background: rgba(0, 0, 0, 0.5);
-  border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
+  color: #ffffff;
 }
 
 .uploadSpinner {
   width: 24px;
   height: 24px;
-  border: 3px solid #ffffff;
-  border-top-color: transparent;
+  border: 3px solid rgba(255, 255, 255, 0.3);
+  border-top-color: #ffffff;
   border-radius: 50%;
-  animation: spin 0.6s linear infinite;
+  animation: spin 0.7s linear infinite;
 }
 
+.changePhotoButton {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--color-primary, #ef4444);
+  font-size: 0.875rem;
+  font-weight: 600;
+  padding: 0.5rem 1rem;
+  border-radius: 9999px;
+  transition: background-color 0.15s ease;
+}
+
+.changePhotoButton:hover {
+  background-color: var(--color-primary-soft, #fef2f2);
+}
+
+/* ==================== FORM ==================== */
+.form {
+  padding: 0 1rem 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.fieldGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.fieldLabel {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--color-text-secondary, #6b7280);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  margin-left: 0.25rem;
+}
+
+.fieldInput,
+.fieldTextarea,
+.fieldSelect {
+  width: 100%;
+  background-color: var(--color-surface-alt, #f3f4f6);
+  border: 1px solid transparent;
+  border-radius: 1rem;
+  padding: 1rem;
+  font-size: 0.9375rem;
+  font-family: inherit;
+  color: var(--color-text, #111827);
+  outline: none;
+  transition: background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+  box-sizing: border-box;
+}
+
+.fieldInput:focus,
+.fieldTextarea:focus,
+.fieldSelect:focus {
+  background-color: var(--color-surface, #ffffff);
+  border-color: var(--color-primary, #ef4444);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary, #ef4444) 15%, transparent);
+}
+
+.fieldTextarea {
+  resize: none;
+  min-height: 130px;
+  line-height: 1.6;
+  font-size: 0.9375rem;
+  padding: 1.125rem;
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE/Edge */
+}
+
+.fieldTextarea::-webkit-scrollbar {
+  display: none; /* Chrome/Safari */
+}
+
+/* Force remove focus ring */
+.fieldTextarea:focus,
+.fieldTextarea:focus-visible,
+.fieldInput:focus,
+.fieldInput:focus-visible {
+  outline: none !important;
+  -webkit-appearance: none !important;
+  appearance: none !important;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary, #ef4444) 15%, transparent) !important;
+}
+
+.fieldSelect {
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg width='12' height='8' viewBox='0 0 12 8' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%236b7280' stroke-width='2' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 1rem center;
+  padding-right: 2.5rem;
+}
+
+.fieldInput::placeholder,
+.fieldTextarea::placeholder {
+  color: var(--color-text-muted, #9ca3af);
+}
+
+/* Character Counter */
+.charCount {
+  display: inline-flex;
+  align-items: center;
+  align-self: flex-end;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  color: var(--color-text-muted, #9ca3af);
+  background-color: var(--color-surface-alt, #f3f4f6);
+  padding: 0.25rem 0.625rem;
+  border-radius: 9999px;
+  margin-top: 0.375rem;
+  margin-right: 0.25rem;
+  transition: all 0.2s ease;
+}
+
+.charCountWarning {
+  color: #ffffff !important;
+  background-color: var(--color-primary, #ef4444) !important;
+}
+
+/* ==================== BANNERS ==================== */
+.errorBanner {
+  background-color: var(--color-primary-soft, #fef2f2);
+  color: var(--color-danger, #dc2626);
+  padding: 0.875rem 1rem;
+  border-radius: 0.75rem;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  border: 1px solid var(--color-primary-soft-border, #fecaca);
+  margin: 0 1rem 1rem;
+}
+
+.successBanner {
+  background-color: color-mix(in srgb, var(--color-success, #10b981) 12%, transparent);
+  color: var(--color-success, #059669);
+  padding: 0.875rem 1rem;
+  border-radius: 0.75rem;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  border: 1px solid color-mix(in srgb, var(--color-success, #10b981) 30%, transparent);
+  margin: 0 1rem 1rem;
+  animation: slideDown 0.3s ease;
+}
+
+/* ==================== SAVE BUTTON (minimal header check) ==================== */
+.saveButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0.5rem;
+  background: none;
+  color: var(--color-primary, #ef4444);
+  border: none;
+  border-radius: 9999px;
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease, transform 0.1s ease;
+}
+
+.saveButton:hover:not(:disabled) {
+  background-color: var(--color-surface-alt, #f3f4f6);
+  color: var(--color-primary-hover, #dc2626);
+}
+
+.saveButton:active:not(:disabled) {
+  transform: scale(0.94);
+}
+
+.saveButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  color: var(--color-text-muted, #9ca3af);
+}
+
+/* ==================== LOADING ==================== */
+.loadingContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+  gap: 1rem;
+  color: var(--color-text-secondary, #6b7280);
+  font-size: 0.875rem;
+}
+
+/* ==================== ANIMATIONS ==================== */
 @keyframes spin {
   to { transform: rotate(360deg); }
+}
+
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ==================== DARK MODE ==================== */
+[data-theme="dark"] .fieldInput,
+[data-theme="dark"] .fieldTextarea,
+[data-theme="dark"] .fieldSelect {
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+[data-theme="dark"] .fieldInput:focus,
+[data-theme="dark"] .fieldTextarea:focus,
+[data-theme="dark"] .fieldSelect:focus {
+  background-color: rgba(255, 255, 255, 0.08);
+}
+
+@media (prefers-color-scheme: dark) {
+  .fieldInput,
+  .fieldTextarea,
+  .fieldSelect {
+    background-color: rgba(255, 255, 255, 0.05);
+  }
+  .fieldInput:focus,
+  .fieldTextarea:focus,
+  .fieldSelect:focus {
+    background-color: rgba(255, 255, 255, 0.08);
+  }
 }
