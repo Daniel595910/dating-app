@@ -1,159 +1,147 @@
+/* ============================================================
+   CommunitySkeleton — modern full-bleed skeleton
+   Matches the flat post-card design (hairline dividers, 48px
+   avatars, 18px content inset, edge-to-edge media).
+   ============================================================ */
+
 .skeletonPage {
-  min-height: 100dvh;
-  background-color: var(--color-bg, #faf9f7);
-  max-width: 480px;
-  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  background: var(--color-bg, #faf9f7);
   padding-bottom: calc(5rem + env(safe-area-inset-bottom));
-}
-
-.headerSkeleton {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 1rem;
-  background-color: var(--color-surface, #ffffff);
-  border-bottom: 1px solid var(--color-border, #f3f4f6);
-}
-
-.headerLeft {
-  flex: 1;
-}
-
-.titleSkeleton {
-  width: 160px;
-  height: 20px;
-  border-radius: 0.25rem;
-  background: linear-gradient(90deg, var(--color-border, #f3f4f6) 25%, var(--color-border-strong, #e5e7eb) 50%, var(--color-border, #f3f4f6) 75%);
-  background-size: 200% 100%;
-  animation: shimmer 1.5s infinite;
-  margin-bottom: 0.5rem;
-}
-
-.subtitleSkeleton {
-  width: 120px;
-  height: 14px;
-  border-radius: 0.25rem;
-  background: linear-gradient(90deg, var(--color-border, #f3f4f6) 25%, var(--color-border-strong, #e5e7eb) 50%, var(--color-border, #f3f4f6) 75%);
-  background-size: 200% 100%;
-  animation: shimmer 1.5s infinite;
-}
-
-.headerActions {
-  display: flex;
-  gap: 0.5rem;
-}
-
-.iconSkeleton {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  background: linear-gradient(90deg, var(--color-border, #f3f4f6) 25%, var(--color-border-strong, #e5e7eb) 50%, var(--color-border, #f3f4f6) 75%);
-  background-size: 200% 100%;
-  animation: shimmer 1.5s infinite;
-}
-
-.filterSkeleton {
-  display: flex;
-  gap: 0.5rem;
-  padding: 0.5rem 1rem;
-  background-color: var(--color-surface, #ffffff);
-  border-bottom: 1px solid var(--color-border, #f3f4f6);
-}
-
-.filterItemSkeleton {
-  width: 64px;
-  height: 28px;
-  border-radius: 9999px;
-  background: linear-gradient(90deg, var(--color-border, #f3f4f6) 25%, var(--color-border-strong, #e5e7eb) 50%, var(--color-border, #f3f4f6) 75%);
-  background-size: 200% 100%;
-  animation: shimmer 1.5s infinite;
+  width: 100%;
 }
 
 .postSkeleton {
-  background-color: var(--color-surface, #ffffff);
-  border-radius: 1rem;
-  padding: 1rem;
-  margin: 0.75rem;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  background: var(--color-surface, #ffffff);
+  padding: 16px 18px 0;
+  border-bottom: 1px solid var(--color-border, #f3f4f6);
+  overflow: hidden;
 }
 
 .postHeaderSkeleton {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  margin-bottom: 0.75rem;
+  gap: 12px;
+  margin-bottom: 12px;
 }
 
 .avatarSkeleton {
-  width: 44px;
-  height: 44px;
+  width: 48px;
+  height: 48px;
   border-radius: 50%;
-  background: linear-gradient(90deg, var(--color-border, #f3f4f6) 25%, var(--color-border-strong, #e5e7eb) 50%, var(--color-border, #f3f4f6) 75%);
-  background-size: 200% 100%;
-  animation: shimmer 1.5s infinite;
   flex-shrink: 0;
+  background: linear-gradient(90deg,
+    var(--color-surface-alt, #f9fafb) 25%,
+    var(--color-border, #f3f4f6) 50%,
+    var(--color-surface-alt, #f9fafb) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.4s ease-in-out infinite;
 }
 
 .postHeaderText {
   flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
 }
 
 .nameSkeleton {
-  width: 100px;
-  height: 16px;
-  border-radius: 0.25rem;
-  background: linear-gradient(90deg, var(--color-border, #f3f4f6) 25%, var(--color-border-strong, #e5e7eb) 50%, var(--color-border, #f3f4f6) 75%);
+  width: 40%;
+  height: 14px;
+  border-radius: 6px;
+  background: linear-gradient(90deg,
+    var(--color-surface-alt, #f9fafb) 25%,
+    var(--color-border, #f3f4f6) 50%,
+    var(--color-surface-alt, #f9fafb) 75%);
   background-size: 200% 100%;
-  animation: shimmer 1.5s infinite;
-  margin-bottom: 0.25rem;
+  animation: shimmer 1.4s ease-in-out infinite;
 }
 
 .locationSkeleton {
-  width: 80px;
+  width: 28%;
   height: 12px;
-  border-radius: 0.25rem;
-  background: linear-gradient(90deg, var(--color-border, #f3f4f6) 25%, var(--color-border-strong, #e5e7eb) 50%, var(--color-border, #f3f4f6) 75%);
+  border-radius: 6px;
+  background: linear-gradient(90deg,
+    var(--color-surface-alt, #f9fafb) 25%,
+    var(--color-border, #f3f4f6) 50%,
+    var(--color-surface-alt, #f9fafb) 75%);
   background-size: 200% 100%;
-  animation: shimmer 1.5s infinite;
+  animation: shimmer 1.4s ease-in-out infinite;
 }
 
 .contentSkeleton {
   width: 100%;
   height: 14px;
-  border-radius: 0.25rem;
-  background: linear-gradient(90deg, var(--color-border, #f3f4f6) 25%, var(--color-border-strong, #e5e7eb) 50%, var(--color-border, #f3f4f6) 75%);
+  border-radius: 6px;
+  margin-bottom: 10px;
+  background: linear-gradient(90deg,
+    var(--color-surface-alt, #f9fafb) 25%,
+    var(--color-border, #f3f4f6) 50%,
+    var(--color-surface-alt, #f9fafb) 75%);
   background-size: 200% 100%;
-  animation: shimmer 1.5s infinite;
-  margin-bottom: 0.5rem;
+  animation: shimmer 1.4s ease-in-out infinite;
 }
 
 .contentSkeletonShort {
-  width: 60%;
+  width: 62%;
   height: 14px;
-  border-radius: 0.25rem;
-  background: linear-gradient(90deg, var(--color-border, #f3f4f6) 25%, var(--color-border-strong, #e5e7eb) 50%, var(--color-border, #f3f4f6) 75%);
+  border-radius: 6px;
+  margin-bottom: 16px;
+  background: linear-gradient(90deg,
+    var(--color-surface-alt, #f9fafb) 25%,
+    var(--color-border, #f3f4f6) 50%,
+    var(--color-surface-alt, #f9fafb) 75%);
   background-size: 200% 100%;
-  animation: shimmer 1.5s infinite;
-  margin-bottom: 0.75rem;
+  animation: shimmer 1.4s ease-in-out infinite;
+}
+
+.mediaSkeleton {
+  width: calc(100% + 36px);
+  margin: 0 -18px;
+  aspect-ratio: 4 / 3;
+  background: linear-gradient(90deg,
+    var(--color-surface-alt, #f9fafb) 25%,
+    var(--color-border, #f3f4f6) 50%,
+    var(--color-surface-alt, #f9fafb) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.4s ease-in-out infinite;
 }
 
 .actionsSkeleton {
   display: flex;
-  gap: 1.5rem;
-  padding-top: 0.75rem;
-  border-top: 1px solid var(--color-border, #f3f4f6);
+  align-items: center;
+  gap: 24px;
+  padding: 12px 0 16px;
 }
 
 .actionIconSkeleton {
-  width: 40px;
+  width: 44px;
   height: 18px;
-  border-radius: 0.25rem;
-  background: linear-gradient(90deg, var(--color-border, #f3f4f6) 25%, var(--color-border-strong, #e5e7eb) 50%, var(--color-border, #f3f4f6) 75%);
+  border-radius: 6px;
+  background: linear-gradient(90deg,
+    var(--color-surface-alt, #f9fafb) 25%,
+    var(--color-border, #f3f4f6) 50%,
+    var(--color-surface-alt, #f9fafb) 75%);
   background-size: 200% 100%;
-  animation: shimmer 1.5s infinite;
+  animation: shimmer 1.4s ease-in-out infinite;
 }
 
 @keyframes shimmer {
   0% { background-position: -200% 0; }
   100% { background-position: 200% 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .avatarSkeleton,
+  .nameSkeleton,
+  .locationSkeleton,
+  .contentSkeleton,
+  .contentSkeletonShort,
+  .mediaSkeleton,
+  .actionIconSkeleton {
+    animation: none;
+    background: var(--color-surface-alt, #f9fafb);
+  }
 }
