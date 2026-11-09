@@ -473,39 +473,42 @@ export const DiscoverPage: React.FC = () => {
   };
 
 
-  const handleSeekStart = (e: React.MouseEvent | React.TouchEvent) => {
+  const handleSeekStart = (e: React.PointerEvent) => {
+    
+resetDragVisual();  // cancel any pending swipe gesture
+    e.preventDefault();
+    e.stopPropagation();
     setIsSeeking(true);
+    updateSeekPosition(e);
+    try {
+      (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+    } catch {}
+  };
+
+  const handleSeekMove = (e: React.PointerEvent) => {
+    if (!isSeeking) return;
+    e.preventDefault();
     updateSeekPosition(e);
   };
 
-  const handleSeekMove = (e: React.MouseEvent | React.TouchEvent) => {
-    if (isSeeking) {
-      updateSeekPosition(e);
-    }
-  };
-
-  const handleSeekEnd = () => {
+  const handleSeekEnd = (e: React.PointerEvent) => {
+    if (!isSeeking) return;
+    try {
+      (e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId);
+    } catch {}
     setIsSeeking(false);
   };
 
-  const updateSeekPosition = (e: React.MouseEvent | React.TouchEvent) => {
-    if (videoRef.current && videoDuration > 0 && progressBarRef.current) {
-      const rect = progressBarRef.current.getBoundingClientRect();
-      let clientX: number;
-      if ('touches' in e && e.touches.length > 0) {
-        clientX = e.touches[0].clientX;
-      } else if ('clientX' in e) {
-        clientX = e.clientX;
-      } else {
-        return;
-      }
-      const x = Math.max(0, Math.min(clientX - rect.left, rect.width));
-      const percentage = (x / rect.width) * 100;
-      if (videoRef.current && isFinite(videoDuration) && videoDuration > 0) {
-        videoRef.current.currentTime = (percentage / 100) * videoDuration;
-        setVideoProgress(percentage);
-      }
-    }
+  const updateSeekPosition = (e: React.PointerEvent) => {
+    const bar = progressBarRef.current;
+    const vid = videoRef.current;
+    if (!bar || !vid || vid.duration <= 0 || !isFinite(vid.duration)) return;
+    const rect = bar.getBoundingClientRect();
+    const clientX = e.clientX;
+    const x = Math.max(0, Math.min(clientX - rect.left, rect.width));
+    const percentage = (x / rect.width) * 100;
+    vid.currentTime = (percentage / 100) * vid.duration;
+    setVideoProgress(percentage);
   };
 
   const formatTime = (seconds: number): string => {
@@ -603,7 +606,7 @@ export const DiscoverPage: React.FC = () => {
 
 
   return (
-    <div ref={containerRef} className={styles.discoverPage} data-theme="dark" onTouchStart={(e) => { if (!commentsOpen && !showPublishModal && !showMyVideos) handleTouchStart(e); }} onTouchMove={(e) => { if (!commentsOpen && !showPublishModal && !showMyVideos) handleTouchMove(e); }} onTouchEnd={(e) => { if (!commentsOpen && !showPublishModal && !showMyVideos) handleTouchEnd(e); }} onTouchCancel={(e) => { if (!commentsOpen && !showPublishModal && !showMyVideos) handleTouchCancel(); }} style={{ touchAction: 'none', userSelect: 'none', WebkitUserSelect: 'none', overscrollBehavior: 'none' }}>
+    <div ref={containerRef} className={styles.discoverPage} data-theme="dark" onTouchStart={(e) => { if (commentsOpen || showPublishModal || showMyVideos || isSeeking) return; if ((e.target as HTMLElement).closest('[class*="progressBarWrapper"]')) return; handleTouchStart(e); }} onTouchMove={(e) => { if (commentsOpen || showPublishModal || showMyVideos || isSeeking) return; if ((e.target as HTMLElement).closest('[class*="progressBarWrapper"]')) return; handleTouchMove(e); }} onTouchEnd={(e) => { if (commentsOpen || showPublishModal || showMyVideos || isSeeking) return; if ((e.target as HTMLElement).closest('[class*="progressBarWrapper"]')) return; handleTouchEnd(e); }} onTouchCancel={(e) => { if (commentsOpen || showPublishModal || showMyVideos || isSeeking) return; if ((e.target as HTMLElement).closest('[class*="progressBarWrapper"]')) return; handleTouchCancel(); }} style={{ touchAction: 'none', userSelect: 'none', WebkitUserSelect: 'none', overscrollBehavior: 'none' }}>
       {showOfflineToast && (
         <div className={styles.offlineToast}>
           <WifiOff size={14} />
@@ -758,13 +761,11 @@ export const DiscoverPage: React.FC = () => {
             ref={progressBarRef}
             className={styles.progressBarWrapper}
             data-seeking={isSeeking}
-            onMouseDown={handleSeekStart}
-            onMouseMove={handleSeekMove}
-            onMouseUp={handleSeekEnd}
-            onMouseLeave={handleSeekEnd}
-            onTouchStart={handleSeekStart}
-            onTouchMove={handleSeekMove}
-            onTouchEnd={handleSeekEnd}
+            onPointerDown={handleSeekStart}
+            onPointerMove={handleSeekMove}
+            onPointerUp={handleSeekEnd}
+            onPointerCancel={handleSeekEnd}
+            style={{ touchAction: 'none' }}
           >
             <div style={{ width: '100%', height: 6, backgroundColor: 'rgba(255,255,255,0.3)', borderRadius: 9999, overflow: 'hidden', position: 'relative' }}>
               <div style={{ width: videoProgress + '%', height: '100%', backgroundColor: '#ef4444', borderRadius: 9999, transition: isSeeking ? 'none' : 'width 0.1s linear' }} />
