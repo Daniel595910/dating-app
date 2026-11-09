@@ -1,0 +1,95 @@
+/* ============================================================
+   ChatSkeleton — modern shimmer rows matching real conversation
+   ============================================================ */
+
+.list {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem;
+  background: var(--color-surface, #ffffff);
+  border-bottom: 1px solid var(--color-border, #f3f4f6);
+}
+
+.avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  background: linear-gradient(90deg,
+    var(--color-surface-alt, #f9fafb) 25%,
+    var(--color-border, #f3f4f6) 50%,
+    var(--color-surface-alt, #f9fafb) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.4s ease-in-out infinite;
+}
+
+.info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.name {
+  width: 40%;
+  height: 14px;
+  border-radius: 6px;
+  background: linear-gradient(90deg,
+    var(--color-surface-alt, #f9fafb) 25%,
+    var(--color-border, #f3f4f6) 50%,
+    var(--color-surface-alt, #f9fafb) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.4s ease-in-out infinite;
+}
+
+.time {
+  width: 48px;
+  height: 11px;
+  border-radius: 6px;
+  flex-shrink: 0;
+  background: linear-gradient(90deg,
+    var(--color-surface-alt, #f9fafb) 25%,
+    var(--color-border, #f3f4f6) 50%,
+    var(--color-surface-alt, #f9fafb) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.4s ease-in-out infinite;
+}
+
+.preview {
+  width: 70%;
+  height: 13px;
+  border-radius: 6px;
+  background: linear-gradient(90deg,
+    var(--color-surface-alt, #f9fafb) 25%,
+    var(--color-border, #f3f4f6) 50%,
+    var(--color-surface-alt, #f9fafb) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.4s ease-in-out infinite;
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .avatar, .name, .time, .preview {
+    animation: none;
+    background: var(--color-surface-alt, #f9fafb);
+  }
+}

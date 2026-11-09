@@ -1,4 +1,4 @@
-﻿.composerWrapper {
+.composerWrapper {
   border-top: 1px solid var(--color-border);
   background: var(--color-surface);
   padding-bottom: env(safe-area-inset-bottom);
@@ -76,7 +76,9 @@
   resize: none;
   font-size: 0.875rem;
   font-family: inherit;
-  outline: none;
+  outline: none !important; /* Kill the ring */
+  -webkit-appearance: none; /* Kill iOS styling */
+  appearance: none;
   max-height: 120px;
   min-height: 42px;
   background: var(--color-surface-alt);
@@ -85,10 +87,12 @@
   transition: all 0.2s ease;
 }
 
-.input:focus {
+.input:focus,
+.input:focus-visible {
   border-color: var(--color-primary);
   background: var(--color-surface);
-  box-shadow: 0 0 0 3px var(--color-primary-soft);
+  outline: none !important; /* Kill the ring */
+  box-shadow: none !important; /* Kill any glow */
 }
 
 .input::placeholder {
@@ -121,8 +125,10 @@
 }
 
 .sendButton {
-  width: 42px;
-  height: 42px;
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  min-height: 44px;
   border-radius: 50%;
   background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-hover) 100%);
   color: #ffffff;
@@ -132,26 +138,25 @@
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  transition: all 0.2s ease;
-  min-width: 42px;
-  min-height: 42px;
-  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 2px 10px color-mix(in srgb, var(--color-primary) 35%, transparent);
 }
 
 .sendButton:hover:not(:disabled) {
-  transform: scale(1.08);
-  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
+  transform: scale(1.06);
+  box-shadow: 0 4px 16px color-mix(in srgb, var(--color-primary) 50%, transparent);
 }
 
 .sendButton:active:not(:disabled) {
-  transform: scale(0.95);
+  transform: scale(0.94);
 }
 
 .sendButton:disabled {
   background: var(--color-border);
-  color: var(--color-text-disabled);
+  color: var(--color-text-muted);
   box-shadow: none;
   cursor: not-allowed;
+  opacity: 0.6;
 }
 
 .attachmentMenu {
@@ -280,13 +285,13 @@
 }
 
 /* ============================================================ */
-/* ChatHeader style unification â€” frosted glass + tighter buttons */
+/* ChatHeader style unification ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â frosted glass + tighter buttons */
 /* ============================================================ */
 
 /* Frosted translucent composer wrapper to match ChatHeader */
 .composerWrapper {
   background: rgba(255, 255, 255, 0.98);
-  /* backdrop-filter removed â€” caused containing-block bug for MediaEditor overlay */
+  /* backdrop-filter removed ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â caused containing-block bug for MediaEditor overlay */
   border-top: 1px solid rgba(0, 0, 0, 0.06);
 }
 
@@ -352,6 +357,11 @@
 [data-theme="dark"] .input {
   background: rgba(255, 255, 255, 0.05);
   border-color: rgba(255, 255, 255, 0.08);
+  color: #f5f5f7;
+}
+
+[data-theme="dark"] .input::placeholder {
+  color: #a1a1a6;
 }
 
 [data-theme="dark"] .input:focus {
@@ -375,4 +385,40 @@
   background: rgba(239, 68, 68, 0.15); /* Red soft background */
   border-color: rgba(239, 68, 68, 0.3);
   color: #f87171; /* Light red text */
+}
+
+/* System Dark Mode for Send Button */
+@media (prefers-color-scheme: dark) {
+  .sendButton {
+    background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-hover) 100%);
+    box-shadow: 0 2px 10px color-mix(in srgb, var(--color-primary) 40%, transparent);
+  }
+  .sendButton:hover:not(:disabled) {
+    box-shadow: 0 4px 16px color-mix(in srgb, var(--color-primary) 60%, transparent);
+  }
+  .sendButton:disabled {
+    background: var(--color-border);
+    color: var(--color-text-muted);
+  }
+}
+/* ============================================================ */
+/* HARD KILL: Native Input Ring & Tap Highlight                 */
+/* ============================================================ */
+.input,
+.input:focus,
+.input:focus-visible,
+.input:active {
+  -webkit-appearance: none !important;
+  -moz-appearance: none !important;
+  appearance: none !important;
+  -webkit-tap-highlight-color: transparent !important;
+  outline: 0 !important;
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+/* Remove focus ring from the composer wrapper just in case */
+.composer *:focus {
+  outline: none !important;
+  box-shadow: none !important;
 }

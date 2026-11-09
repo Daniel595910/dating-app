@@ -7,7 +7,7 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '@/config/supabase.client';
 import { Conversation } from '@dating-app/types';
 import { UserAvatar } from '../common/UserAvatar';
-import { LoadingScreen } from '../common/LoadingScreen';
+import { ChatSkeleton } from '../../features/chat/components/ChatSkeleton';
 import styles from './ChatList.module.css';
 
 interface ChatListProps {
@@ -16,8 +16,8 @@ interface ChatListProps {
 
 const formatPreview = (preview: string | null): string => {
   if (!preview) return '';
-  if (preview === 'Photo') return '📷 Photo';
-  if (preview === 'Video') return '🎬 Video';
+  if (preview === 'Photo') return 'ðŸ“· Photo';
+  if (preview === 'Video') return 'ðŸŽ¬ Video';
   return preview;
 };
 
@@ -109,7 +109,7 @@ export const ChatList: React.FC < ChatListProps > = ({ onSelectConversation }) =
   }, []);
 
   if (loading) {
-    return <LoadingScreen message="Loading conversations..." />;
+    return <ChatSkeleton rows={6} />;
   }
   
   if (error) {

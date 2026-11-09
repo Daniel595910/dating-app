@@ -54,6 +54,21 @@ useSettings.getState().load().then(() => {
   }
 });
 
+
+// KILL ALL FOCUS OUTLINES APP-WIDE
+const style = document.createElement('style');
+style.innerHTML = `
+  *:focus, *:focus-visible, *:focus-within, *:active {
+    outline: none !important;
+    outline-width: 0 !important;
+    outline-style: none !important;
+    outline-color: transparent !important;
+    box-shadow: none !important;
+    -webkit-tap-highlight-color: transparent !important;
+  }
+`;
+document.head.appendChild(style);
+
 ReactDOM.createRoot(document.getElementById('root') !).render(
   <React.StrictMode>
     <App />

@@ -160,16 +160,16 @@ body {
 
 
 /* ============================================================ */
-/* GLOBAL PREMIUM POLISH — appended, non-destructive            */
+/* GLOBAL PREMIUM POLISH ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â appended, non-destructive            */
 /* Fixes accessibility issues + adds mobile polish              */
 /* ============================================================ */
 
-/* 1. Tap highlight removal — no blue/grey flash on touch      */
+/* 1. Tap highlight removal ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â no blue/grey flash on touch      */
 * {
   -webkit-tap-highlight-color: transparent;
 }
 
-/* 2. Refined text selection — matches app accent red          */
+/* 2. Refined text selection ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â matches app accent red          */
 ::selection {
   background-color: rgba(239, 68, 68, 0.22);
   color: inherit;
@@ -309,4 +309,35 @@ button:disabled,
 [data-theme="dark"] ::-webkit-scrollbar-thumb:hover {
   background: rgba(255, 255, 255, 0.3);
   background-clip: content-box;
+}
+
+/* ============================================================ */
+/* GLOBAL FIX: Remove all focus rings from text inputs          */
+/* ============================================================ */
+input:focus,
+input:focus-visible,
+textarea:focus,
+textarea:focus-visible {
+  outline: none !important;
+  outline-width: 0 !important;
+  outline-style: none !important;
+  outline-color: transparent !important;
+  box-shadow: none !important;
+  -webkit-appearance: none !important;
+  appearance: none !important;
+  -webkit-tap-highlight-color: transparent !important;
+}
+/* ============================================================ */
+/* Force remove focus rings from inputs                         */
+/* ============================================================ */
+input:focus,
+input:focus-visible,
+textarea:focus,
+textarea:focus-visible,
+select:focus,
+select:focus-visible {
+  outline: 0 !important;
+  outline: none !important;
+  box-shadow: none !important;
+  -webkit-tap-highlight-color: transparent !important;
 }

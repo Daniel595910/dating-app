@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '@/store/auth.store';
 import { supabase } from '@/config/supabase.client';
@@ -8,6 +8,7 @@ import { usePresence } from '../../features/chat/hooks/usePresence';
 import { Conversation } from '../../features/chat/types/chat.types';
 import { MessageCircle, ArrowRight, ArrowLeft, Search, X, Pin } from 'lucide-react';
 import styles from './ChatsPage.module.css';
+import { ChatSkeleton } from '../../features/chat/components/ChatSkeleton';
 
 export const ChatsPage: React.FC = () => {
   const navigate = useNavigate();
@@ -326,8 +327,14 @@ export const ChatsPage: React.FC = () => {
 
   if (loading) {
     return (
-      <div className={styles.loading}>
-        <div className={styles.spinner} />
+      <div className={styles.container}>
+        <div className={styles.headerRow}>
+          <button className={styles.backButton} onClick={() => navigate(-1)} aria-label="Back">
+            <ArrowLeft size={22} />
+          </button>
+          <h1 className={styles.title}>Chats</h1>
+        </div>
+        <ChatSkeleton rows={8} />
       </div>
     );
   }
@@ -510,7 +517,7 @@ export const ChatsPage: React.FC = () => {
           <div className={styles.archivedModal} onClick={(e) => e.stopPropagation()}>
             <div className={styles.archivedHeader}>
               <h2 className={styles.archivedTitle}>Archived</h2>
-              <button className={styles.archivedClose} onClick={() => setShowArchivedModal(false)} aria-label="Close">×</button>
+              <button className={styles.archivedClose} onClick={() => setShowArchivedModal(false)} aria-label="Close">Ã—</button>
             </div>
             <div className={styles.archivedList}>
               {archivedLoading ? (
