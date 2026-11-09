@@ -16,7 +16,7 @@ class MediaService {
     try {
       const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
       if (!allowedTypes.includes(file.type)) {
-        return { success: false, error: `File type ${file.type} not allowed` };
+        return { success: false, error: 'Please upload a JPG, PNG, WebP, or GIF image' };
       }
 
       const maxSize = 10 * 1024 * 1024;

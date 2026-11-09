@@ -192,7 +192,7 @@ export const CommunityCreationSheet: React.FC<CommunityCreationSheetProps> = ({
                     <input
                       ref={fileInputRef}
                       type="file"
-                      accept="image/*"
+                      accept="image/jpeg,image/png,image/webp,image/gif"
                       onChange={handleAvatarPick}
                       style={{ display: 'none' }}
                     />

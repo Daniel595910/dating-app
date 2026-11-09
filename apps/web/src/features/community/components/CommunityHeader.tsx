@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Search, MoreVertical, Users, ChevronDown, Globe, Info, Flag, Compass, Star, Handshake } from 'lucide-react';
+import { Search, MoreVertical, Users, ChevronDown, Globe, Info, Flag, Compass, Star, Handshake, Plus, UserRoundPlus } from 'lucide-react';
 import { CommunityInfo } from '../../types/community.types';
 import { NotificationBell } from './NotificationBell';
  import { AvatarStack } from './AvatarStack';
@@ -130,8 +130,8 @@ export const CommunityHeader: React.FC<CommunityHeaderProps> = ({
         </div>
 
         <div className={styles.headerRight}>
-          {memberPreview.length > 0 && memberPreviewCommunityId === community.id && (
-            <div style={{ marginRight: '0.5rem' }}>
+          <div className={styles.avatarStackContainer}>
+            {memberPreview.length > 0 && memberPreviewCommunityId === community.id ? (
               <AvatarStack
                 members={memberPreview}
                 totalCount={community.memberCount}
@@ -139,8 +139,17 @@ export const CommunityHeader: React.FC<CommunityHeaderProps> = ({
                 onClick={onOpenMembers}
                 ringState={storyRingState}
               />
-            </div>
-          )}
+            ) : (
+              <button
+                type="button"
+                className={styles.emptyAvatarPlaceholder}
+                onClick={onOpenMembers}
+                aria-label="View members"
+              >
+                <UserRoundPlus size={14} />
+              </button>
+            )}
+          </div>
 
           <div className={styles.headerActions}>
             <NotificationBell userId={userId} buttonClassName={styles.iconButton} />

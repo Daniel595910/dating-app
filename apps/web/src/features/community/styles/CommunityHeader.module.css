@@ -216,3 +216,87 @@
 .header[data-has-cover="true"] .iconButton:hover { background: rgba(0,0,0,0.5); }
 .header[data-has-cover="true"] .actionBadge { border-color: rgba(0,0,0,0.4); }
 .header[data-has-cover="true"] .flagContainer { display: none; }
+/* ===== LOGO SHRINK ===== */
+.flagContainer {
+  width: 28px !important;
+  height: 28px !important;
+  border-radius: 8px !important;
+  font-size: 16px !important;
+}
+
+/* Placeholder avatar — matches the real avatar stack footprint */
+.emptyAvatarPlaceholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 2px dashed var(--color-border-strong, #e5e7eb);
+  background: var(--color-surface-alt, #f9fafb);
+  color: var(--color-text-muted, #9ca3af);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: border-color 0.15s ease, color 0.15s ease;
+}
+
+.emptyAvatarPlaceholder:hover {
+  border-color: var(--color-primary, #ef4444);
+  color: var(--color-primary, #ef4444);
+}
+
+/* Header right wrapper — ensures both stack and placeholder occupy the same space */
+.avatarStackContainer {
+  display: flex;
+  align-items: center;
+  margin-right: 0.5rem;
+  flex-shrink: 0;
+  min-width: 28px;
+}
+/* ===== LOGO HEIGHT ONLY ===== */
+/* Width stays 28px, height shrinks to make the box shorter (rectangular) */
+.flagContainer {
+  height: 22px !important;
+  min-height: 22px !important;
+  max-height: 22px !important;
+  /* width: 28px stays from the previous rule */
+}
+
+/* Ensure the image inside scales to the shorter height */
+.logoImage {
+  height: 100% !important;
+  width: 100% !important;
+  object-fit: cover !important;
+  border-radius: 6px !important;
+}
+/* ===== CIRCULAR LOGO ===== */
+/* Forces the logo container to be a perfect circle */
+.flagContainer {
+  border-radius: 50% !important;
+  overflow: hidden !important;
+}
+
+/* Ensure image inside is also circular */
+.logoImage {
+  border-radius: 50% !important;
+  object-fit: cover !important;
+  width: 100% !important;
+  height: 100% !important;
+}
+/* ===== CIRCULAR LOGO (24x24) ===== */
+/* Forces the logo container to be a perfect circle, sized down to 24px */
+.flagContainer {
+  width: 24px !important;
+  height: 24px !important;
+  border-radius: 50% !important;
+  overflow: hidden !important;
+  font-size: 14px !important;
+}
+
+/* Ensure image inside is also circular */
+.logoImage {
+  border-radius: 50% !important;
+  object-fit: cover !important;
+  width: 100% !important;
+  height: 100% !important;
+}
