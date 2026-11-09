@@ -4,6 +4,7 @@ import { useAuthStore } from '@/store/auth.store';
 import { useUIStore } from '@/store/ui.store';
 import { supabase } from '@/config/supabase.client';
 import { profileService } from '../../features/profile/services/profile.service';
+import { useConnection } from '../../features/community/hooks/useConnection';
 import { ProfileData, ProfileStats, UserPost } from '../../features/profile/types/profile.types';
 import { PhotoViewer } from '../../features/profile/components/PhotoViewer';
 import { PhotoManagement } from '../../features/profile/components/PhotoManagement';
@@ -34,6 +35,8 @@ export const ProfilePage: React.FC = () => {
     points: 0,
     planExpiresAt: null,
   });
+  const [connectionStatus, setConnectionStatus] = useState<'none' | 'pending' | 'matched' | 'accepted' | 'mutual_interest' | 'sending'>('none');
+  const { sendRequest, getConnectionStatus } = useConnection(user?.id || null);
   const [statsModal, setStatsModal] = useState<'posts' | 'followers' | 'following' | 'connections' | null>(null);
   const [followersList, setFollowersList] = useState<Array<{ userId: string; name: string; avatarUrl: string | null; isFollowing?: boolean; followsMe?: boolean }>>([]);
   const [followingList, setFollowingList] = useState<Array<{ userId: string; name: string; avatarUrl: string | null; isFollowing?: boolean; followsMe?: boolean }>>([]);
@@ -531,6 +534,27 @@ export const ProfilePage: React.FC = () => {
     }
   };
 
+  // Load viewer's connection status with this profile
+  useEffect(() => {
+    if (!user?.id || !targetUserId || isOwnProfile) return;
+    getConnectionStatus(targetUserId).then((status) => {
+      setConnectionStatus(status as any);
+    });
+  }, [user?.id, targetUserId, isOwnProfile, getConnectionStatus]);
+
+  const handleGetToKnow = async () => {
+    if (!user?.id || !targetUserId || isOwnProfile) return;
+    setConnectionStatus('sending');
+    const ok = await sendRequest(targetUserId);
+    if (ok) {
+      setConnectionStatus('pending');
+      showToast('Connection request sent!', 'success');
+    } else {
+      setConnectionStatus('none');
+      showToast('Failed to send request', 'error');
+    }
+  };
+
   if (loading) {
     return (
       <div className={styles.loadingContainer}>
@@ -640,7 +664,7 @@ export const ProfilePage: React.FC = () => {
                         {post.content.length > 80 ? post.content.substring(0, 80) + '...' : post.content}
                       </p>
                       <span className={styles.statsModalItemMeta}>
-                        {new Date(post.createdAt).toLocaleDateString()} • {post.likeCount} likes • {post.commentCount} comments
+                        {new Date(post.createdAt).toLocaleDateString()} â€¢ {post.likeCount} likes â€¢ {post.commentCount} comments
                       </span>
                     </div>
                   ))
@@ -749,7 +773,7 @@ export const ProfilePage: React.FC = () => {
                                 lineHeight: 1,
                               }}
                             >
-                              💕 Matched
+                              ðŸ’• Matched
                             </span>
                           )}
                         </div>
@@ -899,7 +923,7 @@ export const ProfilePage: React.FC = () => {
 
         {profile.bio && <p className={styles.bio}>{profile.bio}</p>}
 
-        {/* Public VIP badge — visible to anyone viewing this profile */}
+        {/* Public VIP badge â€” visible to anyone viewing this profile */}
         {!isOwnProfile && profile?.vipLevel && profile.vipLevel !== 'free' && (
           <span
             className={styles.vipBadgePublic}
@@ -910,7 +934,7 @@ export const ProfilePage: React.FC = () => {
           </span>
         )}
 
-        {/* Own profile — full badge with credits link */}
+        {/* Own profile â€” full badge with credits link */}
         {isOwnProfile && vipData.level !== 'free' && (
           <button className={styles.vipBadge} onClick={() => navigate('/profile/vip')}>
             <Crown size={14} />
@@ -929,7 +953,7 @@ export const ProfilePage: React.FC = () => {
                 color: hasShared ? '#10b981' : '#ef4444',
               }}>
               <Share2 size={18} />
-              {shareLoading ? 'Sharing…' : hasShared ? 'Shared' : 'Share'}
+              {shareLoading ? 'Sharingâ€¦' : hasShared ? 'Shared' : 'Share'}
             </button>
             <button className={styles.primaryAction} onClick={() => navigate('/profile/edit')}>
               Edit Profile
@@ -946,14 +970,28 @@ export const ProfilePage: React.FC = () => {
           </div>
         ) : (
           <div className={styles.actionRow}>
-            <button className={styles.primaryAction} onClick={handleMessage}>
-              <MessageCircle size={18} />
-              Message
-            </button>
+          <div className={styles.actionRow}>
+            {connectionStatus === 'matched' ? (
+              <button className={styles.primaryAction} onClick={handleMessage}>
+                <MessageCircle size={18} />
+                Message
+              </button>
+            ) : connectionStatus === 'pending' || connectionStatus === 'sending' ? (
+              <button className={styles.primaryAction} disabled style={{ opacity: 0.6, cursor: 'not-allowed' }}>
+                <Check size={18} />
+                {connectionStatus === 'sending' ? 'Sending…' : 'Request Sent'}
+              </button>
+            ) : (
+              <button className={styles.primaryAction} onClick={handleGetToKnow}>
+                <Heart size={18} />
+                Get to Know
+              </button>
+            )}
             <button className={styles.secondaryAction} onClick={handleFollow}>
               {isFollowing ? <Check size={18} /> : <UserPlus size={18} />}
               {isFollowing ? 'Following' : 'Follow'}
             </button>
+          </div>
           </div>
         )}
 
@@ -1313,7 +1351,7 @@ export const ProfilePage: React.FC = () => {
                 transition: 'background-color 0.15s, transform 0.1s',
               }}
             >
-              {unmatchLoading ? 'Unmatching…' : 'Unmatch'}
+              {unmatchLoading ? 'Unmatchingâ€¦' : 'Unmatch'}
             </button>
           </div>
         </div>
