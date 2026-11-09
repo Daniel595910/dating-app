@@ -1,0 +1,143 @@
+/* ============================================================
+   NotificationPromptBanner — Premium Floating Toast
+   ============================================================ */
+
+.banner {
+  position: fixed;
+  top: calc(env(safe-area-inset-top) + 0.75rem);
+  left: 50%;
+  transform: translateX(-50%);
+  width: calc(100% - 1.5rem);
+  max-width: 400px;
+  z-index: 9998;
+  background: var(--color-surface-raised, #ffffff);
+  border-radius: 1.25rem;
+  padding: 1rem;
+  box-shadow: 
+    0 12px 32px rgba(0, 0, 0, 0.12),
+    0 4px 12px rgba(0, 0, 0, 0.08),
+    0 0 0 1px var(--color-border, rgba(0,0,0,0.04));
+  display: flex;
+  align-items: flex-start;
+  gap: 0.875rem;
+  animation: slideDownPrompt 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.iconWrapper {
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, var(--color-primary-soft, #fef2f2), var(--color-primary-soft-border, #fee2e2));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.icon {
+  color: var(--color-primary, #ef4444);
+}
+
+.content {
+  flex: 1;
+  min-width: 0;
+  padding-top: 2px;
+}
+
+.title {
+  font-size: 0.9375rem;
+  font-weight: 700;
+  color: var(--color-text, #111827);
+  margin: 0 0 0.25rem;
+  letter-spacing: -0.01em;
+}
+
+.text {
+  font-size: 0.8125rem;
+  color: var(--color-text-secondary, #6b7280);
+  margin: 0;
+  line-height: 1.45;
+}
+
+.actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+
+.enableButton {
+  padding: 0 1rem;
+  height: 34px;
+  background: var(--color-primary, #ef4444);
+  color: #ffffff;
+  border: none;
+  border-radius: 9999px;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.enableButton:hover:not(:disabled) {
+  background: var(--color-primary-hover, #dc2626);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.25);
+}
+
+.enableButton:disabled {
+  background: var(--color-surface-alt, #f3f4f6);
+  color: var(--color-text-muted, #9ca3af);
+  cursor: wait;
+}
+
+.dismissButton {
+  padding: 0 1rem;
+  height: 34px;
+  background: none;
+  color: var(--color-text-secondary, #6b7280);
+  border: 1px solid var(--color-border-strong, #e5e7eb);
+  border-radius: 9999px;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.dismissButton:hover {
+  background: var(--color-surface-alt, #f9fafb);
+  color: var(--color-text, #111827);
+}
+
+.closeButton {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--color-text-muted, #9ca3af);
+  padding: 4px;
+  margin-left: 0.125rem;
+  border-radius: 50%;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.closeButton:hover {
+  background: var(--color-surface-alt, #f3f4f6);
+  color: var(--color-text, #111827);
+}
+
+.inlineIcon {
+  display: inline;
+  vertical-align: -2px;
+  margin: 0 2px;
+}
+
+@keyframes slideDownPrompt {
+  from { opacity: 0; transform: translateX(-50%) translateY(-12px) scale(0.98); }
+  to   { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); }
+}

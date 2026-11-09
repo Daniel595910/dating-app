@@ -242,6 +242,7 @@ export const DiscoverCommunitiesPage: React.FC = () => {
         <button className={styles.headerButton} onClick={() => navigate(-1)} aria-label="Back">
           <ArrowLeft size={22} />
         </button>
+        
         <div className={styles.searchContainer}>
           <Search size={18} className={styles.searchIcon} />
           <input
@@ -255,14 +256,17 @@ export const DiscoverCommunitiesPage: React.FC = () => {
               <X size={16} />
             </button>
           )}
+          
+          {/* Filter Button moved INSIDE the search bar */}
+          <div className={styles.searchDivider} />
+          <button
+            className={`${styles.searchFilterButton} ${showFilters ? styles.searchFilterButtonActive : ''}`}
+            onClick={() => setShowFilters((prev) => !prev)}
+            aria-label="Filters"
+          >
+            <Filter size={18} />
+          </button>
         </div>
-        <button
-          className={`${styles.headerButton} ${showFilters ? styles.headerButtonActive : ''}`}
-          onClick={() => setShowFilters((prev) => !prev)}
-          aria-label="Filters"
-        >
-          <Filter size={20} />
-        </button>
       </header>
 
       <div className={styles.content}>
