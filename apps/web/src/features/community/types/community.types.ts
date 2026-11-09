@@ -70,6 +70,7 @@ export interface CommunityInfo {
   city?: string;
   flag: string;
   coverImageUrl?: string | null;
+  avatarUrl?: string | null;
   isFeatured?: boolean;
 }
 
