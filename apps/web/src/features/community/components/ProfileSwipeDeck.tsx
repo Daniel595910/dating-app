@@ -108,6 +108,7 @@ export const ProfileSwipeDeck: React.FC<ProfileSwipeDeckProps> = ({ userId, comm
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<L.Map | null>(null);
   const markersRef = useRef<L.Marker[]>([]);
+  const filterPanelRef = useRef<HTMLDivElement>(null);
 
   const getDominantColor = (imgUrl: string): Promise<string> => {
     return new Promise((resolve) => {
@@ -202,7 +203,7 @@ export const ProfileSwipeDeck: React.FC<ProfileSwipeDeckProps> = ({ userId, comm
       }
 
       const authorIds = [...new Set(posts.map((p: any) => p.author_id))];
-      
+
       const { data: profilesData } = await supabase
         .from('profiles')
         .select('*')
@@ -224,15 +225,15 @@ export const ProfileSwipeDeck: React.FC<ProfileSwipeDeckProps> = ({ userId, comm
       }
 
       const cards: ProfileCard[] = [];
-      
+
       for (const post of posts.filter((p: any) => p.author_id !== userId)) {
         const prof = profileMap.get(post.author_id);
         const metadata = post.metadata || {};
-        
+
         let lat = null;
         let lng = null;
         let distance = null;
-        
+
         if (prof?.location) {
           const geo = await geocodeLocation(
             prof.location.city,
@@ -304,6 +305,12 @@ export const ProfileSwipeDeck: React.FC<ProfileSwipeDeckProps> = ({ userId, comm
       setCardBackground('linear-gradient(135deg, #fecaca 0%, #f87171 100%)');
     }
   }, [currentIndex, filteredProfiles]);
+
+  useEffect(() => {
+    if (showFilters && filterPanelRef.current) {
+      filterPanelRef.current.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+  }, [showFilters]);
 
   const handleTouchStart = (e: React.TouchEvent) => {
     setSwipe({ isDragging: true, startX: e.touches[0].clientX, deltaX: 0 });
@@ -398,8 +405,11 @@ export const ProfileSwipeDeck: React.FC<ProfileSwipeDeckProps> = ({ userId, comm
   if (viewerQualified === null || loading) {
     return (
       <div className={styles.loading}>
-        <div className={styles.spinner} />
-        <p>Loading profiles...</p>
+        <div className={styles.loaderRings}>
+          <span className={styles.loaderRingOuter} />
+          <span className={styles.loaderRingInner} />
+        </div>
+        <p className={styles.loadingText}>Loading profiles...</p>
       </div>
     );
   }
@@ -437,13 +447,13 @@ export const ProfileSwipeDeck: React.FC<ProfileSwipeDeckProps> = ({ userId, comm
   return (
     <div className={styles.deckContainer}>
       <div className={styles.viewToggle}>
-        <button 
+        <button
           className={`${styles.viewButton} ${viewMode === 'swipe' ? styles.viewButtonActive : ''}`}
           onClick={() => setViewMode('swipe')}
         >
           <Heart size={16} /> Swipe
         </button>
-        <button 
+        <button
           className={`${styles.viewButton} ${viewMode === 'map' ? styles.viewButtonActive : ''}`}
           onClick={() => setViewMode('map')}
         >
@@ -455,7 +465,7 @@ export const ProfileSwipeDeck: React.FC<ProfileSwipeDeckProps> = ({ userId, comm
       </div>
 
       {showFilters && (
-        <div className={styles.filterPanel}>
+        <div className={styles.filterPanel} ref={filterPanelRef}>
           <div className={styles.filterPanelHeader}>
             <span className={styles.filterPanelTitle}>
               {filtersFromPrefs ? 'From your preferences' : 'Adjusting this session'}
@@ -487,7 +497,10 @@ export const ProfileSwipeDeck: React.FC<ProfileSwipeDeckProps> = ({ userId, comm
           </div>
 
           <div className={styles.filterRow}>
-            <label className={styles.filterLabel}>Age: {filters.minAge} - {filters.maxAge}</label>
+            <div className={styles.filterRowHeader}>
+              <label className={styles.filterLabel}>Age range</label>
+              <span className={styles.filterValue}>{filters.minAge} – {filters.maxAge}</span>
+            </div>
             <input
               type="range"
               min={18}
@@ -498,6 +511,7 @@ export const ProfileSwipeDeck: React.FC<ProfileSwipeDeckProps> = ({ userId, comm
                 setFiltersFromPrefs(false);
               }}
               className={styles.rangeSlider}
+              aria-label="Minimum age"
             />
             <input
               type="range"
@@ -509,10 +523,15 @@ export const ProfileSwipeDeck: React.FC<ProfileSwipeDeckProps> = ({ userId, comm
                 setFiltersFromPrefs(false);
               }}
               className={styles.rangeSlider}
+              aria-label="Maximum age"
             />
           </div>
+
           <div className={styles.filterRow}>
-            <label className={styles.filterLabel}>Max Distance: {filters.maxDistance} km</label>
+            <div className={styles.filterRowHeader}>
+              <label className={styles.filterLabel}>Max distance</label>
+              <span className={styles.filterValue}>{filters.maxDistance} km</span>
+            </div>
             <input
               type="range"
               min={5}
@@ -524,19 +543,25 @@ export const ProfileSwipeDeck: React.FC<ProfileSwipeDeckProps> = ({ userId, comm
                 setFiltersFromPrefs(false);
               }}
               className={styles.rangeSlider}
+              aria-label="Maximum distance in kilometers"
             />
           </div>
+
           <div className={styles.filterRow}>
-            <label className={styles.filterCheckbox}>
+            <label className={styles.toggle}>
+              <span className={styles.toggleLabel}>Verified only</span>
               <input
                 type="checkbox"
+                className={styles.toggleInput}
                 checked={filters.verifiedOnly}
                 onChange={(e) => {
                   setFilters({ ...filters, verifiedOnly: e.target.checked });
                   setFiltersFromPrefs(false);
                 }}
               />
-              Verified only
+              <span className={styles.toggleTrack} aria-hidden="true">
+                <span className={styles.toggleThumb} />
+              </span>
             </label>
           </div>
         </div>
@@ -550,7 +575,7 @@ export const ProfileSwipeDeck: React.FC<ProfileSwipeDeckProps> = ({ userId, comm
           <div ref={mapRef} className={styles.mapContainer} />
         </div>
       ) : current ? (
-        <div 
+        <div
           className={styles.deck}
           onTouchStart={handleTouchStart}
           onTouchMove={handleTouchMove}
@@ -582,7 +607,7 @@ export const ProfileSwipeDeck: React.FC<ProfileSwipeDeckProps> = ({ userId, comm
                 <div className={styles.location}>
                   <MapPin size={12} />
                   {current.location}
-                  {current.distanceKm && <span className={styles.distance}> â€¢ {current.distanceKm} km</span>}
+                  {current.distanceKm && <span className={styles.distance}> • {current.distanceKm} km</span>}
                 </div>
               )}
               {current.interests.length > 0 && (
@@ -609,8 +634,20 @@ export const ProfileSwipeDeck: React.FC<ProfileSwipeDeckProps> = ({ userId, comm
         </div>
       ) : (
         <div className={styles.empty}>
-          <Users size={48} className={styles.emptyIcon} />
+          <div className={styles.emptyIconWrapper}>
+            <Users size={32} className={styles.emptyIcon} />
+          </div>
           <p className={styles.emptyTitle}>No profiles match your filters</p>
+          <p className={styles.emptyText}>
+            Try widening your age range or distance to see more people.
+          </p>
+          <button
+            type="button"
+            className={styles.emptyCta}
+            onClick={() => setShowFilters(true)}
+          >
+            Adjust filters
+          </button>
         </div>
       )}
 
