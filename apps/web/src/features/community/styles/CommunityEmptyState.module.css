@@ -1,0 +1,71 @@
+/* ============================================================
+   CommunityEmptyState — Premium Empty Layout
+   ============================================================ */
+
+.container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 4rem 1.5rem;
+  min-height: 50vh;
+  animation: fadeIn 0.3s ease-out;
+}
+
+.iconWrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--color-primary-soft, #fef2f2) 0%, var(--color-primary-soft-border, #fecaca) 100%);
+  color: var(--color-primary, #ef4444);
+  margin-bottom: 1.25rem;
+  box-shadow: 0 4px 12px color-mix(in srgb, var(--color-primary, #ef4444) 10%, transparent);
+}
+
+.title {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: var(--color-text, #111827);
+  margin: 0 0 0.5rem;
+  letter-spacing: -0.01em;
+}
+
+.text {
+  font-size: 0.9375rem;
+  line-height: 1.5;
+  color: var(--color-text-secondary, #6b7280);
+  margin: 0 0 1.5rem;
+  max-width: 280px;
+}
+
+.createButton {
+  padding: 0.75rem 1.5rem;
+  background-color: var(--color-primary, #ef4444);
+  color: #ffffff;
+  border: none;
+  border-radius: 9999px;
+  cursor: pointer;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  transition: all 0.15s ease;
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--color-primary, #ef4444) 25%, transparent);
+}
+
+.createButton:hover {
+  background-color: var(--color-primary-hover, #dc2626);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px color-mix(in srgb, var(--color-primary, #ef4444) 35%, transparent);
+}
+
+.createButton:active {
+  transform: scale(0.97);
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}

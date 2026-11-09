@@ -447,20 +447,26 @@ export const ProfileSwipeDeck: React.FC<ProfileSwipeDeckProps> = ({ userId, comm
   return (
     <div className={styles.deckContainer}>
       <div className={styles.viewToggle}>
-        <button
-          className={`${styles.viewButton} ${viewMode === 'swipe' ? styles.viewButtonActive : ''}`}
-          onClick={() => setViewMode('swipe')}
+        <div className={styles.segmentedControl}>
+          <button 
+            className={`${styles.viewButton} ${viewMode === 'swipe' ? styles.viewButtonActive : ''}`}
+            onClick={() => setViewMode('swipe')}
+          >
+            <Heart size={16} /> Swipe
+          </button>
+          <button 
+            className={`${styles.viewButton} ${viewMode === 'map' ? styles.viewButtonActive : ''}`}
+            onClick={() => setViewMode('map')}
+          >
+            <MapIcon size={16} /> Map
+          </button>
+        </div>
+        <button 
+          className={`${styles.filterButton} ${showFilters ? styles.filterButtonActive : ''}`} 
+          onClick={() => setShowFilters(!showFilters)}
+          aria-label="Filters"
         >
-          <Heart size={16} /> Swipe
-        </button>
-        <button
-          className={`${styles.viewButton} ${viewMode === 'map' ? styles.viewButtonActive : ''}`}
-          onClick={() => setViewMode('map')}
-        >
-          <MapIcon size={16} /> Map
-        </button>
-        <button className={styles.filterButton} onClick={() => setShowFilters(!showFilters)}>
-          <SlidersHorizontal size={16} />
+          <SlidersHorizontal size={18} />
         </button>
       </div>
 
@@ -499,7 +505,7 @@ export const ProfileSwipeDeck: React.FC<ProfileSwipeDeckProps> = ({ userId, comm
           <div className={styles.filterRow}>
             <div className={styles.filterRowHeader}>
               <label className={styles.filterLabel}>Age range</label>
-              <span className={styles.filterValue}>{filters.minAge} – {filters.maxAge}</span>
+              <span className={styles.filterValue}>{filters.minAge} â€“ {filters.maxAge}</span>
             </div>
             <input
               type="range"
@@ -607,7 +613,7 @@ export const ProfileSwipeDeck: React.FC<ProfileSwipeDeckProps> = ({ userId, comm
                 <div className={styles.location}>
                   <MapPin size={12} />
                   {current.location}
-                  {current.distanceKm && <span className={styles.distance}> • {current.distanceKm} km</span>}
+                  {current.distanceKm && <span className={styles.distance}> â€¢ {current.distanceKm} km</span>}
                 </div>
               )}
               {current.interests.length > 0 && (

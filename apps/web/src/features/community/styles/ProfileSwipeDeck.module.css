@@ -211,7 +211,7 @@
 }
 
 /* ============================================================
-   LOADING — dual-ring TikTok-style loader, themed
+   LOADING Ã¢â‚¬â€ dual-ring TikTok-style loader, themed
    ============================================================ */
 .loading,
 .empty {
@@ -272,7 +272,7 @@
 }
 
 /* ============================================================
-   EMPTY STATE — premium, themed, with recovery CTA
+   EMPTY STATE Ã¢â‚¬â€ premium, themed, with recovery CTA
    ============================================================ */
 .emptyIconWrapper {
   width: 72px;
@@ -552,23 +552,70 @@
 .viewToggle {
   display: flex;
   align-items: center;
-  gap: 6px;
-  margin-bottom: 12px;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+  padding: 0 4px;
+}
+
+.segmentedControl {
+  display: flex;
+  align-items: center;
+  background: var(--color-surface-alt, #f9fafb);
+  border: 1px solid var(--color-border, #e5e7eb);
+  border-radius: 9999px;
+  padding: 3px;
+  flex: 1;
+  max-width: 240px;
 }
 
 .viewButton {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 6px;
-  padding: 8px 14px;
-  background: #ffffff;
-  border: 1px solid #e5e7eb;
+  flex: 1;
+  padding: 8px 12px;
+  background: transparent;
+  border: none;
   border-radius: 9999px;
   cursor: pointer;
   font-size: 13px;
   font-weight: 600;
-  color: #374151;
-  transition: all 0.15s;
+  color: var(--color-text-secondary, #6b7280);
+  transition: all 0.2s ease;
+}
+
+.filterButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  background: var(--color-surface, #ffffff);
+  border: 1px solid var(--color-border, #e5e7eb);
+  border-radius: 50%;
+  cursor: pointer;
+  color: var(--color-text-secondary, #6b7280);
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+}
+
+.filterButton:hover {
+  background: var(--color-surface-alt, #f9fafb);
+  color: var(--color-text, #111827);
+}
+
+.filterButtonActive {
+  background: var(--color-primary-soft, #fef2f2);
+  border-color: var(--color-primary, #ef4444);
+  color: var(--color-primary, #ef4444);
+}
+
+.viewButtonActive {
+  background: var(--color-surface, #ffffff);
+  color: var(--color-text, #111827);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.08);
 }
 
 .viewButtonActive {
@@ -628,16 +675,32 @@
 }
 
 .mapView {
-  min-height: 400px;
-  border-radius: 16px;
+  flex: 1;
+  min-height: 500px;
+  border-radius: 24px;
   overflow: hidden;
   position: relative;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  background: var(--color-surface-alt, #f9fafb);
+  margin-bottom: 16px;
+  border: 1px solid var(--color-border, #e5e7eb);
 }
 
 .mapContainer {
   width: 100%;
-  height: 400px;
-  border-radius: 16px;
+  height: 100%;
+  min-height: 500px;
+  background: #e5e5ea; /* Fallback for tiles loading */
+}
+
+/* Dark mode fix for Leaflet tiles to make them look premium */
+@media (prefers-color-scheme: dark) {
+  .mapContainer :global(.leaflet-tile-pane) {
+    filter: brightness(0.6) invert(1) contrast(3) hue-rotate(200deg) saturate(0.3) brightness(0.7);
+  }
+  .mapContainer :global(.leaflet-container) {
+    background: #1a1a1c;
+  }
 }
 
 .mapPlaceholder {
@@ -658,21 +721,33 @@
 
 .closeMapButton {
   position: absolute;
-  top: 12px;
-  right: 12px;
+  top: 16px;
+  right: 16px;
   z-index: 1000;
-  background: rgba(255, 255, 255, 0.9);
-  border: none;
+  background: var(--color-surface, rgba(255, 255, 255, 0.95));
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--color-border, rgba(0, 0, 0, 0.05));
   border-radius: 50%;
-  width: 40px;
-  height: 40px;
+  width: 44px;
+  height: 44px;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  color: #374151;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-  transition: all 0.15s;
+  color: var(--color-text, #111827);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+  transition: all 0.2s ease;
+}
+
+.closeMapButton:hover {
+  transform: scale(1.05);
+  background: var(--color-surface-raised, #ffffff);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+}
+
+.closeMapButton:active {
+  transform: scale(0.95);
 }
 
 .closeMapButton:hover {
@@ -723,7 +798,7 @@
 
 
 /* ============================================================
-   RESPONSIVE — small phones
+   RESPONSIVE Ã¢â‚¬â€ small phones
    ============================================================ */
 @media (max-width: 400px) {
   .deck {
@@ -780,7 +855,7 @@
 }
 
 /* ============================================================
-   RESPONSIVE — very short viewports (landscape phones)
+   RESPONSIVE Ã¢â‚¬â€ very short viewports (landscape phones)
    ============================================================ */
 @media (max-height: 640px) {
   .deck {
@@ -807,7 +882,7 @@
 }
 
 /* ============================================================
-   RESPONSIVE — tablets and up
+   RESPONSIVE Ã¢â‚¬â€ tablets and up
    ============================================================ */
 @media (min-width: 768px) {
   .deck {
@@ -878,7 +953,7 @@
   background: #fef2f2;
 }
 /* ============================================================
-   Get to know button — mirrors pass/like shape, blue accent
+   Get to know button Ã¢â‚¬â€ mirrors pass/like shape, blue accent
    ============================================================ */
 .getToKnowButton {
   width: 56px;
@@ -921,7 +996,7 @@
   }
 }
 /* ============================================================
-   VIP-required modal — bottom sheet matching ConnectionPrompt
+   VIP-required modal Ã¢â‚¬â€ bottom sheet matching ConnectionPrompt
    ============================================================ */
 .vipBlockOverlay {
   position: fixed;

@@ -1,89 +1,65 @@
-﻿import React from 'react';
-import { Sparkles, Heart, Users } from 'lucide-react';
+import React from 'react';
+import { Sparkles, Heart, Users, MapPin } from 'lucide-react';
 import { FeedFilter } from '../types/community.types';
+import styles from '../styles/CommunityEmptyState.module.css';
 
 interface CommunityEmptyStateProps {
   onCreatePost: () => void;
   filter: FeedFilter;
 }
 
-const EMPTY_CONFIGS: Record<FeedFilter, { icon: React.ReactNode; title: string; text: string; showCreateButton: boolean }> = {
+const EMPTY_CONFIGS: Record<string, { icon: React.ReactNode; title: string; text: string; showCreateButton: boolean }> = {
   all: {
-    icon: <Sparkles size={32} style={{ color: '#f59e0b' }} />,
+    icon: <Sparkles size={32} />,
     title: 'Your community is just getting started',
     text: 'Be the first person to introduce yourself and start a conversation.',
     showCreateButton: true,
   },
   new: {
-    icon: <Sparkles size={32} style={{ color: '#f59e0b' }} />,
+    icon: <Sparkles size={32} />,
     title: 'No new posts yet',
-    text: 'Check back later or create a post yourself.',
+    text: 'Check back later or create a post yourself to get things going.',
     showCreateButton: true,
   },
   looking: {
-    icon: <Heart size={32} style={{ color: '#ef4444' }} />,
+    icon: <Heart size={32} />,
     title: 'Nobody is currently looking',
-    text: 'No one has posted what they are looking for yet.',
+    text: 'No one has posted what they are looking for yet. Check back soon.',
     showCreateButton: true,
   },
+  profiles: {
+    icon: <Users size={32} />,
+    title: 'No profiles yet',
+    text: 'Nobody has shared their profile in this community yet.',
+    showCreateButton: false,
+  },
   nearby: {
-    icon: <Users size={32} style={{ color: '#3b82f6' }} />,
-    title: 'No nearby posts',
-    text: 'There are no posts from people near you right now.',
+    icon: <MapPin size={32} />,
+    title: 'No posts nearby',
+    text: 'There are no posts from people near you right now. Try expanding your location settings.',
     showCreateButton: false,
   },
   following: {
-    icon: <Users size={32} style={{ color: '#3b82f6' }} />,
+    icon: <Users size={32} />,
     title: 'No posts from people you follow',
-    text: 'Follow more people to see their posts here.',
+    text: 'Follow more people in the community to see their posts here.',
     showCreateButton: false,
   },
 };
 
 export const CommunityEmptyState: React.FC<CommunityEmptyStateProps> = ({ onCreatePost, filter }) => {
-  const config = EMPTY_CONFIGS[filter];
+  const config = EMPTY_CONFIGS[filter] || EMPTY_CONFIGS.all;
 
   return (
-    <div style={{
-      display: 'flex',
-      flexDirection: 'column',
-      alignItems: 'center',
-      gap: '0.75rem',
-      padding: '3rem 1.5rem',
-      textAlign: 'center',
-    }}>
-      <div style={{
-        width: 72,
-        height: 72,
-        borderRadius: '50%',
-        background: 'linear-gradient(135deg, #fef3c7 0%, #fde68a 100%)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-      }}>
+    <div className={styles.container}>
+      <div className={styles.iconWrapper}>
         {config.icon}
       </div>
-      <h3 style={{ fontSize: '1.125rem', fontWeight: 600, color: '#111827', margin: 0 }}>
-        {config.title}
-      </h3>
-      <p style={{ fontSize: '0.875rem', color: '#6b7280', margin: 0, maxWidth: 280, lineHeight: 1.5 }}>
-        {config.text}
-      </p>
+      <h3 className={styles.title}>{config.title}</h3>
+      <p className={styles.text}>{config.text}</p>
+      
       {config.showCreateButton && (
-        <button
-          onClick={onCreatePost}
-          style={{
-            marginTop: '0.5rem',
-            padding: '0.75rem 1.5rem',
-            backgroundColor: '#ef4444',
-            color: '#ffffff',
-            border: 'none',
-            borderRadius: '9999px',
-            cursor: 'pointer',
-            fontSize: '0.9375rem',
-            fontWeight: 500,
-          }}
-        >
+        <button onClick={onCreatePost} className={styles.createButton}>
           Create a Post
         </button>
       )}
