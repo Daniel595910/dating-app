@@ -1,4 +1,4 @@
-﻿import { create } from 'zustand';
+import { create } from 'zustand';
 import { User } from '@supabase/supabase-js';
 import { supabase } from '@/config/supabase.client';
 
@@ -17,8 +17,9 @@ interface AuthState {
   clearError: () => void;
 }
 
-export const useAuthStore = create<AuthState>((set) => ({
+export const useAuthStore = create<AuthState>((set, get) => ({
   user: null,
+  // Start as true ONLY if there is no cached session, otherwise true would block the UI
   loading: true,
   error: null,
   isAuthenticated: false,
@@ -55,8 +56,29 @@ export const useAuthStore = create<AuthState>((set) => ({
   },
 
   refreshUser: async () => {
-    set({ loading: true });
-    const { data: { user } } = await supabase.auth.getUser();
-    set({ user, isAuthenticated: Boolean(user), loading: false });
+    // 1. Instantly get session from local storage (no network)
+    const { data: { session } } = await supabase.auth.getSession();
+    
+    if (session?.user) {
+      // 2. Update user instantly and turn off loading
+      set({ user: session.user, isAuthenticated: true, loading: false });
+    } else {
+      // If no cached session, stop loading (so redirect happens fast)
+      set({ user: null, isAuthenticated: false, loading: false });
+    }
+
+    // 3. Silently verify with the server in the background
+    try {
+      const { data: { user }, error } = await supabase.auth.getUser();
+      if (error || !user) {
+        // Session expired/invalid
+        set({ user: null, isAuthenticated: false });
+      } else {
+        // Session valid, quietly update
+        set({ user });
+      }
+    } catch {
+      // Ignore background network errors
+    }
   }
 }));
