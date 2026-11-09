@@ -949,3 +949,27 @@
   background-color: #22C55E !important;
   box-shadow: 0 0 4px rgba(0, 0, 0, 0.5) !important;
 }
+/* ===== FIX HEADER DROPDOWN Z-INDEX & CLIPPING ===== */
+.header {
+  z-index: 50 !important;      /* Ensure header sits above feed */
+  overflow: visible !important; /* Allow dropdown to break out of the header box */
+}
+
+.headerContent {
+  overflow: visible !important; /* Allow dropdown to break out */
+}
+
+.headerRight {
+  overflow: visible !important;
+  z-index: 60 !important;
+}
+
+.headerActions {
+  overflow: visible !important;
+  z-index: 61 !important;
+}
+
+/* Ensure the dropdown menu itself sits on top of everything */
+.headerActions > div > div {
+  z-index: 9999 !important;
+}
