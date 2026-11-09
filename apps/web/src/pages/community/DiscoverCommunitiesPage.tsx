@@ -279,24 +279,11 @@ export const DiscoverCommunitiesPage: React.FC = () => {
           </span>
         </div>
 
-        {/* Worldwide toggle */}
-        <label
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.5rem',
-            fontSize: '0.75rem',
-            color: '#6b7280',
-            cursor: 'pointer',
-            marginBottom: '0.75rem',
-            userSelect: 'none',
-          }}
-        >
+        <label className={styles.worldwideToggle}>
           <input
             type="checkbox"
             checked={includeWorldwide}
             onChange={(e) => setIncludeWorldwide(e.target.checked)}
-            style={{ width: 16, height: 16, accentColor: '#ef4444', cursor: 'pointer' }}
           />
           Include communities from other countries
         </label>
@@ -351,12 +338,15 @@ export const DiscoverCommunitiesPage: React.FC = () => {
           <div className={styles.skeletonList}>
             {[1, 2, 3].map((i) => (
               <div key={i} className={styles.skeletonCard}>
-                <div className={styles.skeletonCover} />
-                <div className={styles.skeletonBody}>
-                  <div className={`${styles.skeletonLine} ${styles.skeletonLineMed}`} />
-                  <div className={`${styles.skeletonLine} ${styles.skeletonLineShort}`} />
-                  <div className={styles.skeletonLine} />
+                <div className={styles.skeletonTop}>
+                  <div className={styles.skeletonAvatar} />
+                  <div className={styles.skeletonInfo}>
+                    <div className={`${styles.skeletonLine} ${styles.skeletonLineMed}`} />
+                    <div className={`${styles.skeletonLine} ${styles.skeletonLineShort}`} />
+                  </div>
                 </div>
+                <div className={`${styles.skeletonLine} ${styles.skeletonLineFull}`} />
+                <div className={`${styles.skeletonLine} ${styles.skeletonLineShort}`} />
               </div>
             ))}
           </div>
@@ -482,97 +472,63 @@ interface CommunityCardProps {
 const CommunityCard: React.FC<CommunityCardProps> = ({
   community, isJoining, onJoin, onEnter, onViewRules, gradient,
 }) => {
+  const badge = community.isFeatured
+    ? { label: 'Featured', className: styles.badgeFeatured }
+    : community.isSponsored
+    ? { label: 'Sponsored', className: styles.badgeSponsored }
+    : community.isAdmin
+    ? { label: 'Admin', className: styles.badgeAdmin }
+    : null;
+
   return (
     <div className={`${styles.card} ${community.isSponsored ? styles.cardSponsored : ''}`}>
-      <div className={styles.cardCoverWrap}>
+      <div className={styles.cardAvatar}>
         {community.coverImageUrl ? (
-          <img src={community.coverImageUrl} alt="" className={styles.coverImage} />
+          <img src={community.coverImageUrl} alt="" className={styles.cardAvatarImage} />
         ) : (
-          <div className={styles.coverFallback} style={{ background: gradient }}>
+          <div className={styles.cardAvatarFallback} style={{ background: gradient }}>
             {community.name.charAt(0).toUpperCase()}
           </div>
         )}
-
-        <div className={styles.cardBadgeRow}>
-          <div className={styles.cardBadgeGroup}>
-            {community.isFeatured && (
-              <span className={`${styles.badgePill} ${styles.badgeFeatured}`}>
-                <Star size={9} fill="currentColor" /> Featured
-              </span>
-            )}
-            {community.isSponsored && (
-              <span className={`${styles.badgePill} ${styles.badgeSponsored}`}>
-                <Star size={9} /> Sponsored
-              </span>
-            )}
-            {community.isAdmin && (
-              <span className={`${styles.badgePill} ${styles.badgeAdmin}`}>
-                Admin
-              </span>
-            )}
-          </div>
-          <div className={styles.cardBadgeGroup}>
-            {community.isPrivate ? (
-              <span className={`${styles.badgePill} ${styles.badgePrivate}`}>
-                <Lock size={9} /> Private
-              </span>
-            ) : (
-              <span className={`${styles.badgePill} ${styles.badgePublic}`}>
-                <Globe size={9} /> Public
-              </span>
-            )}
-          </div>
-        </div>
       </div>
 
       <div className={styles.cardBody}>
-        <h3 className={styles.cardName}>{community.name}</h3>
-
-        {community.description && (
-          <p className={styles.cardDescription}>{community.description}</p>
-        )}
-
+        <div className={styles.cardNameRow}>
+          <h3 className={styles.cardName}>{community.name}</h3>
+          {community.isPrivate && <Lock size={13} className={styles.lockIcon} />}
+          {badge && (
+            <span className={`${styles.priorityBadge} ${badge.className}`}>
+              {badge.label}
+            </span>
+          )}
+        </div>
         <div className={styles.cardMeta}>
           <span className={styles.metaItem}>
-            <MapPin size={12} />
-            {[community.city, community.state, community.country].filter(Boolean).join(', ')}
-          </span>
-          <span className={styles.metaItem}>
-            <Users size={12} />
+            <Users size={11} />
             {community.memberCount.toLocaleString()}
           </span>
           <span className={styles.metaItem}>
-            <TrendingUp size={12} />
-            {community.postCount}
+            <MapPin size={11} />
+            {[community.city, community.country].filter(Boolean).join(', ') || community.country}
           </span>
         </div>
+      </div>
 
-        <div className={styles.cardActions}>
-          {community.isJoined ? (
-            <button className={styles.enterButton} onClick={onEnter}>
-              <Check size={14} />
-              Enter
-            </button>
-          ) : (
-            <button
-              className={styles.joinButton}
-              onClick={onJoin}
-              disabled={isJoining}
-            >
-              {isJoining ? 'Joining...' : 'Join'}
-            </button>
-          )}
-          {community.rules.length > 0 && (
-            <button
-              className={styles.rulesButton}
-              onClick={onViewRules}
-              aria-label="View rules"
-              title="View rules"
-            >
-              <BookOpen size={16} />
-            </button>
-          )}
-        </div>
+      <div className={styles.cardActions}>
+        {community.isJoined ? (
+          <button className={styles.enterButton} onClick={onEnter}>
+            <Check size={13} /> Enter
+          </button>
+        ) : (
+          <button className={styles.joinButton} onClick={onJoin} disabled={isJoining}>
+            {isJoining ? '...' : 'Join'}
+          </button>
+        )}
+        {community.rules.length > 0 && (
+          <button className={styles.rulesButton} onClick={onViewRules} title="View rules">
+            <BookOpen size={14} />
+          </button>
+        )}
       </div>
     </div>
   );

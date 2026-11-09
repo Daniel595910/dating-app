@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '@/store/auth.store';
 import { searchService } from '../../features/search/services/search.service';
@@ -19,6 +19,7 @@ export const SearchPage: React.FC = () => {
   const [searched, setSearched] = useState(false);
   const [recentSearches, setRecentSearches] = useState<string[]>([]);
   const [connectionSent, setConnectionSent] = useState<Set<string>>(new Set());
+  const [tabFilter, setTabFilter] = useState<'all' | 'people' | 'communities' | 'posts' | 'tags'>('all');
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -138,11 +139,41 @@ export const SearchPage: React.FC = () => {
         </div>
       </header>
 
+      {query.trim().length > 0 && !loading && (
+        <div className={styles.tabBar}>
+          {([
+            { key: 'all' as const, label: 'All', count: totalResults },
+            { key: 'people' as const, label: 'People', count: results.length },
+            { key: 'communities' as const, label: 'Communities', count: communityResults.length },
+            { key: 'posts' as const, label: 'Posts', count: postResults.length },
+            { key: 'tags' as const, label: 'Tags', count: tagResults.length },
+          ]).map((tab) => (
+            tab.count > 0 && (
+              <button
+                key={tab.key}
+                className={`${styles.tab} ${tabFilter === tab.key ? styles.tabActive : ''}`}
+                onClick={() => setTabFilter(tab.key)}
+              >
+                {tab.label}
+                <span className={styles.tabCount}>{tab.count}</span>
+              </button>
+            )
+          ))}
+        </div>
+      )}
+
       <div className={styles.content}>
         {loading ? (
           <div className={styles.loadingState}>
-            <div className={styles.spinner} />
-            <p>Searching...</p>
+            {[1, 2, 3, 4, 5].map((i) => (
+              <div key={i} className={styles.skeletonRow}>
+                <div className={styles.skeletonAvatar} />
+                <div className={styles.skeletonLines}>
+                  <div className={`${styles.skeletonLine} ${styles.skeletonLineShort}`} />
+                  <div className={styles.skeletonLine} />
+                </div>
+              </div>
+            ))}
           </div>
         ) : searched && totalResults === 0 ? (
           <div className={styles.emptyState}>
@@ -218,7 +249,7 @@ export const SearchPage: React.FC = () => {
         ) : (
           <div className={styles.resultsList}>
             {/* PEOPLE FIRST - Facebook style */}
-            {results.length > 0 && (
+            {(tabFilter === 'all' || tabFilter === 'people') && results.length > 0 && (
               <div className={styles.peopleSection}>
                 <p className={styles.sectionLabel}>People</p>
                 {results.map((result) => (
@@ -294,7 +325,7 @@ export const SearchPage: React.FC = () => {
             )}
 
             {/* COMMUNITIES */}
-            {communityResults.length > 0 && (
+            {(tabFilter === 'all' || tabFilter === 'communities') && communityResults.length > 0 && (
               <div className={styles.communityResultsSection}>
                 <p className={styles.sectionLabel}>Communities</p>
                 {communityResults.map((community) => (
@@ -323,7 +354,7 @@ export const SearchPage: React.FC = () => {
             )}
 
             {/* TAGS */}
-            {tagResults.length > 0 && (
+            {(tabFilter === 'all' || tabFilter === 'tags') && tagResults.length > 0 && (
               <div className={styles.tagResultsSection}>
                 <p className={styles.sectionLabel}>Tags</p>
                 <div className={styles.tagChips}>
@@ -341,7 +372,7 @@ export const SearchPage: React.FC = () => {
             )}
 
             {/* POSTS */}
-            {postResults.length > 0 && (
+            {(tabFilter === 'all' || tabFilter === 'posts') && postResults.length > 0 && (
               <div className={styles.postResultsSection}>
                 <p className={styles.sectionLabel}>Posts</p>
                 {postResults.map((post) => (

@@ -1,95 +1,102 @@
-﻿import React from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Shield, Heart, Users, MessageCircle, AlertTriangle, Lock, Sparkles } from 'lucide-react';
+import {
+  ArrowLeft, Shield, Heart, Users, MessageCircle, AlertTriangle, Lock,
+  Sparkles, MoreVertical, Headphones, MessageSquare, LifeBuoy
+} from 'lucide-react';
+import styles from './CommunityGuidelinesPage.module.css';
 
 export const CommunityGuidelinesPage: React.FC = () => {
   const navigate = useNavigate();
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  // Close dropdown on outside click or Escape
+  useEffect(() => {
+    if (!menuOpen) return;
+    const handleClickOutside = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setMenuOpen(false);
+      }
+    };
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setMenuOpen(false);
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('keydown', handleEscape);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleEscape);
+    };
+  }, [menuOpen]);
 
   const sections = [
-    {
-      icon: Heart,
-      title: 'Be Respectful',
-      description: 'Treat everyone with kindness and respect. Do not harass, bully, or discriminate against others.',
-      rules: [
-        'No hate speech or discrimination',
-        'No harassment or bullying',
-        'No threats of violence',
-      ],
-    },
-    {
-      icon: Shield,
-      title: 'Stay Safe',
-      description: 'Your safety is our priority. Never share sensitive information with people you meet online.',
-      rules: [
-        'Never share passwords or OTPs',
-        'Never send money to people you meet online',
-        'Never share bank details or card information',
-        'Report suspicious behavior immediately',
-      ],
-    },
-    {
-      icon: Users,
-      title: 'Be Authentic',
-      description: 'Use your real identity. Fake profiles and impersonation are not allowed.',
-      rules: [
-        'Use your real photos',
-        'Do not impersonate others',
-        'One account per person',
-        'Complete KYC verification',
-      ],
-    },
-    {
-      icon: MessageCircle,
-      title: 'Keep Conversations Appropriate',
-      description: 'Keep conversations respectful and appropriate for a dating community.',
-      rules: [
-        'No explicit sexual content',
-        'No solicitation',
-        'No spam or advertising',
-        'No off-platform scamming',
-      ],
-    },
-    {
-      icon: AlertTriangle,
-      title: 'Report Violations',
-      description: 'Help us keep the community safe by reporting any violations.',
-      rules: [
-        'Report suspicious users',
-        'Report inappropriate content',
-        'Report scam attempts',
-        'Block users who make you uncomfortable',
-      ],
-    },
-    {
-      icon: Lock,
-      title: 'Privacy',
-      description: 'Protect your privacy and the privacy of others.',
-      rules: [
-        'Do not share others\' personal information',
-        'Do not screenshot private conversations without consent',
-        'Respect privacy settings',
-      ],
-    },
+    { icon: Heart, title: 'Be Respectful', description: 'Treat everyone with kindness and respect. Do not harass, bully, or discriminate against others.', rules: ['No hate speech or discrimination', 'No harassment or bullying', 'No threats of violence'] },
+    { icon: Shield, title: 'Stay Safe', description: 'Your safety is our priority. Never share sensitive information with people you meet online.', rules: ['Never share passwords or OTPs', 'Never send money to people you meet online', 'Never share bank details or card information', 'Report suspicious behavior immediately'] },
+    { icon: Users, title: 'Be Authentic', description: 'Use your real identity. Fake profiles and impersonation are not allowed.', rules: ['Use your real photos', 'Do not impersonate others', 'One account per person', 'Complete KYC verification'] },
+    { icon: MessageCircle, title: 'Keep Conversations Appropriate', description: 'Keep conversations respectful and appropriate for a dating community.', rules: ['No explicit sexual content', 'No solicitation', 'No spam or advertising', 'No off-platform scamming'] },
+    { icon: AlertTriangle, title: 'Report Violations', description: 'Help us keep the community safe by reporting any violations.', rules: ['Report suspicious users', 'Report inappropriate content', 'Report scam attempts', 'Block users who make you uncomfortable'] },
+    { icon: Lock, title: 'Privacy', description: 'Protect your privacy and the privacy of others.', rules: ["Do not share others' personal information", 'Do not screenshot private conversations without consent', 'Respect privacy settings'] },
   ];
 
+  const handleSupportClick = () => {
+    setMenuOpen(false);
+    // Placeholder — wire this to your live chat later
+    alert('Contact Customer Support — coming soon.');
+  };
+
+  const handleLiveChatClick = () => {
+    setMenuOpen(false);
+    // Placeholder — wire this to your live chat later
+    alert('Live Chat — coming soon.');
+  };
+
   return (
-    <div style={{ minHeight: '100dvh', backgroundColor: '#faf9f7', maxWidth: 480, margin: '0 auto' }}>
-      <header style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.625rem 0.75rem', paddingTop: 'calc(0.625rem + env(safe-area-inset-top))', backgroundColor: '#ffffff', borderBottom: '1px solid #f3f4f6' }}>
-        <button onClick={() => navigate(-1)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#111827', padding: '0.5rem', borderRadius: '9999px', minWidth: 44, minHeight: 44 }}>
+    <div className={styles.page}>
+      <header className={styles.header}>
+        <button
+          className={styles.headerButton}
+          onClick={() => navigate(-1)}
+          aria-label="Back"
+        >
           <ArrowLeft size={22} />
         </button>
-        <h1 style={{ fontSize: '1rem', fontWeight: 700, color: '#111827', margin: 0 }}>Community Guidelines</h1>
+        <h1 className={styles.headerTitle}>Community Guidelines</h1>
+
+        {/* 3-dot menu */}
+        <div className={styles.menuWrapper} ref={menuRef}>
+          <button
+            className={styles.headerButton}
+            onClick={() => setMenuOpen((v) => !v)}
+            aria-label="More options"
+            aria-expanded={menuOpen}
+          >
+            <MoreVertical size={22} />
+          </button>
+
+          {menuOpen && (
+            <div className={styles.dropdown}>
+              <button className={styles.dropdownItem} onClick={handleSupportClick}>
+                <LifeBuoy size={16} />
+                Contact Customer Support
+              </button>
+              <div className={styles.dropdownDivider} />
+              <button className={styles.dropdownItem} onClick={handleLiveChatClick}>
+                <MessageSquare size={16} />
+                Live Chat
+              </button>
+            </div>
+          )}
+        </div>
       </header>
 
-      <div style={{ padding: '1rem' }}>
-        <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
-          <div style={{ width: 64, height: 64, borderRadius: '50%', backgroundColor: '#dbeafe', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 0.5rem' }}>
-            <Sparkles size={28} style={{ color: '#3b82f6' }} />
+      <div className={styles.content}>
+        <div className={styles.hero}>
+          <div className={styles.heroIconWrap}>
+            <Sparkles size={32} className={styles.heroIcon} />
           </div>
-          <h2 style={{ fontSize: '1.125rem', fontWeight: 700, color: '#111827', margin: '0 0 0.25rem' }}>
-            Keep Our Community Safe
-          </h2>
-          <p style={{ fontSize: '0.8125rem', color: '#6b7280', margin: 0 }}>
+          <h2 className={styles.heroTitle}>Keep Our Community Safe</h2>
+          <p className={styles.heroText}>
             These guidelines help ensure a safe and respectful environment for everyone.
           </p>
         </div>
@@ -97,20 +104,18 @@ export const CommunityGuidelinesPage: React.FC = () => {
         {sections.map((section) => {
           const Icon = section.icon;
           return (
-            <div key={section.title} style={{ backgroundColor: '#ffffff', borderRadius: '1rem', padding: '1rem', marginBottom: '0.75rem', border: '1px solid #e5e7eb' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
-                <Icon size={18} style={{ color: '#ef4444' }} />
-                <h3 style={{ fontSize: '0.9375rem', fontWeight: 700, color: '#111827', margin: 0 }}>
-                  {section.title}
-                </h3>
+            <div key={section.title} className={styles.section}>
+              <div className={styles.sectionHeader}>
+                <div className={styles.sectionIconWrap}>
+                  <Icon size={18} className={styles.sectionIcon} />
+                </div>
+                <h3 className={styles.sectionTitle}>{section.title}</h3>
               </div>
-              <p style={{ fontSize: '0.8125rem', color: '#6b7280', margin: '0 0 0.5rem', lineHeight: 1.5 }}>
-                {section.description}
-              </p>
-              <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
+              <p className={styles.sectionDescription}>{section.description}</p>
+              <ul className={styles.rulesList}>
                 {section.rules.map((rule) => (
-                  <li key={rule} style={{ fontSize: '0.8125rem', color: '#374151', padding: '0.25rem 0', display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
-                    <span style={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: '#ef4444', flexShrink: 0 }} />
+                  <li key={rule} className={styles.ruleItem}>
+                    <span className={styles.ruleDot} />
                     {rule}
                   </li>
                 ))}
@@ -118,6 +123,17 @@ export const CommunityGuidelinesPage: React.FC = () => {
             </div>
           );
         })}
+
+        <div className={styles.supportCard}>
+          <Headphones size={32} className={styles.supportIcon} />
+          <h3 className={styles.supportTitle}>Need help?</h3>
+          <p className={styles.supportText}>
+            Our support team is here to help with any concerns or questions.
+          </p>
+          <button className={styles.supportButton} onClick={handleLiveChatClick}>
+            Start Live Chat
+          </button>
+        </div>
       </div>
     </div>
   );

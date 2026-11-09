@@ -12,13 +12,19 @@
 
 .feedContainer {
   flex: 1;
-  min-height: 0;                     /* critical: allows flex child to scroll */
+  min-height: 0;
   overflow-y: auto;
   overflow-x: hidden;
   padding: 0 0 calc(6rem + env(safe-area-inset-bottom));
   -webkit-overflow-scrolling: touch;
   overscroll-behavior: contain;
-  touch-action: pan-y;               /* explicit vertical swipe */
+  touch-action: pan-y;
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE/Edge */
+}
+
+.feedContainer::-webkit-scrollbar {
+  display: none; /* Chrome/Safari */
 }
 
 .stickyHeader {
