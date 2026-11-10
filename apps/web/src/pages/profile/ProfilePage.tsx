@@ -834,9 +834,25 @@ export const ProfilePage: React.FC = () => {
         </button>
         <span className={styles.headerTitle}>{profile.displayName}</span>
         {isOwnProfile ? (
+          <div className={styles.headerActions}>
+            <button
+              className={styles.headerButton}
+              onClick={handleShareProfile}
+              disabled={shareLoading}
+              aria-label="Share profile"
+            >
+              {shareLoading ? (
+                <div className={styles.headerSpinner} />
+              ) : hasShared ? (
+                <Check size={22} />
+              ) : (
+                <Share2 size={22} />
+              )}
+            </button>
             <button className={styles.headerButton} onClick={() => navigate('/settings')} aria-label="Settings">
               <Settings size={22} />
             </button>
+          </div>
         ) : (
           <div style={{ position: 'relative', zIndex: 9999 }}>
             <button
@@ -883,6 +899,15 @@ export const ProfilePage: React.FC = () => {
       </header>
 
       <div className={styles.hero}>
+
+        {/* VIP / Premium badge — top of hero for own profile */}
+        {isOwnProfile && vipData.level !== 'free' && (
+          <button className={styles.vipBadge} onClick={() => navigate('/profile/vip')}>
+            <Crown size={14} />
+            <span>{vipData.level.toUpperCase()} Member</span>
+            <span className={styles.creditsBadge}>{vipData.credits} credits</span>
+          </button>
+        )}
         <div className={styles.avatarContainer}>
           {profile.avatarUrl ? (
             <img src={profile.avatarUrl} alt={profile.displayName} className={styles.avatar} />
@@ -934,42 +959,27 @@ export const ProfilePage: React.FC = () => {
           </span>
         )}
 
-        {/* Own profile â€” full badge with credits link */}
-        {isOwnProfile && vipData.level !== 'free' && (
-          <button className={styles.vipBadge} onClick={() => navigate('/profile/vip')}>
-            <Crown size={14} />
-            <span>{vipData.level.toUpperCase()} Member</span>
-            <span className={styles.creditsBadge}>{vipData.credits} credits</span>
-          </button>
-        )}
-
         {isOwnProfile ? (
-          <div className={styles.actionRow}>
-            <button className={styles.primaryAction} onClick={handleShareProfile}
-              disabled={shareLoading}
-              style={{
-                cursor: shareLoading ? 'wait' : 'pointer',
-                background: hasShared ? '#d1fae5' : '#fef2f2',
-                color: hasShared ? '#10b981' : '#ef4444',
-              }}>
-              <Share2 size={18} />
-              {shareLoading ? 'Sharingâ€¦' : hasShared ? 'Shared' : 'Share'}
-            </button>
-            <button className={styles.primaryAction} onClick={() => navigate('/profile/edit')}>
-              Edit Profile
-            </button>
-            <button className={styles.secondaryAction} onClick={() => setPhotoManagementOpen(true)} aria-label="Manage Photos">
-              <Camera size={18} />
-            </button>
-            <button className={styles.secondaryAction} onClick={() => navigate('/profile/preferences')} aria-label="Dating Preferences">
-              <Heart size={18} />
-            </button>
-            <button className={styles.secondaryAction} onClick={() => navigate('/profile/vip')} aria-label="VIP and Credits">
-              <Star size={18} />
-            </button>
+          <div className={styles.ownActions}>
+            <div className={styles.primaryActions}>
+              <button className={styles.primaryAction} onClick={() => navigate('/profile/edit')}>
+                Edit Profile
+              </button>
+              <button className={styles.myCommunitiesButton} onClick={() => navigate('/profile/my-communities')}>
+                <Users size={16} />
+                My Communities
+              </button>
+            </div>
+            <div className={styles.iconActions}>
+              <button className={styles.secondaryAction} onClick={() => setPhotoManagementOpen(true)} aria-label="Manage Photos">
+                <Camera size={18} />
+              </button>
+              <button className={styles.secondaryAction} onClick={() => navigate('/profile/vip')} aria-label="VIP and Credits">
+                <Star size={18} />
+              </button>
+            </div>
           </div>
         ) : (
-          <div className={styles.actionRow}>
           <div className={styles.actionRow}>
             {connectionStatus === 'matched' ? (
               <button className={styles.primaryAction} onClick={handleMessage}>
@@ -992,15 +1002,8 @@ export const ProfilePage: React.FC = () => {
               {isFollowing ? 'Following' : 'Follow'}
             </button>
           </div>
-          </div>
         )}
 
-        {isOwnProfile && (
-          <button className={styles.createCommunityButton} onClick={() => navigate('/profile/my-communities')} style={{ background: 'none', border: '1px solid #e5e7eb', color: '#111827' }}>
-            <Users size={16} />
-            My Communities
-          </button>
-        )}
 
         {isOwnProfile && (
           <button className={styles.createCommunityButton} onClick={() => setCommunityCreationOpen(true)}>
