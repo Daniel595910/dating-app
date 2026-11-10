@@ -189,10 +189,24 @@ sw.addEventListener('push', (event) => {
 
   const title = data.title || 'Dating App';
 
+  // Read admin logo URL from Cache API (written by main.tsx on app load)
+  let cachedLogoUrl = '';
+  try {
+    const cache = await caches.open('app-settings');
+    const cached = await cache.match('/__logo_url');
+    if (cached) {
+      const text = await cached.text();
+      if (text && text.startsWith('http')) cachedLogoUrl = text;
+    }
+  } catch {
+    // Cache not available — fall back to default
+  }
+  const notificationIcon = data.icon || cachedLogoUrl || '/icons/icon-192x192.png';
+
   const options: NotificationOptions & Record<string, any> = {
     body: data.body || '',
-    icon: data.icon || '/icons/icon-192x192.png',
-    badge: '/icons/icon-192x192.png',
+    icon: notificationIcon,
+    badge: notificationIcon,
     // image: data.image, (removed to match WhatsApp)
     data: {
       ...(data.data || {}),

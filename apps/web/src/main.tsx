@@ -52,7 +52,19 @@ useSettings.getState().load().then(() => {
       document.head.appendChild(link);
     }
   }
+
+  // Write logo URL to Cache API so the service worker can read it for push notifications
+  try {
+    caches.open('app-settings').then((cache) => {
+      cache.put('/__logo_url', new Response(logoUrl || '', {
+        headers: { 'Content-Type': 'text/plain' },
+      }));
+    });
+  } catch {
+    // Cache API not available (rare) — SW will fall back to default icon
+  }
 });
+
 
 
 // KILL ALL FOCUS OUTLINES APP-WIDE
