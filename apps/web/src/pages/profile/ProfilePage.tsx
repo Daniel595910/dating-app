@@ -11,7 +11,7 @@ import { PhotoManagement } from '../../features/profile/components/PhotoManageme
 import { CommunityCreationSheet } from '../../features/community/components/CommunityCreationSheet';
 import { ReportSheet } from '../../features/community/components/ReportSheet';
 import { BlockConfirmSheet } from '../../features/community/components/BlockConfirmSheet';
-import { ArrowLeft, Settings, BadgeCheck, MapPin, Heart, Grid, Menu, UserPlus, Check, Camera, MoreVertical, X, Star, MessageCircle, Crown, Users, Ban, Flag, Share2, Video, Eye, Play, Volume2, VolumeX, Trash2 } from 'lucide-react';
+import { ArrowLeft, Settings, BadgeCheck, MapPin, Heart, Grid, Menu, UserPlus, Check, Camera, MoreVertical, X, Star, MessageCircle, Crown, Users, Ban, Flag, Share2, Video, Eye, Play, Volume2, VolumeX, Trash2, Sparkles, Handshake } from 'lucide-react';
 import styles from './ProfilePage.module.css';
 
 export const ProfilePage: React.FC = () => {
@@ -828,136 +828,174 @@ export const ProfilePage: React.FC = () => {
         </div>
       )}
 
-      <header className={styles.header}>
-        <button className={styles.headerButton} onClick={() => navigate(-1)} aria-label="Back">
-          <ArrowLeft size={22} />
-        </button>
-        <span className={styles.headerTitle}>{profile.displayName}</span>
-        {isOwnProfile ? (
-          <div className={styles.headerActions}>
-            <button
-              className={styles.headerButton}
-              onClick={handleShareProfile}
-              disabled={shareLoading}
-              aria-label="Share profile"
-            >
-              {shareLoading ? (
-                <div className={styles.headerSpinner} />
-              ) : hasShared ? (
-                <Check size={22} />
-              ) : (
-                <Share2 size={22} />
+      <div className={styles.topSectionV2}>
+        <div className={styles.wavesBg} aria-hidden="true">
+          <svg viewBox="0 0 375 300" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <linearGradient id="waveGrad1" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stopColor="#FFE0E8" stopOpacity="1" />
+                <stop offset="100%" stopColor="#FFF6F8" stopOpacity="0.6" />
+              </linearGradient>
+              <linearGradient id="waveGrad2" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stopColor="#FFD1DC" stopOpacity="0.9" />
+                <stop offset="100%" stopColor="#FFF0F3" stopOpacity="0.3" />
+              </linearGradient>
+            </defs>
+            <path d="M0,120 C100,60 200,180 375,100 L375,0 L0,0 Z" fill="url(#waveGrad1)" />
+            <path d="M0,200 C120,140 240,240 375,180 L375,300 L0,300 Z" fill="url(#waveGrad2)" opacity="0.7" />
+          </svg>
+        </div>
+
+        <header className={styles.headerV2}>
+          <button className={styles.headerBtnV2} onClick={() => navigate(-1)} aria-label="Back">
+            <ArrowLeft size={26} />
+          </button>
+          <span className={styles.headerTitleV2}>{profile.displayName}</span>
+          {isOwnProfile ? (
+            <div className={styles.headerActionsV2}>
+              <button
+                className={styles.headerBtnV2}
+                onClick={handleShareProfile}
+                disabled={shareLoading}
+                aria-label="Share profile"
+              >
+                {shareLoading ? (
+                  <div className={styles.headerSpinner} />
+                ) : hasShared ? (
+                  <Check size={26} />
+                ) : (
+                  <Share2 size={26} />
+                )}
+              </button>
+              <button className={styles.headerBtnV2} onClick={() => navigate('/settings')} aria-label="Settings">
+                <Settings size={27} />
+              </button>
+            </div>
+          ) : (
+            <div style={{ position: 'relative', zIndex: 9999 }}>
+              <button
+                className={styles.headerBtnV2}
+                onClick={() => setShowMoreMenu((prev) => !prev)}
+                aria-label="More options"
+              >
+                <MoreVertical size={26} />
+              </button>
+              {showMoreMenu && (
+                <div
+                  style={{
+                    position: 'absolute',
+                    top: 'calc(100% + 4px)',
+                    right: 0,
+                    zIndex: 9999,
+                    backgroundColor: '#ffffff',
+                    borderRadius: '12px',
+                    boxShadow: '0 10px 30px rgba(0,0,0,0.2)',
+                    border: '1px solid #e5e7eb',
+                    minWidth: 200,
+                    padding: '6px',
+                  }}
+                >
+                  <button
+                    onClick={() => { setShowMoreMenu(false); setBlockSheetOpen(true); }}
+                    style={{ display: 'flex', alignItems: 'center', gap: '10px', width: '100%', padding: '12px', background: 'none', border: 'none', cursor: 'pointer', color: '#374151', fontSize: '14px', borderRadius: '8px', textAlign: 'left' }}
+                  >
+                    <Ban size={16} />
+                    Block User
+                  </button>
+                  <button
+                    onClick={() => { setShowMoreMenu(false); setReportSheetOpen(true); }}
+                    style={{ display: 'flex', alignItems: 'center', gap: '10px', width: '100%', padding: '12px', background: 'none', border: 'none', cursor: 'pointer', color: '#ef4444', fontSize: '14px', borderRadius: '8px', textAlign: 'left' }}
+                  >
+                    <Flag size={16} />
+                    Report User
+                  </button>
+                </div>
               )}
+            </div>
+          )}
+        </header>
+
+        <div className={styles.heroV2}>
+          <div className={styles.avatarContainerV2}>
+            {profile.avatarUrl ? (
+              <img src={profile.avatarUrl} alt={profile.displayName} className={styles.avatarV2} />
+            ) : (
+              <div className={styles.avatarFallbackV2}>{profile.displayName.charAt(0).toUpperCase()}</div>
+            )}
+            {profile.isVerified && <BadgeCheck size={30} className={styles.verifiedBadgeV2} />}
+          </div>
+
+          {isOwnProfile && (
+            vipData.level !== 'free' ? (
+              <button className={styles.premiumPill} onClick={() => navigate('/profile/vip')}>
+                <Crown size={19} />
+                <span className={styles.premiumLabel}>PREMIUM MEMBER</span>
+                <span className={styles.creditsBadgeV2}>{vipData.credits} credits</span>
+              </button>
+            ) : (
+              <button className={styles.upgradePill} onClick={() => navigate('/profile/vip')}>
+                <Sparkles size={18} />
+                <span>UPGRADE TO PREMIUM</span>
+              </button>
+            )
+          )}
+
+          <div className={styles.statsRowV2}>
+            <button className={styles.statColumn} onClick={() => { setStatsModal('followers'); loadStatsLists('followers'); }}>
+              <Users size={24} className={styles.statIcon} />
+              <span className={styles.statValueV2}>{stats.followers}</span>
+              <span className={styles.statLabelV2}>Followers</span>
             </button>
-            <button className={styles.headerButton} onClick={() => navigate('/settings')} aria-label="Settings">
-              <Settings size={22} />
+            <div className={styles.statDivider} />
+            <button className={styles.statColumn} onClick={() => { setStatsModal('following'); loadStatsLists('following'); }}>
+              <UserPlus size={24} className={styles.statIcon} />
+              <span className={styles.statValueV2}>{stats.following}</span>
+              <span className={styles.statLabelV2}>Following</span>
+            </button>
+            <div className={styles.statDivider} />
+            <button className={styles.statColumn} onClick={() => { setStatsModal('connections'); loadStatsLists('connections'); }}>
+              <Handshake size={24} className={styles.statIcon} />
+              <span className={styles.statValueV2}>{stats.connections}</span>
+              <span className={styles.statLabelV2}>Connections</span>
             </button>
           </div>
-        ) : (
-          <div style={{ position: 'relative', zIndex: 9999 }}>
-            <button
-              className={styles.headerButton}
-              onClick={() => setShowMoreMenu((prev) => !prev)}
-              aria-label="More options"
-            >
-              <MoreVertical size={22} />
-            </button>
 
-            {showMoreMenu && (
-              <div
-                style={{
-                  position: 'absolute',
-                  top: 'calc(100% + 4px)',
-                  right: 0,
-                  zIndex: 9999,
-                  backgroundColor: '#ffffff',
-                  borderRadius: '12px',
-                  boxShadow: '0 10px 30px rgba(0,0,0,0.2)',
-                  border: '1px solid #e5e7eb',
-                  minWidth: 200,
-                  padding: '6px',
-                }}
-              >
-                <button
-                  onClick={() => { setShowMoreMenu(false); setBlockSheetOpen(true); }}
-                  style={{ display: 'flex', alignItems: 'center', gap: '10px', width: '100%', padding: '12px', background: 'none', border: 'none', cursor: 'pointer', color: '#374151', fontSize: '14px', borderRadius: '8px', textAlign: 'left' }}
-                >
-                  <Ban size={16} />
-                  Block User
-                </button>
-                <button
-                  onClick={() => { setShowMoreMenu(false); setReportSheetOpen(true); }}
-                  style={{ display: 'flex', alignItems: 'center', gap: '10px', width: '100%', padding: '12px', background: 'none', border: 'none', cursor: 'pointer', color: '#ef4444', fontSize: '14px', borderRadius: '8px', textAlign: 'left' }}
-                >
-                  <Flag size={16} />
-                  Report User
-                </button>
+          <div className={styles.nameSectionV2}>
+            <h1 className={styles.displayNameV2}>
+              {profile.displayName}
+              {profile.isVerified && <BadgeCheck size={26} className={styles.nameVerifiedV2} />}
+            </h1>
+            {profile.location && (
+              <div className={styles.locationCapsule}>
+                <MapPin size={18} />
+                <span>
+                  {[profile.location.city, profile.location.state, profile.location.country]
+                    .filter(Boolean)
+                    .join(', ')}
+                </span>
               </div>
             )}
           </div>
-        )}
-      </header>
 
-      <div className={styles.hero}>
-
-        {/* VIP / Premium badge — top of hero for own profile */}
-        {isOwnProfile && vipData.level !== 'free' && (
-          <button className={styles.vipBadge} onClick={() => navigate('/profile/vip')}>
-            <Crown size={14} />
-            <span>{vipData.level.toUpperCase()} Member</span>
-            <span className={styles.creditsBadge}>{vipData.credits} credits</span>
-          </button>
-        )}
-        <div className={styles.avatarContainer}>
-          {profile.avatarUrl ? (
-            <img src={profile.avatarUrl} alt={profile.displayName} className={styles.avatar} />
-          ) : (
-            <div className={styles.avatarFallback}>{profile.displayName.charAt(0).toUpperCase()}</div>
-          )}
-          {profile.isVerified && <BadgeCheck size={20} className={styles.verifiedBadge} />}
-        </div>
-
-        <div className={styles.statsRow}>
-          <button className={styles.statButton} onClick={() => { setStatsModal('followers'); loadStatsLists('followers'); }}>
-            <span className={styles.statValue}>{stats.followers}</span>
-            <span className={styles.statLabel}>Followers</span>
-          </button>
-          <button className={styles.statButton} onClick={() => { setStatsModal('following'); loadStatsLists('following'); }}>
-            <span className={styles.statValue}>{stats.following}</span>
-            <span className={styles.statLabel}>Following</span>
-          </button>
-          <button className={styles.statButton} onClick={() => { setStatsModal('connections'); loadStatsLists('connections'); }}>
-            <span className={styles.statValue}>{stats.connections}</span>
-            <span className={styles.statLabel}>Connections</span>
-          </button>
-        </div>
-
-        <div className={styles.nameSection}>
-          <h1 className={styles.displayName}>{profile.displayName}</h1>
-          {profile.location && (
-            <div className={styles.locationRow}>
-              <MapPin size={14} />
-              <span>
-                {[profile.location.city, profile.location.state, profile.location.country]
-                  .filter(Boolean)
-                  .join(', ')}
-              </span>
+          {profile.bio && (
+            <div className={styles.bioCardV2}>
+              <p>{profile.bio}</p>
             </div>
           )}
+
+          {!isOwnProfile && profile?.vipLevel && profile.vipLevel !== 'free' && (
+            <span
+              className={styles.vipBadgePublic}
+              title={`${profile.vipLevel.toUpperCase()} member`}
+            >
+              <Crown size={14} />
+              <span>{profile.vipLevel.toUpperCase()}</span>
+            </span>
+          )}
         </div>
+      </div>
 
-        {profile.bio && <p className={styles.bio}>{profile.bio}</p>}
-
-        {/* Public VIP badge â€” visible to anyone viewing this profile */}
-        {!isOwnProfile && profile?.vipLevel && profile.vipLevel !== 'free' && (
-          <span
-            className={styles.vipBadgePublic}
-            title={`${profile.vipLevel.toUpperCase()} member`}
-          >
-            <Crown size={14} />
-            <span>{profile.vipLevel.toUpperCase()}</span>
-          </span>
-        )}
+      <div className={styles.hero}>
 
         {isOwnProfile ? (
           <div className={styles.ownActions}>
