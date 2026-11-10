@@ -1,81 +1,121 @@
+/* ============================================================
+   BlockedUsersPage — Premium list (theme-aware)
+   ============================================================ */
+
 .blockedPage {
-  min-height: 100dvh;
+  height: 100dvh;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  -webkit-overflow-scrolling: touch;
   background-color: var(--color-bg, #faf9f7);
   max-width: 480px;
   margin: 0 auto;
+  padding-bottom: env(safe-area-inset-bottom);
 }
 
+.blockedPage::-webkit-scrollbar {
+  display: none;
+}
+
+/* ==================== HEADER ==================== */
 .header {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  padding: 0.625rem 0.75rem;
-  padding-top: calc(0.625rem + env(safe-area-inset-top));
-  background-color: #ffffff;
-  border-bottom: 1px solid #f3f4f6;
+  padding: 0.5rem 0.75rem;
+  padding-top: calc(0.5rem + env(safe-area-inset-top));
+  background-color: color-mix(in srgb, var(--color-surface) 96%, transparent);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--color-border);
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  min-height: 56px;
 }
 
 .headerButton {
   background: none;
   border: none;
   cursor: pointer;
-  color: #111827;
+  color: var(--color-text);
   padding: 0.5rem;
   border-radius: 9999px;
   min-width: 44px;
   min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.15s ease;
+}
+
+.headerButton:hover {
+  background-color: var(--color-surface-alt);
 }
 
 .headerTitle {
   font-size: 1rem;
   font-weight: 700;
-  color: #111827;
+  color: var(--color-text);
   margin: 0;
+  letter-spacing: -0.01em;
 }
 
+/* ==================== CONTENT ==================== */
 .content {
-  padding: 1rem;
+  padding: 1rem 0.75rem 2rem;
 }
 
 .errorBanner {
-  background-color: #fee2e2;
-  color: #991b1b;
+  background-color: var(--color-primary-soft, #fee2e2);
+  color: var(--color-danger, #991b1b);
   padding: 0.75rem 1rem;
-  border-radius: 0.5rem;
-  font-size: 0.875rem;
+  border-radius: 0.75rem;
+  font-size: 0.8125rem;
+  font-weight: 500;
   margin-bottom: 1rem;
+  border: 1px solid var(--color-primary-soft-border, #fecaca);
 }
 
+/* ==================== EMPTY ==================== */
 .emptyState {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.5rem;
-  padding: 3rem 1rem;
   text-align: center;
+  padding: 4rem 1.5rem;
 }
 
 .emptyIcon {
-  color: #d1d5db;
+  color: var(--color-text-muted, #9ca3af);
+  margin-bottom: 1rem;
 }
 
 .emptyTitle {
-  font-size: 1rem;
+  font-size: 1.0625rem;
   font-weight: 700;
-  color: #111827;
-  margin: 0;
+  color: var(--color-text, #111827);
+  margin: 0 0 0.375rem;
 }
 
 .emptyText {
   font-size: 0.8125rem;
-  color: #6b7280;
+  color: var(--color-text-secondary, #6b7280);
   margin: 0;
   max-width: 280px;
+  line-height: 1.5;
 }
 
+/* ==================== LIST ==================== */
 .blockedList {
   display: flex;
   flex-direction: column;
+  background-color: var(--color-surface);
+  border-radius: 1rem;
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
 }
 
 .blockedItem {
@@ -83,20 +123,29 @@
   align-items: center;
   gap: 0.75rem;
   padding: 0.875rem 1rem;
-  background-color: #ffffff;
-  border-bottom: 1px solid #f9fafb;
+  background-color: var(--color-surface);
+  transition: background-color 0.15s ease;
 }
 
+.blockedItem:not(:last-child) {
+  border-bottom: 1px solid var(--color-border);
+}
+
+.blockedItem:hover {
+  background-color: var(--color-surface-alt);
+}
+
+/* ==================== AVATAR ==================== */
 .avatar {
   width: 44px;
   height: 44px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #fef3c7, #fde68a);
+  background: linear-gradient(135deg, var(--color-primary-soft, #fef2f2), var(--color-primary-soft-border, #fee2e2));
   display: flex;
   align-items: center;
   justify-content: center;
   font-weight: 700;
-  color: #92400e;
+  color: var(--color-primary, #ef4444);
   font-size: 1rem;
   overflow: hidden;
   flex-shrink: 0;
@@ -108,46 +157,66 @@
   object-fit: cover;
 }
 
+/* ==================== INFO ==================== */
 .info {
   flex: 1;
   min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
 }
 
 .name {
-  display: block;
   font-weight: 600;
   font-size: 0.9375rem;
-  color: #111827;
+  color: var(--color-text, #111827);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .blockedDate {
-  font-size: 0.6875rem;
-  color: #9ca3af;
+  font-size: 0.75rem;
+  color: var(--color-text-muted, #9ca3af);
+  font-weight: 500;
 }
 
+/* ==================== UNBLOCK BUTTON ==================== */
 .unblockButton {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   gap: 0.375rem;
-  padding: 0.5rem 0.875rem;
-  background: none;
-  border: 1px solid #e5e7eb;
+  padding: 0 0.875rem;
+  background: var(--color-surface-alt);
+  border: 1px solid var(--color-border-strong);
   border-radius: 9999px;
   cursor: pointer;
   font-size: 0.8125rem;
-  font-weight: 500;
-  color: #374151;
+  font-weight: 600;
+  color: var(--color-text);
   min-height: 36px;
+  font-family: inherit;
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease, transform 0.1s ease;
+  flex-shrink: 0;
+  white-space: nowrap;
 }
 
 .unblockButton:hover {
-  background-color: #f3f4f6;
+  background-color: var(--color-primary-soft, #fef2f2);
+  border-color: var(--color-primary-soft-border, #fecaca);
+  color: var(--color-primary, #ef4444);
 }
 
+.unblockButton:active {
+  transform: scale(0.96);
+}
+
+/* ==================== LOADING ==================== */
 .loadingContainer {
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 50dvh;
-  color: #9ca3af;
+  min-height: 60vh;
+  color: var(--color-text-muted);
+  font-size: 0.875rem;
 }

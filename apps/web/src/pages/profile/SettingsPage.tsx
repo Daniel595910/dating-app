@@ -45,6 +45,7 @@ export const SettingsPage: React.FC = () => {
   const { theme, setTheme } = useThemeStore();
   const appName = useSettings((s) => s.settings['general.app_name']) || 'Spensive';
   const supportEmail = useSettings((s) => s.settings['general.support_email']) || 'support@spensive.me';
+  const logoUrl = useSettings((s) => s.settings['general.logo_url']) || '/icons/icon-192x192.png';
   const [modal, setModal] = useState<ModalType>(null);
   const [deleteConfirmText, setDeleteConfirmText] = useState('');
   const [deleting, setDeleting] = useState(false);
@@ -64,6 +65,8 @@ export const SettingsPage: React.FC = () => {
   const [newEmail, setNewEmail] = useState('');
   const [newDob, setNewDob] = useState('');
   const [savingAccount, setSavingAccount] = useState(false);
+  const [passwordStep, setPasswordStep] = useState<'form' | 'code'>('form');
+  const [otpCode, setOtpCode] = useState('');
 
   useEffect(() => {
     if (!user) return;
@@ -99,7 +102,7 @@ export const SettingsPage: React.FC = () => {
 
   const handleShareProfile = async () => {
     if (!user) return;
-      const url = `${window.location.origin}/profile/${user.id}`;
+    const url = `${window.location.origin}/profile/${user.id}`;
     if (navigator.share) {
       try {
         await navigator.share({ title: `Find me on ${appName}`, url });
@@ -143,7 +146,22 @@ export const SettingsPage: React.FC = () => {
     }
   };
 
-  const handleChangePassword = async () => {
+  const closeModal = () => {
+    setModal(null);
+    setDeleteConfirmText('');
+    setNewPassword('');
+    setConfirmPassword('');
+    setNewEmail('');
+    setOtpCode('');
+    setPasswordStep('form');
+  };
+
+  // Step 1 — validate password + send recovery code to email
+  const handleRequestPasswordCode = async () => {
+    if (!user?.email) {
+      showToast('No email on file', 'error');
+      return;
+    }
     if (newPassword.length < 8) {
       showToast('Password must be at least 8 characters', 'warning');
       return;
@@ -153,16 +171,52 @@ export const SettingsPage: React.FC = () => {
       return;
     }
     setSavingAccount(true);
-    const result = await authService.updatePassword(newPassword);
+    const result = await authService.requestPasswordReset(user.email);
     setSavingAccount(false);
     if (!result.success) {
-      showToast(result.error || 'Could not update password', 'error');
+      showToast(result.error || 'Could not send code', 'error');
       return;
     }
-    showToast('Password updated', 'success');
-    setNewPassword('');
-    setConfirmPassword('');
+    setPasswordStep('code');
+    showToast('Code sent to your email', 'success');
+  };
+
+  // Step 2 — verify the 8-digit code, then actually change the password
+  const handleVerifyPasswordCode = async () => {
+    if (!user?.email) return;
+    const code = otpCode.trim();
+    if (code.length < 4) {
+      showToast('Enter the code from your email', 'warning');
+      return;
+    }
+    setSavingAccount(true);
+    const verify = await authService.verifyRecoveryOtp(user.email, code);
+    if (!verify.success) {
+      setSavingAccount(false);
+      showToast(verify.error || 'Invalid or expired code', 'error');
+      return;
+    }
+    const update = await authService.updatePassword(newPassword);
+    setSavingAccount(false);
+    if (!update.success) {
+      showToast(update.error || 'Could not update password', 'error');
+      return;
+    }
+    showToast('Password updated successfully', 'success');
     closeModal();
+  };
+
+  // Resend the code (if user doesn't receive it)
+  const handleResendPasswordCode = async () => {
+    if (!user?.email) return;
+    setSavingAccount(true);
+    const result = await authService.requestPasswordReset(user.email);
+    setSavingAccount(false);
+    if (!result.success) {
+      showToast(result.error || 'Could not resend code', 'error');
+      return;
+    }
+    showToast('New code sent to your email', 'success');
   };
 
   const handleChangeEmail = async () => {
@@ -205,14 +259,6 @@ export const SettingsPage: React.FC = () => {
     }
     showToast('Date of birth updated', 'success');
     closeModal();
-  };
-
-  const closeModal = () => {
-    setModal(null);
-    setDeleteConfirmText('');
-    setNewPassword('');
-    setConfirmPassword('');
-    setNewEmail('');
   };
 
   const settingsSections: SettingSection[] = [
@@ -357,48 +403,132 @@ export const SettingsPage: React.FC = () => {
         <div className={`${styles.modalOverlay} ${styles.modalOverlayBottom}`} onClick={closeModal}>
           <div className={styles.sheet} onClick={(e) => e.stopPropagation()}>
             <div className={styles.sheetHeader}>
-              <h2 className={styles.sheetTitle}>Change Password</h2>
+              <h2 className={styles.sheetTitle}>
+                {passwordStep === 'code' ? 'Enter Code' : 'Change Password'}
+              </h2>
               <button className={styles.sheetClose} onClick={closeModal} aria-label="Close">
                 <X size={20} />
               </button>
             </div>
             <div className={styles.sheetBody}>
-              <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, marginBottom: 6, color: 'var(--color-text)' }}>
-                New password
-              </label>
-              <input
-                type="password"
-                className={styles.modalInput}
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-                placeholder="At least 8 characters"
-                autoFocus
-              />
-              <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, margin: '1rem 0 6px', color: 'var(--color-text)' }}>
-                Confirm new password
-              </label>
-              <input
-                type="password"
-                className={styles.modalInput}
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                placeholder="Repeat new password"
-              />
-              <div className={styles.modalActions} style={{ marginTop: '1.5rem' }}>
-                <button
-                  className={`${styles.modalButton} ${styles.modalButtonSecondary}`}
-                  onClick={closeModal}
-                >
-                  Cancel
-                </button>
-                <button
-                  className={`${styles.modalButton} ${styles.modalButtonDanger}`}
-                  onClick={handleChangePassword}
-                  disabled={savingAccount}
-                >
-                  {savingAccount ? 'Saving…' : 'Change'}
-                </button>
-              </div>
+              {!user?.email_confirmed_at ? (
+                <div className={styles.verifyRequiredBox}>
+                  <div className={styles.verifyRequiredIcon}>
+                    <Mail size={24} />
+                  </div>
+                  <h3 className={styles.verifyRequiredTitle}>Verify your email first</h3>
+                  <p className={styles.verifyRequiredText}>
+                    For your security, we need to confirm your email before you can change your password.
+                    We'll send a confirmation link to <strong>{user?.email}</strong>.
+                  </p>
+                  <button
+                    className={styles.verifyResendButton}
+                    onClick={async () => {
+                      if (!user?.email) return;
+                      const { error } = await supabase.auth.resend({ type: 'signup', email: user.email });
+                      if (error) {
+                        showToast(error.message || 'Could not send verification email', 'error');
+                      } else {
+                        showToast('Verification email sent — check your inbox', 'success');
+                      }
+                    }}
+                  >
+                    Resend verification email
+                  </button>
+                </div>
+              ) : passwordStep === 'form' ? (
+                <>
+                  <label className={styles.dobLabel}>New password</label>
+                  <input
+                    type="password"
+                    className={styles.dobInput}
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    placeholder="At least 8 characters"
+                    autoFocus
+                  />
+                  {newPassword.length > 0 && newPassword.length < 8 && (
+                    <p className={styles.fieldHint}>
+                      Password is too short ({newPassword.length}/8)
+                    </p>
+                  )}
+
+                  <label className={styles.dobLabel} style={{ marginTop: '1rem' }}>
+                    Confirm new password
+                  </label>
+                  <input
+                    type="password"
+                    className={styles.dobInput}
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    placeholder="Repeat new password"
+                  />
+                  {confirmPassword.length > 0 && newPassword !== confirmPassword && (
+                    <p className={styles.fieldHint}>Passwords don't match</p>
+                  )}
+
+                  <div className={styles.modalActions}>
+                    <button
+                      className={`${styles.modalButton} ${styles.modalButtonSecondary}`}
+                      onClick={closeModal}
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      className={`${styles.modalButton} ${styles.modalButtonDanger}`}
+                      onClick={handleRequestPasswordCode}
+                      disabled={savingAccount}
+                    >
+                      {savingAccount ? 'Sending…' : 'Change'}
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <p className={styles.otpHelpText}>
+                    We sent an 8-digit code to <strong>{user?.email}</strong>.
+                    Enter it below to confirm your password change.
+                  </p>
+
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
+                    maxLength={8}
+                    className={styles.otpInput}
+                    value={otpCode}
+                    onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, ''))}
+                    placeholder="00000000"
+                    autoFocus
+                    autoComplete="one-time-code"
+                  />
+
+                  <button
+                    className={styles.otpResendLink}
+                    onClick={handleResendPasswordCode}
+                    disabled={savingAccount}
+                    type="button"
+                  >
+                    Didn't receive a code? Resend
+                  </button>
+
+                  <div className={styles.modalActions}>
+                    <button
+                      className={`${styles.modalButton} ${styles.modalButtonSecondary}`}
+                      onClick={() => { setPasswordStep('form'); setOtpCode(''); }}
+                    >
+                      Back
+                    </button>
+                    <button
+                      className={`${styles.modalButton} ${styles.modalButtonDanger}`}
+                      onClick={handleVerifyPasswordCode}
+                      disabled={savingAccount || otpCode.length < 4}
+                    >
+                      {savingAccount ? 'Verifying…' : 'Verify'}
+                    </button>
+                  </div>
+                </>
+              )}
             </div>
           </div>
         </div>
@@ -415,24 +545,37 @@ export const SettingsPage: React.FC = () => {
               </button>
             </div>
             <div className={styles.sheetBody}>
-              <p style={{ fontSize: '0.8125rem', color: 'var(--color-text-secondary)', marginBottom: '0.75rem' }}>
-                Current: <strong>{user?.email}</strong>
-              </p>
-              <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, marginBottom: 6, color: 'var(--color-text)' }}>
-                New email
-              </label>
+              <div className={styles.emailCurrentBox}>
+                <div className={styles.emailCurrentIcon}>
+                  <Mail size={18} />
+                </div>
+                <div className={styles.emailCurrentBody}>
+                  <p className={styles.emailCurrentLabel}>Current email</p>
+                  <p className={styles.emailCurrentValue}>{user?.email}</p>
+                </div>
+              </div>
+
+              <label className={styles.dobLabel}>New email address</label>
               <input
                 type="email"
-                className={styles.modalInput}
+                className={styles.dobInput}
                 value={newEmail}
                 onChange={(e) => setNewEmail(e.target.value)}
                 placeholder="you@example.com"
                 autoFocus
+                autoComplete="email"
+                autoCapitalize="none"
+                spellCheck={false}
               />
-              <p style={{ fontSize: '0.75rem', color: 'var(--color-text-tertiary)', marginTop: '0.75rem' }}>
-                Supabase will send a confirmation email. The change only takes effect after you confirm.
+
+              <p className={styles.emailHint}>
+                <Shield size={13} />
+                <span>
+                  We'll send a confirmation link to your new address. Your email won't change until you confirm.
+                </span>
               </p>
-              <div className={styles.modalActions} style={{ marginTop: '1.5rem' }}>
+
+              <div className={styles.modalActions}>
                 <button
                   className={`${styles.modalButton} ${styles.modalButtonSecondary}`}
                   onClick={closeModal}
@@ -463,17 +606,18 @@ export const SettingsPage: React.FC = () => {
               </button>
             </div>
             <div className={styles.sheetBody}>
-              <p style={{ fontSize: '0.8125rem', color: 'var(--color-text-secondary)', marginBottom: '0.75rem' }}>
-                Used to calculate your age on your profile.
+              <p className={styles.dobIntro}>
+                Used to calculate your age on your profile. This is not shown publicly.
               </p>
+              <label className={styles.dobLabel}>Your birthday</label>
               <input
                 type="date"
-                className={styles.modalInput}
+                className={styles.dobInput}
                 value={newDob}
                 onChange={(e) => setNewDob(e.target.value)}
                 max={new Date().toISOString().slice(0, 10)}
               />
-              <div className={styles.modalActions} style={{ marginTop: '1.5rem' }}>
+              <div className={styles.modalActions}>
                 <button
                   className={`${styles.modalButton} ${styles.modalButtonSecondary}`}
                   onClick={closeModal}
@@ -577,16 +721,16 @@ export const SettingsPage: React.FC = () => {
               </button>
             </div>
             <div className={styles.sheetBody}>
-              <div className={styles.group} style={{ margin: '0 0 1rem' }}>
-                <div className={styles.row} style={{ cursor: 'default' }}>
-                  <span className={styles.rowIcon}><Eye size={18} /></span>
-                  <span className={styles.rowLabel}>
-                    Show my activity
-                    <br />
-                    <small style={{ color: '#6b7280', fontSize: '0.75rem', fontWeight: 400 }}>
+              <h4 className={styles.privacySectionLabel}>Visibility</h4>
+              <div className={styles.privacyGroup}>
+                <div className={styles.privacyRow}>
+                  <span className={styles.privacyRowIcon}><Eye size={18} /></span>
+                  <div className={styles.privacyRowBody}>
+                    <span className={styles.privacyRowTitle}>Show my activity</span>
+                    <span className={styles.privacyRowSubtitle}>
                       Let others see your posts and reactions
-                    </small>
-                  </span>
+                    </span>
+                  </div>
                   <button
                     className={`${styles.toggle} ${showActivity ? styles.toggleOn : ''}`}
                     onClick={() => { const next = !showActivity; setShowActivity(next); savePrivacySetting('show_activity', next); }}
@@ -596,15 +740,14 @@ export const SettingsPage: React.FC = () => {
                   </button>
                 </div>
 
-                <div className={styles.row} style={{ cursor: 'default' }}>
-                  <span className={styles.rowIcon}><MessageSquare size={18} /></span>
-                  <span className={styles.rowLabel}>
-                    Allow messages
-                    <br />
-                    <small style={{ color: '#6b7280', fontSize: '0.75rem', fontWeight: 400 }}>
+                <div className={styles.privacyRow}>
+                  <span className={styles.privacyRowIcon}><MessageSquare size={18} /></span>
+                  <div className={styles.privacyRowBody}>
+                    <span className={styles.privacyRowTitle}>Allow messages</span>
+                    <span className={styles.privacyRowSubtitle}>
                       Let members of your communities message you
-                    </small>
-                  </span>
+                    </span>
+                  </div>
                   <button
                     className={`${styles.toggle} ${allowMessages ? styles.toggleOn : ''}`}
                     onClick={() => { const next = !allowMessages; setAllowMessages(next); savePrivacySetting('allow_messages', next); }}
@@ -614,15 +757,14 @@ export const SettingsPage: React.FC = () => {
                   </button>
                 </div>
 
-                <div className={styles.row} style={{ cursor: 'default' }}>
-                  <span className={styles.rowIcon}><Globe size={18} /></span>
-                  <span className={styles.rowLabel}>
-                    Discoverable profile
-                    <br />
-                    <small style={{ color: '#6b7280', fontSize: '0.75rem', fontWeight: 400 }}>
+                <div className={styles.privacyRow}>
+                  <span className={styles.privacyRowIcon}><Globe size={18} /></span>
+                  <div className={styles.privacyRowBody}>
+                    <span className={styles.privacyRowTitle}>Discoverable profile</span>
+                    <span className={styles.privacyRowSubtitle}>
                       Appear in Discover and search results
-                    </small>
-                  </span>
+                    </span>
+                  </div>
                   <button
                     className={`${styles.toggle} ${discoverable ? styles.toggleOn : ''}`}
                     onClick={() => { const next = !discoverable; setDiscoverable(next); savePrivacySetting('is_discoverable', next); }}
@@ -633,25 +775,26 @@ export const SettingsPage: React.FC = () => {
                 </div>
               </div>
 
-              <button
-                className={styles.row}
-                onClick={() => { closeModal(); navigate('/settings/blocked-users'); }}
-                style={{ background: '#ffffff', borderRadius: '1rem', marginBottom: '1rem' }}
-              >
-                <span className={styles.rowIcon}><Ban size={18} /></span>
-                <span className={styles.rowLabel}>Blocked Users</span>
-                <ChevronRight size={16} className={styles.rowChevron} />
-              </button>
+              <h4 className={styles.privacySectionLabel}>Shortcuts</h4>
+              <div className={styles.privacyGroup}>
+                <button
+                  className={styles.privacyActionRow}
+                  onClick={() => { closeModal(); navigate('/settings/blocked-users'); }}
+                >
+                  <Ban size={18} />
+                  <span className={styles.privacyActionLabel}>Blocked Users</span>
+                  <ChevronRight size={16} className={styles.privacyActionChevron} />
+                </button>
 
-              <button
-                className={styles.row}
-                onClick={() => { closeModal(); navigate('/settings/notifications'); }}
-                style={{ background: '#ffffff', borderRadius: '1rem' }}
-              >
-                <span className={styles.rowIcon}><Bell size={18} /></span>
-                <span className={styles.rowLabel}>Notification Preferences</span>
-                <ChevronRight size={16} className={styles.rowChevron} />
-              </button>
+                <button
+                  className={styles.privacyActionRow}
+                  onClick={() => { closeModal(); navigate('/settings/notifications'); }}
+                >
+                  <Bell size={18} />
+                  <span className={styles.privacyActionLabel}>Notification Preferences</span>
+                  <ChevronRight size={16} className={styles.privacyActionChevron} />
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -668,47 +811,47 @@ export const SettingsPage: React.FC = () => {
               </button>
             </div>
             <div className={styles.sheetBody}>
-              <p><strong>Need a hand?</strong></p>
-              <p style={{ marginBottom: '1rem' }}>
-                Email us directly at{' '}
-                <a
-                  href="mailto:support@spensive.me"
-                  style={{ color: '#ef4444', fontWeight: 600, textDecoration: 'none' }}
-                >
-                  support@spensive.me
-                </a>
-                {' '}â€” we usually reply within 24 hours. You can also check the
-                community guidelines for rules and safety tips.
-              </p>
+              <div className={styles.helpIntro}>
+                <div className={styles.helpIntroIcon}>
+                  <HelpCircle size={24} />
+                </div>
+                <h3 className={styles.helpIntroTitle}>Need a hand?</h3>
+                <p className={styles.helpIntroText}>
+                  Email us directly at{' '}
+                  <a href="mailto:support@spensive.me" className={styles.helpIntroLink}>
+                    support@spensive.me
+                  </a>
+                  {' '}— we usually reply within 24 hours. You can also check the community
+                  guidelines for rules and safety tips.
+                </p>
+              </div>
 
               <button
-                className={styles.row}
+                className={styles.helpRow}
                 onClick={() => navigate('/community-guidelines')}
-                style={{ background: '#f9fafb', borderRadius: '1rem', marginBottom: '0.75rem' }}
               >
-                <span className={styles.rowIcon}><FileText size={18} /></span>
-                <span className={styles.rowLabel}>Community Guidelines</span>
-                <ChevronRight size={16} className={styles.rowChevron} />
+                <span className={styles.helpRowIcon}><FileText size={18} /></span>
+                <span className={styles.helpRowBody}>
+                  <span className={styles.helpRowTitle}>Community Guidelines</span>
+                  <span className={styles.helpRowSubtitle}>Rules, safety tips, and community standards</span>
+                </span>
+                <ChevronRight size={16} className={styles.helpRowChevron} />
               </button>
 
               <a
                 href="mailto:support@spensive.me?subject=Dating%20App%20Support%20Request&body=Hi%20team%2C%0A%0AI%20need%20help%20with%3A%0A%0A"
-                className={styles.row}
-                style={{ background: '#f9fafb', borderRadius: '1rem', marginBottom: '0.75rem', textDecoration: 'none' }}
+                className={styles.helpRow}
               >
-                <span className={styles.rowIcon}><Mail size={18} /></span>
-                <span className={styles.rowLabel}>
-                  Email Support
-                  <br />
-                  <span style={{ fontSize: '0.75rem', color: '#6b7280', fontWeight: 400 }}>
-                    support@spensive.me
-                  </span>
+                <span className={styles.helpRowIcon}><Mail size={18} /></span>
+                <span className={styles.helpRowBody}>
+                  <span className={styles.helpRowTitle}>Email Support</span>
+                  <span className={styles.helpRowSubtitle}>support@spensive.me</span>
                 </span>
-                <ChevronRight size={16} className={styles.rowChevron} />
+                <ChevronRight size={16} className={styles.helpRowChevron} />
               </a>
 
               <button
-                className={styles.row}
+                className={styles.helpRow}
                 onClick={async () => {
                   try {
                     await navigator.clipboard.writeText('support@spensive.me');
@@ -717,37 +860,28 @@ export const SettingsPage: React.FC = () => {
                     showToast('support@spensive.me', 'info');
                   }
                 }}
-                style={{ background: '#f9fafb', borderRadius: '1rem', marginBottom: '0.75rem' }}
               >
-                <span className={styles.rowIcon}><CopyIcon size={18} /></span>
-                <span className={styles.rowLabel}>Copy email address</span>
+                <span className={styles.helpRowIcon}><CopyIcon size={18} /></span>
+                <span className={styles.helpRowBody}>
+                  <span className={styles.helpRowTitle}>Copy email address</span>
+                  <span className={styles.helpRowSubtitle}>Save it for later</span>
+                </span>
               </button>
 
               <button
-                className={styles.row}
+                className={styles.helpRow}
                 onClick={() => setModal('privacy')}
-                style={{ background: '#f9fafb', borderRadius: '1rem' }}
               >
-                <span className={styles.rowIcon}><Shield size={18} /></span>
-                <span className={styles.rowLabel}>Report a Safety Issue</span>
-                <ChevronRight size={16} className={styles.rowChevron} />
+                <span className={styles.helpRowIcon}><Shield size={18} /></span>
+                <span className={styles.helpRowBody}>
+                  <span className={styles.helpRowTitle}>Report a Safety Issue</span>
+                  <span className={styles.helpRowSubtitle}>Tell us about anything unsafe</span>
+                </span>
+                <ChevronRight size={16} className={styles.helpRowChevron} />
               </button>
             </div>
           </div>
         </div>
-      )}
-
-      {/* LOCATION MODAL */}
-      {modal === 'location' && (
-        <LocationSetupSheet
-          open={true}
-          onClose={closeModal}
-          userId={user?.id || ''}
-          onLocationSaved={() => {
-            closeModal();
-            window.location.reload();
-          }}
-        />
       )}
 
       {/* ABOUT MODAL */}
@@ -761,94 +895,99 @@ export const SettingsPage: React.FC = () => {
               </button>
             </div>
             <div className={styles.sheetBody}>
-              <div style={{ textAlign: 'center', padding: '1rem 0 1.5rem' }}>
-                <div
-                  style={{
-                    width: 72,
-                    height: 72,
-                    borderRadius: 20,
-                    margin: '0 auto 0.875rem',
-                    background: 'linear-gradient(135deg, #ef4444, #dc2626)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    color: '#ffffff',
-                    fontSize: '1.75rem',
-                    fontWeight: 800,
-                    boxShadow: '0 8px 24px rgba(239, 68, 68, 0.3)',
-                  }}
-                >
-                  D
+              <div className={styles.aboutBrand}>
+                <div className={styles.aboutIconWrapper}>
+                  <img
+                    src={logoUrl}
+                    alt={appName}
+                    className={styles.aboutIconImage}
+                  />
                 </div>
-                <p style={{ fontSize: '1.0625rem', fontWeight: 700, color: '#111827', margin: '0 0 0.25rem' }}>
-                  Dating App
-                </p>
-                <p style={{ fontSize: '0.8125rem', color: '#9ca3af', margin: 0 }}>
-                  Version 1.0.0
-                </p>
+                <h3 className={styles.aboutAppName}>{appName}</h3>
+                <p className={styles.aboutVersion}>Version 1.0.0</p>
               </div>
 
               <button
-                className={styles.row}
+                className={styles.helpRow}
                 onClick={() => window.open('https://spensive.me/terms', '_blank', 'noopener')}
-                style={{ background: '#f9fafb', borderRadius: '1rem', marginBottom: '0.75rem' }}
               >
-                <span className={styles.rowIcon}><FileText size={18} /></span>
-                <span className={styles.rowLabel}>Terms of Service</span>
-                <ChevronRight size={16} className={styles.rowChevron} />
+                <span className={styles.helpRowIcon}><FileText size={18} /></span>
+                <span className={styles.helpRowBody}>
+                  <span className={styles.helpRowTitle}>Terms of Service</span>
+                  <span className={styles.helpRowSubtitle}>Read the terms</span>
+                </span>
+                <ChevronRight size={16} className={styles.helpRowChevron} />
               </button>
 
               <button
-                className={styles.row}
+                className={styles.helpRow}
                 onClick={() => window.open('https://spensive.me/privacy', '_blank', 'noopener')}
-                style={{ background: '#f9fafb', borderRadius: '1rem', marginBottom: '0.75rem' }}
               >
-                <span className={styles.rowIcon}><Shield size={18} /></span>
-                <span className={styles.rowLabel}>Privacy Policy</span>
-                <ChevronRight size={16} className={styles.rowChevron} />
+                <span className={styles.helpRowIcon}><Shield size={18} /></span>
+                <span className={styles.helpRowBody}>
+                  <span className={styles.helpRowTitle}>Privacy Policy</span>
+                  <span className={styles.helpRowSubtitle}>How we protect your data</span>
+                </span>
+                <ChevronRight size={16} className={styles.helpRowChevron} />
               </button>
 
               <button
-                className={styles.row}
+                className={styles.helpRow}
                 onClick={() => window.open('https://spensive.me/permissions', '_blank', 'noopener')}
-                style={{ background: '#f9fafb', borderRadius: '1rem' }}
               >
-                <span className={styles.rowIcon}><Smartphone size={18} /></span>
-                <span className={styles.rowLabel}>App Permissions</span>
-                <ChevronRight size={16} className={styles.rowChevron} />
+                <span className={styles.helpRowIcon}><Smartphone size={18} /></span>
+                <span className={styles.helpRowBody}>
+                  <span className={styles.helpRowTitle}>App Permissions</span>
+                  <span className={styles.helpRowSubtitle}>What we access and why</span>
+                </span>
+                <ChevronRight size={16} className={styles.helpRowChevron} />
               </button>
 
-              {/* Help & Support */}
-              <p style={{ fontSize: '0.75rem', fontWeight: 700, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.05em', margin: '1.5rem 0 0.5rem' }}>
-                Help & Support
-              </p>
+              <h4 className={styles.aboutSectionLabel}>Help & Support</h4>
 
               <a
-                className={styles.row}
+                className={styles.helpRow}
                 href={'mailto:' + supportEmail}
-                style={{ background: '#f9fafb', borderRadius: '1rem', textDecoration: 'none', marginBottom: '0.75rem' }}
               >
-                <span className={styles.rowIcon}><Mail size={18} /></span>
-                <span className={styles.rowLabel}>Contact Support</span>
-                <ChevronRight size={16} className={styles.rowChevron} />
+                <span className={styles.helpRowIcon}><Mail size={18} /></span>
+                <span className={styles.helpRowBody}>
+                  <span className={styles.helpRowTitle}>Contact Support</span>
+                  <span className={styles.helpRowSubtitle}>{supportEmail}</span>
+                </span>
+                <ChevronRight size={16} className={styles.helpRowChevron} />
               </a>
 
               <a
-                className={styles.row}
+                className={styles.helpRow}
                 href={'mailto:' + supportEmail + '?subject=Feedback%20for%20' + encodeURIComponent(appName)}
-                style={{ background: '#f9fafb', borderRadius: '1rem', textDecoration: 'none', marginBottom: '0.75rem' }}
               >
-                <span className={styles.rowIcon}><MessageSquare size={18} /></span>
-                <span className={styles.rowLabel}>Send Feedback</span>
-                <ChevronRight size={16} className={styles.rowChevron} />
+                <span className={styles.helpRowIcon}><MessageSquare size={18} /></span>
+                <span className={styles.helpRowBody}>
+                  <span className={styles.helpRowTitle}>Send Feedback</span>
+                  <span className={styles.helpRowSubtitle}>Help us improve {appName}</span>
+                </span>
+                <ChevronRight size={16} className={styles.helpRowChevron} />
               </a>
 
-              <p style={{ textAlign: 'center', fontSize: '0.75rem', color: '#9ca3af', marginTop: '1.5rem' }}>
+              <p className={styles.aboutFooter}>
                 © {new Date().getFullYear()} {appName}. All rights reserved.
               </p>
             </div>
           </div>
         </div>
+      )}
+
+      {/* LOCATION SETUP MODAL */}
+      {modal === 'location' && (
+        <LocationSetupSheet
+          open={true}
+          onClose={closeModal}
+          userId={user?.id || ''}
+          onLocationSaved={() => {
+            closeModal();
+            window.location.reload();
+          }}
+        />
       )}
     </div>
   );

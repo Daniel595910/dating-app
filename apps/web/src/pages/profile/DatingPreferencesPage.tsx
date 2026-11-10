@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '@/store/auth.store';
 import { supabase } from '@/config/supabase.client';
 import {
-  ArrowLeft, Save, Calendar, MapPin, Heart, BadgeCheck, RotateCcw, Check,
+  ArrowLeft, Calendar, MapPin, Heart, BadgeCheck, RotateCcw, Check,
 } from 'lucide-react';
 import styles from './DatingPreferencesPage.module.css';
 
@@ -192,9 +192,9 @@ export const DatingPreferencesPage: React.FC = () => {
           className={`${styles.saveButton} ${hasChanges ? styles.saveButtonWithChanges : ''}`}
           onClick={handleSave}
           disabled={!hasChanges || saving}
+          aria-label="Save preferences"
         >
-          <Save size={14} />
-          {saving ? 'Saving…' : 'Save'}
+          <Check size={18} strokeWidth={2.5} />
         </button>
       </header>
 

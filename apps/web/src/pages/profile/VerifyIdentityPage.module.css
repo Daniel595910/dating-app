@@ -1,35 +1,45 @@
 /* ============================================================
-   VerifyIdentityPage — identity verification wizard
+   VerifyIdentityPage Ã¢â‚¬â€ identity verification wizard
    ============================================================ */
 
 .page {
-  min-height: 100dvh;
+  height: 100dvh;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  -webkit-overflow-scrolling: touch;
   background-color: var(--color-bg, #faf9f7);
   max-width: 480px;
   margin: 0 auto;
   padding-bottom: env(safe-area-inset-bottom);
 }
 
+.page::-webkit-scrollbar {
+  display: none;
+}
+
 .header {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  padding: 0.625rem 0.75rem;
-  padding-top: calc(0.625rem + env(safe-area-inset-top));
-  background-color: rgba(255, 255, 255, 0.94);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border-bottom: 1px solid #f3f4f6;
+  padding: 0.5rem 0.75rem;
+  padding-top: calc(0.5rem + env(safe-area-inset-top));
+  background-color: color-mix(in srgb, var(--color-surface) 96%, transparent);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--color-border);
   position: sticky;
   top: 0;
   z-index: 20;
+  min-height: 56px;
 }
 
 .headerButton {
   background: none;
   border: none;
   cursor: pointer;
-  color: #111827;
+  color: var(--color-text, #111827);
   padding: 0.5rem;
   border-radius: 9999px;
   display: flex;
@@ -41,13 +51,13 @@
 }
 
 .headerButton:hover {
-  background-color: #f3f4f6;
+  background-color: var(--color-surface-alt, #f3f4f6);
 }
 
 .headerTitle {
   font-size: 1.0625rem;
   font-weight: 700;
-  color: #111827;
+  color: var(--color-text, #111827);
   margin: 0;
   letter-spacing: -0.01em;
 }
@@ -62,12 +72,12 @@
 .loading {
   padding: 3rem 1rem;
   text-align: center;
-  color: #9ca3af;
+  color: var(--color-text-muted, #9ca3af);
   font-size: 0.875rem;
 }
 
 .statusCard {
-  background: #ffffff;
+  background: var(--color-surface, #ffffff);
   border-radius: 1.25rem;
   padding: 2rem 1.5rem;
   text-align: center;
@@ -86,26 +96,26 @@
   align-items: center;
   justify-content: center;
   margin-bottom: 0.5rem;
-  background: #f3f4f6;
-  color: #6b7280;
+  background: var(--color-surface-alt, #f3f4f6);
+  color: var(--color-text-secondary, #6b7280);
 }
 
 .statusIconGreen  { background: linear-gradient(135deg, #d1fae5, #a7f3d0); color: #059669; }
 .statusIconYellow { background: linear-gradient(135deg, #fef3c7, #fde68a); color: #d97706; }
-.statusIconRed    { background: linear-gradient(135deg, #fee2e2, #fecaca); color: #dc2626; }
+.statusIconRed    { background: linear-gradient(135deg, var(--color-primary-soft, #fee2e2), var(--color-primary-soft-border, #fecaca)); color: var(--color-danger, #dc2626); }
 .statusIconBlue   { background: linear-gradient(135deg, #dbeafe, #bfdbfe); color: #2563eb; }
 
 .statusTitle {
   font-size: 1.25rem;
   font-weight: 800;
-  color: #111827;
+  color: var(--color-text, #111827);
   margin: 0;
   letter-spacing: -0.01em;
 }
 
 .statusText {
   font-size: 0.875rem;
-  color: #6b7280;
+  color: var(--color-text-secondary, #6b7280);
   margin: 0;
   line-height: 1.5;
   max-width: 320px;
@@ -114,14 +124,14 @@
 .stepTitle {
   font-size: 1.125rem;
   font-weight: 800;
-  color: #111827;
+  color: var(--color-text, #111827);
   margin: 0 0 0.5rem;
   letter-spacing: -0.01em;
 }
 
 .stepText {
   font-size: 0.875rem;
-  color: #6b7280;
+  color: var(--color-text-secondary, #6b7280);
   margin: 0 0 1rem;
   line-height: 1.5;
 }
@@ -143,8 +153,8 @@
   width: 32px;
   height: 32px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #ef4444, #dc2626);
-  color: #ffffff;
+  background: linear-gradient(135deg, var(--color-primary, #ef4444), var(--color-primary-hover, #dc2626));
+  color: var(--color-surface, #ffffff);
   font-weight: 800;
   font-size: 0.875rem;
   display: flex;
@@ -157,47 +167,47 @@
 .stepItemTitle {
   font-size: 0.9375rem;
   font-weight: 700;
-  color: #111827;
+  color: var(--color-text, #111827);
   margin-bottom: 0.125rem;
 }
 
 .stepItemText {
   font-size: 0.8125rem;
-  color: #6b7280;
+  color: var(--color-text-secondary, #6b7280);
   line-height: 1.45;
 }
 
 .exampleBox {
-  background: #ffffff;
-  border: 2px dashed #e5e7eb;
+  background: var(--color-surface, #ffffff);
+  border: 2px dashed var(--color-border-strong, #e5e7eb);
   border-radius: 1rem;
   padding: 1.5rem 1rem;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 0.5rem;
-  color: #9ca3af;
+  color: var(--color-text-muted, #9ca3af);
   margin-bottom: 1rem;
 }
 
 .exampleText {
   font-size: 0.75rem;
   font-weight: 600;
-  color: #6b7280;
+  color: var(--color-text-secondary, #6b7280);
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
 
 .uploadBox {
-  background: #ffffff;
-  border: 2px dashed #e5e7eb;
+  background: var(--color-surface, #ffffff);
+  border: 2px dashed var(--color-border-strong, #e5e7eb);
   border-radius: 1rem;
   padding: 2.5rem 1rem;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 0.75rem;
-  color: #6b7280;
+  color: var(--color-text-secondary, #6b7280);
   cursor: pointer;
   font-size: 0.875rem;
   font-weight: 600;
@@ -206,9 +216,9 @@
 }
 
 .uploadBox:hover {
-  border-color: #ef4444;
-  color: #ef4444;
-  background: #fef2f2;
+  border-color: var(--color-primary, #ef4444);
+  color: var(--color-primary, #ef4444);
+  background: var(--color-primary-soft, #fef2f2);
 }
 
 .preview {
@@ -216,7 +226,7 @@
   max-height: 340px;
   object-fit: contain;
   border-radius: 1rem;
-  background: #f3f4f6;
+  background: var(--color-surface-alt, #f3f4f6);
   margin-bottom: 1rem;
   display: block;
 }
@@ -234,9 +244,9 @@
   gap: 0.375rem;
   padding: 0.5rem 0.875rem;
   border-radius: 9999px;
-  border: 1.5px solid #e5e7eb;
-  background: #ffffff;
-  color: #6b7280;
+  border: 1.5px solid var(--color-border-strong, #e5e7eb);
+  background: var(--color-surface, #ffffff);
+  color: var(--color-text-secondary, #6b7280);
   font-size: 0.8125rem;
   font-weight: 600;
   cursor: pointer;
@@ -245,14 +255,14 @@
 }
 
 .typeBtn:hover {
-  border-color: #d1d5db;
-  color: #374151;
+  border-color: var(--color-border-strong, #d1d5db);
+  color: var(--color-text, #374151);
 }
 
 .typeBtnActive {
-  background: linear-gradient(135deg, #ef4444, #dc2626);
-  border-color: #ef4444;
-  color: #ffffff;
+  background: linear-gradient(135deg, var(--color-primary, #ef4444), var(--color-primary-hover, #dc2626));
+  border-color: var(--color-primary, #ef4444);
+  color: var(--color-surface, #ffffff);
   box-shadow: 0 2px 8px rgba(239, 68, 68, 0.25);
 }
 
@@ -266,7 +276,7 @@
 .reviewLabel {
   font-size: 0.6875rem;
   font-weight: 700;
-  color: #6b7280;
+  color: var(--color-text-secondary, #6b7280);
   text-transform: uppercase;
   letter-spacing: 0.05em;
   margin-bottom: 0.375rem;
@@ -277,7 +287,7 @@
   aspect-ratio: 3 / 4;
   object-fit: cover;
   border-radius: 0.75rem;
-  background: #f3f4f6;
+  background: var(--color-surface-alt, #f3f4f6);
   display: block;
 }
 
@@ -285,8 +295,8 @@
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  background: #eff6ff;
-  border: 1px solid #bfdbfe;
+  background: color-mix(in srgb, #3b82f6 8%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-primary, #3b82f6) 30%, transparent);
   color: #1e40af;
   font-size: 0.75rem;
   font-weight: 500;
@@ -298,8 +308,9 @@
 .primaryButton {
   width: 100%;
   padding: 0.875rem 1.25rem;
-  background: linear-gradient(135deg, #ef4444, #dc2626);
-  color: #ffffff;
+  background: linear-gradient(135deg, var(--color-primary, #ef4444) 0%, var(--color-primary-hover, #dc2626) 100%);
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
   border: none;
   border-radius: 9999px;
   font-size: 0.9375rem;
@@ -307,30 +318,58 @@
   cursor: pointer;
   min-height: 48px;
   font-family: inherit;
-  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.25);
-  transition: all 0.15s ease;
+  box-shadow: 0 4px 14px color-mix(in srgb, var(--color-primary, #ef4444) 30%, transparent);
+  transition: transform 0.15s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.15s ease, background 0.15s ease;
+  letter-spacing: -0.01em;
 }
 
-.primaryButton:hover:not(:disabled) { background: linear-gradient(135deg, #dc2626, #b91c1c); }
-.primaryButton:active:not(:disabled) { transform: scale(0.98); }
-.primaryButton:disabled { background: #f3f4f6; color: #9ca3af; box-shadow: none; cursor: not-allowed; }
+.primaryButton:hover:not(:disabled) {
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px color-mix(in srgb, var(--color-primary, #ef4444) 45%, transparent);
+}
+
+.primaryButton:active:not(:disabled) {
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+  transform: scale(0.97);
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--color-primary, #ef4444) 30%, transparent);
+}
+
+.primaryButton:disabled {
+  background: var(--color-surface-alt, #f3f4f6);
+  color: var(--color-text-muted, #9ca3af) !important;
+  -webkit-text-fill-color: var(--color-text-muted, #9ca3af) !important;
+  box-shadow: none;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
 
 .secondaryButton {
   flex: 1;
   padding: 0.875rem 1.25rem;
-  background: none;
-  color: #374151;
-  border: 1.5px solid #e5e7eb;
+  background: var(--color-surface, #ffffff);
+  color: var(--color-text, #374151);
+  border: 1.5px solid var(--color-border-strong, #e5e7eb);
   border-radius: 9999px;
   font-size: 0.9375rem;
   font-weight: 600;
   cursor: pointer;
   min-height: 48px;
   font-family: inherit;
-  transition: all 0.15s ease;
+  transition: background 0.15s ease, border-color 0.15s ease, transform 0.1s ease;
+  letter-spacing: -0.01em;
 }
 
-.secondaryButton:hover { background: #f9fafb; border-color: #d1d5db; }
+.secondaryButton:hover {
+  background: var(--color-surface-alt, #f9fafb);
+  border-color: var(--color-text-muted, #9ca3af);
+}
+
+.secondaryButton:active {
+  transform: scale(0.98);
+}
 
 .navRow { display: flex; gap: 0.5rem; margin-top: 1rem; }
 .navRow .primaryButton { flex: 1; width: auto; }

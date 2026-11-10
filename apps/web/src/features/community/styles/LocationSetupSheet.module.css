@@ -1,3 +1,7 @@
+/* ============================================================
+   LocationSetupSheet — Premium bottom sheet (theme-aware)
+   ============================================================ */
+
 .overlay {
   position: fixed;
   inset: 0;
@@ -6,10 +10,12 @@
   display: flex;
   align-items: flex-end;
   animation: fadeIn 0.2s ease;
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
 }
 
 .sheet {
-  background-color: #ffffff;
+  background-color: var(--color-surface, #ffffff);
   border-radius: 1.5rem 1.5rem 0 0;
   width: 100%;
   max-width: 480px;
@@ -17,95 +23,134 @@
   padding: 0.5rem 1.25rem calc(1.5rem + env(safe-area-inset-bottom));
   max-height: 85dvh;
   overflow-y: auto;
-  animation: slideUp 0.3s ease;
+  overflow-x: hidden;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  -webkit-overflow-scrolling: touch;
+  animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
 }
 
+.sheet::-webkit-scrollbar {
+  display: none;
+}
+
+/* ==================== DRAG HANDLE ==================== */
 .dragHandle {
   width: 40px;
   height: 4px;
-  background-color: #e5e7eb;
+  background-color: var(--color-border-strong, #e5e7eb);
   border-radius: 9999px;
-  margin: 0 auto 0.75rem;
+  margin: 0.25rem auto 0.75rem;
 }
 
+/* ==================== HEADER ==================== */
 .header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.75rem;
 }
 
 .title {
   font-size: 1.125rem;
   font-weight: 700;
-  color: #111827;
+  color: var(--color-text, #111827);
   margin: 0;
+  letter-spacing: -0.01em;
 }
 
 .closeButton {
   background: none;
   border: none;
   cursor: pointer;
-  color: #6b7280;
+  color: var(--color-text-secondary, #6b7280);
   padding: 0.5rem;
   border-radius: 9999px;
-  min-width: 44px;
-  min-height: 44px;
-}
-
-.iconWrapper {
-  width: 56px;
-  height: 56px;
-  border-radius: 50%;
-  background-color: #dbeafe;
+  min-width: 40px;
+  min-height: 40px;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin: 0 auto 0.75rem;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.closeButton:hover {
+  background-color: var(--color-surface-alt, #f3f4f6);
+  color: var(--color-text, #111827);
+}
+
+/* ==================== ICON / DESCRIPTION ==================== */
+.iconWrapper {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--color-primary-soft, #fef2f2), var(--color-primary-soft-border, #fee2e2));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 1rem;
+  box-shadow: 0 4px 16px color-mix(in srgb, var(--color-primary, #ef4444) 12%, transparent);
 }
 
 .mapIcon {
-  color: #3b82f6;
+  color: var(--color-primary, #ef4444);
 }
 
 .description {
   font-size: 0.875rem;
-  color: #6b7280;
-  line-height: 1.5;
-  margin: 0 0 1rem;
+  color: var(--color-text-secondary, #6b7280);
+  line-height: 1.55;
+  margin: 0 0 1.25rem;
   text-align: center;
+  max-width: 340px;
+  margin-left: auto;
+  margin-right: auto;
 }
 
+/* ==================== DETECT BUTTON ==================== */
 .detectButton {
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
   width: 100%;
-  padding: 0.75rem;
-  background-color: #eff6ff;
-  color: #3b82f6;
-  border: 1px solid #bfdbfe;
+  padding: 0 1rem;
+  background: linear-gradient(135deg, var(--color-primary, #ef4444) 0%, var(--color-primary-hover, #dc2626) 100%);
+  color: #ffffff;
+  border: none;
   border-radius: 9999px;
   cursor: pointer;
   font-size: 0.9375rem;
-  font-weight: 600;
+  font-weight: 700;
   min-height: 48px;
+  font-family: inherit;
+  box-shadow: 0 4px 14px color-mix(in srgb, var(--color-primary, #ef4444) 30%, transparent);
+  transition: transform 0.15s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.15s ease;
+  margin-bottom: 0.75rem;
+  letter-spacing: -0.01em;
 }
 
 .detectButton:hover:not(:disabled) {
-  background-color: #dbeafe;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px color-mix(in srgb, var(--color-primary, #ef4444) 45%, transparent);
+}
+
+.detectButton:active:not(:disabled) {
+  transform: scale(0.97);
 }
 
 .detectButton:disabled {
-  opacity: 0.7;
+  opacity: 0.6;
   cursor: not-allowed;
+  box-shadow: none;
 }
 
 .spinnerIcon {
   animation: spin 0.8s linear infinite;
 }
 
+/* ==================== DIVIDER / FIELD GROUP ==================== */
 .divider {
   display: flex;
   align-items: center;
@@ -118,13 +163,16 @@
   content: '';
   flex: 1;
   height: 1px;
-  background-color: #e5e7eb;
+  background-color: var(--color-border, #e5e7eb);
 }
 
 .divider span {
   font-size: 0.75rem;
-  color: #9ca3af;
+  color: var(--color-text-muted, #9ca3af);
   white-space: nowrap;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 600;
 }
 
 .fieldGroup {
@@ -135,134 +183,135 @@
 }
 
 .fieldLabel {
-  font-size: 0.875rem;
-  font-weight: 500;
-  color: #374151;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--color-text-secondary, #6b7280);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  margin-left: 0.25rem;
 }
 
 .select,
 .input {
-  padding: 0.625rem 0.875rem;
-  border: 1px solid #d1d5db;
-  border-radius: 0.5rem;
+  padding: 0.75rem 1rem;
+  border: 1px solid transparent;
+  border-radius: 0.875rem;
   font-size: 0.9375rem;
   font-family: inherit;
   outline: none;
-  background-color: #ffffff;
-  color: #111827;
-  transition: border-color 0.15s ease;
+  background-color: var(--color-surface-alt, #f3f4f6);
+  color: var(--color-text, #111827);
+  transition: background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
   min-height: 44px;
+  box-sizing: border-box;
+  width: 100%;
 }
 
 .select:focus,
-.input:focus {
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+.input:focus,
+.select:focus-visible,
+.input:focus-visible {
+  background-color: var(--color-surface, #ffffff);
+  border-color: var(--color-primary, #ef4444);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary, #ef4444) 15%, transparent);
+  outline: none !important;
 }
 
 .select:disabled,
 .input:disabled {
-  background-color: #f9fafb;
+  background-color: var(--color-surface-alt, #f9fafb);
+  opacity: 0.6;
   cursor: not-allowed;
 }
 
-.error {
-  color: #ef4444;
-  font-size: 0.8125rem;
-  margin: 0 0 0.5rem;
-  text-align: center;
-}
-
+/* ==================== SAVE BUTTON ==================== */
 .saveButton {
   width: 100%;
-  padding: 0.875rem;
-  background-color: #ef4444;
-  color: #ffffff;
+  padding: 0 1.25rem;
+  background: linear-gradient(135deg, var(--color-primary, #ef4444) 0%, var(--color-primary-hover, #dc2626) 100%);
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
   border: none;
   border-radius: 9999px;
   cursor: pointer;
   font-size: 0.9375rem;
-  font-weight: 600;
+  font-weight: 700;
   min-height: 48px;
-  margin-top: 0.5rem;
+  margin-top: 0.75rem;
+  font-family: inherit;
+  box-shadow: 0 4px 14px color-mix(in srgb, var(--color-primary, #ef4444) 30%, transparent);
+  transition: transform 0.15s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.15s ease;
+  letter-spacing: -0.01em;
 }
 
 .saveButton:hover:not(:disabled) {
-  background-color: #dc2626;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px color-mix(in srgb, var(--color-primary, #ef4444) 45%, transparent);
+}
+
+.saveButton:active:not(:disabled) {
+  transform: scale(0.97);
 }
 
 .saveButton:disabled {
-  opacity: 0.5;
+  background: var(--color-surface-alt, #f3f4f6);
+  color: var(--color-text-muted, #9ca3af) !important;
+  -webkit-text-fill-color: var(--color-text-muted, #9ca3af) !important;
+  box-shadow: none;
   cursor: not-allowed;
+  opacity: 0.6;
 }
 
+/* ==================== SUCCESS STATE ==================== */
 .successState {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.75rem;
-  padding: 2rem 1rem;
   text-align: center;
+  padding: 2rem 1rem 1rem;
+  gap: 1rem;
+  animation: scaleIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 .successIcon {
-  width: 64px;
-  height: 64px;
+  width: 72px;
+  height: 72px;
   border-radius: 50%;
-  background-color: #d1fae5;
-  color: #10b981;
+  background: linear-gradient(135deg, var(--color-success, #10b981), #059669);
+  color: #ffffff;
   display: flex;
   align-items: center;
   justify-content: center;
+  box-shadow: 0 8px 24px rgba(16, 185, 129, 0.3), 0 0 0 8px rgba(16, 185, 129, 0.1);
 }
 
 .successText {
   font-size: 0.9375rem;
-  color: #111827;
+  color: var(--color-text, #111827);
   margin: 0;
   line-height: 1.5;
+  max-width: 300px;
 }
 
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-
-@keyframes slideUp {
-  from { transform: translateY(100%); }
-  to { transform: translateY(0); }
-}
-
-@keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
-}
-
-/* ============================================================
-   Location verification states
-   Added for the GPS-required flow.
-   ============================================================ */
-
-/* ---------- Verified card (green, after successful detect) ---------- */
-
+/* ==================== VERIFIED CARD ==================== */
 .verifiedBox {
   display: flex;
   align-items: center;
   gap: 12px;
   padding: 14px 16px;
   margin-bottom: 0.75rem;
-  background: rgba(16, 185, 129, 0.08);
-  border: 1px solid rgba(16, 185, 129, 0.25);
-  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--color-success, #10b981) 8%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-success, #10b981) 25%, transparent);
+  border-radius: 0.875rem;
 }
 
 .verifiedIcon {
   width: 36px;
   height: 36px;
   min-width: 36px;
-  border-radius: var(--radius-full);
-  background: rgba(16, 185, 129, 0.15);
-  color: var(--color-success);
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--color-success, #10b981) 15%, transparent);
+  color: var(--color-success, #10b981);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -275,9 +324,9 @@
 }
 
 .verifiedTitle {
-  font-size: var(--font-xs);
+  font-size: 0.6875rem;
   font-weight: 700;
-  color: var(--color-success);
+  color: var(--color-success, #10b981);
   text-transform: uppercase;
   letter-spacing: 0.05em;
   margin: 0 0 2px;
@@ -285,9 +334,9 @@
 }
 
 .verifiedDetail {
-  font-size: var(--font-sm);
+  font-size: 0.8125rem;
   font-weight: 600;
-  color: var(--color-text);
+  color: var(--color-text, #111827);
   margin: 0;
   line-height: 1.4;
   word-break: break-word;
@@ -297,18 +346,18 @@
   background: none;
   border: none;
   padding: 6px 10px;
-  font-size: var(--font-xs);
+  font-size: 0.75rem;
   font-weight: 700;
-  color: var(--color-success);
+  color: var(--color-success, #10b981);
   cursor: pointer;
-  border-radius: var(--radius-sm);
+  border-radius: 0.5rem;
   font-family: inherit;
   flex-shrink: 0;
   transition: background 0.15s ease;
 }
 
 .verifiedRetry:hover:not(:disabled) {
-  background: rgba(16, 185, 129, 0.12);
+  background: color-mix(in srgb, var(--color-success, #10b981) 12%, transparent);
 }
 
 .verifiedRetry:disabled {
@@ -316,19 +365,18 @@
   cursor: not-allowed;
 }
 
-/* ---------- Error box (red, for any failure) ---------- */
-
+/* ==================== ERROR BOX ==================== */
 .errorBox {
   display: flex;
   align-items: flex-start;
   gap: 10px;
   padding: 12px 14px;
   margin-bottom: 0.75rem;
-  background: var(--color-primary-soft);
-  border: 1px solid var(--color-primary-soft-border);
-  border-radius: var(--radius-md);
-  color: var(--color-primary-hover);
-  font-size: var(--font-sm);
+  background: var(--color-primary-soft, #fee2e2);
+  border: 1px solid var(--color-primary-soft-border, #fecaca);
+  border-radius: 0.875rem;
+  color: var(--color-danger, #dc2626);
+  font-size: 0.8125rem;
   line-height: 1.5;
 }
 
@@ -342,12 +390,32 @@
   min-width: 0;
 }
 
-/* ---------- Required note under the disabled Save button ---------- */
-
+/* ==================== REQUIRED NOTE ==================== */
 .requiredNote {
-  font-size: var(--font-xs);
-  color: var(--color-text-muted);
+  font-size: 0.75rem;
+  color: var(--color-text-muted, #9ca3af);
   text-align: center;
-  margin: 10px 0 0;
+  margin: 12px 0 0;
   line-height: 1.4;
+}
+
+/* ==================== ANIMATIONS ==================== */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { transform: translateY(100%); }
+  to   { transform: translateY(0); }
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+@keyframes scaleIn {
+  0%   { opacity: 0; transform: scale(0.9); }
+  100% { opacity: 1; transform: scale(1); }
 }

@@ -1,5 +1,5 @@
 /* ============================================================
-   SettingsPage â€” modern mobile settings layout
+   SettingsPage ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â modern mobile settings layout
    ============================================================ */
 
 .page {
@@ -233,6 +233,7 @@
 .modalActions {
   display: flex;
   gap: 0.5rem;
+  margin-top: 1.5rem;
 }
 
 .modalButton {
@@ -350,9 +351,16 @@
 .sheetBody {
   padding: 1rem 1.25rem calc(1.5rem + env(safe-area-inset-bottom));
   overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
   color: var(--color-text-secondary);
   font-size: 0.9375rem;
   line-height: 1.6;
+}
+
+.sheetBody::-webkit-scrollbar {
+  display: none;
 }
 
 .sheetBody p {
@@ -472,4 +480,579 @@
   background: var(--color-surface);
   color: var(--color-text);
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+}
+/* ==================== HELP MODAL ==================== */
+.helpIntro {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 0.5rem 0 1.5rem;
+}
+
+.helpIntroIcon {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--color-primary-soft, #fef2f2) 0%, var(--color-primary-soft-border, #fee2e2) 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-primary, #ef4444);
+  margin-bottom: 1rem;
+  box-shadow: 0 4px 16px color-mix(in srgb, var(--color-primary, #ef4444) 12%, transparent);
+}
+
+.helpIntroTitle {
+  font-size: 1.0625rem;
+  font-weight: 700;
+  color: var(--color-text, #111827);
+  margin: 0 0 0.375rem;
+  letter-spacing: -0.01em;
+}
+
+.helpIntroText {
+  font-size: 0.8125rem;
+  color: var(--color-text-secondary, #6b7280);
+  margin: 0;
+  line-height: 1.5;
+  max-width: 340px;
+}
+
+.helpIntroLink {
+  color: var(--color-primary, #ef4444);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.helpIntroLink:hover {
+  text-decoration: underline;
+}
+
+.helpRow {
+  display: flex;
+  align-items: center;
+  gap: 0.875rem;
+  width: 100%;
+  padding: 0.875rem 1rem;
+  background-color: var(--color-surface-alt, #f9fafb);
+  border: 1px solid var(--color-border, #f3f4f6);
+  border-radius: 1rem;
+  cursor: pointer;
+  margin-bottom: 0.625rem;
+  text-align: left;
+  font-family: inherit;
+  transition: background-color 0.15s ease, border-color 0.15s ease, transform 0.1s ease;
+  text-decoration: none;
+}
+
+.helpRow:last-child {
+  margin-bottom: 0;
+}
+
+.helpRow:hover {
+  background-color: var(--color-surface, #ffffff);
+  border-color: var(--color-border-strong, #e5e7eb);
+}
+
+.helpRow:active {
+  transform: scale(0.99);
+}
+
+.helpRowIcon {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background-color: var(--color-surface, #ffffff);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-text-secondary, #6b7280);
+  flex-shrink: 0;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.helpRow:hover .helpRowIcon {
+  background-color: var(--color-primary-soft, #fef2f2);
+  color: var(--color-primary, #ef4444);
+}
+
+.helpRowBody {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.helpRowTitle {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--color-text, #111827);
+  line-height: 1.25;
+}
+
+.helpRowSubtitle {
+  font-size: 0.75rem;
+  color: var(--color-text-muted, #9ca3af);
+  line-height: 1.4;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.helpRowChevron {
+  color: var(--color-text-muted, #9ca3af);
+  flex-shrink: 0;
+}
+/* ==================== ABOUT MODAL ==================== */
+.aboutBrand {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 0.5rem 0 1.75rem;
+}
+
+.aboutIconWrapper {
+  width: 80px;
+  height: 80px;
+  border-radius: 22px;
+  overflow: hidden;
+  margin-bottom: 1rem;
+  box-shadow:
+    0 8px 24px rgba(239, 68, 68, 0.25),
+    0 2px 8px rgba(0, 0, 0, 0.08);
+  background: var(--color-surface-alt, #f3f4f6);
+}
+
+.aboutIconImage {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.aboutAppName {
+  font-size: 1.125rem;
+  font-weight: 800;
+  color: var(--color-text, #111827);
+  margin: 0 0 0.25rem;
+  letter-spacing: -0.01em;
+}
+
+.aboutVersion {
+  font-size: 0.8125rem;
+  color: var(--color-text-muted, #9ca3af);
+  margin: 0;
+  font-weight: 500;
+}
+
+.aboutSectionLabel {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--color-text-muted, #9ca3af);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin: 1.5rem 0 0.625rem 0.5rem;
+}
+
+.aboutFooter {
+  text-align: center;
+  font-size: 0.75rem;
+  color: var(--color-text-muted, #9ca3af);
+  margin: 1.75rem 0 0;
+  line-height: 1.5;
+}
+/* ==================== PRIVACY MODAL ==================== */
+.privacyGroup {
+  background-color: var(--color-surface, #ffffff);
+  border-radius: 1rem;
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+  margin-bottom: 1rem;
+}
+
+.privacyRow {
+  display: flex;
+  align-items: center;
+  gap: 0.875rem;
+  padding: 0.9375rem 1rem;
+  background-color: var(--color-surface, #ffffff);
+  transition: background-color 0.15s ease;
+}
+
+.privacyRow:not(:last-child) {
+  border-bottom: 1px solid var(--color-border, #f3f4f6);
+}
+
+.privacyRow:hover {
+  background-color: var(--color-surface-alt, #f9fafb);
+}
+
+.privacyRowIcon {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background-color: var(--color-surface-alt, #f3f4f6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-text-secondary, #6b7280);
+  flex-shrink: 0;
+}
+
+.privacyRowBody {
+  flex: 1;
+  min-width: 0;
+}
+
+.privacyRowTitle {
+  display: block;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--color-text, #111827);
+  line-height: 1.25;
+}
+
+.privacyRowSubtitle {
+  display: block;
+  font-size: 0.75rem;
+  color: var(--color-text-secondary, #6b7280);
+  margin-top: 2px;
+  line-height: 1.4;
+}
+
+.privacySectionLabel {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--color-text-muted, #9ca3af);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin: 0 0 0.5rem 0.5rem;
+}
+
+.privacyActionRow {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+  padding: 0.9375rem 1rem;
+  background-color: var(--color-surface, #ffffff);
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  font-family: inherit;
+  transition: background-color 0.15s ease;
+}
+
+.privacyActionRow:not(:last-child) {
+  border-bottom: 1px solid var(--color-border, #f3f4f6);
+}
+
+.privacyActionRow:hover {
+  background-color: var(--color-surface-alt, #f9fafb);
+}
+
+.privacyActionRow svg:first-child {
+  color: var(--color-text-secondary, #6b7280);
+  flex-shrink: 0;
+}
+
+.privacyActionRow .privacyActionLabel {
+  flex: 1;
+  font-size: 0.9375rem;
+  font-weight: 500;
+  color: var(--color-text, #111827);
+}
+
+.privacyActionRow .privacyActionChevron {
+  color: var(--color-text-muted, #9ca3af);
+  flex-shrink: 0;
+}
+
+/* ==================== DATE OF BIRTH MODAL ==================== */
+.dobIntro {
+  font-size: 0.875rem;
+  color: var(--color-text-secondary, #6b7280);
+  line-height: 1.5;
+  margin: 0 0 1rem;
+}
+
+.dobLabel {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--color-text-secondary, #6b7280);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  margin-left: 0.25rem;
+  margin-bottom: 0.5rem;
+}
+
+.dobInput {
+  width: 100%;
+  padding: 1rem;
+  border: 1px solid transparent;
+  border-radius: 1rem;
+  font-size: 1rem;
+  font-family: inherit;
+  color: var(--color-text, #111827);
+  background-color: var(--color-surface-alt, #f3f4f6);
+  outline: none;
+  transition: background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+  box-sizing: border-box;
+  min-height: 52px;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  margin-bottom: 0.25rem;
+}
+
+.dobInput:focus,
+.dobInput:focus-visible {
+  background-color: var(--color-surface, #ffffff);
+  border-color: var(--color-primary, #ef4444);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary, #ef4444) 15%, transparent);
+  outline: none !important;
+}
+
+/* Make the calendar picker icon red-tinted (webkit only) */
+.dobInput::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+  opacity: 0.6;
+  transition: opacity 0.15s ease;
+}
+
+.dobInput:hover::-webkit-calendar-picker-indicator {
+  opacity: 1;
+}
+
+/* Prevent the native "invalid" red border on empty */
+.dobInput:invalid {
+  box-shadow: none;
+}
+
+/* ==================== PASSWORD VERIFICATION REQUIRED ==================== */
+.verifyRequiredBox {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 1rem 0 0.5rem;
+}
+
+.verifyRequiredIcon {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--color-primary-soft, #fef2f2) 0%, var(--color-primary-soft-border, #fee2e2) 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-primary, #ef4444);
+  margin-bottom: 1rem;
+  box-shadow: 0 4px 16px color-mix(in srgb, var(--color-primary, #ef4444) 12%, transparent);
+}
+
+.verifyRequiredTitle {
+  font-size: 1.0625rem;
+  font-weight: 700;
+  color: var(--color-text, #111827);
+  margin: 0 0 0.5rem;
+  letter-spacing: -0.01em;
+}
+
+.verifyRequiredText {
+  font-size: 0.875rem;
+  color: var(--color-text-secondary, #6b7280);
+  margin: 0 0 1.5rem;
+  line-height: 1.5;
+  max-width: 340px;
+}
+
+.verifyRequiredText strong {
+  color: var(--color-text, #111827);
+  font-weight: 600;
+}
+
+.verifyResendButton {
+  width: 100%;
+  padding: 0.875rem 1.25rem;
+  background: linear-gradient(135deg, var(--color-primary, #ef4444) 0%, var(--color-primary-hover, #dc2626) 100%);
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+  border: none;
+  border-radius: 9999px;
+  font-size: 0.9375rem;
+  font-weight: 700;
+  cursor: pointer;
+  min-height: 48px;
+  font-family: inherit;
+  box-shadow: 0 4px 14px color-mix(in srgb, var(--color-primary, #ef4444) 30%, transparent);
+  transition: transform 0.15s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.15s ease;
+}
+
+.verifyResendButton:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px color-mix(in srgb, var(--color-primary, #ef4444) 45%, transparent);
+}
+
+.verifyResendButton:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+.verifyResendButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* ==================== FIELD HINTS ==================== */
+.fieldHint {
+  font-size: 0.75rem;
+  color: var(--color-danger, #ef4444);
+  margin: 0.375rem 0 0 0.25rem;
+  line-height: 1.4;
+  font-weight: 500;
+  display: block;
+}
+
+/* ==================== OTP CODE INPUT ==================== */
+.otpHelpText {
+  font-size: 0.875rem;
+  color: var(--color-text-secondary, #6b7280);
+  line-height: 1.5;
+  margin: 0 0 1.25rem;
+  text-align: center;
+}
+
+.otpHelpText strong {
+  color: var(--color-text, #111827);
+  font-weight: 600;
+}
+
+.otpInput {
+  width: 100%;
+  padding: 1.125rem 1rem;
+  border: 1px solid transparent;
+  border-radius: 1rem;
+  font-size: 1.75rem;
+  font-weight: 700;
+  font-family: 'SF Mono', 'Menlo', 'Consolas', monospace;
+  text-align: center;
+  letter-spacing: 0.5em;
+  color: var(--color-text, #111827);
+  background-color: var(--color-surface-alt, #f3f4f6);
+  outline: none;
+  transition: background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+  box-sizing: border-box;
+  min-height: 64px;
+  margin-bottom: 0.75rem;
+}
+
+.otpInput::placeholder {
+  color: var(--color-text-muted, #d1d5db);
+  letter-spacing: 0.5em;
+  font-weight: 500;
+}
+
+.otpInput:focus,
+.otpInput:focus-visible {
+  background-color: var(--color-surface, #ffffff);
+  border-color: var(--color-primary, #ef4444);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary, #ef4444) 15%, transparent);
+  outline: none !important;
+}
+
+.otpResendLink {
+  display: block;
+  width: 100%;
+  padding: 0.5rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--color-primary, #ef4444);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  font-family: inherit;
+  text-align: center;
+  margin-bottom: 0.5rem;
+  transition: color 0.15s ease;
+}
+
+.otpResendLink:hover:not(:disabled) {
+  color: var(--color-primary-hover, #dc2626);
+  text-decoration: underline;
+}
+
+.otpResendLink:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ==================== CHANGE EMAIL MODAL ==================== */
+.emailCurrentBox {
+  background-color: var(--color-surface-alt, #f3f4f6);
+  border: 1px solid var(--color-border, #e5e7eb);
+  border-radius: 0.875rem;
+  padding: 0.875rem 1rem;
+  margin-bottom: 1.25rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.emailCurrentIcon {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background-color: var(--color-surface, #ffffff);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-text-secondary, #6b7280);
+  flex-shrink: 0;
+}
+
+.emailCurrentBody {
+  flex: 1;
+  min-width: 0;
+}
+
+.emailCurrentLabel {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  color: var(--color-text-muted, #9ca3af);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin: 0 0 0.125rem;
+}
+
+.emailCurrentValue {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--color-text, #111827);
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.emailHint {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  font-size: 0.75rem;
+  color: var(--color-text-muted, #9ca3af);
+  line-height: 1.5;
+  margin: 0.75rem 0 0;
+  padding: 0.625rem 0.75rem;
+  background-color: color-mix(in srgb, var(--color-primary, #ef4444) 5%, transparent);
+  border-radius: 0.625rem;
+}
+
+.emailHint svg {
+  flex-shrink: 0;
+  margin-top: 1px;
+  color: var(--color-primary, #ef4444);
 }
