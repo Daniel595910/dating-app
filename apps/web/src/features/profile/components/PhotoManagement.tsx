@@ -1,4 +1,4 @@
-﻿import React, { useState, useRef } from 'react';
+import React, { useState, useRef } from 'react';
 import { Camera, Trash2, X, Star } from 'lucide-react';
 import { supabase } from '@/config/supabase.client';
 
@@ -84,6 +84,13 @@ export const PhotoManagement: React.FC<PhotoManagementProps> = ({
   };
 
   const handleDelete = async (photoId: string) => {
+    const photo = photos.find((p) => p.id === photoId);
+    if (!photo) return;
+    const confirmMsg = photo.isPrimary
+      ? 'This is your primary photo. Deleting it will pick a new primary automatically. Continue?'
+      : 'Delete this photo?';
+    if (!window.confirm(confirmMsg)) return;
+
     setError(null);
     const { error } = await supabase
       .from('profile_photos')
@@ -92,9 +99,39 @@ export const PhotoManagement: React.FC<PhotoManagementProps> = ({
 
     if (error) {
       setError('Failed to delete photo');
-    } else {
-      onPhotosChanged();
+      return;
     }
+
+    // If we just deleted the primary, promote the next photo
+    if (photo.isPrimary) {
+      const remaining = photos.filter((p) => p.id !== photoId);
+      if (remaining.length > 0) {
+        const nextPrimary = remaining[0];
+        const { data: profileRecord } = await supabase
+          .from('profiles')
+          .select('id')
+          .eq('user_id', userId)
+          .single();
+        if (profileRecord) {
+          await supabase
+            .from('profile_photos')
+            .update({ is_primary: true })
+            .eq('id', nextPrimary.id);
+          await supabase
+            .from('profiles')
+            .update({ avatar_url: nextPrimary.url })
+            .eq('user_id', userId);
+        }
+      } else {
+        // No photos left — clear avatar
+        await supabase
+          .from('profiles')
+          .update({ avatar_url: null })
+          .eq('user_id', userId);
+      }
+    }
+
+    onPhotosChanged();
   };
 
   const handleSetPrimary = async (photoId: string) => {

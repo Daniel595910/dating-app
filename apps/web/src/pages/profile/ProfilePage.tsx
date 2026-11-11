@@ -215,30 +215,97 @@ export const ProfilePage: React.FC = () => {
   };
 
   const handleDeleteVideo = async (videoId: string) => {
-    await supabase.from('discover_videos').delete().eq('id', videoId).eq('user_id', targetUserId);
+    if (!isOwnProfile || !user?.id) {
+      showToast('You can only delete your own videos', 'error');
+      return;
+    }
+    const { error } = await supabase
+      .from('discover_videos')
+      .delete()
+      .eq('id', videoId)
+      .eq('user_id', user.id);
+    if (error) {
+      showToast('Failed to delete video', 'error');
+      return;
+    }
     await loadDiscoverVideos();
     setVideoMenuOpen(null);
   };
 
   const handleUpdateVideoPrivacy = async (videoId: string, privacy: string) => {
-    await supabase
+    if (!isOwnProfile || !user?.id) {
+      showToast('You can only manage your own videos', 'error');
+      return;
+    }
+    const { error } = await supabase
       .from('discover_videos')
-      .update({ privacy: privacy })
+      .update({ privacy })
       .eq('id', videoId)
-      .eq('user_id', targetUserId);
+      .eq('user_id', user.id);
+    if (error) {
+      showToast('Failed to update privacy', 'error');
+      return;
+    }
     await loadDiscoverVideos();
   };
 
-  const handleDeletePost = async (postId: string) => {
-    await supabase.from('posts').delete().eq('id', postId).eq('author_id', targetUserId);
+  const handleDeletePost = async (postId: string, imageIndex?: number) => {
+    if (!isOwnProfile || !user?.id) {
+      showToast('You can only delete your own posts', 'error');
+      return;
+    }
+    const post = userPosts.find((p) => p.id === postId);
+    if (!post) return;
+    const hasMultipleImages = post.images.length > 1;
+
+    // If post has multiple images and a specific imageIndex is provided:
+    // only remove that image, keep the post alive.
+    if (hasMultipleImages && imageIndex !== undefined) {
+      const remainingImages = post.images.filter((_, i) => i !== imageIndex);
+      const { error: updateError } = await supabase
+        .from('posts')
+        .update({ images: remainingImages })
+        .eq('id', postId)
+        .eq('author_id', user.id);
+      if (updateError) {
+        showToast('Failed to delete photo', 'error');
+        return;
+      }
+    } else {
+      // Single image or full-post delete
+      const { error: deleteError } = await supabase
+        .from('posts')
+        .delete()
+        .eq('id', postId)
+        .eq('author_id', user.id);
+      if (deleteError) {
+        showToast('Failed to delete post', 'error');
+        return;
+      }
+    }
+
+    // Refresh posts
     const updatedPosts = await profileService.getUserPosts(targetUserId);
     setUserPosts(updatedPosts);
     setPostMenuOpen(null);
+    showToast('Deleted', 'success');
   };
 
   const handleToggleVideoVisibility = async (videoId: string, currentStatus: string) => {
+    if (!isOwnProfile || !user?.id) {
+      showToast('You can only manage your own videos', 'error');
+      return;
+    }
     const newStatus = currentStatus === 'removed' ? 'pending' : 'removed';
-    await supabase.from('discover_videos').update({ status: newStatus }).eq('id', videoId).eq('user_id', targetUserId);
+    const { error } = await supabase
+      .from('discover_videos')
+      .update({ status: newStatus })
+      .eq('id', videoId)
+      .eq('user_id', user.id);
+    if (error) {
+      showToast('Failed to update video', 'error');
+      return;
+    }
     await loadDiscoverVideos();
     setVideoMenuOpen(null);
   };
@@ -1151,7 +1218,7 @@ export const ProfilePage: React.FC = () => {
                           <div className={styles.galleryDropdownMenu} onClick={(e) => e.stopPropagation()}>
                             <button
                               className={styles.deletePostButton}
-                              onClick={() => handleDeletePost(post.id)}
+                              onClick={() => handleDeletePost(post.id, imageIndex)}
                             >
                               <Trash2 size={14} /> Delete Post
                             </button>
