@@ -12,7 +12,7 @@
 /* ==================== CONTAINER ==================== */
 .profilePage {
   min-height: 100dvh;
-  background-color: var(--color-bg, #faf9f7);
+  background-color: var(--color-bg);
   width: 100%;
   max-width: 480px;
   margin: 0 auto;
@@ -514,7 +514,7 @@
 .loadingSpinner {
   width: 32px;
   height: 32px;
-  border: 3px solid #f3f4f6;
+  border: 1px solid var(--color-border);
   border-top-color: var(--color-primary);
   border-radius: 50%;
   animation: spin 0.6s linear infinite;
@@ -752,7 +752,7 @@
 
 .statsModalItem {
   padding: 0.75rem;
-  border-bottom: 1px solid #f9fafb;
+  background-color: var(--color-surface-alt);
 }
 
 .statsModalItemText {
@@ -781,7 +781,7 @@
   padding: 0.75rem;
   background: none;
   border: none;
-  border-bottom: 1px solid #f9fafb;
+  background: var(--color-surface-alt);
   cursor: pointer;
   text-align: left;
 }
@@ -996,7 +996,7 @@
 }
 
 .videoDropdownMenu button:hover {
-  background: #f3f4f6;
+  border: 3px solid var(--color-border);
 }
 
 .deleteVideoButton {
@@ -1782,7 +1782,7 @@
 .headerSpinner {
   width: 18px;
   height: 18px;
-  border: 2px solid var(--color-border, #e5e7eb);
+  border: 1px solid var(--color-border-strong);
   border-top-color: var(--color-primary, #ef4444);
   border-radius: 50%;
   animation: headerSpin 0.6s linear infinite;
@@ -1931,7 +1931,7 @@
   border-radius: 50%;
   border: none;
   background: rgba(255, 255, 255, 0.7);
-  color: var(--color-text, #171A2B);
+  color: var(--color-text);
   cursor: pointer;
   backdrop-filter: blur(6px);
   -webkit-backdrop-filter: blur(6px);
@@ -1945,7 +1945,7 @@
 @media (prefers-color-scheme: dark) {
   .headerBtnV2 {
     background: rgba(25, 26, 31, 0.7);
-    color: #F5F5F7;
+  .headerBtnV2 { color: var(--color-text); }
   }
   .headerBtnV2:active {
     background: rgba(25, 26, 31, 0.95);
@@ -1955,7 +1955,7 @@
 .headerTitleV2 {
   font-size: 21px;
   font-weight: 600;
-  color: var(--color-text, #171A2B);
+  color: var(--color-text);
   text-align: center;
   flex: 1;
   overflow: hidden;
@@ -1964,7 +1964,7 @@
 }
 
 @media (prefers-color-scheme: dark) {
-  .headerTitleV2 { color: #F5F5F7; }
+  .headerTitleV2 { color: var(--color-text); }
 }
 
 .headerActionsV2 {
@@ -1991,7 +1991,7 @@
   border: 6px solid #ffffff;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
   overflow: visible;
-  background: #f7f7f9;
+  background: var(--color-surface-alt);
 }
 
 .avatarV2 {
@@ -2097,35 +2097,35 @@
   border: none;
   padding: 8px 4px;
   cursor: pointer;
-  color: var(--color-text, #171A2B);
+  color: var(--color-text);
 }
 
 .statIcon {
-  color: #171A2B;
+  color: var(--color-text);
   margin-bottom: 2px;
 }
 
 @media (prefers-color-scheme: dark) {
-  .statColumn { color: #F5F5F7; }
-  .statIcon { color: #F5F5F7; }
+  .statColumn { color: var(--color-text); }
+  .statIcon { color: var(--color-text); }
 }
 
 .statValueV2 {
   font-size: 24px;
   font-weight: 700;
   line-height: 1.1;
-  color: var(--color-text, #171A2B);
+  color: var(--color-text);
 }
 
 .statLabelV2 {
   font-size: 14px;
   font-weight: 500;
-  color: #73798A;
+  color: var(--color-text-secondary);
 }
 
 @media (prefers-color-scheme: dark) {
-  .statValueV2 { color: #F5F5F7; }
-  .statLabelV2 { color: #92939D; }
+  .statValueV2 { color: var(--color-text); }
+  .statLabelV2 { color: var(--color-text-muted); }
 }
 
 .statDivider {
@@ -2152,14 +2152,14 @@
   gap: 8px;
   font-size: 30px;
   font-weight: 700;
-  color: var(--color-text, #171A2B);
+  color: var(--color-text);
   text-align: center;
   margin: 0;
   line-height: 1.2;
 }
 
 @media (prefers-color-scheme: dark) {
-  .displayNameV2 { color: #F5F5F7; }
+  .displayNameV2 { color: var(--color-text); }
 }
 
 .nameVerifiedV2 {
@@ -2175,7 +2175,7 @@
   background: rgba(0, 0, 0, 0.04);
   border-radius: 999px;
   font-size: 16px;
-  color: #4B5063;
+  color: var(--color-text-secondary);
   font-weight: 500;
   max-width: 90%;
   text-align: center;
@@ -2184,7 +2184,7 @@
 @media (prefers-color-scheme: dark) {
   .locationCapsule {
     background: rgba(255, 255, 255, 0.06);
-    color: #B8BAC4;
+    color: var(--color-text-muted);
   }
 }
 
@@ -2196,7 +2196,7 @@
   padding: 20px 22px;
   font-size: 17px;
   line-height: 1.5;
-  color: #4B5063;
+  color: var(--color-text-secondary);
   text-align: center;
 }
 
@@ -2205,7 +2205,7 @@
 @media (prefers-color-scheme: dark) {
   .bioCardV2 {
     background: #321D23;
-    color: #E5E5EA;
+    color: var(--color-text);
   }
 }
 
