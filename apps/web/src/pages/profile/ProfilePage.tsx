@@ -11,7 +11,7 @@ import { PhotoManagement } from '../../features/profile/components/PhotoManageme
 import { CommunityCreationSheet } from '../../features/community/components/CommunityCreationSheet';
 import { ReportSheet } from '../../features/community/components/ReportSheet';
 import { BlockConfirmSheet } from '../../features/community/components/BlockConfirmSheet';
-import { ArrowLeft, Settings, BadgeCheck, MapPin, Heart, Grid, Menu, UserPlus, Check, Camera, MoreVertical, X, Star, MessageCircle, Crown, Users, Ban, Flag, Share2, Video, Eye, Play, Volume2, VolumeX, Trash2, Sparkles, Handshake } from 'lucide-react';
+import { ArrowLeft, Settings, BadgeCheck, MapPin, Heart, Grid, Menu, UserPlus, Check, Camera, MoreVertical, X, Star, MessageCircle, Crown, Users, Ban, Flag, Share2, Video, Eye, Play, Volume2, VolumeX, Trash2, Sparkles, Handshake, Pencil, ChevronDown, ChevronRight } from 'lucide-react';
 import styles from './ProfilePage.module.css';
 
 export const ProfilePage: React.FC = () => {
@@ -56,6 +56,7 @@ export const ProfilePage: React.FC = () => {
   const [previewDiscoverVideo, setPreviewDiscoverVideo] = useState<any>(null);
   const [previewMuted, setPreviewMuted] = useState(true);
   const previewVideoElementRef = useRef<HTMLVideoElement>(null);
+  const [bioExpanded, setBioExpanded] = useState(false);
 
   const handleShareProfile = async () => {
     if (!user || !profile) {
@@ -978,8 +979,23 @@ export const ProfilePage: React.FC = () => {
           </div>
 
           {profile.bio && (
-            <div className={styles.bioCardV2}>
-              <p>{profile.bio}</p>
+            <div className={`${styles.bioCardV2} ${!bioExpanded ? styles.bioCardClamped : ''}`}>
+              <p>
+                {profile.bio}
+                {profile.bio.length > 140 && (
+                  <button
+                    type="button"
+                    className={styles.bioReadMore}
+                    onClick={() => setBioExpanded((v) => !v)}
+                  >
+                    {bioExpanded ? ' Read Less' : ' Read More'}
+                    <ChevronDown
+                      size={14}
+                      className={bioExpanded ? styles.chevronUp : ''}
+                    />
+                  </button>
+                )}
+              </p>
             </div>
           )}
 
@@ -998,22 +1014,45 @@ export const ProfilePage: React.FC = () => {
       <div className={styles.hero}>
 
         {isOwnProfile ? (
-          <div className={styles.ownActions}>
-            <div className={styles.primaryActions}>
-              <button className={styles.primaryAction} onClick={() => navigate('/profile/edit')}>
+          <div className={styles.ownActionsV2}>
+            <div className={styles.primaryRowV2}>
+              <button
+                className={styles.editProfileV2}
+                onClick={() => navigate('/profile/edit')}
+              >
+                <Pencil size={20} />
                 Edit Profile
               </button>
-              <button className={styles.myCommunitiesButton} onClick={() => navigate('/profile/my-communities')}>
-                <Users size={16} />
+              <button
+                className={styles.myCommunitiesV2}
+                onClick={() => navigate('/profile/my-communities')}
+              >
+                <Users size={20} />
                 My Communities
               </button>
             </div>
-            <div className={styles.iconActions}>
-              <button className={styles.secondaryAction} onClick={() => setPhotoManagementOpen(true)} aria-label="Manage Photos">
-                <Camera size={18} />
+            <div className={styles.secondaryRowV2}>
+              <button
+                className={styles.secondaryBtnV2}
+                onClick={() => setPhotoManagementOpen(true)}
+              >
+                <Camera size={22} />
+                Gallery
               </button>
-              <button className={styles.secondaryAction} onClick={() => navigate('/profile/vip')} aria-label="VIP and Credits">
-                <Star size={18} />
+              <button
+                className={styles.secondaryBtnV2}
+                onClick={() => navigate('/profile/vip')}
+              >
+                <Star size={22} />
+                Favorites
+              </button>
+              <button
+                className={styles.secondaryBtnV2}
+                onClick={handleShareProfile}
+                disabled={shareLoading}
+              >
+                <Share2 size={22} />
+                Share
               </button>
             </div>
           </div>
@@ -1042,12 +1081,15 @@ export const ProfilePage: React.FC = () => {
           </div>
         )}
 
-
         {isOwnProfile && (
-          <button className={styles.createCommunityButton} onClick={() => setCommunityCreationOpen(true)}>
-            <Crown size={16} />
-            Create Community
-            <span className={styles.createCommunityCost}>100 credits</span>
+          <button
+            className={styles.createCommunityBanner}
+            onClick={() => setCommunityCreationOpen(true)}
+          >
+            <Crown size={28} />
+            <span className={styles.createCommunityLabel}>Create Community</span>
+            <span className={styles.createCommunityCredits}>100 credits</span>
+            <ChevronRight size={22} className={styles.createCommunityChevron} />
           </button>
         )}
       </div>

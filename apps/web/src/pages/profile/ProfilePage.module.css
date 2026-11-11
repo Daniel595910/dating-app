@@ -2363,3 +2363,1563 @@
   .premiumPill { font-size: 12px; padding: 6px 11px; }
   .locationCapsule > span { max-width: 220px; }
 }
+
+/* ============================================================
+   PHASE 2 - ACTIONS, BANNER, READ-MORE BIO
+   ============================================================ */
+
+/* Own-profile action rows */
+.ownActionsV2 {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+  max-width: 480px;
+  margin: 8px auto 0;
+}
+
+.primaryRowV2 {
+  display: flex;
+  gap: 12px;
+}
+
+.editProfileV2 {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 16px 20px;
+  background: var(--color-primary);
+  color: #ffffff;
+  border: none;
+  border-radius: 999px;
+  font-size: 17px;
+  font-weight: 700;
+  cursor: pointer;
+  min-height: 58px;
+  box-shadow: 0 6px 20px rgba(239, 68, 68, 0.3);
+  transition: transform 0.1s ease, box-shadow 0.15s ease, background-color 0.15s ease;
+}
+
+.editProfileV2:active {
+  transform: scale(0.97);
+}
+
+.myCommunitiesV2 {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 16px 20px;
+  background: var(--color-surface);
+  color: var(--color-text);
+  border: 1.5px solid var(--color-border-strong);
+  border-radius: 999px;
+  font-size: 17px;
+  font-weight: 600;
+  cursor: pointer;
+  min-height: 58px;
+  transition: background-color 0.15s ease;
+}
+
+.secondaryRowV2 {
+  display: flex;
+  gap: 10px;
+}
+
+.secondaryBtnV2 {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 12px 8px;
+  background: var(--color-surface);
+  color: var(--color-text);
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  min-height: 50px;
+  transition: background-color 0.15s ease;
+}
+
+.secondaryBtnV2:active {
+  background: var(--color-surface-alt);
+}
+
+.secondaryBtnV2:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Create Community banner */
+.createCommunityBanner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: calc(100% - 32px);
+  max-width: 480px;
+  margin: 12px auto 0;
+  padding: 16px 20px;
+  background: linear-gradient(135deg, #FDF3C7 0%, #F8D66D 100%);
+  border: 1px solid #EFC94C;
+  border-radius: 999px;
+  color: #925016;
+  font-size: 19px;
+  font-weight: 700;
+  cursor: pointer;
+  min-height: 72px;
+  box-shadow: 0 4px 14px rgba(248, 214, 109, 0.4);
+  transition: transform 0.1s ease, box-shadow 0.15s ease;
+}
+
+.createCommunityBanner:active {
+  transform: scale(0.98);
+  box-shadow: 0 2px 8px rgba(248, 214, 109, 0.5);
+}
+
+.createCommunityLabel {
+  flex: 0 0 auto;
+}
+
+.createCommunityCredits {
+  padding: 4px 10px;
+  background: rgba(146, 80, 22, 0.18);
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.createCommunityChevron {
+  flex-shrink: 0;
+  opacity: 0.7;
+}
+
+/* Read-more bio */
+.bioCardClamped p {
+  display: -webkit-box;
+  -webkit-line-clamp: 5;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.bioReadMore {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 10px;
+  padding: 4px 10px;
+  background: none;
+  border: none;
+  color: var(--color-primary);
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.bioReadMore svg {
+  transition: transform 0.2s ease;
+}
+
+.chevronUp {
+  transform: rotate(180deg);
+}
+
+/* Dark mode */
+[data-theme="dark"] .editProfileV2 {
+  box-shadow: 0 6px 20px rgba(239, 68, 68, 0.4);
+}
+
+[data-theme="dark"] .myCommunitiesV2 {
+  background: var(--color-surface);
+  border-color: var(--color-border-strong);
+  color: var(--color-text);
+}
+
+[data-theme="dark"] .secondaryBtnV2 {
+  background: var(--color-surface);
+  border-color: var(--color-border);
+  color: var(--color-text);
+}
+
+[data-theme="dark"] .secondaryBtnV2:active {
+  background: var(--color-surface-raised);
+}
+
+[data-theme="dark"] .createCommunityBanner {
+  background: linear-gradient(135deg, #4a3a1a 0%, #6b5520 100%);
+  border-color: #8a6d2c;
+  color: #F8D66D;
+  box-shadow: 0 4px 14px rgba(248, 214, 109, 0.15);
+}
+
+[data-theme="dark"] .createCommunityCredits {
+  background: rgba(248, 214, 109, 0.2);
+  color: #F8D66D;
+}
+
+/* Small screen tightening */
+@media (max-width: 380px) {
+  .editProfileV2,
+  .myCommunitiesV2 {
+    font-size: 15px;
+    min-height: 52px;
+    padding: 12px 14px;
+  }
+  .secondaryBtnV2 {
+    font-size: 13px;
+    min-height: 46px;
+  }
+  .createCommunityBanner {
+    font-size: 17px;
+    min-height: 64px;
+  }
+  .createCommunityCredits {
+    font-size: 12px;
+  }
+}
+
+/* ============================================================
+   PHASE 2.5 - FIT + SCROLL FIX + SMALLER BUTTONS
+   ============================================================ */
+
+/* ---------- SCROLL FIX ---------- */
+/* The root should scroll. Phase 1 accidentally set overflow: hidden */
+/* on .topSectionV2, which trapped the hero. Reset it. */
+.topSectionV2 {
+  overflow: visible !important;
+  height: auto !important;
+}
+
+.profilePage {
+  min-height: 100dvh;
+  height: auto !important;
+  overflow-x: hidden;
+  overflow-y: auto !important;
+  -webkit-overflow-scrolling: touch;
+}
+
+html, body {
+  overflow-y: auto;
+  overflow-x: hidden;
+  height: auto;
+}
+
+/* ---------- BUTTON SIZING FIX ---------- */
+/* Shrink primary + secondary + banner to fit 360px screens cleanly */
+.editProfileV2,
+.myCommunitiesV2 {
+  font-size: 15px;
+  min-height: 48px;
+  padding: 12px 14px;
+  gap: 6px;
+}
+
+.editProfileV2 svg,
+.myCommunitiesV2 svg {
+  width: 18px;
+  height: 18px;
+}
+
+.secondaryBtnV2 {
+  font-size: 13px;
+  min-height: 42px;
+  padding: 10px 6px;
+  gap: 4px;
+}
+
+.secondaryBtnV2 svg {
+  width: 20px;
+  height: 20px;
+}
+
+.createCommunityBanner {
+  font-size: 16px;
+  min-height: 58px;
+  padding: 12px 16px;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.createCommunityBanner svg:first-child {
+  width: 22px !important;
+  height: 22px !important;
+}
+
+.createCommunityChevron {
+  width: 18px !important;
+  height: 18px !important;
+}
+
+.createCommunityCredits {
+  font-size: 11px;
+  padding: 3px 8px;
+}
+
+/* ---------- CONTAINER PADDING FIX ---------- */
+/* Reduce vertical gaps so the whole thing fits without excess scroll */
+.heroV2 {
+  padding: 8px 16px 12px;
+  gap: 10px;
+}
+
+.ownActionsV2 {
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.primaryRowV2,
+.secondaryRowV2 {
+  gap: 8px;
+}
+
+/* ---------- SMALL SCREEN (<= 380px) ---------- */
+@media (max-width: 380px) {
+  .editProfileV2,
+  .myCommunitiesV2 {
+    font-size: 14px;
+    min-height: 44px;
+    padding: 10px 10px;
+  }
+  .secondaryBtnV2 {
+    font-size: 12px;
+    min-height: 40px;
+    padding: 8px 4px;
+  }
+  .secondaryBtnV2 svg {
+    width: 18px;
+    height: 18px;
+  }
+  .createCommunityBanner {
+    font-size: 14px;
+    min-height: 52px;
+    padding: 10px 12px;
+    gap: 6px;
+  }
+  .createCommunityCredits {
+    font-size: 10px;
+    padding: 2px 6px;
+  }
+  .heroV2 {
+    padding: 6px 12px 10px;
+    gap: 8px;
+  }
+  .displayNameV2 {
+    font-size: 22px;
+  }
+  .locationCapsule {
+    font-size: 13px;
+    padding: 6px 12px;
+  }
+  .bioCardV2 {
+    font-size: 14px;
+    padding: 14px 16px;
+  }
+}
+
+/* ---------- VERY SMALL SCREEN (<= 360px) ---------- */
+@media (max-width: 360px) {
+  .editProfileV2,
+  .myCommunitiesV2 {
+    font-size: 13px;
+    min-height: 42px;
+    padding: 8px 8px;
+    gap: 4px;
+  }
+  .editProfileV2 svg,
+  .myCommunitiesV2 svg {
+    width: 16px;
+    height: 16px;
+  }
+  .createCommunityBanner {
+    font-size: 13px;
+    min-height: 48px;
+    padding: 8px 10px;
+  }
+  .createCommunityBanner svg:first-child {
+    width: 18px !important;
+    height: 18px !important;
+  }
+  .displayNameV2 {
+    font-size: 20px;
+  }
+  .statValueV2 {
+    font-size: 20px;
+  }
+  .statLabelV2 {
+    font-size: 11px;
+  }
+}
+
+/* ---------- DARK MODE ---------- */
+[data-theme="dark"] .topSectionV2 {
+  overflow: visible;
+}
+
+/* ============================================================
+   PHASE 2.6 - SHRINK EDIT + MY COMMUNITIES BUTTONS
+   ============================================================ */
+
+.editProfileV2,
+.myCommunitiesV2 {
+  font-size: 13px !important;
+  font-weight: 600;
+  min-height: 40px !important;
+  height: 40px;
+  padding: 8px 12px !important;
+  gap: 6px !important;
+  border-radius: 999px;
+}
+
+.editProfileV2 svg,
+.myCommunitiesV2 svg {
+  width: 16px !important;
+  height: 16px !important;
+}
+
+@media (max-width: 380px) {
+  .editProfileV2,
+  .myCommunitiesV2 {
+    font-size: 12px !important;
+    min-height: 36px !important;
+    height: 36px;
+    padding: 6px 10px !important;
+  }
+  .editProfileV2 svg,
+  .myCommunitiesV2 svg {
+    width: 14px !important;
+    height: 14px !important;
+  }
+}
+
+@media (max-width: 360px) {
+  .editProfileV2,
+  .myCommunitiesV2 {
+    font-size: 11px !important;
+    min-height: 34px !important;
+    height: 34px;
+    padding: 5px 8px !important;
+    gap: 4px !important;
+  }
+  .editProfileV2 svg,
+  .myCommunitiesV2 svg {
+    width: 13px !important;
+    height: 13px !important;
+  }
+}
+
+/* ============================================================
+   PHASE 2.7 - AGGRESSIVE SHRINK: EDIT + MY COMMUNITIES
+   ============================================================ */
+
+.editProfileV2,
+.myCommunitiesV2 {
+  font-size: 11px !important;
+  font-weight: 600;
+  min-height: 32px !important;
+  height: 32px;
+  max-height: 32px;
+  padding: 4px 10px !important;
+  gap: 4px !important;
+  border-radius: 999px;
+  letter-spacing: 0.2px;
+  line-height: 1;
+}
+
+.editProfileV2 svg,
+.myCommunitiesV2 svg {
+  width: 12px !important;
+  height: 12px !important;
+  flex-shrink: 0;
+}
+
+@media (max-width: 380px) {
+  .editProfileV2,
+  .myCommunitiesV2 {
+    font-size: 10px !important;
+    min-height: 30px !important;
+    height: 30px;
+    max-height: 30px;
+    padding: 3px 8px !important;
+  }
+  .editProfileV2 svg,
+  .myCommunitiesV2 svg {
+    width: 11px !important;
+    height: 11px !important;
+  }
+}
+
+@media (max-width: 360px) {
+  .editProfileV2,
+  .myCommunitiesV2 {
+    font-size: 9px !important;
+    min-height: 28px !important;
+    height: 28px;
+    max-height: 28px;
+    padding: 2px 6px !important;
+    gap: 3px !important;
+  }
+  .editProfileV2 svg,
+  .myCommunitiesV2 svg {
+    width: 10px !important;
+    height: 10px !important;
+  }
+}
+
+/* ============================================================
+   PHASE 2.8 - FIX BUTTON PROPORTIONS (auto width, balanced padding)
+   ============================================================ */
+
+/* Row should center the buttons, not stretch them */
+.primaryRowV2 {
+  justify-content: center !important;
+  gap: 10px !important;
+}
+
+/* Buttons: auto width, balanced padding, not squished */
+.editProfileV2,
+.myCommunitiesV2 {
+  flex: 0 0 auto !important;
+  width: auto !important;
+  min-width: 0 !important;
+  font-size: 13px !important;
+  height: 38px !important;
+  min-height: 38px !important;
+  max-height: 38px !important;
+  padding: 0 18px !important;
+  gap: 6px !important;
+  border-radius: 999px;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.editProfileV2 svg,
+.myCommunitiesV2 svg {
+  width: 15px !important;
+  height: 15px !important;
+  flex-shrink: 0;
+}
+
+@media (max-width: 380px) {
+  .editProfileV2,
+  .myCommunitiesV2 {
+    font-size: 12px !important;
+    height: 34px !important;
+    min-height: 34px !important;
+    max-height: 34px !important;
+    padding: 0 14px !important;
+    gap: 5px !important;
+  }
+  .editProfileV2 svg,
+  .myCommunitiesV2 svg {
+    width: 13px !important;
+    height: 13px !important;
+  }
+}
+
+@media (max-width: 360px) {
+  .editProfileV2,
+  .myCommunitiesV2 {
+    font-size: 11px !important;
+    height: 32px !important;
+    min-height: 32px !important;
+    max-height: 32px !important;
+    padding: 0 12px !important;
+    gap: 4px !important;
+  }
+  .editProfileV2 svg,
+  .myCommunitiesV2 svg {
+    width: 12px !important;
+    height: 12px !important;
+  }
+}
+
+/* ============================================================
+   PHASE 2.9 - SHRINK BIO CARD
+   ============================================================ */
+
+.bioCardV2 {
+  max-width: 340px !important;
+  margin: 0 auto !important;
+  padding: 14px 18px !important;
+  border-radius: 20px !important;
+  font-size: 14px !important;
+  line-height: 1.45 !important;
+}
+
+.bioCardV2 p {
+  font-size: 14px !important;
+}
+
+@media (max-width: 380px) {
+  .bioCardV2 {
+    max-width: 300px !important;
+    padding: 12px 16px !important;
+    font-size: 13px !important;
+  }
+  .bioCardV2 p {
+    font-size: 13px !important;
+  }
+}
+
+@media (max-width: 360px) {
+  .bioCardV2 {
+    max-width: 280px !important;
+    padding: 10px 14px !important;
+    font-size: 12px !important;
+    border-radius: 18px !important;
+  }
+  .bioCardV2 p {
+    font-size: 12px !important;
+  }
+}
+
+/* ============================================================
+   PHASE 3.0 - INLINE READ MORE
+   ============================================================ */
+
+/* 1. Make the Read More button flow inline with the text */
+.bioReadMore {
+  display: inline !important;
+  background: none !important;
+  border: none !important;
+  padding: 0 !important;
+  margin: 0 0 0 4px !important;
+  color: var(--color-primary) !important;
+  font-size: inherit !important;
+  font-weight: 700 !important;
+  cursor: pointer;
+  vertical-align: baseline;
+  white-space: nowrap;
+}
+
+/* 2. Align the chevron with the text baseline */
+.bioReadMore svg {
+  display: inline-block !important;
+  vertical-align: middle !important;
+  margin-left: 2px;
+  position: relative;
+  top: -1px;
+  transition: transform 0.2s ease;
+}
+
+/* 3. Ensure the paragraph properly clamps the text and inline button */
+.bioCardClamped p {
+  display: -webkit-box !important;
+  -webkit-line-clamp: 4 !important; /* Show 4 lines before cutting off */
+  -webkit-box-orient: vertical !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis;
+  margin: 0 !important;
+}
+
+/* 4. When expanded, remove the clamp but keep normal text flow */
+.bioCardV2 p {
+  margin: 0 !important;
+}
+
+/* ============================================================
+   PHASE 3.1 - FIX READ MORE VISIBILITY (CSS FADE TRICK)
+   ============================================================ */
+
+/* Reset the clamp to use a fade effect instead of line-clamp */
+/* This ensures the inline button is NEVER hidden. */
+.bioCardClamped p {
+  display: block !important;
+  -webkit-line-clamp: unset !important;
+  -webkit-box-orient: unset !important;
+  overflow: visible !important;
+  position: relative;
+  max-height: 5.8em; /* 4 lines of text */
+  overflow: hidden !important;
+}
+
+/* Add a soft fade at the bottom so the text fades out before the Read More button */
+.bioCardClamped p::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 100%;
+  height: 1.5em;
+  background: linear-gradient(to bottom, transparent, #FFF0F3);
+  pointer-events: none;
+}
+
+/* Dark mode fade color */
+[data-theme="dark"] .bioCardClamped p::after {
+  background: linear-gradient(to bottom, transparent, var(--color-surface-raised));
+}
+
+/* Ensure the Read More button sits above the fade and is fully visible */
+.bioReadMore {
+  position: relative;
+  z-index: 2;
+  display: inline-flex !important;
+  align-items: center;
+}
+
+/* ============================================================
+   PHASE 3.2 - READ MORE: BOTTOM-RIGHT OVERLAY (reliable)
+   ============================================================ */
+
+/* Card becomes the positioning context */
+.bioCardV2 {
+  position: relative !important;
+}
+
+/* Clamp the text via line-clamp (text only, button excluded) */
+.bioCardClamped p {
+  display: -webkit-box !important;
+  -webkit-line-clamp: 4 !important;
+  -webkit-box-orient: vertical !important;
+  overflow: hidden !important;
+  margin: 0 !important;
+}
+
+/* The button inside the clamped <p> must NOT be clipped by line-clamp */
+/* Hide the inline button on the clamped state — we will overlay it */
+.bioCardClamped .bioReadMore {
+  position: absolute !important;
+  right: 20px !important;
+  bottom: 14px !important;
+  z-index: 5 !important;
+  display: inline-flex !important;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px !important;
+  background: #FFF0F3 !important;
+  border-radius: 999px;
+  color: var(--color-primary) !important;
+  font-size: 13px !important;
+  font-weight: 700 !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+[data-theme="dark"] .bioCardClamped .bioReadMore {
+  background: var(--color-surface-raised) !important;
+}
+
+/* When expanded, button flows inline normally at the end of the text */
+.bioCardV2:not(.bioCardClamped) .bioReadMore {
+  position: static !important;
+  display: inline-flex !important;
+  align-items: center;
+  background: none !important;
+  padding: 0 !important;
+  margin: 0 0 0 4px !important;
+  box-shadow: none !important;
+  font-size: inherit !important;
+  font-weight: 700 !important;
+  vertical-align: baseline;
+}
+
+/* Chevron alignment */
+.bioReadMore svg {
+  display: inline-block !important;
+  vertical-align: middle !important;
+  margin-left: 2px;
+  transition: transform 0.2s ease;
+}
+
+/* ============================================================
+   PHASE 3.3 - CREATE COMMUNITY BANNER (reference match)
+   ============================================================ */
+
+.createCommunityBanner {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 10px !important;
+  width: calc(100% - 32px) !important;
+  max-width: 440px !important;
+  margin: 10px auto 0 !important;
+  padding: 14px 18px !important;
+  background: linear-gradient(135deg, #FDF3C7 0%, #F8D66D 100%) !important;
+  border: 1px solid #EFC94C !important;
+  border-radius: 999px !important;
+  color: #925016 !important;
+  font-size: 16px !important;
+  font-weight: 700 !important;
+  cursor: pointer !important;
+  min-height: 54px !important;
+  height: 54px !important;
+  max-height: 54px !important;
+  box-shadow: 0 4px 14px rgba(248, 214, 109, 0.4) !important;
+  transition: transform 0.1s ease, box-shadow 0.15s ease !important;
+  white-space: nowrap;
+}
+
+.createCommunityBanner:active {
+  transform: scale(0.98) !important;
+  box-shadow: 0 2px 8px rgba(248, 214, 109, 0.5) !important;
+}
+
+.createCommunityBanner > svg:first-child {
+  width: 22px !important;
+  height: 22px !important;
+  color: #B8860B !important;
+  flex-shrink: 0;
+}
+
+.createCommunityLabel {
+  font-size: 16px !important;
+  font-weight: 700 !important;
+  color: #925016 !important;
+  letter-spacing: 0.2px;
+  flex: 0 1 auto;
+}
+
+.createCommunityCredits {
+  padding: 4px 10px !important;
+  background: rgba(184, 134, 11, 0.22) !important;
+  border-radius: 999px !important;
+  font-size: 12px !important;
+  font-weight: 700 !important;
+  color: #7A3E0A !important;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.createCommunityChevron {
+  width: 18px !important;
+  height: 18px !important;
+  color: #925016 !important;
+  opacity: 0.6 !important;
+  flex-shrink: 0;
+  margin-left: 2px;
+}
+
+/* Dark mode */
+[data-theme="dark"] .createCommunityBanner {
+  background: linear-gradient(135deg, #4a3a1a 0%, #6b5520 100%) !important;
+  border-color: #8a6d2c !important;
+  color: #F8D66D !important;
+  box-shadow: 0 4px 14px rgba(248, 214, 109, 0.15) !important;
+}
+
+[data-theme="dark"] .createCommunityBanner > svg:first-child {
+  color: #F8D66D !important;
+}
+
+[data-theme="dark"] .createCommunityLabel {
+  color: #F8D66D !important;
+}
+
+[data-theme="dark"] .createCommunityCredits {
+  background: rgba(248, 214, 109, 0.2) !important;
+  color: #F8D66D !important;
+}
+
+[data-theme="dark"] .createCommunityChevron {
+  color: #F8D66D !important;
+}
+
+/* Small screens */
+@media (max-width: 380px) {
+  .createCommunityBanner {
+    min-height: 48px !important;
+    height: 48px !important;
+    max-height: 48px !important;
+    padding: 10px 14px !important;
+    font-size: 14px !important;
+    gap: 8px !important;
+  }
+  .createCommunityLabel { font-size: 14px !important; }
+  .createCommunityCredits { font-size: 11px !important; padding: 3px 8px !important; }
+  .createCommunityBanner > svg:first-child { width: 18px !important; height: 18px !important; }
+  .createCommunityChevron { width: 16px !important; height: 16px !important; }
+}
+
+@media (max-width: 360px) {
+  .createCommunityBanner {
+    min-height: 44px !important;
+    height: 44px !important;
+    max-height: 44px !important;
+    padding: 8px 12px !important;
+    font-size: 13px !important;
+    gap: 6px !important;
+  }
+  .createCommunityLabel { font-size: 13px !important; }
+  .createCommunityCredits { font-size: 10px !important; padding: 2px 6px !important; }
+  .createCommunityBanner > svg:first-child { width: 16px !important; height: 16px !important; }
+  .createCommunityChevron { width: 14px !important; height: 14px !important; }
+}
+
+/* ============================================================
+   PHASE 3.4 - BANNER: SHORTER HEIGHT
+   ============================================================ */
+
+.createCommunityBanner {
+  min-height: 40px !important;
+  height: 40px !important;
+  max-height: 40px !important;
+  padding: 0 14px !important;
+  gap: 8px !important;
+}
+
+.createCommunityBanner > svg:first-child {
+  width: 16px !important;
+  height: 16px !important;
+}
+
+.createCommunityLabel {
+  font-size: 14px !important;
+}
+
+.createCommunityCredits {
+  font-size: 11px !important;
+  padding: 2px 8px !important;
+}
+
+.createCommunityChevron {
+  width: 14px !important;
+  height: 14px !important;
+}
+
+@media (max-width: 380px) {
+  .createCommunityBanner {
+    min-height: 36px !important;
+    height: 36px !important;
+    max-height: 36px !important;
+    padding: 0 12px !important;
+    gap: 6px !important;
+  }
+  .createCommunityLabel { font-size: 13px !important; }
+  .createCommunityCredits { font-size: 10px !important; padding: 2px 6px !important; }
+  .createCommunityBanner > svg:first-child { width: 14px !important; height: 14px !important; }
+  .createCommunityChevron { width: 12px !important; height: 12px !important; }
+}
+
+@media (max-width: 360px) {
+  .createCommunityBanner {
+    min-height: 34px !important;
+    height: 34px !important;
+    max-height: 34px !important;
+    padding: 0 10px !important;
+    gap: 5px !important;
+  }
+  .createCommunityLabel { font-size: 12px !important; }
+  .createCommunityCredits { font-size: 9px !important; padding: 1px 5px !important; }
+  .createCommunityBanner > svg:first-child { width: 12px !important; height: 12px !important; }
+  .createCommunityChevron { width: 11px !important; height: 11px !important; }
+}
+
+/* ============================================================
+   PHASE 3.5 - CREATE COMMUNITY BANNER: GLASS TRANSLUCENT
+   ============================================================ */
+
+.createCommunityBanner {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 8px !important;
+  width: calc(100% - 32px) !important;
+  max-width: 440px !important;
+  margin: 10px auto 0 !important;
+  padding: 0 14px !important;
+  min-height: 42px !important;
+  height: 42px !important;
+  max-height: 42px !important;
+  background: rgba(248, 214, 109, 0.18) !important;
+  backdrop-filter: blur(12px) saturate(160%) !important;
+  -webkit-backdrop-filter: blur(12px) saturate(160%) !important;
+  border: 1px solid rgba(248, 214, 109, 0.55) !important;
+  border-radius: 999px !important;
+  color: #925016 !important;
+  cursor: pointer !important;
+  box-shadow: 0 4px 20px rgba(248, 214, 109, 0.18) !important;
+  transition: background 0.2s ease, transform 0.1s ease, box-shadow 0.2s ease !important;
+  white-space: nowrap;
+}
+
+.createCommunityBanner:hover {
+  background: rgba(248, 214, 109, 0.26) !important;
+  box-shadow: 0 6px 24px rgba(248, 214, 109, 0.28) !important;
+}
+
+.createCommunityBanner:active {
+  transform: scale(0.98) !important;
+}
+
+.createCommunityBanner > svg:first-child {
+  width: 18px !important;
+  height: 18px !important;
+  color: #B8860B !important;
+  flex-shrink: 0;
+  filter: drop-shadow(0 1px 2px rgba(184, 134, 11, 0.3));
+}
+
+.createCommunityLabel {
+  font-size: 14px !important;
+  font-weight: 700 !important;
+  color: #7A3E0A !important;
+  letter-spacing: 0.2px;
+  flex: 0 1 auto;
+}
+
+.createCommunityCredits {
+  padding: 3px 9px !important;
+  background: rgba(184, 134, 11, 0.22) !important;
+  border: 1px solid rgba(184, 134, 11, 0.3) !important;
+  border-radius: 999px !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  color: #7A3E0A !important;
+  white-space: nowrap;
+  flex-shrink: 0;
+  backdrop-filter: blur(6px) !important;
+  -webkit-backdrop-filter: blur(6px) !important;
+}
+
+.createCommunityChevron {
+  width: 14px !important;
+  height: 14px !important;
+  color: #925016 !important;
+  opacity: 0.65 !important;
+  flex-shrink: 0;
+  margin-left: 2px;
+}
+
+/* ---------- DARK MODE GLASS ---------- */
+[data-theme="dark"] .createCommunityBanner {
+  background: rgba(248, 214, 109, 0.08) !important;
+  border-color: rgba(248, 214, 109, 0.35) !important;
+  box-shadow: 0 4px 20px rgba(248, 214, 109, 0.08) !important;
+}
+
+[data-theme="dark"] .createCommunityBanner:hover {
+  background: rgba(248, 214, 109, 0.16) !important;
+  box-shadow: 0 6px 24px rgba(248, 214, 109, 0.16) !important;
+}
+
+[data-theme="dark"] .createCommunityBanner > svg:first-child {
+  color: #F8D66D !important;
+}
+
+[data-theme="dark"] .createCommunityLabel {
+  color: #F8D66D !important;
+}
+
+[data-theme="dark"] .createCommunityCredits {
+  background: rgba(248, 214, 109, 0.15) !important;
+  border-color: rgba(248, 214, 109, 0.25) !important;
+  color: #F8D66D !important;
+}
+
+[data-theme="dark"] .createCommunityChevron {
+  color: #F8D66D !important;
+}
+
+/* ---------- SMALL SCREENS ---------- */
+@media (max-width: 380px) {
+  .createCommunityBanner {
+    min-height: 38px !important;
+    height: 38px !important;
+    max-height: 38px !important;
+    padding: 0 12px !important;
+    gap: 6px !important;
+  }
+  .createCommunityLabel { font-size: 13px !important; }
+  .createCommunityCredits { font-size: 10px !important; padding: 2px 7px !important; }
+  .createCommunityBanner > svg:first-child { width: 16px !important; height: 16px !important; }
+  .createCommunityChevron { width: 12px !important; height: 12px !important; }
+}
+
+@media (max-width: 360px) {
+  .createCommunityBanner {
+    min-height: 34px !important;
+    height: 34px !important;
+    max-height: 34px !important;
+    padding: 0 10px !important;
+    gap: 5px !important;
+  }
+  .createCommunityLabel { font-size: 12px !important; }
+  .createCommunityCredits { font-size: 9px !important; padding: 1px 6px !important; }
+  .createCommunityBanner > svg:first-child { width: 14px !important; height: 14px !important; }
+  .createCommunityChevron { width: 11px !important; height: 11px !important; }
+}
+
+/* ============================================================
+   PHASE 3.6 - ALIGN SECONDARY ROW WITH PRIMARY ROW
+   ============================================================ */
+
+/* 1. Make primary row full width so we know its exact edges */
+.primaryRowV2 {
+  width: 100% !important;
+  max-width: 100% !important;
+  justify-content: space-between !important;
+  gap: 10px !important;
+}
+
+/* 2. Primary buttons: equal share of the row */
+.editProfileV2,
+.myCommunitiesV2 {
+  flex: 1 1 0 !important;
+  width: auto !important;
+  min-width: 0 !important;
+  height: 40px !important;
+  min-height: 40px !important;
+  max-height: 40px !important;
+  padding: 0 12px !important;
+  font-size: 13px !important;
+  gap: 6px !important;
+}
+
+.editProfileV2 svg,
+.myCommunitiesV2 svg {
+  width: 15px !important;
+  height: 15px !important;
+}
+
+/* 3. Secondary row: full width, matches primary row edges */
+.secondaryRowV2 {
+  width: 100% !important;
+  max-width: 100% !important;
+  display: flex !important;
+  gap: 10px !important; /* same gap as primary row */
+}
+
+/* 4. Three secondary buttons split the row evenly into thirds */
+.secondaryBtnV2 {
+  flex: 1 1 0 !important;
+  width: 0 !important; /* allows flex to distribute evenly */
+  min-width: 0 !important;
+  height: 38px !important;
+  min-height: 38px !important;
+  max-height: 38px !important;
+  padding: 0 4px !important;
+  font-size: 12px !important;
+  gap: 4px !important;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.secondaryBtnV2 svg {
+  width: 16px !important;
+  height: 16px !important;
+  flex-shrink: 0 !important;
+}
+
+/* 5. Own actions container caps the width so rows align */
+.ownActionsV2 {
+  width: 100% !important;
+  max-width: 440px !important;
+  margin: 8px auto 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 10px !important;
+}
+
+/* ---------- SMALL SCREENS ---------- */
+@media (max-width: 380px) {
+  .editProfileV2,
+  .myCommunitiesV2 {
+    height: 36px !important;
+    min-height: 36px !important;
+    max-height: 36px !important;
+    font-size: 12px !important;
+    padding: 0 10px !important;
+    gap: 5px !important;
+  }
+  .editProfileV2 svg,
+  .myCommunitiesV2 svg {
+    width: 14px !important;
+    height: 14px !important;
+  }
+  .secondaryBtnV2 {
+    height: 34px !important;
+    min-height: 34px !important;
+    max-height: 34px !important;
+    font-size: 11px !important;
+    gap: 3px !important;
+  }
+  .secondaryBtnV2 svg {
+    width: 14px !important;
+    height: 14px !important;
+  }
+}
+
+@media (max-width: 360px) {
+  .editProfileV2,
+  .myCommunitiesV2 {
+    height: 34px !important;
+    min-height: 34px !important;
+    max-height: 34px !important;
+    font-size: 11px !important;
+    padding: 0 8px !important;
+    gap: 4px !important;
+  }
+  .editProfileV2 svg,
+  .myCommunitiesV2 svg {
+    width: 13px !important;
+    height: 13px !important;
+  }
+  .secondaryBtnV2 {
+    height: 32px !important;
+    min-height: 32px !important;
+    max-height: 32px !important;
+    font-size: 10px !important;
+    padding: 0 3px !important;
+    gap: 2px !important;
+  }
+  .secondaryBtnV2 svg {
+    width: 12px !important;
+    height: 12px !important;
+  }
+}
+
+/* ============================================================
+   PHASE 3.8 - COMPACT AUTO-WIDTH BUTTONS
+   ============================================================ */
+
+/* Container: center everything, do not stretch */
+.ownActionsV2 {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  width: 100% !important;
+  gap: 10px !important;
+  margin: 8px auto 0 !important;
+}
+
+/* Primary row: auto width, centered */
+.primaryRowV2 {
+  display: flex !important;
+  justify-content: center !important;
+  gap: 8px !important;
+  width: auto !important;
+}
+
+/* Primary buttons: only as wide as their text */
+.editProfileV2,
+.myCommunitiesV2 {
+  flex: 0 0 auto !important;
+  width: auto !important;
+  min-width: 0 !important;
+  height: 40px !important;
+  min-height: 40px !important;
+  max-height: 40px !important;
+  padding: 0 16px !important;
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  gap: 6px !important;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.editProfileV2 svg,
+.myCommunitiesV2 svg {
+  width: 15px !important;
+  height: 15px !important;
+  flex-shrink: 0 !important;
+}
+
+/* Secondary row: auto width, centered */
+.secondaryRowV2 {
+  display: flex !important;
+  justify-content: center !important;
+  gap: 8px !important;
+  width: auto !important;
+}
+
+/* Secondary buttons: only as wide as their text */
+.secondaryBtnV2 {
+  flex: 0 0 auto !important;
+  width: auto !important;
+  min-width: 0 !important;
+  height: 38px !important;
+  min-height: 38px !important;
+  max-height: 38px !important;
+  padding: 0 14px !important;
+  font-size: 12px !important;
+  font-weight: 500 !important;
+  gap: 5px !important;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.secondaryBtnV2 svg {
+  width: 15px !important;
+  height: 15px !important;
+  flex-shrink: 0 !important;
+}
+
+/* Small screen adjustments */
+@media (max-width: 380px) {
+  .editProfileV2,
+  .myCommunitiesV2 {
+    height: 36px !important;
+    min-height: 36px !important;
+    max-height: 36px !important;
+    padding: 0 12px !important;
+    font-size: 12px !important;
+  }
+  .secondaryBtnV2 {
+    height: 34px !important;
+    min-height: 34px !important;
+    max-height: 34px !important;
+    padding: 0 10px !important;
+    font-size: 11px !important;
+  }
+}
+
+/* ============================================================
+   PHASE 3.9 - SHRINK STATS (FOLLOWERS/FOLLOWING/CONNECTIONS)
+   ============================================================ */
+
+.statsRowV2 {
+  gap: 0 !important;
+  margin: 4px auto 0 !important;
+  max-width: 280px !important; /* narrower so it doesnt stretch */
+}
+
+.statColumn {
+  padding: 4px 2px !important;
+  gap: 2px !important;
+}
+
+.statIcon {
+  width: 18px !important;
+  height: 18px !important;
+  min-width: 18px !important;
+  min-height: 18px !important;
+  margin-bottom: 0 !important;
+}
+
+.statValueV2 {
+  font-size: 18px !important;
+  font-weight: 700 !important;
+  line-height: 1.1 !important;
+}
+
+.statLabelV2 {
+  font-size: 11px !important;
+  font-weight: 500 !important;
+}
+
+.statDivider {
+  height: 32px !important;
+}
+
+@media (max-width: 380px) {
+  .statValueV2 {
+    font-size: 16px !important;
+  }
+  .statLabelV2 {
+    font-size: 10px !important;
+  }
+  .statIcon {
+    width: 16px !important;
+    height: 16px !important;
+    min-width: 16px !important;
+    min-height: 16px !important;
+  }
+  .statDivider {
+    height: 28px !important;
+  }
+}
+
+/* ============================================================
+   PHASE 4.0 - SHRINK DISPLAY NAME + VERIFIED BADGE
+   ============================================================ */
+
+.displayNameV2 {
+  font-size: 20px !important;
+  font-weight: 700 !important;
+  gap: 6px !important;
+  line-height: 1.2 !important;
+  margin: 0 !important;
+}
+
+.displayNameV2 svg,
+.nameVerifiedV2 {
+  width: 18px !important;
+  height: 18px !important;
+  flex-shrink: 0 !important;
+}
+
+@media (max-width: 380px) {
+  .displayNameV2 {
+    font-size: 18px !important;
+  }
+  .displayNameV2 svg,
+  .nameVerifiedV2 {
+    width: 16px !important;
+    height: 16px !important;
+  }
+}
+
+@media (max-width: 360px) {
+  .displayNameV2 {
+    font-size: 17px !important;
+  }
+  .displayNameV2 svg,
+  .nameVerifiedV2 {
+    width: 15px !important;
+    height: 15px !important;
+  }
+}
+
+/* ============================================================
+   PHASE 4.1 - NAME + BADGE: EVEN SMALLER
+   ============================================================ */
+
+.displayNameV2 {
+  font-size: 18px !important;
+  font-weight: 700 !important;
+  gap: 4px !important;
+  line-height: 1.15 !important;
+}
+
+/* Badge noticeably smaller */
+.displayNameV2 svg,
+.nameVerifiedV2 {
+  width: 14px !important;
+  height: 14px !important;
+}
+
+@media (max-width: 380px) {
+  .displayNameV2 {
+    font-size: 16px !important;
+  }
+  .displayNameV2 svg,
+  .nameVerifiedV2 {
+    width: 12px !important;
+    height: 12px !important;
+  }
+}
+
+@media (max-width: 360px) {
+  .displayNameV2 {
+    font-size: 15px !important;
+  }
+  .displayNameV2 svg,
+  .nameVerifiedV2 {
+    width: 11px !important;
+    height: 11px !important;
+  }
+}
+
+/* ============================================================
+   PHASE 4.2 - HIDE SCROLLBAR BUT KEEP SCROLLING
+   ============================================================ */
+
+/* 1. Hide the scrollbar for the whole document */
+html, body {
+  scrollbar-width: none !important; /* Firefox */
+  -ms-overflow-style: none !important; /* IE/Edge */
+}
+
+html::-webkit-scrollbar,
+body::-webkit-scrollbar {
+  display: none !important; /* Chrome/Safari */
+  width: 0 !important;
+  height: 0 !important;
+}
+
+/* 2. Hide the scrollbar on the profile page container too */
+.profilePage {
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
+}
+
+.profilePage::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+
+/* ============================================================
+   PHASE 4.3 - LET BROWSER HANDLE SCROLL (like Settings page)
+   ============================================================ */
+
+/* The pattern that works everywhere: NO height cap on the page, */
+/* NO overflow on the page wrapper. Let #root + body scroll. */
+.profilePage {
+  height: auto !important;
+  max-height: none !important;
+  overflow: visible !important;
+  overflow-x: clip !important;  /* keep horizontal clip for waves */
+  overflow-y: visible !important; /* allow vertical scroll to bubble up */
+}
+
+/* Kill the topSectionV2 clip trap once and for all */
+.topSectionV2 {
+  overflow: visible !important;
+  height: auto !important;
+}
+
+/* Ensure the wavesBg itself still clips the SVG only */
+.wavesBg {
+  overflow: hidden !important;
+}
+
+/* Root and body are the scroll containers — like Settings page */
+html {
+  height: auto !important;
+  overflow-y: auto !important;
+  -webkit-overflow-scrolling: touch !important;
+}
+
+body {
+  height: auto !important;
+  min-height: 100dvh !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  -webkit-overflow-scrolling: touch !important;
+}
+
+/* #root grows with content (min-height already set globally) */
+#root {
+  height: auto !important;
+  min-height: 100dvh !important;
+  overflow: visible !important;
+}
+
+/* ============================================================
+   PHASE 4.4 - iOS SAFARI SCROLL FIX
+   (overflow-x: hidden on html/body kills vertical touch scroll)
+   ============================================================ */
+
+/* 1. html: allow horizontal overflow to be clipped differently */
+/*    overflow-x: clip does NOT break scroll like hidden does.   */
+html {
+  overflow-x: clip !important;
+  overflow-y: auto !important;
+  overscroll-behavior: auto !important;
+  touch-action: pan-y !important;
+  height: auto !important;
+  min-height: 100dvh !important;
+}
+
+/* 2. body: same treatment — clip horizontally, scroll vertically */
+body {
+  overflow-x: clip !important;
+  overflow-y: auto !important;
+  overscroll-behavior: auto !important;
+  touch-action: pan-y !important;
+  height: auto !important;
+  min-height: 100dvh !important;
+}
+
+/* 3. profilePage: clean up the clip-visible mixed overflow */
+.profilePage {
+  overflow-x: clip !important;
+  overflow-y: visible !important;
+}
+
+/* 4. #root: allow natural scroll */
+#root {
+  height: auto !important;
+  min-height: 100dvh !important;
+  overflow: visible !important;
+  touch-action: pan-y !important;
+}
