@@ -7,6 +7,7 @@ import { profileService } from '../../features/profile/services/profile.service'
 import { useConnection } from '../../features/community/hooks/useConnection';
 import { ProfileData, ProfileStats, UserPost } from '../../features/profile/types/profile.types';
 import { PhotoViewer } from '../../features/profile/components/PhotoViewer';
+import { VideoPreviewModal } from '../../features/profile/components/VideoPreviewModal';
 import { PhotoManagement } from '../../features/profile/components/PhotoManagement';
 import { CommunityCreationSheet } from '../../features/community/components/CommunityCreationSheet';
 import { ReportSheet } from '../../features/community/components/ReportSheet';
@@ -54,8 +55,6 @@ export const ProfilePage: React.FC = () => {
   const [videoMenuOpen, setVideoMenuOpen] = useState<string | null>(null);
   const [postMenuOpen, setPostMenuOpen] = useState<string | null>(null);
   const [previewDiscoverVideo, setPreviewDiscoverVideo] = useState<any>(null);
-  const [previewMuted, setPreviewMuted] = useState(true);
-  const previewVideoElementRef = useRef<HTMLVideoElement>(null);
   const [bioExpanded, setBioExpanded] = useState(false);
 
   const handleShareProfile = async () => {
@@ -1550,87 +1549,12 @@ export const ProfilePage: React.FC = () => {
       </div>
     )}
 
-    {previewDiscoverVideo && (
-        <div className={styles.videoPreviewOverlay} onClick={() => setPreviewDiscoverVideo(null)}>
-          <div className={styles.videoPreviewModal} onClick={(e) => e.stopPropagation()}>
-            {/* Close button */}
-            <button className={styles.videoPreviewClose} onClick={() => setPreviewDiscoverVideo(null)}>
-              <X size={20} />
-            </button>
-
-            {/* Video */}
-            <video 
-              ref={previewVideoElementRef}
-              src={previewDiscoverVideo.video_url} 
-              autoPlay 
-              loop
-              muted={previewMuted}
-              playsInline 
-              className={styles.videoPreviewPlayer}
-              onClick={(e) => {
-                const video = e.currentTarget;
-                if (video.paused) video.play();
-                else video.pause();
-              }}
-            />
-
-            {/* Volume toggle */}
-            <button 
-              className={styles.videoPreviewVolumeButton}
-              onClick={(e) => {
-                e.stopPropagation();
-                if (previewVideoElementRef.current) {
-                  previewVideoElementRef.current.muted = !previewVideoElementRef.current.muted;
-                  setPreviewMuted(previewVideoElementRef.current.muted);
-                  
-                  // If unmuting, try to play with sound
-                  if (!previewVideoElementRef.current.muted) {
-                    previewVideoElementRef.current.play().catch(() => {
-                      // If autoplay with sound fails, keep muted
-                      previewVideoElementRef.current!.muted = true;
-                      setPreviewMuted(true);
-                    });
-                  }
-                }
-              }}
-            >
-              {previewMuted ? <VolumeX size={20} /> : <Volume2 size={20} />}
-            </button>
-
-            {/* Play/Pause overlay */}
-            <button className={styles.videoPreviewPlayButton}>
-              <Play size={28} />
-            </button>
-
-            {/* Bottom panel */}
-            <div className={styles.videoPreviewBottom}>
-              <div className={styles.videoPreviewStats}>
-                <span className={styles.videoPreviewStat}>
-                  <Heart size={14} fill="#ef4444" />
-                  {previewDiscoverVideo.like_count || 0}
-                </span>
-                <span className={styles.videoPreviewStat}>
-                  <Eye size={14} />
-                  {previewDiscoverVideo.view_count || 0}
-                </span>
-              </div>
-
-              <div className={styles.videoPreviewPrivacy}>
-                <label className={styles.privacyLabel}>Visibility</label>
-                <select 
-                  value={previewDiscoverVideo.privacy || 'public'}
-                  onChange={(e) => handleUpdateVideoPrivacy(previewDiscoverVideo.id, e.target.value)}
-                  className={styles.privacySelect}
-                >
-                  <option value="public">Public</option>
-                  <option value="friends">Friends Only</option>
-                  <option value="private">Only Me</option>
-                </select>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+      <VideoPreviewModal
+        video={previewDiscoverVideo}
+        onClose={() => setPreviewDiscoverVideo(null)}
+        isOwner={isOwnProfile}
+        onUpdatePrivacy={handleUpdateVideoPrivacy}
+      />
     </div>
   );
 };
