@@ -3923,3 +3923,344 @@ body {
   overflow: visible !important;
   touch-action: pan-y !important;
 }
+
+/* ============================================================
+   PHASE 3 - TABS, POSTS GRID, VIDEOS GRID, ABOUT CARDS
+   ============================================================ */
+
+/* ---------- TABS ---------- */
+.tabsV3 {
+  display: flex !important;
+  width: 100% !important;
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.tabV3 {
+  flex: 1 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 4px !important;
+  padding: 12px 8px 10px !important;
+  background: none !important;
+  border: none !important;
+  cursor: pointer;
+  color: var(--color-text-muted) !important;
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  position: relative;
+  transition: color 0.15s ease;
+  min-height: 64px;
+}
+
+.tabV3::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 20%;
+  right: 20%;
+  height: 3px;
+  background: transparent;
+  border-radius: 3px 3px 0 0;
+  transition: background 0.15s ease;
+}
+
+.tabActiveV3 {
+  color: var(--color-primary) !important;
+}
+
+.tabActiveV3::after {
+  background: var(--color-primary) !important;
+}
+
+@media (max-width: 380px) {
+  .tabV3 {
+    font-size: 12px !important;
+    padding: 10px 6px 8px !important;
+    min-height: 58px;
+  }
+}
+
+/* ---------- POSTS GRID ---------- */
+.galleryGridV3 {
+  display: grid !important;
+  grid-template-columns: repeat(2, 1fr) !important;
+  gap: 10px !important;
+  padding: 12px !important;
+}
+
+.galleryItemV3 {
+  position: relative !important;
+  aspect-ratio: 1 / 1 !important;
+  border-radius: 16px !important;
+  overflow: hidden !important;
+  background: var(--color-surface-alt);
+  cursor: pointer;
+}
+
+.galleryImageV3 {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
+  display: block;
+}
+
+.galleryEngagementV3 {
+  position: absolute !important;
+  bottom: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  display: flex !important;
+  justify-content: space-around !important;
+  align-items: center !important;
+  padding: 8px 10px !important;
+  background: linear-gradient(to top, rgba(0,0,0,0.65), transparent) !important;
+  color: #ffffff !important;
+  font-size: 11px !important;
+  font-weight: 600 !important;
+}
+
+.galleryEngagementV3 span {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+}
+
+.galleryMenuV3 {
+  position: absolute !important;
+  top: 8px !important;
+  right: 8px !important;
+  width: 32px !important;
+  height: 32px !important;
+  border-radius: 50% !important;
+  background: rgba(0, 0, 0, 0.45) !important;
+  color: #ffffff !important;
+  border: none !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  cursor: pointer;
+  z-index: 2;
+}
+
+@media (min-width: 600px) {
+  .galleryGridV3 {
+    grid-template-columns: repeat(3, 1fr) !important;
+  }
+}
+
+/* ---------- VIDEOS GRID ---------- */
+.videosSectionV3 {
+  padding: 12px !important;
+}
+
+.videosGridV3 {
+  display: grid !important;
+  grid-template-columns: repeat(2, 1fr) !important;
+  gap: 10px !important;
+}
+
+.videoCardV3 {
+  display: flex !important;
+  flex-direction: column !important;
+  cursor: pointer;
+}
+
+.videoThumbWrapV3 {
+  position: relative !important;
+  aspect-ratio: 9 / 16 !important;
+  border-radius: 16px !important;
+  overflow: hidden !important;
+  background: #000;
+}
+
+.videoThumbnailV3 {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
+  display: block;
+}
+
+.videoPlayOverlayV3 {
+  position: absolute !important;
+  inset: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  pointer-events: none;
+}
+
+.videoPlayBtnV3 {
+  width: 44px !important;
+  height: 44px !important;
+  border-radius: 50% !important;
+  background: rgba(0, 0, 0, 0.5) !important;
+  backdrop-filter: blur(6px) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  color: #ffffff !important;
+  border: 1.5px solid rgba(255, 255, 255, 0.5);
+}
+
+.videoDurationV3 {
+  position: absolute !important;
+  bottom: 8px !important;
+  right: 8px !important;
+  background: rgba(0, 0, 0, 0.7) !important;
+  color: #ffffff !important;
+  padding: 2px 6px !important;
+  border-radius: 6px !important;
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.3px;
+}
+
+.videoMenuButtonV3 {
+  position: absolute !important;
+  top: 8px !important;
+  right: 8px !important;
+  width: 32px !important;
+  height: 32px !important;
+  border-radius: 50% !important;
+  background: rgba(0, 0, 0, 0.45) !important;
+  color: #ffffff !important;
+  border: none !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  cursor: pointer;
+  z-index: 2;
+}
+
+.videoMetaV3 {
+  padding: 6px 4px 0 !important;
+}
+
+.videoViewsV3 {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+  font-size: 11px !important;
+  color: var(--color-text-muted) !important;
+  font-weight: 600;
+}
+
+.videoTitleV3 {
+  margin: 4px 0 0 !important;
+  font-size: 12px !important;
+  font-weight: 500 !important;
+  color: var(--color-text) !important;
+  line-height: 1.3 !important;
+  display: -webkit-box !important;
+  -webkit-line-clamp: 2 !important;
+  -webkit-box-orient: vertical !important;
+  overflow: hidden !important;
+}
+
+@media (min-width: 600px) {
+  .videosGridV3 {
+    grid-template-columns: repeat(3, 1fr) !important;
+  }
+}
+
+/* ---------- ABOUT ---------- */
+.aboutV3 {
+  padding: 16px 12px 24px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 12px !important;
+  max-width: 480px !important;
+  margin: 0 auto !important;
+}
+
+.aboutHeadingV3 {
+  font-size: 18px !important;
+  font-weight: 700 !important;
+  color: var(--color-text) !important;
+  margin: 0 0 4px !important;
+}
+
+.aboutCardV3 {
+  background: var(--color-surface) !important;
+  border-radius: 16px !important;
+  padding: 16px !important;
+  border: 1px solid var(--color-border) !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 10px !important;
+}
+
+.aboutCardTitleV3 {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  font-size: 14px !important;
+  font-weight: 700 !important;
+  color: var(--color-text) !important;
+  margin: 0 !important;
+}
+
+.aboutCardTitleV3 svg {
+  color: var(--color-primary) !important;
+}
+
+.aboutCardTextV3 {
+  font-size: 14px !important;
+  line-height: 1.5 !important;
+  color: var(--color-text-secondary) !important;
+  margin: 0 !important;
+}
+
+.aboutRowV3 {
+  display: flex !important;
+  align-items: flex-start !important;
+  gap: 10px !important;
+  padding: 6px 0 !important;
+  border-top: 1px solid var(--color-border) !important;
+}
+
+.aboutRowV3:first-of-type { border-top: none !important; }
+
+.aboutRowIconV3 {
+  color: var(--color-text-muted) !important;
+  flex-shrink: 0 !important;
+  margin-top: 2px;
+}
+
+.aboutRowLabelV3 {
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  color: var(--color-text-muted) !important;
+  min-width: 80px !important;
+  flex-shrink: 0;
+}
+
+.aboutRowValueV3 {
+  font-size: 14px !important;
+  font-weight: 500 !important;
+  color: var(--color-text) !important;
+  flex: 1 !important;
+  word-break: break-word;
+}
+
+.aboutTagsV3 {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  gap: 6px !important;
+}
+
+.aboutTagV3 {
+  padding: 5px 12px !important;
+  background: var(--color-primary-soft) !important;
+  color: var(--color-primary) !important;
+  border-radius: 999px !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+}
+
+[data-theme="dark"] .aboutCardV3 {
+  background: var(--color-surface-raised) !important;
+}

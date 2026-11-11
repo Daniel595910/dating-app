@@ -11,7 +11,7 @@ import { PhotoManagement } from '../../features/profile/components/PhotoManageme
 import { CommunityCreationSheet } from '../../features/community/components/CommunityCreationSheet';
 import { ReportSheet } from '../../features/community/components/ReportSheet';
 import { BlockConfirmSheet } from '../../features/community/components/BlockConfirmSheet';
-import { ArrowLeft, Settings, BadgeCheck, MapPin, Heart, Grid, Menu, UserPlus, Check, Camera, MoreVertical, X, Star, MessageCircle, Crown, Users, Ban, Flag, Share2, Video, Eye, Play, Volume2, VolumeX, Trash2, Sparkles, Handshake, Pencil, ChevronDown, ChevronRight } from 'lucide-react';
+import { ArrowLeft, Settings, BadgeCheck, MapPin, Heart, Grid, Menu, UserPlus, Check, Camera, MoreVertical, X, Star, MessageCircle, Crown, Users, Ban, Flag, Share2, Video, Eye, Play, Volume2, VolumeX, Trash2, Sparkles, Handshake, Pencil, ChevronDown, ChevronRight, Info } from 'lucide-react';
 import styles from './ProfilePage.module.css';
 
 export const ProfilePage: React.FC = () => {
@@ -1094,32 +1094,32 @@ export const ProfilePage: React.FC = () => {
         )}
       </div>
 
-      <div className={styles.tabs}>
+      <div className={styles.tabsV3}>
         <button
-          className={`${styles.tab} ${activeTab === 'posts' ? styles.tabActive : ''}`}
+          className={`${styles.tabV3} ${activeTab === 'posts' ? styles.tabActiveV3 : ''}`}
           onClick={() => setActiveTab('posts')}
         >
-          <Grid size={18} />
-          Posts
+          <Grid size={22} />
+          <span>Posts</span>
         </button>
         <button
-          className={`${styles.tab} ${activeTab === 'videos' ? styles.tabActive : ''}`}
+          className={`${styles.tabV3} ${activeTab === 'videos' ? styles.tabActiveV3 : ''}`}
           onClick={() => { setActiveTab('videos'); loadDiscoverVideos(); }}
         >
-          <Video size={18} />
-          Videos
+          <Video size={22} />
+          <span>Videos</span>
         </button>
         <button
-          className={`${styles.tab} ${activeTab === 'about' ? styles.tabActive : ''}`}
+          className={`${styles.tabV3} ${activeTab === 'about' ? styles.tabActiveV3 : ''}`}
           onClick={() => setActiveTab('about')}
         >
-          <Menu size={18} />
-          About
+          <Menu size={22} />
+          <span>About</span>
         </button>
       </div>
 
       {activeTab === 'posts' ? (
-        <div className={styles.galleryGrid}>
+        <div className={styles.galleryGridV3}>
           {userPosts.length > 0 ? (
             userPosts.map((post, postIndex) => (
               post.images.map((image, imageIndex) => {
@@ -1127,29 +1127,29 @@ export const ProfilePage: React.FC = () => {
                 return (
                   <div
                     key={`${post.id}-${imageIndex}`}
-                    className={styles.galleryItem}
+                    className={styles.galleryItemV3}
                     onClick={() => setPhotoViewerIndex(globalIndex)}
                   >
-                    <img src={image} alt="" loading="lazy" className={styles.galleryImage} />
-                    <div className={styles.galleryOverlay}>
-                      <Heart size={14} />
+                    <img src={image} alt="" loading="lazy" className={styles.galleryImageV3} />
+                    <div className={styles.galleryEngagementV3}>
+                      <span><Heart size={14} /> {post.likeCount || 0}</span>
+                      <span><MessageCircle size={14} /> {post.commentCount || 0}</span>
+                      <span><Share2 size={14} /> {post.shareCount || 0}</span>
                     </div>
-                    
                     {isOwnProfile && (
                       <>
-                        <button 
-                          className={styles.galleryMenuButton}
-                          onClick={(e) => { 
-                            e.stopPropagation(); 
-                            setPostMenuOpen(postMenuOpen === post.id ? null : post.id); 
+                        <button
+                          className={styles.galleryMenuV3}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setPostMenuOpen(postMenuOpen === post.id ? null : post.id);
                           }}
                         >
-                          <MoreVertical size={14} />
+                          <MoreVertical size={16} />
                         </button>
-                        
                         {postMenuOpen === post.id && (
                           <div className={styles.galleryDropdownMenu} onClick={(e) => e.stopPropagation()}>
-                            <button 
+                            <button
                               className={styles.deletePostButton}
                               onClick={() => handleDeletePost(post.id)}
                             >
@@ -1172,7 +1172,7 @@ export const ProfilePage: React.FC = () => {
           )}
         </div>
       ) : activeTab === 'videos' ? (
-        <div className={styles.videosSection}>
+        <div className={styles.videosSectionV3}>
           {discoverVideos.length === 0 ? (
             <div className={styles.emptyPosts}>
               <Video size={32} />
@@ -1180,79 +1180,121 @@ export const ProfilePage: React.FC = () => {
               <p className={styles.emptySubtext}>Upload videos from the Discover page</p>
             </div>
           ) : (
-            <div className={styles.videosGrid}>
+            <div className={styles.videosGridV3}>
               {discoverVideos.map((video) => (
-                <div key={video.id} className={styles.videoCard} onClick={() => setPreviewDiscoverVideo(video)}>
-                  <video src={video.video_url} muted playsInline className={styles.videoThumbnail} />
-                  <div className={styles.videoStats}>
-                    <span><Heart size={10} /> {video.like_count || 0}</span>
-                    <span><Eye size={10} /> {video.view_count || 0}</span>
-                  </div>
-                  <div className={styles.videoStatus}>
-                    {video.status === 'approved' && <span className={styles.statusApproved}>Approved</span>}
-                    {video.status === 'pending' && <span className={styles.statusPending}>Pending</span>}
-                    {video.status === 'removed' && <span className={styles.statusRemoved}>Hidden</span>}
-                  </div>
-                  {isOwnProfile && (
-                    <button 
-                      className={styles.videoMenuButton} 
-                      onClick={(e) => { 
-                        e.stopPropagation(); 
-                        setVideoMenuOpen(videoMenuOpen === video.id ? null : video.id); 
-                      }}
-                    >
-                      <MoreVertical size={16} />
-                    </button>
-                  )}
-                  {videoMenuOpen === video.id && (
-                    <div className={styles.videoDropdownMenu} onClick={(e) => e.stopPropagation()}>
-                      <button onClick={(e) => { e.stopPropagation(); handleToggleVideoVisibility(video.id, video.status); }}>
-                        {video.status === 'removed' ? 'Show in Discover' : 'Hide from Discover'}
-                      </button>
-                      <button className={styles.deleteVideoButton} onClick={(e) => { e.stopPropagation(); handleDeleteVideo(video.id); }}>
-                        Delete Video
-                      </button>
+                <div key={video.id} className={styles.videoCardV3} onClick={() => setPreviewDiscoverVideo(video)}>
+                  <div className={styles.videoThumbWrapV3}>
+                    <video src={video.video_url} muted playsInline className={styles.videoThumbnailV3} />
+                    <div className={styles.videoPlayOverlayV3}>
+                      <div className={styles.videoPlayBtnV3}>
+                        <Play size={22} fill="#ffffff" />
+                      </div>
                     </div>
-                  )}
+                    {video.duration_seconds && (
+                      <span className={styles.videoDurationV3}>
+                        {`${Math.floor(video.duration_seconds / 60)}:${String(video.duration_seconds % 60).padStart(2, '0')}`}
+                      </span>
+                    )}
+                    {isOwnProfile && (
+                      <button
+                        className={styles.videoMenuButtonV3}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setVideoMenuOpen(videoMenuOpen === video.id ? null : video.id);
+                        }}
+                      >
+                        <MoreVertical size={16} />
+                      </button>
+                    )}
+                    {videoMenuOpen === video.id && (
+                      <div className={styles.videoDropdownMenu} onClick={(e) => e.stopPropagation()}>
+                        <button onClick={(e) => { e.stopPropagation(); handleToggleVideoVisibility(video.id, video.status); }}>
+                          {video.status === 'removed' ? 'Show in Discover' : 'Hide from Discover'}
+                        </button>
+                        <button className={styles.deleteVideoButton} onClick={(e) => { e.stopPropagation(); handleDeleteVideo(video.id); }}>
+                          Delete Video
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                  <div className={styles.videoMetaV3}>
+                    <span className={styles.videoViewsV3}><Eye size={12} /> {video.view_count || 0}</span>
+                    {video.caption && (
+                      <p className={styles.videoTitleV3}>{video.caption}</p>
+                    )}
+                  </div>
                 </div>
               ))}
             </div>
           )}
         </div>
       ) : (
-        <div className={styles.aboutSection}>
-          <h3 className={styles.aboutTitle}>About</h3>
-          <p className={styles.aboutText}>{profile.bio || 'No bio yet'}</p>
+        <div className={styles.aboutV3}>
+          <h3 className={styles.aboutHeadingV3}>About {profile.displayName}</h3>
 
-          {profile.interests.length > 0 && (
-            <div className={styles.aboutBlock}>
-              <h4 className={styles.aboutLabel}>Interests</h4>
-              <div className={styles.interestTags}>
-                {profile.interests.map((interest, index) => (
-                  <span key={index} className={styles.interestTag}>{interest}</span>
+          {profile.bio && (
+            <div className={styles.aboutCardV3}>
+              <h4 className={styles.aboutCardTitleV3}>
+                <Info size={16} /> About Me
+              </h4>
+              <p className={styles.aboutCardTextV3}>{profile.bio}</p>
+            </div>
+          )}
+
+          {(profile.location || profile.relationshipIntent || profile.occupation) && (
+            <div className={styles.aboutCardV3}>
+              <h4 className={styles.aboutCardTitleV3}>
+                <UserPlus size={16} /> Basic Info
+              </h4>
+              {profile.location && (
+                <div className={styles.aboutRowV3}>
+                  <MapPin size={16} className={styles.aboutRowIconV3} />
+                  <span className={styles.aboutRowLabelV3}>Location</span>
+                  <span className={styles.aboutRowValueV3}>
+                    {[profile.location.city, profile.location.state, profile.location.country].filter(Boolean).join(', ')}
+                  </span>
+                </div>
+              )}
+              {profile.relationshipIntent && (
+                <div className={styles.aboutRowV3}>
+                  <Heart size={16} className={styles.aboutRowIconV3} />
+                  <span className={styles.aboutRowLabelV3}>Looking For</span>
+                  <span className={styles.aboutRowValueV3}>{profile.relationshipIntent.replace(/_/g, ' ')}</span>
+                </div>
+              )}
+              {profile.occupation && (
+                <div className={styles.aboutRowV3}>
+                  <Crown size={16} className={styles.aboutRowIconV3} />
+                  <span className={styles.aboutRowLabelV3}>Occupation</span>
+                  <span className={styles.aboutRowValueV3}>{profile.occupation}</span>
+                </div>
+              )}
+            </div>
+          )}
+
+          {profile.languages.length > 0 && (
+            <div className={styles.aboutCardV3}>
+              <h4 className={styles.aboutCardTitleV3}>
+                <MessageCircle size={16} /> Languages
+              </h4>
+              <div className={styles.aboutTagsV3}>
+                {profile.languages.map((lang, i) => (
+                  <span key={i} className={styles.aboutTagV3}>{lang}</span>
                 ))}
               </div>
             </div>
           )}
 
-          {profile.relationshipIntent && (
-            <div className={styles.aboutBlock}>
-              <h4 className={styles.aboutLabel}>Looking For</h4>
-              <p className={styles.aboutText}>{profile.relationshipIntent.replace(/_/g, ' ')}</p>
-            </div>
-          )}
-
-          {profile.occupation && (
-            <div className={styles.aboutBlock}>
-              <h4 className={styles.aboutLabel}>Occupation</h4>
-              <p className={styles.aboutText}>{profile.occupation}</p>
-            </div>
-          )}
-
-          {profile.languages.length > 0 && (
-            <div className={styles.aboutBlock}>
-              <h4 className={styles.aboutLabel}>Languages</h4>
-              <p className={styles.aboutText}>{profile.languages.join(', ')}</p>
+          {profile.interests.length > 0 && (
+            <div className={styles.aboutCardV3}>
+              <h4 className={styles.aboutCardTitleV3}>
+                <Star size={16} /> Interests
+              </h4>
+              <div className={styles.aboutTagsV3}>
+                {profile.interests.map((interest, i) => (
+                  <span key={i} className={styles.aboutTagV3}>{interest}</span>
+                ))}
+              </div>
             </div>
           )}
         </div>
