@@ -16,7 +16,7 @@ import { communityService } from '../../features/community/services/community.se
 import { FilterBar } from '../../features/community/components/FilterBar';
 import { CommunityPostCard } from '../../features/community/components/CommunityPostCard';
 import { CreatePostButton } from '../../features/community/components/CreatePostSheet';
-import { CreatePostForm } from '../../features/community/components/CreatePostForm';
+import { CreatePostForm } from '../../features/community/components/CreatePostForm.v2';
 import { CommunitySkeleton } from '../../features/community/components/CommunitySkeleton';
 import { CommunityEmptyState } from '../../features/community/components/CommunityEmptyState';
 import { FeedErrorState } from '../../features/community/components/FeedErrorState';
