@@ -65,7 +65,49 @@ export const ProfilePage: React.FC = () => {
   const [previewDiscoverVideo, setPreviewDiscoverVideo] = useState<any>(null);
   const [bioExpanded, setBioExpanded] = useState(false);
 
-  const handleShareProfile = async () => {
+  // Header Share button: copy profile link (native share if available)
+  const handleShareLink = async () => {
+    if (!profile) return;
+    const shareTarget = profile.username || targetUserId;
+    const url = `${window.location.origin}/profile/${shareTarget}`;
+
+    // Try native share (mobile)
+    if (typeof navigator !== 'undefined' && (navigator as any).share) {
+      try {
+        await (navigator as any).share({
+          title: `${profile.displayName} on Spensive`,
+          text: `Check out ${profile.displayName}'s profile`,
+          url,
+        });
+        return;
+      } catch (err: any) {
+        if (err?.name === 'AbortError') return; // user cancelled
+        // fall through to clipboard
+      }
+    }
+
+    // Fallback: copy to clipboard
+    try {
+      if (navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(url);
+      } else {
+        const ta = document.createElement('textarea');
+        ta.value = url;
+        ta.style.position = 'fixed';
+        ta.style.opacity = '0';
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+      }
+      showToast('Profile link copied', 'success');
+    } catch {
+      showToast('Failed to copy link', 'error');
+    }
+  };
+
+  // Secondary Share button: post profile to community
+  const handleShareToCommunity = async () => {
     if (!user || !profile) {
       showToast('You need to be signed in', 'warning');
       return;
@@ -76,66 +118,76 @@ export const ProfilePage: React.FC = () => {
     }
     setShareLoading(true);
     try {
-        // Figure out which community to share to.
-        // Priority:
-        //   1. The community currently selected in the app (from localStorage)
-        //   2. The first ACTIVE membership otherwise
-        const preferredId = (() => {
-          try { return localStorage.getItem('selectedCommunityId'); } catch { return null; }
-        })();
+      const preferredId = (() => {
+        try { return localStorage.getItem('selectedCommunityId'); } catch { return null; }
+      })();
 
-        const { data: memberships } = await supabase
-          .from('community_members')
-          .select('community_id')
-          .eq('user_id', user.id)
-          .eq('status', 'active');
+      const { data: memberships } = await supabase
+        .from('community_members')
+        .select('community_id')
+        .eq('user_id', user.id)
+        .eq('status', 'active');
 
-        if (!memberships || memberships.length === 0) {
-          console.error('Cannot share: no active community memberships');
-          showToast('Join a community first to share your profile', 'warning');
-          setShareLoading(false);
-          return;
-        }
+      if (!memberships || memberships.length === 0) {
+        showToast('Join a community first to share your profile', 'warning');
+        setShareLoading(false);
+        return;
+      }
 
-        const targetCommunityId =
-          (preferredId && memberships.some((m) => m.community_id === preferredId))
-            ? preferredId
-            : memberships[0].community_id;
+      const targetCommunityId =
+        (preferredId && memberships.some((m) => m.community_id === preferredId))
+          ? preferredId
+          : memberships[0].community_id;
 
-        const { error: insertError } = await supabase.from('posts').insert({
-          community_id: targetCommunityId,
-          author_id: user.id,
-          type: 'profile_share',
-          content: profile.bio || 'Check out my profile!',
-          status: 'published',
-          images: profile.avatarUrl ? [profile.avatarUrl] : [],
-          metadata: {
-            profileShare: true,
-            displayName: profile.displayName,
-            age: profile.age || null,
-            location: profile.location ? [profile.location.city, profile.location.state].filter(Boolean).join(', ') : null,
-            interests: profile.interests || [],
-            relationshipIntent: profile.relationshipIntent || null,
-          },
-        });
+      const { error: insertError } = await supabase.from('posts').insert({
+        community_id: targetCommunityId,
+        author_id: user.id,
+        type: 'profile_share',
+        content: profile.bio || 'Check out my profile!',
+        status: 'published',
+        images: profile.avatarUrl ? [profile.avatarUrl] : [],
+        metadata: {
+          profileShare: true,
+          displayName: profile.displayName,
+          age: profile.age || null,
+          location: profile.location ? [profile.location.city, profile.location.state].filter(Boolean).join(', ') : null,
+          interests: profile.interests || [],
+          relationshipIntent: profile.relationshipIntent || null,
+        },
+      });
 
-        if (insertError) {
-          console.error('[share] insert error:', insertError);
-          throw insertError;
-        }
-        setHasShared(true);
-        setShareSuccess(true);
-        setTimeout(() => setShareSuccess(false), 4000);
+      if (insertError) throw insertError;
+      setHasShared(true);
+      setShareSuccess(true);
+      setTimeout(() => setShareSuccess(false), 4000);
     } catch (err: any) {
-      console.error('[share] caught:', err);
+      console.error('[share-to-community] caught:', err);
       showToast(err?.message || 'Failed to share profile', 'error');
     } finally {
       setShareLoading(false);
     }
   };
 
-  const isOwnProfile = !userId || userId === 'undefined' || userId === user?.id;
-  const targetUserId = userId || user?.id || '';
+  const [resolvedUserId, setResolvedUserId] = useState<string>(userId || user?.id || '');
+  const isOwnProfile = !userId || userId === 'undefined' || resolvedUserId === user?.id;
+  const targetUserId = resolvedUserId;
+
+  // Resolve slug (username) to actual userId
+  useEffect(() => {
+    if (!userId || userId === 'undefined') {
+      setResolvedUserId(user?.id || '');
+      return;
+    }
+    const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (uuidPattern.test(userId)) {
+      setResolvedUserId(userId);
+      return;
+    }
+    // It's a slug — resolve to userId
+    profileService.getProfileByUsername(userId).then((p) => {
+      if (p) setResolvedUserId(p.userId);
+    });
+  }, [userId, user?.id]);
 
   useEffect(() => {
     const loadProfile = async () => {
@@ -1080,7 +1132,7 @@ export const ProfilePage: React.FC = () => {
             <div className={styles.headerActionsV2}>
               <button
                 className={styles.headerBtnV2}
-                onClick={handleShareProfile}
+                onClick={handleShareLink}
                 disabled={shareLoading}
                 aria-label="Share profile"
               >
@@ -1272,7 +1324,7 @@ export const ProfilePage: React.FC = () => {
               </button>
               <button
                 className={styles.secondaryBtnV2}
-                onClick={handleShareProfile}
+                onClick={handleShareToCommunity}
                 disabled={shareLoading}
               >
                 <Share2 size={22} />

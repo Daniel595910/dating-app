@@ -14,6 +14,39 @@ class ProfileService {
     return {
       id: data.id,
       userId: data.user_id,
+      username: data.username || '',
+      displayName: data.display_name,
+      bio: data.bio,
+      avatarUrl: data.avatar_url,
+      coverPhotoUrl: data.cover_photo_url,
+      gender: data.gender,
+      age: data.age,
+      location: data.location,
+      interests: data.interests || [],
+      relationshipIntent: data.relationship_intent,
+      occupation: data.occupation,
+      languages: data.languages || [],
+      isVerified: data.is_verified,
+      verificationBadge: data.verification_badge,
+      vipLevel: data.vip_level || 'free',
+      createdAt: data.created_at,
+      updatedAt: data.updated_at,
+    };
+  }
+
+  async getProfileByUsername(username: string): Promise<ProfileData | null> {
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('username', username)
+      .maybeSingle();
+
+    if (error || !data) return null;
+
+    return {
+      id: data.id,
+      userId: data.user_id,
+      username: data.username || '',
       displayName: data.display_name,
       bio: data.bio,
       avatarUrl: data.avatar_url,
@@ -34,7 +67,6 @@ class ProfileService {
   }
 
   async getProfilePhotos(userId: string): Promise<ProfilePhoto[]> {
-    // Get profile record ID
     const { data: profileRecord } = await supabase
       .from('profiles')
       .select('id')
@@ -131,7 +163,6 @@ class ProfileService {
   }
 
   async uploadProfilePhoto(userId: string, file: File): Promise<string | null> {
-    // Get profile record ID
     const { data: profileRecord } = await supabase
       .from('profiles')
       .select('id')
@@ -212,5 +243,3 @@ class ProfileService {
 }
 
 export const profileService = new ProfileService();
-
-
