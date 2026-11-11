@@ -1335,22 +1335,22 @@ export const ProfilePage: React.FC = () => {
         ) : (
           <div className={styles.actionRow}>
             {connectionStatus === 'matched' ? (
-              <button className={styles.primaryAction} onClick={handleMessage}>
+              <button className={styles.publicPrimary} onClick={handleMessage}>
                 <MessageCircle size={18} />
                 Message
               </button>
             ) : connectionStatus === 'pending' || connectionStatus === 'sending' ? (
-              <button className={styles.primaryAction} disabled style={{ opacity: 0.6, cursor: 'not-allowed' }}>
+              <button className={styles.publicPrimary} disabled style={{ opacity: 0.6, cursor: 'not-allowed' }}>
                 <Check size={18} />
                 {connectionStatus === 'sending' ? 'Sending…' : 'Request Sent'}
               </button>
             ) : (
-              <button className={styles.primaryAction} onClick={handleGetToKnow}>
+              <button className={styles.publicPrimary} onClick={handleGetToKnow}>
                 <Heart size={18} />
                 Get to Know
               </button>
             )}
-            <button className={styles.secondaryAction} onClick={handleFollow}>
+            <button className={styles.publicSecondary} onClick={handleFollow}>
               {isFollowing ? <Check size={18} /> : <UserPlus size={18} />}
               {isFollowing ? 'Following' : 'Follow'}
             </button>
