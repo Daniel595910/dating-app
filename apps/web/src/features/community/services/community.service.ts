@@ -236,19 +236,31 @@ class CommunityService {
     content: string,
     lookingFor?: string,
     media?: PostMedia[],
-    tags?: string[]
+    tags?: string[],
+    audioUrl?: string
   ): Promise<CommunityPost | null> {
+    const images = (media || []).filter((m) => m.type === 'image').map((m) => m.url);
+    const videos = (media || []).filter((m) => m.type === 'video').map((m) => m.url);
+    const finalAudio = audioUrl || (media || []).find((m) => m.type === 'audio')?.url;
+
+    const insertData: any = {
+      community_id: communityId,
+      author_id: authorId,
+      type,
+      content,
+      status: 'published',
+      images: images.length > 0 ? images : null,
+      videos: videos.length > 0 ? videos : null,
+      tags: tags || [],
+    };
+
+    if (finalAudio) {
+      insertData.metadata = { audioUrl: finalAudio };
+    }
+
     const { data, error } = await supabase
       .from('posts')
-      .insert({
-        community_id: communityId,
-        author_id: authorId,
-        type,
-        content,
-        status: 'published',
-        images: media?.map((m) => m.url) || [],
-        tags: tags || [],
-      })
+      .insert(insertData)
       .select()
       .single();
 
@@ -837,6 +849,36 @@ class CommunityService {
   }
 
   private mapPostToCommunityPost(post: any, profile: any, liked: boolean): CommunityPost {
+    const media: PostMedia[] = [];
+    let sortIdx = 0;
+
+    (post.images || []).forEach((url: string) => {
+      media.push({
+        id: `${post.id}-img-${sortIdx}`,
+        type: 'image' as const,
+        url,
+        sortOrder: sortIdx++,
+      });
+    });
+
+    (post.videos || []).forEach((url: string) => {
+      media.push({
+        id: `${post.id}-vid-${sortIdx}`,
+        type: 'video' as const,
+        url,
+        sortOrder: sortIdx++,
+      });
+    });
+
+    if (post.metadata?.audioUrl) {
+      media.push({
+        id: `${post.id}-audio-${sortIdx}`,
+        type: 'audio' as any,
+        url: post.metadata.audioUrl,
+        sortOrder: sortIdx++,
+      });
+    }
+
     return {
       id: post.id,
       communityId: post.community_id,
@@ -850,12 +892,7 @@ class CommunityService {
       },
       type: post.type,
       content: post.content,
-      media: (post.images || []).map((url: string, index: number) => ({
-        id: `${post.id}-media-${index}`,
-        type: 'image' as const,
-        url,
-        sortOrder: index,
-      })),
+      media,
       lookingFor: post.type === 'looking_for' ? this.parseLookingFor(post.content) : undefined,
       tags: post.tags || [],
       metadata: post.metadata || null,

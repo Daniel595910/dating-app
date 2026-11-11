@@ -13,7 +13,7 @@ export interface CommunityPostAuthor {
 
 export interface PostMedia {
   id: string;
-  type: 'image' | 'video';
+  type: 'image' | 'video' | 'audio';
   url: string;
   width?: number;
   height?: number;
