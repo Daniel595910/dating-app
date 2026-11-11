@@ -11,6 +11,7 @@ import {
 import { CommunityCreationSheet } from '@/features/community/components/CommunityCreationSheet';
 import { communityService } from '@/features/community/services/community.service';
 import { mediaService } from '@/features/community/services/media.service';
+import styles from './CommunityManagementPage.module.css';
 
 interface ManagedCommunity {
   id: string;
@@ -529,18 +530,8 @@ export const CommunityManagementPage: React.FC = () => {
   const canCreate = vipData.level !== 'free' && vipData.credits >= 100;
 
   return (
-    <div style={{ minHeight: '100dvh', backgroundColor: '#faf9f7', maxWidth: 480, margin: '0 auto' }}>
-      <header
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '0.5rem',
-          padding: '0.625rem 0.75rem',
-          paddingTop: 'calc(0.625rem + env(safe-area-inset-top))',
-          backgroundColor: '#ffffff',
-          borderBottom: '1px solid #f3f4f6',
-        }}
-      >
+    <div className={styles.page}>
+      <header className={styles.header}>
         <button
           onClick={() => navigate('/profile')}
           style={{
