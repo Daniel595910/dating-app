@@ -203,12 +203,15 @@ sw.addEventListener('push', (event) => {
   }
   const notificationIcon = data.icon || cachedLogoUrl || '/icons/icon-192x192.png';
 
+  const senderAvatar = data.image || data.avatar_url || data.data?.sender_avatar || data.data?.avatar_url || '' ;
+
   const options: NotificationOptions & Record<string, any> = {
     body: data.body || '',
-    // LEFT SIDE: App Logo (from cache or fallback)
-    icon: cachedLogoUrl || data.icon || '/icons/icon-192x192.png',
+    // RIGHT SIDE: sender's avatar (what the user actually wants to see)
+    icon: senderAvatar || cachedLogoUrl || '/icons/icon-192x192.png',
+    // SMALL MONOCHROME BADGE: small Spensive logo, shown in status bar
     badge: '/icons/icon-192x192.png',
-    // RIGHT SIDE: User Avatar (passed from the server payload)
+    // OPTIONAL: large preview image below the text
     image: data.image || undefined,
     data: {
       ...(data.data || {}),
