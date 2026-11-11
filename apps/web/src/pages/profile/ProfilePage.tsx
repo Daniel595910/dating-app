@@ -1201,7 +1201,6 @@ export const ProfilePage: React.FC = () => {
                     <div className={styles.galleryEngagementV3}>
                       <span><Heart size={14} /> {post.likeCount || 0}</span>
                       <span><MessageCircle size={14} /> {post.commentCount || 0}</span>
-                      <span><Share2 size={14} /> {post.shareCount || 0}</span>
                     </div>
                     {isOwnProfile && (
                       <>
