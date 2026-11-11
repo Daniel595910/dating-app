@@ -166,7 +166,6 @@ serve(async (req: Request) => {
       }
     }
 
-
     // NOTE: the notification row is already inserted by the caller.
     // This function only delivers the push. Inserting here would fire the
     // trigger again and create an infinite loop.
@@ -198,15 +197,30 @@ serve(async (req: Request) => {
         .select('id, user_id, endpoint, p256dh, auth')
         .eq('user_id', payload.user_id);
 
-      const avatarUrl = (payload.data as any)?.avatar_url || null;
+      // Fetch the admin app logo from platform_settings (same source as useSettings on the client)
+      let appLogoUrl = 'https://spensive.me/icons/icon-192x192.png';
+      try {
+        const { data: logoRow } = await supabase
+          .from('platform_settings')
+          .select('value')
+          .eq('key', 'general.logo_url')
+          .maybeSingle();
+        if (logoRow?.value && String(logoRow.value).startsWith('http')) {
+          appLogoUrl = String(logoRow.value);
+        }
+      } catch {
+        // keep fallback
+      }
+
+      const senderAvatarUrl = (payload.data as any)?.avatar_url || null;
 
       const pushPayload = JSON.stringify({
         title: payload.title,
         body: payload.body,
-        // Only use the sender's avatar as the small icon.
-        // Do NOT pass 'image' — Android will render it as a huge banner,
-        // which makes it look messy. WhatsApp only uses 'icon'.
-        icon: payload.icon || avatarUrl,
+        // LEFT side: app logo from admin panel
+        icon: appLogoUrl,
+        // RIGHT side: sender's avatar (Android renders this as the small right-side image)
+        image: senderAvatarUrl || undefined,
         tag: payload.tag || 'chat-' + (payload.data?.conversation_id || 'msg'),
         renotify: payload.renotify !== undefined ? payload.renotify : true,
         vibrate: payload.vibrate || [200, 100, 200],
@@ -233,7 +247,7 @@ serve(async (req: Request) => {
           pushSent++;
         } catch (err: any) {
           pushFailed++;
-          // 404 or 410 means the subscription is dead → remove it
+          // 404 or 410 means the subscription is dead -> remove it
           if (err?.statusCode === 404 || err?.statusCode === 410) {
             await supabase.from('push_subscriptions').delete().eq('id', sub.id);
           }

@@ -205,9 +205,11 @@ sw.addEventListener('push', (event) => {
 
   const options: NotificationOptions & Record<string, any> = {
     body: data.body || '',
-    icon: notificationIcon,
-    badge: notificationIcon,
-    // image: data.image, (removed to match WhatsApp)
+    // LEFT SIDE: App Logo (from cache or fallback)
+    icon: cachedLogoUrl || data.icon || '/icons/icon-192x192.png',
+    badge: '/icons/icon-192x192.png',
+    // RIGHT SIDE: User Avatar (passed from the server payload)
+    image: data.image || undefined,
     data: {
       ...(data.data || {}),
       type,
