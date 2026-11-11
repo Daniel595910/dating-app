@@ -1,5 +1,5 @@
-import React, { useState, useRef, useCallback } from 'react';
-import { X, ArrowLeft, ArrowRight, Camera, Heart, MessageCircle, Sparkles, HelpCircle, Check, ImagePlus, Trash2, Mic, Square, Upload, Scissors, Play, Pause } from 'lucide-react';
+import { useState, useRef } from 'react';
+import { X, ArrowLeft, ArrowRight, Camera, Heart, MessageCircle, Sparkles, HelpCircle, Check, ImagePlus, Trash2, Mic, Square, Upload, Scissors, Play, Pause, Video } from 'lucide-react';
 import { supabase } from '@/config/supabase.client';
 import { CommunityPostType, PostMedia } from '../../types/community.types';
 import { mediaService } from '../services/media.service';
@@ -112,6 +112,8 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
   const audioChunksRef = useRef<Blob[]>([]);
   const recordingTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const trimAudioRef = useRef<HTMLAudioElement>(null);
+  const videoInputRef = useRef<HTMLInputElement>(null);
+  const [videoUploading, setVideoUploading] = useState(false);
 
   const handleTypeSelect = (type: CommunityPostType) => {
     setPostType(type);
@@ -240,6 +242,33 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
     }
   };
 
+
+  const handleVideoSelect = async (files: FileList | null) => {
+    if (!files || files.length === 0) return;
+    setVideoUploading(true);
+    setError(null);
+
+    const selectedFiles = Array.from(files);
+    const maxVideos = 3;
+    const remainingSlots = maxVideos - media.filter(m => m.type === 'video').length;
+    const filesToUpload = selectedFiles.slice(0, remainingSlots);
+
+    try {
+      for (const file of filesToUpload) {
+        const result = await mediaService.uploadVideo(file, userId, 'post_video');
+        if (result.success && result.media) {
+          setMedia((prev) => [...prev, { ...result.media!, sortOrder: prev.length }]);
+        } else {
+          setError(result.error || `Failed to upload ${file.name}`);
+        }
+      }
+    } catch (err: any) {
+      setError(err.message || 'Video upload failed');
+    } finally {
+      setVideoUploading(false);
+      if (videoInputRef.current) videoInputRef.current.value = '';
+    }
+  };
   const handleRemoveMedia = (mediaId: string) => {
     setMedia((prev) => prev.filter((m) => m.id !== mediaId));
   };
@@ -288,11 +317,6 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
   };
 
   const handlePublish = async () => {
-    if (hasPhotos && hasAudio) {
-      setError('You can only post photos OR audio, not both.');
-      return;
-    }
-
     setSubmitting(true);
     setError(null);
 
@@ -302,34 +326,29 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
         ? content + '\n\nLooking for: ' + lookingFor
         : content;
 
-      let metadata: any = {};
-      
+      // Upload audio if present
+      let finalAudioUrl: string | undefined;
       if (audioBlob) {
         const audioResult = await mediaService.uploadAudio(audioBlob, userId, 'post_audio');
         if (audioResult.success && audioResult.media) {
-          metadata.audioUrl = audioResult.media.url;
-          metadata.durationMs = recordingTime * 1000;
+          finalAudioUrl = audioResult.media.url;
         }
       }
 
-      const postData: any = {
-        community_id: communityId,
-        author_id: userId,
-        type: postType,
-        content: finalContent,
-        status: 'published',
-        images: media.map((m) => m.url),
-        tags: tagArray,
-        metadata: Object.keys(metadata).length > 0 ? metadata : null,
-      };
+      // Call the new createPost signature
+      const { communityService } = await import('../services/community.service');
+      const createdPost = await communityService.createPost(
+        communityId,
+        userId,
+        postType!,
+        finalContent,
+        lookingFor || undefined,
+        media,
+        tagArray,
+        finalAudioUrl
+      );
 
-      const { data, error: insertError } = await supabase
-        .from('posts')
-        .insert(postData)
-        .select()
-        .single();
-
-      if (insertError) throw insertError;
+      if (!createdPost) throw new Error('Failed to create post');
 
       setSuccess(true);
       setTimeout(() => {
@@ -341,7 +360,7 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
         setTags('');
         setMedia([]);
         removeAudio();
-        onPostCreated(data);
+        onPostCreated(createdPost);
         onClose();
       }, 1500);
     } catch (err: any) {
@@ -424,8 +443,8 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
                     type="button"
                     onClick={() => setShowRecordPrompt(true)}
                     className={styles.uploadButton}
-                    disabled={hasPhotos}
-                    title={hasPhotos ? 'Remove photos first to record audio' : ''}
+                    
+
                   >
                     <Mic size={16} /> Record Voice
                   </button>
@@ -433,8 +452,8 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
                     type="button"
                     onClick={() => audioFileInputRef.current?.click()}
                     className={styles.uploadButton}
-                    disabled={hasPhotos}
-                    title={hasPhotos ? 'Remove photos first to upload audio' : ''}
+                    
+
                   >
                     <Upload size={16} /> Upload Audio
                   </button>
@@ -462,33 +481,42 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
                 </div>
               )}
             </div>
-
-            {(hasPhotos && hasAudio) && (
-              <div className={styles.warningBanner}>
-                <Sparkles size={14} className={styles.warningIcon} />
-                <span>You can only post photos OR audio, not both. Remove one to continue.</span>
-              </div>
-            )}
 <input ref={fileInputRef} type="file" accept="image/jpeg,image/png,image/webp,image/gif" multiple onChange={(e) => handleFileSelect(e.target.files)} style={{ display: 'none' }} />
             <input ref={audioFileInputRef} type="file" accept="audio/*,.mp3,.wav,.webm,.ogg,.m4a" onChange={(e) => handleAudioFileSelect(e.target.files)} style={{ display: 'none' }} />
+            <input ref={videoInputRef} type="file" accept="video/mp4,video/webm,video/quicktime" multiple onChange={(e) => handleVideoSelect(e.target.files)} style={{ display: 'none' }} />
 
             <div className={styles.attachmentRow}>
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
-                disabled={uploading || media.length >= maxPhotosPerPost || hasAudio}
+                disabled={uploading || media.length >= maxPhotosPerPost}
                 className={styles.uploadButton}
-                title={hasAudio ? 'Remove audio first to add photos' : ''}
+
               >
                 <ImagePlus size={16} />
                 <span>{uploading ? 'Uploading... ' + Math.round(uploadProgress) + '%' : media.length > 0 ? 'Add More Photos (' + media.length + '/' + maxPhotosPerPost + ')' : 'Add Photos'}</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => videoInputRef.current?.click()}
+                disabled={videoUploading || media.filter(m => m.type === 'video').length >= 3}
+                className={styles.uploadButton}
+              >
+                <Video size={16} />
+                <span>{videoUploading ? 'Uploading video...' : media.filter(m => m.type === 'video').length > 0 ? 'Add More Videos (' + media.filter(m => m.type === 'video').length + '/3)' : 'Add Video'}</span>
               </button>
             </div>
             {media.length > 0 && (
               <div className={styles.mediaPreview}>
                 {media.map((m) => (
                   <div key={m.id} className={styles.mediaPreviewItem}>
-                    <img src={m.url} alt="" className={styles.mediaPreviewImage} />
+                    {m.type === 'video' ? (
+                      <div className={styles.mediaPreviewImage} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#000' }}>
+                        <Play size={20} color="#fff" />
+                      </div>
+                    ) : (
+                      <img src={m.url} alt="" className={styles.mediaPreviewImage} />
+                    )}
                     <button className={styles.mediaRemoveButton} onClick={() => handleRemoveMedia(m.id)} aria-label="Remove image">
                       <Trash2 size={12} />
                     </button>
@@ -657,8 +685,3 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
     </div>
   );
 };
-
-
-
-
-

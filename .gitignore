@@ -92,3 +92,7 @@ env.txt
 .env
 .env.local
 .env.*.local
+
+# Local backup files (never commit)
+*.bak
+
