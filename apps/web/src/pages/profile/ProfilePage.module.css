@@ -4790,3 +4790,80 @@ body {
     height: 18px !important;
   }
 }
+
+/* ============================================================
+   HEADER SMALLER PASS
+   ============================================================ */
+
+.headerBtnV2 svg {
+  width: 17px !important;
+  height: 17px !important;
+  stroke-width: 2 !important;
+}
+
+.headerTitleV2 {
+  font-size: 17px !important;
+  font-weight: 600 !important;
+}
+
+@media (max-width: 380px) {
+  .headerBtnV2 svg {
+    width: 16px !important;
+    height: 16px !important;
+  }
+  .headerTitleV2 {
+    font-size: 16px !important;
+  }
+}
+
+/* ============================================================
+   EXPLICIT LIGHT MODE — bio card + upgrade pill
+   Override the prefers-color-scheme media queries so the app
+   theme (data-theme) is the single source of truth.
+   ============================================================ */
+
+/* Bio card — light mode */
+[data-theme="light"] .bioCardV2 {
+  background: #FFF0F3 !important;
+  color: #4B5063 !important;
+}
+
+[data-theme="light"] .bioCardV2 p {
+  color: #4B5063 !important;
+}
+
+/* Bio card — dark mode */
+[data-theme="dark"] .bioCardV2 {
+  background: #321D23 !important;
+  color: var(--color-text) !important;
+}
+
+[data-theme="dark"] .bioCardV2 p {
+  color: var(--color-text) !important;
+}
+
+/* Upgrade pill — light mode */
+[data-theme="light"] .upgradePill {
+  background: #ffffff !important;
+  border: 1.5px solid #F12D45 !important;
+  color: #F12D45 !important;
+}
+
+/* Upgrade pill — dark mode */
+[data-theme="dark"] .upgradePill {
+  background: var(--color-surface) !important;
+  border: 1.5px solid #F04452 !important;
+  color: #F04452 !important;
+}
+
+/* Default (no data-theme attr) — assume light */
+.bioCardV2 {
+  background: #FFF0F3;
+  color: #4B5063;
+}
+
+.upgradePill {
+  background: #ffffff;
+  border: 1.5px solid #F12D45;
+  color: #F12D45;
+}

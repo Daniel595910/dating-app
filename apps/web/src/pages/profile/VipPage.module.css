@@ -1,4 +1,4 @@
-﻿/* ============================================================
+/* ============================================================
    VIP PAGE — Modern Premium Design (Lucide icons only)
    ============================================================ */
 
@@ -856,4 +856,270 @@
   .statusStatValue { font-size: 1rem; }
 
   .statusStatLabel { font-size: 0.5625rem; }
+}
+
+/* ============================================================
+   THEME COMPLIANCE — light + dark mode via tokens
+   Brand colors (red/gold/green gradients, tier icons) stay hardcoded.
+   Structural colors (bg, surface, text, borders) use tokens.
+   ============================================================ */
+
+/* Page background — overrides the hardcoded light gradient */
+.vipPage {
+  background: var(--color-bg) !important;
+}
+
+[data-theme="dark"] .vipPage {
+  background: var(--color-bg) !important;
+}
+
+/* Header */
+.header {
+  background-color: var(--color-surface) !important;
+  border-bottom: 1px solid var(--color-border) !important;
+}
+
+.headerButton {
+  color: var(--color-text) !important;
+}
+
+.headerButton:hover {
+  background-color: var(--color-surface-alt) !important;
+}
+
+.headerTitle {
+  color: var(--color-text) !important;
+}
+
+/* Free status card — make theme-aware (it was gray on light, needs dark) */
+.statusCardFree {
+  background: var(--color-surface-alt) !important;
+  border: 1px solid var(--color-border) !important;
+}
+
+.statusIconWrapperFree {
+  background: var(--color-surface) !important;
+}
+
+.statusLabelFree {
+  color: var(--color-text-secondary) !important;
+}
+
+.statusLevelFree {
+  color: var(--color-text) !important;
+}
+
+.statusMetaFree {
+  color: var(--color-text-secondary) !important;
+}
+
+.statusIconFree {
+  color: var(--color-text-muted) !important;
+}
+
+/* Credits balance chip */
+.creditsBalanceChip {
+  background-color: var(--color-surface) !important;
+  border: 1px solid var(--color-border) !important;
+}
+
+.creditsBalanceLabel {
+  color: var(--color-text-muted) !important;
+}
+
+.creditsBalanceValue {
+  color: var(--color-text) !important;
+}
+
+/* Subscription progress card */
+.subscriptionCard {
+  background-color: var(--color-surface) !important;
+  border: 1px solid var(--color-border) !important;
+}
+
+.subscriptionTitle {
+  color: var(--color-text) !important;
+}
+
+.progressTrack {
+  background-color: var(--color-border) !important;
+}
+
+.subscriptionMeta {
+  color: var(--color-text-muted) !important;
+}
+
+/* Currency chooser */
+.currencyChooser {
+  background-color: var(--color-surface) !important;
+  border: 1px solid var(--color-border) !important;
+}
+
+.currencyChooserTitle {
+  color: var(--color-text) !important;
+}
+
+.currencyHint {
+  color: var(--color-text-secondary) !important;
+}
+
+.currencyHint strong {
+  color: var(--color-text) !important;
+}
+
+.currencyButton {
+  background-color: var(--color-surface-alt) !important;
+  border: 2px solid var(--color-border-strong) !important;
+  color: var(--color-text) !important;
+}
+
+.currencyButton svg {
+  color: var(--color-text-secondary) !important;
+}
+
+.currencyCode {
+  color: var(--color-text-muted) !important;
+}
+
+/* Section headers */
+.sectionTitle {
+  color: var(--color-text) !important;
+}
+
+.sectionSubtitle {
+  color: var(--color-text-secondary) !important;
+}
+
+/* Change currency button */
+.changeCurrencyBtn {
+  color: var(--color-primary) !important;
+  background-color: var(--color-primary-soft) !important;
+}
+
+.changeCurrencyBtn:hover:not(:disabled) {
+  background-color: var(--color-primary-soft-border) !important;
+}
+
+.changeCurrencyBtn:disabled {
+  color: var(--color-text-disabled) !important;
+  background-color: var(--color-surface-alt) !important;
+}
+
+/* Plan cards — surface + border become tokens */
+.planCard {
+  background-color: var(--color-surface) !important;
+  border: 2px solid var(--color-border) !important;
+}
+
+.planCard:hover {
+  border-color: var(--color-border-strong) !important;
+}
+
+.planName {
+  color: var(--color-text) !important;
+}
+
+.planDescription {
+  color: var(--color-text-secondary) !important;
+}
+
+.planPricePeriod {
+  color: var(--color-text-muted) !important;
+}
+
+.planFeature {
+  color: var(--color-text) !important;
+}
+
+/* Credit packs */
+.packCard {
+  background-color: var(--color-surface) !important;
+  border: 2px solid var(--color-border) !important;
+}
+
+.packCredits {
+  color: var(--color-text) !important;
+}
+
+.packLabel {
+  color: var(--color-text-muted) !important;
+}
+
+/* Credits info card — this one keeps its warm gold bg */
+/* but text becomes darker in light, lighter in dark */
+[data-theme="dark"] .creditsInfo {
+  background: linear-gradient(135deg, #4A3A1A 0%, #3A2E14 100%) !important;
+  border-color: #6B5520 !important;
+}
+
+[data-theme="dark"] .creditsInfoTitle,
+[data-theme="dark"] .creditsInfoList li {
+  color: #F8D66D !important;
+}
+
+[data-theme="dark"] .creditsInfoIcon,
+[data-theme="dark"] .creditsInfoList svg {
+  color: #F8D66D !important;
+}
+
+/* Loading */
+.loadingContainer {
+  color: var(--color-text-muted) !important;
+}
+
+/* Success/Error banners — dark mode variants */
+[data-theme="dark"] .successBanner {
+  background-color: rgba(16, 185, 129, 0.15) !important;
+  color: #34D399 !important;
+  border-color: rgba(16, 185, 129, 0.3) !important;
+}
+
+[data-theme="dark"] .errorBanner {
+  background-color: rgba(239, 68, 68, 0.15) !important;
+  color: #F87171 !important;
+  border-color: rgba(239, 68, 68, 0.3) !important;
+}
+
+/* Active plan card (green) — dark variant */
+[data-theme="dark"] .planCardActive {
+  background: linear-gradient(180deg, rgba(16, 185, 129, 0.08) 0%, var(--color-surface) 100%) !important;
+  border-color: #10b981 !important;
+}
+
+/* Currency suggested (gold) — dark variant */
+[data-theme="dark"] .currencySuggested {
+  background-color: rgba(245, 158, 11, 0.12) !important;
+  border-color: #F59E0B !important;
+}
+
+[data-theme="dark"] .currencySuggested:hover {
+  background-color: rgba(245, 158, 11, 0.2) !important;
+}
+
+/* Pack card hover — keep red accent on both themes */
+[data-theme="dark"] .packCard:hover:not(:disabled) {
+  background: linear-gradient(180deg, rgba(239, 68, 68, 0.08) 0%, var(--color-surface) 100%) !important;
+  border-color: var(--color-primary) !important;
+}
+
+/* Pack price chip (red bg) — dark variant */
+[data-theme="dark"] .packPrice {
+  background-color: rgba(239, 68, 68, 0.15) !important;
+  color: var(--color-primary) !important;
+}
+
+/* Pack icon (soft red bg) — dark variant */
+[data-theme="dark"] .packIcon {
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.15) 0%, rgba(239, 68, 68, 0.08) 100%) !important;
+}
+
+/* Feature check wrapper (green bg) — dark variant */
+[data-theme="dark"] .featureCheckWrapper {
+  background-color: rgba(16, 185, 129, 0.15) !important;
+}
+
+/* Days remaining chip (gold) — dark variant */
+[data-theme="dark"] .daysRemaining {
+  background-color: rgba(245, 158, 11, 0.15) !important;
+  color: #FBBF24 !important;
 }
