@@ -4760,3 +4760,33 @@ body {
     font-size: 17px !important;
   }
 }
+
+/* ============================================================
+   HEADER ICON SIZE FIX
+   ============================================================ */
+
+.headerBtnV2 svg {
+  width: 20px !important;
+  height: 20px !important;
+  stroke-width: 2.2 !important;
+  flex-shrink: 0 !important;
+}
+
+/* Ensure header stays readable in both modes */
+[data-theme="light"] .headerBtnV2 {
+  background: rgba(255, 255, 255, 0.85) !important;
+  color: var(--color-text) !important;
+}
+
+[data-theme="dark"] .headerBtnV2 {
+  background: rgba(35, 35, 38, 0.75) !important;
+  color: var(--color-text) !important;
+}
+
+/* Small screens */
+@media (max-width: 380px) {
+  .headerBtnV2 svg {
+    width: 18px !important;
+    height: 18px !important;
+  }
+}

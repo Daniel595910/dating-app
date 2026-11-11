@@ -1,6 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { Camera, Trash2, X, Star } from 'lucide-react';
 import { supabase } from '@/config/supabase.client';
+import styles from './PhotoManagement.module.css';
 
 interface PhotoManagementProps {
   open: boolean;
@@ -181,67 +182,16 @@ export const PhotoManagement: React.FC<PhotoManagementProps> = ({
   };
 
   if (!open) return null;
+  if (!open) return null;
 
   return (
-    <div
-      style={{
-        position: 'fixed',
-        inset: 0,
-        backgroundColor: 'rgba(0,0,0,0.5)',
-        zIndex: 999,
-        display: 'flex',
-        alignItems: 'flex-end',
-      }}
-      onClick={onClose}
-    >
-      <div
-        style={{
-          backgroundColor: '#ffffff',
-          borderRadius: '1.5rem 1.5rem 0 0',
-          width: '100%',
-          maxWidth: 480,
-          margin: '0 auto',
-          maxHeight: '80dvh',
-          padding: '0.5rem 1rem calc(1.5rem + env(safe-area-inset-bottom))',
-          overflowY: 'auto',
-        }}
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div
-          style={{
-            width: 40,
-            height: 4,
-            backgroundColor: '#e5e7eb',
-            borderRadius: '9999px',
-            margin: '0 auto 0.75rem',
-          }}
-        />
+    <div className={styles.overlay} onClick={onClose}>
+      <div className={styles.sheet} onClick={(e) => e.stopPropagation()}>
+        <div className={styles.dragHandle} />
 
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            marginBottom: '1rem',
-          }}
-        >
-          <h3 style={{ fontSize: '1.125rem', fontWeight: 700, color: '#111827', margin: 0 }}>
-            Profile Photos
-          </h3>
-          <button
-            onClick={onClose}
-            aria-label="Close"
-            style={{
-              background: 'none',
-              border: 'none',
-              cursor: 'pointer',
-              color: '#6b7280',
-              padding: '0.5rem',
-              borderRadius: '9999px',
-              minWidth: 44,
-              minHeight: 44,
-            }}
-          >
+        <div className={styles.header}>
+          <h3 className={styles.title}>Profile Photos</h3>
+          <button onClick={onClose} aria-label="Close" className={styles.closeButton}>
             <X size={20} />
           </button>
         </div>
@@ -252,133 +202,71 @@ export const PhotoManagement: React.FC<PhotoManagementProps> = ({
           accept="image/jpeg,image/png,image/webp"
           multiple
           onChange={(e) => handleUpload(e.target.files)}
-          style={{ display: 'none' }}
+          className={styles.hiddenInput}
         />
 
         <button
           onClick={() => fileInputRef.current?.click()}
           disabled={uploading}
-          style={{
-            width: '100%',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: '0.5rem',
-            padding: '0.75rem',
-            background: 'none',
-            border: '1px dashed #d1d5db',
-            borderRadius: '0.75rem',
-            cursor: 'pointer',
-            fontSize: '0.875rem',
-            fontWeight: 500,
-            color: '#6b7280',
-            marginBottom: '1rem',
-            minHeight: 48,
-          }}
+          className={styles.uploadZone}
         >
-          <Camera size={18} />
-          {uploading ? 'Uploading...' : 'Add Photos'}
+          <Camera size={28} className={styles.uploadZoneIcon} />
+          <p className={styles.uploadZoneText}>{uploading ? 'Uploading...' : 'Add Photos'}</p>
+          <p className={styles.uploadZoneHint}>JPG, PNG, or WEBP · Up to 5 photos</p>
         </button>
 
-        {error && (
-          <p style={{ color: '#ef4444', fontSize: '0.8125rem', marginBottom: '0.5rem', textAlign: 'center' }}>
-            {error}
-          </p>
+        {uploading && (
+          <div className={styles.uploadingBanner}>
+            <div className={styles.spinner} />
+            Uploading photos...
+          </div>
         )}
 
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(3, 1fr)',
-            gap: '0.5rem',
-          }}
-        >
-          {photos.map((photo) => (
-            <div
-              key={photo.id}
-              style={{
-                position: 'relative',
-                aspectRatio: '1',
-                borderRadius: '0.75rem',
-                overflow: 'hidden',
-                border: photo.isPrimary ? '2px solid #ef4444' : '1px solid #e5e7eb',
-              }}
-            >
-              <img
-                src={photo.url}
-                alt=""
-                style={{
-                  width: '100%',
-                  height: '100%',
-                  objectFit: 'cover',
-                }}
-              />
-              {photo.isPrimary && (
-                <span
-                  style={{
-                    position: 'absolute',
-                    top: '4px',
-                    left: '4px',
-                    padding: '0.25rem 0.5rem',
-                    backgroundColor: '#ef4444',
-                    color: '#ffffff',
-                    fontSize: '0.625rem',
-                    fontWeight: 600,
-                    borderRadius: '9999px',
-                  }}
-                >
-                  Main
-                </span>
-              )}
-              <div
-                style={{
-                  position: 'absolute',
-                  bottom: '4px',
-                  right: '4px',
-                  display: 'flex',
-                  gap: '4px',
-                }}
-              >
-                {!photo.isPrimary && (
-                  <button
-                    onClick={() => handleSetPrimary(photo.id)}
-                    disabled={settingPrimary === photo.id}
-                    style={{
-                      background: 'rgba(0,0,0,0.6)',
-                      border: 'none',
-                      cursor: 'pointer',
-                      color: '#ffffff',
-                      padding: '4px 8px',
-                      borderRadius: '4px',
-                      fontSize: '0.625rem',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '2px',
-                    }}
-                  >
-                    <Star size={10} />
-                    {settingPrimary === photo.id ? 'Setting...' : 'Set Main'}
-                  </button>
-                )}
-                <button
-                  onClick={() => handleDelete(photo.id)}
-                  aria-label="Delete photo"
-                  style={{
-                    background: 'rgba(0,0,0,0.6)',
-                    border: 'none',
-                    cursor: 'pointer',
-                    color: '#ffffff',
-                    padding: '4px',
-                    borderRadius: '4px',
-                    display: 'flex',
-                    alignItems: 'center',
-                  }}
-                >
-                  <Trash2 size={14} />
-                </button>
-              </div>
+        {error && <p className={styles.error}>{error}</p>}
+
+        <div className={styles.photoGrid}>
+          {photos.length === 0 ? (
+            <div className={styles.emptyPhotos}>
+              No photos yet — add your first photo above
             </div>
-          ))}
+          ) : (
+            photos.map((photo) => (
+              <div
+                key={photo.id}
+                className={`${styles.photoItem} ${photo.isPrimary ? styles.photoItemPrimary : ''}`}
+              >
+                <img src={photo.url} alt="" className={styles.photoImage} />
+                {photo.isPrimary && (
+                  <span className={styles.primaryBadge}>Main</span>
+                )}
+                <div className={styles.photoActions}>
+                  {!photo.isPrimary && (
+                    <button
+                      onClick={() => handleSetPrimary(photo.id)}
+                      disabled={settingPrimary === photo.id}
+                      aria-label="Set as main photo"
+                      title="Set as main photo"
+                      className={styles.photoActionBtn}
+                    >
+                      {settingPrimary === photo.id ? (
+                        <div className={styles.spinner} style={{ width: 14, height: 14 }} />
+                      ) : (
+                        <Star size={14} />
+                      )}
+                    </button>
+                  )}
+                  <button
+                    onClick={() => handleDelete(photo.id)}
+                    aria-label="Delete photo"
+                    title="Delete photo"
+                    className={`${styles.photoActionBtn} ${styles.photoActionBtnDanger}`}
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                </div>
+              </div>
+            ))
+          )}
         </div>
       </div>
     </div>

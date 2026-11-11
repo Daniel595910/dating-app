@@ -173,3 +173,48 @@
     max-height: 82vh;
   }
 }
+
+/* ============================================================
+   PHOTOVIEWER VISIBILITY FIX
+   ============================================================ */
+
+/* Ensure overlay is always dark (photo viewers are always dark-on-dark) */
+.overlay {
+  background: rgba(0, 0, 0, 0.97) !important;
+}
+
+/* Counter — always white, strong glass */
+.counter {
+  color: #ffffff !important;
+  background: rgba(0, 0, 0, 0.55) !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+}
+
+/* Dots — visible on dark overlay */
+.dots {
+  background: rgba(0, 0, 0, 0.5) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  backdrop-filter: blur(8px) !important;
+  -webkit-backdrop-filter: blur(8px) !important;
+}
+
+.dot {
+  background: rgba(255, 255, 255, 0.5) !important;
+}
+
+.dotActive {
+  background: #ffffff !important;
+}
+
+/* Nav buttons — strong glass */
+.closeBtn, .navBtn {
+  background: rgba(0, 0, 0, 0.5) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  color: #ffffff !important;
+}
+
+.closeBtn:active, .navBtn:active {
+  background: rgba(0, 0, 0, 0.75) !important;
+}
