@@ -505,3 +505,63 @@
     font-size: 12px !important;
   }
 }
+
+/* ============================================================
+   PHASE 5.2 - DESKTOP-ONLY NAV BUTTONS
+   ============================================================ */
+
+/* Hidden by default (mobile) */
+.navBtn {
+  display: none !important;
+}
+
+/* Show on desktop (hover-capable devices) */
+@media (hover: hover) and (pointer: fine) {
+  .navBtn {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    position: absolute !important;
+    top: 50% !important;
+    transform: translateY(-50%) !important;
+    width: 56px !important;
+    height: 56px !important;
+    border-radius: 50% !important;
+    background: rgba(0, 0, 0, 0.5) !important;
+    backdrop-filter: blur(12px) saturate(180%) !important;
+    -webkit-backdrop-filter: blur(12px) saturate(180%) !important;
+    border: 1px solid rgba(255, 255, 255, 0.15) !important;
+    color: #ffffff !important;
+    cursor: pointer !important;
+    z-index: 15 !important;
+    opacity: 0;
+    transition: opacity 0.2s, background 0.15s, transform 0.1s !important;
+  }
+
+  .overlay:hover .navBtn {
+    opacity: 1;
+  }
+
+  .navBtn:hover {
+    background: rgba(0, 0, 0, 0.75) !important;
+  }
+
+  .navBtn:active {
+    transform: translateY(-50%) scale(0.92) !important;
+  }
+
+  .navBtnLeft {
+    left: 24px !important;
+  }
+
+  .navBtnRight {
+    right: 24px !important;
+  }
+}
+
+/* Explicit hide on mobile — do NOT show even if hover is emulated */
+@media (max-width: 767px) {
+  .navBtn {
+    display: none !important;
+  }
+}

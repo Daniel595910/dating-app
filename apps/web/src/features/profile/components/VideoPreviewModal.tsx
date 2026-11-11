@@ -234,6 +234,25 @@ export const VideoPreviewModal: React.FC<VideoPreviewModalProps> = ({
             {muted ? <VolumeX size={22} /> : <Volume2 size={22} />}
           </button>
 
+          {hasPrev && (
+            <button
+              className={styles.navBtn + ' ' + styles.navBtnLeft}
+              onClick={(e) => { e.stopPropagation(); goPrev(); }}
+              aria-label="Previous video"
+            >
+              <ChevronUp size={28} style={{ transform: 'rotate(-90deg)' }} />
+            </button>
+          )}
+          {hasNext && (
+            <button
+              className={styles.navBtn + ' ' + styles.navBtnRight}
+              onClick={(e) => { e.stopPropagation(); goNext(); }}
+              aria-label="Next video"
+            >
+              <ChevronUp size={28} style={{ transform: 'rotate(90deg)' }} />
+            </button>
+          )}
+
           <div className={styles.bottomBar}>
             <button className={styles.playBtn} onClick={togglePlay} aria-label="Play/pause">
               {playing ? <Pause size={20} /> : <Play size={20} fill="#ffffff" />}

@@ -32,6 +32,10 @@ export const ProfilePage: React.FC = () => {
   const [selectedPhotos, setSelectedPhotos] = useState<Set<string>>(new Set());
   const photoLongPressTimer = useRef<number | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [videoSelectionMode, setVideoSelectionMode] = useState(false);
+  const [selectedVideos, setSelectedVideos] = useState<Set<string>>(new Set());
+  const videoLongPressTimer = useRef<number | null>(null);
+  const [showVideoDeleteConfirm, setShowVideoDeleteConfirm] = useState(false);
   const [photoManagementOpen, setPhotoManagementOpen] = useState(false);
   const [communityCreationOpen, setCommunityCreationOpen] = useState(false);
   const [vipData, setVipData] = useState<{ level: string; credits: number; points: number; planExpiresAt: string | null }>({
@@ -382,6 +386,66 @@ export const ProfilePage: React.FC = () => {
   const exitPhotoSelection = () => {
     setPhotoSelectionMode(false);
     setSelectedPhotos(new Set());
+  };
+
+  const performBatchDeleteVideos = async () => {
+    if (!isOwnProfile || !user?.id || selectedVideos.size === 0) return;
+    try {
+      for (const videoId of selectedVideos) {
+        const { error } = await supabase
+          .from('discover_videos')
+          .delete()
+          .eq('id', videoId)
+          .eq('user_id', user.id);
+        if (error) throw error;
+      }
+      await loadDiscoverVideos();
+      setVideoSelectionMode(false);
+      setSelectedVideos(new Set());
+      showToast(`Deleted ${selectedVideos.size} video${selectedVideos.size > 1 ? 's' : ''}`, 'success');
+    } catch (err) {
+      console.error('[batch video delete]', err);
+      showToast('Failed to delete videos', 'error');
+    }
+  };
+
+  const handleDeleteSelectedVideos = () => {
+    if (!isOwnProfile || !user?.id || selectedVideos.size === 0) return;
+    setShowVideoDeleteConfirm(true);
+  };
+
+  const confirmBatchDeleteVideos = async () => {
+    setShowVideoDeleteConfirm(false);
+    await performBatchDeleteVideos();
+  };
+
+  const toggleVideoSelection = (id: string) => {
+    setSelectedVideos((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const startVideoLongPress = (id: string) => {
+    if (videoLongPressTimer.current) window.clearTimeout(videoLongPressTimer.current);
+    videoLongPressTimer.current = window.setTimeout(() => {
+      setVideoSelectionMode(true);
+      setSelectedVideos(new Set([id]));
+    }, 500);
+  };
+
+  const cancelVideoLongPress = () => {
+    if (videoLongPressTimer.current) {
+      window.clearTimeout(videoLongPressTimer.current);
+      videoLongPressTimer.current = null;
+    }
+  };
+
+  const exitVideoSelection = () => {
+    setVideoSelectionMode(false);
+    setSelectedVideos(new Set());
   };
 
   const handleToggleVideoVisibility = async (videoId: string, currentStatus: string) => {
@@ -1383,62 +1447,110 @@ export const ProfilePage: React.FC = () => {
           </div>
         </>
       ) : activeTab === 'videos' ? (
-        <div className={styles.videosSectionV3}>
-          {discoverVideos.length === 0 ? (
-            <div className={styles.emptyPosts}>
-              <Video size={32} />
-              <p>No videos yet</p>
-              <p className={styles.emptySubtext}>Upload videos from the Discover page</p>
-            </div>
-          ) : (
-            <div className={styles.videosGridV3}>
-              {discoverVideos.map((video) => (
-                <div key={video.id} className={styles.videoCardV3} onClick={() => setPreviewDiscoverVideo(video)}>
-                  <div className={styles.videoThumbWrapV3}>
-                    <video src={video.video_url} muted playsInline className={styles.videoThumbnailV3} />
-                    <div className={styles.videoPlayOverlayV3}>
-                      <div className={styles.videoPlayBtnV3}>
-                        <Play size={22} fill="#ffffff" />
-                      </div>
-                    </div>
-                    {video.duration_seconds && (
-                      <span className={styles.videoDurationV3}>
-                        {`${Math.floor(video.duration_seconds / 60)}:${String(video.duration_seconds % 60).padStart(2, '0')}`}
-                      </span>
-                    )}
-                    {isOwnProfile && (
-                      <button
-                        className={styles.videoMenuButtonV3}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setVideoMenuOpen(videoMenuOpen === video.id ? null : video.id);
-                        }}
-                      >
-                        <MoreVertical size={16} />
-                      </button>
-                    )}
-                    {videoMenuOpen === video.id && (
-                      <div className={styles.videoDropdownMenu} onClick={(e) => e.stopPropagation()}>
-                        <button onClick={(e) => { e.stopPropagation(); handleToggleVideoVisibility(video.id, video.status); }}>
-                          {video.status === 'removed' ? 'Show in Discover' : 'Hide from Discover'}
-                        </button>
-                        <button className={styles.deleteVideoButton} onClick={(e) => { e.stopPropagation(); handleDeleteVideo(video.id); }}>
-                          Delete Video
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                  <div className={styles.videoMetaV3}>
-                    <span className={styles.videoViewsV3}><Eye size={12} /> {video.view_count || 0}</span>
-                    {video.caption && (
-                      <p className={styles.videoTitleV3}>{video.caption}</p>
-                    )}
-                  </div>
-                </div>
-              ))}
+        <>
+          {videoSelectionMode && (
+            <div className={styles.selectionBar}>
+              <button className={styles.selectionCancel} onClick={exitVideoSelection}>
+                Cancel
+              </button>
+              <span className={styles.selectionCount}>
+                {selectedVideos.size} selected
+              </span>
+              <button
+                className={styles.selectionDelete}
+                onClick={handleDeleteSelectedVideos}
+                disabled={selectedVideos.size === 0}
+              >
+                <Trash2 size={16} />
+                Delete
+              </button>
             </div>
           )}
-        </div>
+          <div className={styles.videosSectionV3}>
+            {discoverVideos.length === 0 ? (
+              <div className={styles.emptyPosts}>
+                <Video size={32} />
+                <p>No videos yet</p>
+                <p className={styles.emptySubtext}>Upload videos from the Discover page</p>
+              </div>
+            ) : (
+              <div className={styles.videosGridV3}>
+                {discoverVideos.map((video) => {
+                  const isSelected = selectedVideos.has(video.id);
+                  return (
+                    <div
+                      key={video.id}
+                      className={styles.videoCardV3 + (videoSelectionMode && isSelected ? ' ' + styles.galleryItemSelected : '')}
+                      onClick={() => {
+                        if (videoSelectionMode) {
+                          toggleVideoSelection(video.id);
+                        } else {
+                          setPreviewDiscoverVideo(video);
+                        }
+                      }}
+                      onMouseDown={() => isOwnProfile && !videoSelectionMode && startVideoLongPress(video.id)}
+                      onMouseUp={cancelVideoLongPress}
+                      onMouseLeave={cancelVideoLongPress}
+                      onTouchStart={() => isOwnProfile && !videoSelectionMode && startVideoLongPress(video.id)}
+                      onTouchEnd={cancelVideoLongPress}
+                      onTouchMove={cancelVideoLongPress}
+                      onContextMenu={(e) => e.preventDefault()}
+                    >
+                      <div className={styles.videoThumbWrapV3}>
+                        <video src={video.video_url} muted playsInline className={styles.videoThumbnailV3} />
+                        {videoSelectionMode ? (
+                          <div className={`${styles.selectionCheckbox} ${isSelected ? styles.selectionCheckboxActive : ''}`}>
+                            {isSelected && <Check size={14} />}
+                          </div>
+                        ) : (
+                          <>
+                            <div className={styles.videoPlayOverlayV3}>
+                              <div className={styles.videoPlayBtnV3}>
+                                <Play size={22} fill="#ffffff" />
+                              </div>
+                            </div>
+                            {video.duration_seconds && (
+                              <span className={styles.videoDurationV3}>
+                                {`${Math.floor(video.duration_seconds / 60)}:${String(video.duration_seconds % 60).padStart(2, '0')}`}
+                              </span>
+                            )}
+                            {isOwnProfile && (
+                              <button
+                                className={styles.videoMenuButtonV3}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setVideoMenuOpen(videoMenuOpen === video.id ? null : video.id);
+                                }}
+                              >
+                                <MoreVertical size={16} />
+                              </button>
+                            )}
+                            {videoMenuOpen === video.id && (
+                              <div className={styles.videoDropdownMenu} onClick={(e) => e.stopPropagation()}>
+                                <button onClick={(e) => { e.stopPropagation(); handleToggleVideoVisibility(video.id, video.status); }}>
+                                  {video.status === 'removed' ? 'Show in Discover' : 'Hide from Discover'}
+                                </button>
+                                <button className={styles.deleteVideoButton} onClick={(e) => { e.stopPropagation(); handleDeleteVideo(video.id); }}>
+                                  Delete Video
+                                </button>
+                              </div>
+                            )}
+                          </>
+                        )}
+                      </div>
+                      <div className={styles.videoMetaV3}>
+                        <span className={styles.videoViewsV3}><Eye size={12} /> {video.view_count || 0}</span>
+                        {video.caption && (
+                          <p className={styles.videoTitleV3}>{video.caption}</p>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </>
       ) : (
         <div className={styles.aboutV3}>
           <h3 className={styles.aboutHeadingV3}>About {profile.displayName}</h3>
@@ -1725,6 +1837,36 @@ export const ProfilePage: React.FC = () => {
               <button
                 className={styles.confirmDelete}
                 onClick={confirmBatchDelete}
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showVideoDeleteConfirm && (
+        <div className={styles.confirmOverlay} onClick={() => setShowVideoDeleteConfirm(false)}>
+          <div className={styles.confirmDialog} onClick={(e) => e.stopPropagation()}>
+            <div className={styles.confirmIcon}>
+              <Trash2 size={28} />
+            </div>
+            <h3 className={styles.confirmTitle}>
+              Delete {selectedVideos.size} {selectedVideos.size === 1 ? 'video' : 'videos'}?
+            </h3>
+            <p className={styles.confirmText}>
+              This action cannot be undone.
+            </p>
+            <div className={styles.confirmActions}>
+              <button
+                className={styles.confirmCancel}
+                onClick={() => setShowVideoDeleteConfirm(false)}
+              >
+                Cancel
+              </button>
+              <button
+                className={styles.confirmDelete}
+                onClick={confirmBatchDeleteVideos}
               >
                 Delete
               </button>
