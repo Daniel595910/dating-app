@@ -1187,9 +1187,10 @@ export const ProfilePage: React.FC = () => {
       {activeTab === 'posts' ? (
         <div className={styles.galleryGridV3}>
           {userPosts.length > 0 ? (
-            userPosts.map((post, postIndex) => (
-              post.images.map((image, imageIndex) => {
-                const globalIndex = postIndex * 10 + imageIndex;
+            userPosts.map((post, postIndex) => {
+              const offset = userPosts.slice(0, postIndex).reduce((sum, p) => sum + p.images.length, 0);
+              return post.images.map((image, imageIndex) => {
+                const globalIndex = offset + imageIndex;
                 return (
                   <div
                     key={`${post.id}-${imageIndex}`}
@@ -1208,18 +1209,18 @@ export const ProfilePage: React.FC = () => {
                           className={styles.galleryMenuV3}
                           onClick={(e) => {
                             e.stopPropagation();
-                            setPostMenuOpen(postMenuOpen === post.id ? null : post.id);
+                            setPostMenuOpen(postMenuOpen === `${post.id}-${imageIndex}` ? null : `${post.id}-${imageIndex}`);
                           }}
                         >
                           <MoreVertical size={16} />
                         </button>
-                        {postMenuOpen === post.id && (
+                        {postMenuOpen === `${post.id}-${imageIndex}` && (
                           <div className={styles.galleryDropdownMenu} onClick={(e) => e.stopPropagation()}>
                             <button
                               className={styles.deletePostButton}
                               onClick={() => handleDeletePost(post.id, imageIndex)}
                             >
-                              <Trash2 size={14} /> Delete Post
+                              <Trash2 size={14} /> {post.images.length > 1 ? 'Delete Photo' : 'Delete Post'}
                             </button>
                           </div>
                         )}
@@ -1227,8 +1228,8 @@ export const ProfilePage: React.FC = () => {
                     )}
                   </div>
                 );
-              })
-            ))
+              });
+            })
           ) : (
             <div className={styles.emptyPosts}>
               <Camera size={32} />
@@ -1551,6 +1552,8 @@ export const ProfilePage: React.FC = () => {
 
       <VideoPreviewModal
         video={previewDiscoverVideo}
+        allVideos={discoverVideos}
+        onChangeVideo={(v) => setPreviewDiscoverVideo(v)}
         onClose={() => setPreviewDiscoverVideo(null)}
         isOwner={isOwnProfile}
         onUpdatePrivacy={handleUpdateVideoPrivacy}

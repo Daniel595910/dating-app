@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { X, Play, Pause, Volume2, VolumeX, Loader2 } from 'lucide-react';
+import { X, Play, Pause, Volume2, VolumeX, Loader2, ChevronUp } from 'lucide-react';
 import styles from './VideoPreviewModal.module.css';
 
 interface VideoPreviewModalProps {
@@ -12,14 +12,18 @@ interface VideoPreviewModalProps {
     caption?: string;
     duration_seconds?: number;
   } | null;
+  allVideos?: Array<any>;
   onClose: () => void;
+  onChangeVideo?: (video: any) => void;
   isOwner: boolean;
   onUpdatePrivacy?: (videoId: string, privacy: string) => void;
 }
 
 export const VideoPreviewModal: React.FC<VideoPreviewModalProps> = ({
   video,
+  allVideos = [],
   onClose,
+  onChangeVideo,
   isOwner,
   onUpdatePrivacy,
 }) => {
@@ -31,41 +35,23 @@ export const VideoPreviewModal: React.FC<VideoPreviewModalProps> = ({
   const [progress, setProgress] = useState(0);
   const [duration, setDuration] = useState(0);
   const [showControls, setShowControls] = useState(true);
+  const [captionExpanded, setCaptionExpanded] = useState(false);
+  const [privacyOpen, setPrivacyOpen] = useState(false);
   const controlsTimer = useRef<number | null>(null);
   const touchStartY = useRef<number | null>(null);
+  const touchStartX = useRef<number | null>(null);
 
   const isOpen = !!video;
+  const currentIdx = video && allVideos.length > 0 ? allVideos.findIndex((v) => v.id === video.id) : -1;
+  const hasNext = currentIdx !== -1 && currentIdx < allVideos.length - 1;
+  const hasPrev = currentIdx !== -1 && currentIdx > 0;
 
-  // Lock body scroll
   useEffect(() => {
     if (!isOpen) return;
     const prev = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
-    return () => {
-      document.body.style.overflow = prev;
-    };
+    return () => { document.body.style.overflow = prev; };
   }, [isOpen]);
-
-  // Escape key closes
-  useEffect(() => {
-    if (!isOpen) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
-      if (e.key === ' ') { e.preventDefault(); togglePlay(); }
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  });
-
-  // Reset state when video changes
-  useEffect(() => {
-    if (!video) return;
-    setLoading(true);
-    setError(false);
-    setProgress(0);
-    setDuration(0);
-    setPlaying(false);
-  }, [video?.id]);
 
   const togglePlay = useCallback(() => {
     const el = videoRef.current;
@@ -81,12 +67,51 @@ export const VideoPreviewModal: React.FC<VideoPreviewModalProps> = ({
     setMuted(el.muted);
   }, []);
 
+  const resetControlsTimer = useCallback(() => {
+    setShowControls(true);
+    if (controlsTimer.current) window.clearTimeout(controlsTimer.current);
+    controlsTimer.current = window.setTimeout(() => {
+      setShowControls(false);
+    }, 2500);
+  }, []);
+
+  const goNext = useCallback(() => {
+    if (!hasNext || !onChangeVideo) return;
+    onChangeVideo(allVideos[currentIdx + 1]);
+  }, [hasNext, currentIdx, allVideos, onChangeVideo]);
+
+  const goPrev = useCallback(() => {
+    if (!hasPrev || !onChangeVideo) return;
+    onChangeVideo(allVideos[currentIdx - 1]);
+  }, [hasPrev, currentIdx, allVideos, onChangeVideo]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+      if (e.key === ' ') { e.preventDefault(); togglePlay(); }
+      if (e.key === 'ArrowUp' || e.key === 'ArrowRight') { e.preventDefault(); goNext(); }
+      if (e.key === 'ArrowDown' || e.key === 'ArrowLeft') { e.preventDefault(); goPrev(); }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [isOpen, onClose, togglePlay, goNext, goPrev]);
+
+  useEffect(() => {
+    if (!video) return;
+    setLoading(true);
+    setError(false);
+    setProgress(0);
+    setDuration(0);
+    setPlaying(false);
+    setCaptionExpanded(false);
+    setPrivacyOpen(false);
+  }, [video?.id]);
+
   const handleTimeUpdate = () => {
     const el = videoRef.current;
     if (!el) return;
-    if (el.duration) {
-      setProgress((el.currentTime / el.duration) * 100);
-    }
+    if (el.duration) setProgress((el.currentTime / el.duration) * 100);
   };
 
   const handleLoadedMetadata = () => {
@@ -106,22 +131,24 @@ export const VideoPreviewModal: React.FC<VideoPreviewModalProps> = ({
 
   const handleTouchStart = (e: React.TouchEvent) => {
     touchStartY.current = e.touches[0].clientY;
+    touchStartX.current = e.touches[0].clientX;
     resetControlsTimer();
   };
 
   const handleTouchEnd = (e: React.TouchEvent) => {
-    if (touchStartY.current === null) return;
+    if (touchStartY.current === null || touchStartX.current === null) return;
     const dy = e.changedTouches[0].clientY - touchStartY.current;
+    const dx = e.changedTouches[0].clientX - touchStartX.current;
     touchStartY.current = null;
-    if (dy > 100) { onClose(); }
-  };
+    touchStartX.current = null;
 
-  const resetControlsTimer = () => {
-    setShowControls(true);
-    if (controlsTimer.current) window.clearTimeout(controlsTimer.current);
-    controlsTimer.current = window.setTimeout(() => {
-      if (playing) setShowControls(false);
-    }, 2500);
+    // Only respond to vertical swipes with clear vertical intent
+    if (Math.abs(dy) < 80 || Math.abs(dy) < Math.abs(dx)) return;
+
+    // Swipe up = next (dy negative)
+    if (dy < -80 && hasNext) { goNext(); return; }
+    // Swipe down = prev (dy positive)
+    if (dy > 80 && hasPrev) { goPrev(); return; }
   };
 
   const formatTime = (s: number) => {
@@ -131,18 +158,31 @@ export const VideoPreviewModal: React.FC<VideoPreviewModalProps> = ({
     return m + ':' + sec.toString().padStart(2, '0');
   };
 
+  const currentPrivacyLabel =
+    video?.privacy === 'friends' ? 'Friends Only' :
+    video?.privacy === 'private' ? 'Only Me' :
+    'Public';
+
+  const setPrivacy = (value: string) => {
+    if (video && onUpdatePrivacy) onUpdatePrivacy(video.id, value);
+    setPrivacyOpen(false);
+  };
+
   if (!isOpen || !video) return null;
+
+  const captionIsLong = video.caption ? video.caption.length > 100 : false;
+  const showCounter = allVideos.length > 1 && currentIdx >= 0;
 
   return (
     <div
       className={styles.overlay}
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
-      onClick={onClose}
     >
-      <div className={styles.container} onClick={(e) => e.stopPropagation()}>
+      <div className={styles.container}>
         <video
           ref={videoRef}
+          key={video.id}
           src={video.video_url}
           autoPlay
           loop
@@ -179,10 +219,16 @@ export const VideoPreviewModal: React.FC<VideoPreviewModalProps> = ({
           </div>
         )}
 
-        <div className={styles.controls + (showControls ? '' : ' ' + styles.controlsHidden)} onClick={(e) => e.stopPropagation()}>
+        <div className={styles.controls + (showControls ? '' : ' ' + styles.controlsHidden)}>
           <button className={styles.closeBtn} onClick={onClose} aria-label="Close">
             <X size={24} />
           </button>
+
+          {showCounter && (
+            <div className={styles.videoCounter}>
+              {currentIdx + 1} / {allVideos.length}
+            </div>
+          )}
 
           <button className={styles.muteBtn} onClick={toggleMute} aria-label="Toggle mute">
             {muted ? <VolumeX size={22} /> : <Volume2 size={22} />}
@@ -206,24 +252,53 @@ export const VideoPreviewModal: React.FC<VideoPreviewModalProps> = ({
             <span className={styles.time}>{formatTime(duration)}</span>
           </div>
 
-          {isOwner && onUpdatePrivacy && (
-            <div className={styles.privacyBar}>
-              <span className={styles.privacyLabel}>Visibility</span>
-              <select
-                value={video.privacy || 'public'}
-                onChange={(e) => onUpdatePrivacy(video.id, e.target.value)}
-                className={styles.privacySelect}
-              >
-                <option value="public">Public</option>
-                <option value="friends">Friends Only</option>
-                <option value="private">Only Me</option>
-              </select>
+          {video.caption && (
+            <div className={styles.captionPill + (captionExpanded ? ' ' + styles.captionPillExpanded : '')}>
+              <p className={styles.captionText}>{video.caption}</p>
+              {captionIsLong && (
+                <button
+                  className={styles.captionToggle}
+                  onClick={() => setCaptionExpanded((v) => !v)}
+                >
+                  {captionExpanded ? 'Read Less' : 'Read More'}
+                  <ChevronUp size={14} className={captionExpanded ? styles.chevronRotated : ''} />
+                </button>
+              )}
             </div>
           )}
 
-          {video.caption && (
-            <div className={styles.captionWrap}>
-              <p className={styles.caption}>{video.caption}</p>
+          {isOwner && onUpdatePrivacy && (
+            <div className={styles.privacyWrap}>
+              <button
+                className={styles.privacyBtn}
+                onClick={() => setPrivacyOpen((v) => !v)}
+                aria-label="Change visibility"
+              >
+                <span>{currentPrivacyLabel}</span>
+                <ChevronUp size={14} className={privacyOpen ? styles.chevronRotated : ''} />
+              </button>
+              {privacyOpen && (
+                <div className={styles.privacyMenu}>
+                  <button
+                    className={styles.privacyMenuItem + (video.privacy === 'public' || !video.privacy ? ' ' + styles.privacyMenuItemActive : '')}
+                    onClick={() => setPrivacy('public')}
+                  >
+                    Public
+                  </button>
+                  <button
+                    className={styles.privacyMenuItem + (video.privacy === 'friends' ? ' ' + styles.privacyMenuItemActive : '')}
+                    onClick={() => setPrivacy('friends')}
+                  >
+                    Friends Only
+                  </button>
+                  <button
+                    className={styles.privacyMenuItem + (video.privacy === 'private' ? ' ' + styles.privacyMenuItemActive : '')}
+                    onClick={() => setPrivacy('private')}
+                  >
+                    Only Me
+                  </button>
+                </div>
+              )}
             </div>
           )}
         </div>

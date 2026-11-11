@@ -290,3 +290,218 @@
     right: 20px;
   }
 }
+
+/* ============================================================
+   Caption collapsible pill
+   ============================================================ */
+.captionPill {
+  position: absolute;
+  bottom: 76px;
+  bottom: calc(76px + env(safe-area-inset-bottom));
+  left: 16px;
+  right: 16px;
+  max-width: 500px;
+  margin: 0 auto;
+  padding: 10px 14px;
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  z-index: 6;
+  transition: max-height 0.25s ease;
+}
+
+.captionText {
+  color: #ffffff;
+  font-size: 13px;
+  line-height: 1.45;
+  margin: 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  word-break: break-word;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+.captionPillExpanded .captionText {
+  -webkit-line-clamp: unset;
+  overflow: visible;
+}
+
+.captionToggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  margin-top: 6px;
+  padding: 0;
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  letter-spacing: 0.2px;
+}
+
+.captionToggle:active {
+  opacity: 0.7;
+}
+
+/* ============================================================
+   Privacy dropdown opens UPWARD
+   ============================================================ */
+.privacyWrap {
+  position: absolute;
+  top: 78px;
+  top: calc(78px + env(safe-area-inset-top));
+  right: 16px;
+  right: calc(16px + env(safe-area-inset-right));
+  z-index: 10;
+}
+
+.privacyBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 999px;
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+  white-space: nowrap;
+}
+
+.privacyBtn:active {
+  background: rgba(0, 0, 0, 0.75);
+}
+
+.privacyMenu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  min-width: 160px;
+  background: rgba(20, 20, 22, 0.95);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 12px;
+  padding: 6px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  animation: fadeSlideUp 0.15s ease;
+}
+
+@keyframes fadeSlideUp {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.privacyMenuItem {
+  display: block;
+  width: 100%;
+  padding: 10px 12px;
+  background: none;
+  border: none;
+  border-radius: 8px;
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 13px;
+  font-weight: 500;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.12s;
+}
+
+.privacyMenuItem:hover,
+.privacyMenuItem:active {
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+}
+
+.privacyMenuItemActive {
+  background: rgba(239, 68, 68, 0.2);
+  color: #F12D45;
+  font-weight: 700;
+}
+
+.chevronRotated {
+  transform: rotate(180deg);
+  transition: transform 0.2s ease;
+}
+
+/* ============================================================
+   PHASE 5.1 - TikTok-style caption + privacy position
+   ============================================================ */
+
+/* Privacy: nudge down further from top */
+.privacyWrap {
+  top: 110px !important;
+  top: calc(110px + env(safe-area-inset-top)) !important;
+}
+
+/* Caption: TikTok-style — bottom-left, translucent, rounded */
+.captionPill {
+  position: absolute !important;
+  bottom: 90px !important;
+  bottom: calc(90px + env(safe-area-inset-bottom)) !important;
+  left: 12px !important;
+  right: auto !important;
+  max-width: 78% !important;
+  margin: 0 !important;
+  padding: 10px 14px !important;
+  background: rgba(0, 0, 0, 0.35) !important;
+  backdrop-filter: blur(20px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(180%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border-radius: 14px !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15) !important;
+  z-index: 6 !important;
+}
+
+.captionPillExpanded {
+  max-width: 88% !important;
+  background: rgba(0, 0, 0, 0.45) !important;
+}
+
+.captionText {
+  color: rgba(255, 255, 255, 0.95) !important;
+  font-size: 13px !important;
+  line-height: 1.4 !important;
+  font-weight: 500 !important;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6) !important;
+  letter-spacing: 0.01em !important;
+}
+
+.captionToggle {
+  color: rgba(255, 255, 255, 0.85) !important;
+  font-size: 12px !important;
+  font-weight: 700 !important;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6) !important;
+}
+
+.captionToggle:active {
+  opacity: 0.65 !important;
+}
+
+/* Small screens */
+@media (max-width: 480px) {
+  .privacyWrap {
+    top: 100px !important;
+    top: calc(100px + env(safe-area-inset-top)) !important;
+  }
+  .captionPill {
+    bottom: 80px !important;
+    bottom: calc(80px + env(safe-area-inset-bottom)) !important;
+    max-width: 82% !important;
+    padding: 9px 12px !important;
+  }
+  .captionText {
+    font-size: 12px !important;
+  }
+}

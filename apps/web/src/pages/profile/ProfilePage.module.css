@@ -4264,3 +4264,230 @@ body {
 [data-theme="dark"] .aboutCardV3 {
   background: var(--color-surface-raised) !important;
 }
+
+/* ============================================================
+   PHASE 3.7 - MODERN POST DELETE DROPDOWN
+   ============================================================ */
+
+/* 3-dot trigger — glassy, refined */
+.galleryMenuV3 {
+  width: 34px !important;
+  height: 34px !important;
+  background: rgba(0, 0, 0, 0.55) !important;
+  backdrop-filter: blur(8px) !important;
+  -webkit-backdrop-filter: blur(8px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  transition: background 0.15s, transform 0.1s !important;
+  touch-action: manipulation;
+}
+
+.galleryMenuV3:hover {
+  background: rgba(0, 0, 0, 0.75) !important;
+}
+
+.galleryMenuV3:active {
+  transform: scale(0.92) !important;
+}
+
+/* Dropdown — modern card with glass, animation, drop shadow */
+.galleryDropdownMenu {
+  position: absolute !important;
+  top: 48px !important;
+  right: 8px !important;
+  background: rgba(255, 255, 255, 0.98) !important;
+  backdrop-filter: blur(20px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(180%) !important;
+  border: 1px solid rgba(0, 0, 0, 0.08) !important;
+  border-radius: 14px !important;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.18), 0 2px 8px rgba(0, 0, 0, 0.08) !important;
+  min-width: 160px !important;
+  padding: 6px !important;
+  z-index: 20 !important;
+  animation: dropdownIn 0.18s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  transform-origin: top right;
+}
+
+@keyframes dropdownIn {
+  from {
+    opacity: 0;
+    transform: translateY(-6px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  .galleryDropdownMenu {
+    background: rgba(30, 30, 34, 0.98) !important;
+    border-color: rgba(255, 255, 255, 0.1) !important;
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.6), 0 2px 8px rgba(0, 0, 0, 0.3) !important;
+  }
+}
+
+[data-theme="dark"] .galleryDropdownMenu {
+  background: rgba(30, 30, 34, 0.98) !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.6), 0 2px 8px rgba(0, 0, 0, 0.3) !important;
+}
+
+/* Delete button — refined, tap-friendly, red */
+.deletePostButton {
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+  width: 100% !important;
+  padding: 10px 14px !important;
+  background: none !important;
+  border: none !important;
+  cursor: pointer !important;
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  color: #DC2626 !important;
+  border-radius: 8px !important;
+  text-align: left !important;
+  transition: background 0.12s !important;
+  font-family: inherit !important;
+  min-height: 42px !important;
+  touch-action: manipulation;
+}
+
+.deletePostButton:hover {
+  background: rgba(220, 38, 38, 0.08) !important;
+}
+
+.deletePostButton:active {
+  background: rgba(220, 38, 38, 0.15) !important;
+}
+
+.deletePostButton svg {
+  flex-shrink: 0 !important;
+  color: #DC2626 !important;
+}
+
+[data-theme="dark"] .deletePostButton {
+  color: #F87171 !important;
+}
+
+[data-theme="dark"] .deletePostButton:hover {
+  background: rgba(248, 113, 113, 0.12) !important;
+}
+
+[data-theme="dark"] .deletePostButton svg {
+  color: #F87171 !important;
+}
+
+/* Delete VIDEO button — same treatment for consistency */
+.deleteVideoButton {
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+  width: 100% !important;
+  padding: 10px 14px !important;
+  background: none !important;
+  border: none !important;
+  cursor: pointer !important;
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  color: #DC2626 !important;
+  border-radius: 8px !important;
+  text-align: left !important;
+  transition: background 0.12s !important;
+  min-height: 42px !important;
+}
+
+.deleteVideoButton:hover {
+  background: rgba(220, 38, 38, 0.08) !important;
+}
+
+[data-theme="dark"] .deleteVideoButton {
+  color: #F87171 !important;
+}
+
+[data-theme="dark"] .deleteVideoButton:hover {
+  background: rgba(248, 113, 113, 0.12) !important;
+}
+
+/* Video dropdown trigger — match gallery styling */
+.videoMenuButtonV3 {
+  width: 34px !important;
+  height: 34px !important;
+  background: rgba(0, 0, 0, 0.55) !important;
+  backdrop-filter: blur(8px) !important;
+  -webkit-backdrop-filter: blur(8px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  transition: background 0.15s, transform 0.1s !important;
+}
+
+.videoMenuButtonV3:active {
+  transform: scale(0.92) !important;
+}
+
+/* Video dropdown menu — match gallery dropdown */
+.videoDropdownMenu {
+  position: absolute !important;
+  top: 48px !important;
+  right: 8px !important;
+  background: rgba(255, 255, 255, 0.98) !important;
+  backdrop-filter: blur(20px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(180%) !important;
+  border: 1px solid rgba(0, 0, 0, 0.08) !important;
+  border-radius: 14px !important;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.18), 0 2px 8px rgba(0, 0, 0, 0.08) !important;
+  min-width: 180px !important;
+  padding: 6px !important;
+  z-index: 20 !important;
+  animation: dropdownIn 0.18s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  transform-origin: top right;
+}
+
+.videoDropdownMenu button {
+  display: block !important;
+  width: 100% !important;
+  padding: 10px 14px !important;
+  background: none !important;
+  border: none !important;
+  cursor: pointer !important;
+  font-size: 13px !important;
+  font-weight: 500 !important;
+  color: var(--color-text) !important;
+  text-align: left !important;
+  border-radius: 8px !important;
+  transition: background 0.12s !important;
+  min-height: 42px !important;
+  font-family: inherit !important;
+}
+
+.videoDropdownMenu button:hover {
+  background: rgba(0, 0, 0, 0.05) !important;
+}
+
+[data-theme="dark"] .videoDropdownMenu {
+  background: rgba(30, 30, 34, 0.98) !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.6), 0 2px 8px rgba(0, 0, 0, 0.3) !important;
+}
+
+[data-theme="dark"] .videoDropdownMenu button {
+  color: var(--color-text) !important;
+}
+
+[data-theme="dark"] .videoDropdownMenu button:hover {
+  background: rgba(255, 255, 255, 0.05) !important;
+}
+
+/* Small screens */
+@media (max-width: 380px) {
+  .galleryDropdownMenu,
+  .videoDropdownMenu {
+    min-width: 150px !important;
+  }
+  .deletePostButton,
+  .deleteVideoButton,
+  .videoDropdownMenu button {
+    font-size: 12px !important;
+    padding: 9px 12px !important;
+    min-height: 40px !important;
+  }
+}

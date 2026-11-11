@@ -19,17 +19,21 @@ export const PhotoViewer: React.FC<PhotoViewerProps> = ({
 }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
+  const imgRef = useRef<HTMLImageElement>(null);
   const touchStartX = useRef<number | null>(null);
   const touchStartY = useRef<number | null>(null);
 
   const isOpen = photos.length > 0 && currentIndex !== null;
+  const currentSrc = currentIndex !== null && photos[currentIndex] ? photos[currentIndex] : '';
 
+  // Reset loading/error whenever src changes
   useEffect(() => {
     if (!isOpen) return;
     setLoading(true);
     setError(false);
-  }, [currentIndex, isOpen]);
+  }, [currentSrc, isOpen]);
 
+  // Keyboard navigation
   useEffect(() => {
     if (!isOpen) return;
     const handleKey = (e: KeyboardEvent) => {
@@ -41,6 +45,7 @@ export const PhotoViewer: React.FC<PhotoViewerProps> = ({
     return () => window.removeEventListener('keydown', handleKey);
   }, [isOpen, currentIndex, photos.length, onClose, onNext, onPrev]);
 
+  // Lock body scroll
   useEffect(() => {
     if (!isOpen) return;
     const prev = document.body.style.overflow;
@@ -89,7 +94,7 @@ export const PhotoViewer: React.FC<PhotoViewerProps> = ({
         <div className={styles.topSpacer} />
       </div>
 
-      {loading && (
+      {loading && !error && (
         <div className={styles.spinnerWrap}>
           <Loader2 size={40} className={styles.spinner} />
         </div>
@@ -102,8 +107,9 @@ export const PhotoViewer: React.FC<PhotoViewerProps> = ({
       )}
 
       <img
-        key={photos[idx]}
-        src={photos[idx]}
+        key={currentSrc}
+        ref={imgRef}
+        src={currentSrc}
         alt=""
         className={styles.image}
         style={{ opacity: loading || error ? 0 : 1 }}
