@@ -28,6 +28,10 @@ export const ProfilePage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'posts' | 'videos' | 'about'>('posts');
   const [photoViewerIndex, setPhotoViewerIndex] = useState<number | null>(null);
+  const [photoSelectionMode, setPhotoSelectionMode] = useState(false);
+  const [selectedPhotos, setSelectedPhotos] = useState<Set<string>>(new Set());
+  const photoLongPressTimer = useRef<number | null>(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [photoManagementOpen, setPhotoManagementOpen] = useState(false);
   const [communityCreationOpen, setCommunityCreationOpen] = useState(false);
   const [vipData, setVipData] = useState<{ level: string; credits: number; points: number; planExpiresAt: string | null }>({
@@ -288,6 +292,96 @@ export const ProfilePage: React.FC = () => {
     setUserPosts(updatedPosts);
     setPostMenuOpen(null);
     showToast('Deleted', 'success');
+  };
+
+  const performBatchDelete = async () => {
+    if (!isOwnProfile || !user?.id || selectedPhotos.size === 0) return;
+
+    // Group selected photos by post.id
+    const byPost = new Map<string, number[]>();
+    selectedPhotos.forEach((key) => {
+      const parts = key.split('-');
+      const imageIndex = parseInt(parts[parts.length - 1], 10);
+      const postId = parts.slice(0, -1).join('-');
+      if (!byPost.has(postId)) byPost.set(postId, []);
+      byPost.get(postId)!.push(imageIndex);
+    });
+
+    try {
+      for (const [postId, indices] of byPost.entries()) {
+        const post = userPosts.find((p) => p.id === postId);
+        if (!post) continue;
+
+        const remainingImages = post.images.filter((_, i) => !indices.includes(i));
+
+        if (remainingImages.length === 0) {
+          // Delete whole post
+          const { error } = await supabase
+            .from('posts')
+            .delete()
+            .eq('id', postId)
+            .eq('author_id', user.id);
+          if (error) throw error;
+        } else {
+          // Update post with remaining images
+          const { error } = await supabase
+            .from('posts')
+            .update({ images: remainingImages })
+            .eq('id', postId)
+            .eq('author_id', user.id);
+          if (error) throw error;
+        }
+      }
+
+      // Refresh
+      const updatedPosts = await profileService.getUserPosts(targetUserId);
+      setUserPosts(updatedPosts);
+      setPhotoSelectionMode(false);
+      setSelectedPhotos(new Set());
+      showToast(`Deleted ${selectedPhotos.size} photo${selectedPhotos.size > 1 ? 's' : ''}`, 'success');
+    } catch (err) {
+      console.error('[batch delete]', err);
+      showToast('Failed to delete photos', 'error');
+    }
+  };
+
+  const handleDeleteSelectedPhotos = () => {
+    if (!isOwnProfile || !user?.id || selectedPhotos.size === 0) return;
+    setShowDeleteConfirm(true);
+  };
+
+  const confirmBatchDelete = async () => {
+    setShowDeleteConfirm(false);
+    await performBatchDelete();
+  };
+
+  const togglePhotoSelection = (key: string) => {
+    setSelectedPhotos((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  };
+
+  const startPhotoLongPress = (key: string) => {
+    if (photoLongPressTimer.current) window.clearTimeout(photoLongPressTimer.current);
+    photoLongPressTimer.current = window.setTimeout(() => {
+      setPhotoSelectionMode(true);
+      setSelectedPhotos(new Set([key]));
+    }, 500);
+  };
+
+  const cancelPhotoLongPress = () => {
+    if (photoLongPressTimer.current) {
+      window.clearTimeout(photoLongPressTimer.current);
+      photoLongPressTimer.current = null;
+    }
+  };
+
+  const exitPhotoSelection = () => {
+    setPhotoSelectionMode(false);
+    setSelectedPhotos(new Set());
   };
 
   const handleToggleVideoVisibility = async (videoId: string, currentStatus: string) => {
@@ -1185,58 +1279,109 @@ export const ProfilePage: React.FC = () => {
       </div>
 
       {activeTab === 'posts' ? (
-        <div className={styles.galleryGridV3}>
-          {userPosts.length > 0 ? (
-            userPosts.map((post, postIndex) => {
-              const offset = userPosts.slice(0, postIndex).reduce((sum, p) => sum + p.images.length, 0);
-              return post.images.map((image, imageIndex) => {
-                const globalIndex = offset + imageIndex;
-                return (
-                  <div
-                    key={`${post.id}-${imageIndex}`}
-                    className={styles.galleryItemV3}
-                    onClick={() => setPhotoViewerIndex(globalIndex)}
-                  >
-                    <img src={image} alt="" loading="lazy" className={styles.galleryImageV3} />
-                    <div className={styles.galleryEngagementV3}>
-                      <span><Heart size={14} /> {post.likeCount || 0}</span>
-                      <span><MessageCircle size={14} /> {post.commentCount || 0}</span>
-                    </div>
-                    {isOwnProfile && (
-                      <>
-                        <button
-                          className={styles.galleryMenuV3}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setPostMenuOpen(postMenuOpen === `${post.id}-${imageIndex}` ? null : `${post.id}-${imageIndex}`);
-                          }}
-                        >
-                          <MoreVertical size={16} />
-                        </button>
-                        {postMenuOpen === `${post.id}-${imageIndex}` && (
-                          <div className={styles.galleryDropdownMenu} onClick={(e) => e.stopPropagation()}>
-                            <button
-                              className={styles.deletePostButton}
-                              onClick={() => handleDeletePost(post.id, imageIndex)}
-                            >
-                              <Trash2 size={14} /> {post.images.length > 1 ? 'Delete Photo' : 'Delete Post'}
-                            </button>
-                          </div>
-                        )}
-                      </>
-                    )}
-                  </div>
-                );
-              });
-            })
-          ) : (
-            <div className={styles.emptyPosts}>
-              <Camera size={32} />
-              <p>No photos yet</p>
-              <p className={styles.emptySubtext}>Photos from community posts will appear here</p>
+        <>
+          {photoSelectionMode && (
+            <div className={styles.selectionBar}>
+              <button className={styles.selectionCancel} onClick={exitPhotoSelection}>
+                Cancel
+              </button>
+              <span className={styles.selectionCount}>
+                {selectedPhotos.size} selected
+              </span>
+              <button
+                className={styles.selectionDelete}
+                onClick={handleDeleteSelectedPhotos}
+                disabled={selectedPhotos.size === 0}
+              >
+                <Trash2 size={16} />
+                Delete
+              </button>
             </div>
           )}
-        </div>
+          <div className={styles.galleryGridV3}>
+            {userPosts.length > 0 ? (
+              userPosts.map((post, postIndex) => {
+                const offset = userPosts.slice(0, postIndex).reduce((sum, p) => sum + p.images.length, 0);
+                return post.images.map((image, imageIndex) => {
+                  const globalIndex = offset + imageIndex;
+                  const key = `${post.id}-${imageIndex}`;
+                  return (
+                    <div
+                      key={key}
+                      className={`${styles.galleryItemV3} ${photoSelectionMode && selectedPhotos.has(key) ? styles.galleryItemSelected : ''}`}
+                      onClick={() => photoSelectionMode ? togglePhotoSelection(key) : setPhotoViewerIndex(globalIndex)}
+                      onMouseDown={() => isOwnProfile && !photoSelectionMode && startPhotoLongPress(key)}
+                      onMouseUp={cancelPhotoLongPress}
+                      onMouseLeave={cancelPhotoLongPress}
+                      onTouchStart={() => isOwnProfile && !photoSelectionMode && startPhotoLongPress(key)}
+                      onTouchEnd={cancelPhotoLongPress}
+                      onTouchMove={cancelPhotoLongPress}
+                      onContextMenu={(e) => e.preventDefault()}
+                    >
+                      {photoSelectionMode && (
+                        <div className={`${styles.selectionCheckbox} ${selectedPhotos.has(key) ? styles.selectionCheckboxActive : ''}`}>
+                          {selectedPhotos.has(key) && <Check size={14} />}
+                        </div>
+                      )}
+                      <img src={image} alt="" loading="lazy" className={styles.galleryImageV3} />
+                      {!photoSelectionMode && (
+                        <>
+                          <div className={styles.galleryEngagementV3}>
+                            <button
+                              className={styles.galleryEngagementBtn}
+                              onClick={(e) => { e.stopPropagation(); navigate('/community?postId=' + post.id); }}
+                              aria-label="View likes on post"
+                            >
+                              <Heart size={14} />
+                              <span>{post.likeCount || 0}</span>
+                            </button>
+                            <button
+                              className={styles.galleryEngagementBtn}
+                              onClick={(e) => { e.stopPropagation(); navigate('/community?postId=' + post.id); }}
+                              aria-label="View comments on post"
+                            >
+                              <MessageCircle size={14} />
+                              <span>{post.commentCount || 0}</span>
+                            </button>
+                          </div>
+                          {isOwnProfile && (
+                            <>
+                              <button
+                                className={styles.galleryMenuV3}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setPostMenuOpen(postMenuOpen === key ? null : key);
+                                }}
+                              >
+                                <MoreVertical size={16} />
+                              </button>
+                              {postMenuOpen === key && (
+                                <div className={styles.galleryDropdownMenu} onClick={(e) => e.stopPropagation()}>
+                                  <button
+                                    className={styles.deletePostButton}
+                                    onClick={() => handleDeletePost(post.id, imageIndex)}
+                                  >
+                                    <Trash2 size={14} /> {post.images.length > 1 ? 'Delete Photo' : 'Delete Post'}
+                                  </button>
+                                </div>
+                              )}
+                            </>
+                          )}
+                        </>
+                      )}
+                    </div>
+                  );
+                });
+              })
+            ) : (
+              <div className={styles.emptyPosts}>
+                <Camera size={32} />
+                <p>No photos yet</p>
+                <p className={styles.emptySubtext}>Photos from community posts will appear here</p>
+              </div>
+            )}
+          </div>
+        </>
       ) : activeTab === 'videos' ? (
         <div className={styles.videosSectionV3}>
           {discoverVideos.length === 0 ? (
@@ -1557,6 +1702,36 @@ export const ProfilePage: React.FC = () => {
         isOwner={isOwnProfile}
         onUpdatePrivacy={handleUpdateVideoPrivacy}
       />
+
+      {showDeleteConfirm && (
+        <div className={styles.confirmOverlay} onClick={() => setShowDeleteConfirm(false)}>
+          <div className={styles.confirmDialog} onClick={(e) => e.stopPropagation()}>
+            <div className={styles.confirmIcon}>
+              <Trash2 size={28} />
+            </div>
+            <h3 className={styles.confirmTitle}>
+              Delete {selectedPhotos.size} {selectedPhotos.size === 1 ? 'photo' : 'photos'}?
+            </h3>
+            <p className={styles.confirmText}>
+              This action cannot be undone.
+            </p>
+            <div className={styles.confirmActions}>
+              <button
+                className={styles.confirmCancel}
+                onClick={() => setShowDeleteConfirm(false)}
+              >
+                Cancel
+              </button>
+              <button
+                className={styles.confirmDelete}
+                onClick={confirmBatchDelete}
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
