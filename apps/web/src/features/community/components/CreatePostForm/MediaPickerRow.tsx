@@ -86,7 +86,7 @@ export function MediaPickerRow({
             {videoUploading
               ? 'Uploading video...'
               : media.filter((m) => m.type === 'video').length > 0
-              ? `Add More Videos (${media.filter((m) => m.type === 'video').length}/3)`
+              ? `Add More Videos (${media.filter((m) => m.type === 'video').length}/1)`
               : 'Add Video'}
           </span>
         </button>

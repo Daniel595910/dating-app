@@ -137,6 +137,12 @@ export function canAddVideo(media: PostMedia[], hasVoice: boolean): MutexCheck {
       reason: 'Photos and videos cannot be mixed in one post. Remove the photos to add a video.',
     };
   }
+  if (media.filter((m) => m.type === 'video').length >= 1) {
+    return {
+      allowed: false,
+      reason: 'Only 1 video allowed per post. Remove the current video to add a different one.',
+    };
+  }
   return { allowed: true };
 }
 

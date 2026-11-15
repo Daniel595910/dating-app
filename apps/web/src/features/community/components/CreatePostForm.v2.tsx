@@ -77,7 +77,7 @@ function audioBufferToWav(buffer: AudioBuffer): Blob {
 export const CreatePostForm: React.FC<CreatePostFormProps> = ({
   open, onClose, communityId, userId, initialType, onPostCreated,
 }) => {
-  const maxPhotosPerPost = useSettings((s) => s.settings['general.max_photos_per_post']) || 10;
+  const maxPhotosPerPost = Math.min(useSettings((s) => s.settings['general.max_photos_per_post']) || 10, 4);
   const {
     state, setStep, setPostType, setContent, setLookingFor, setTags,
     addMedia, removeMedia, setUploading, setUploadProgress, setVideoUploading,
@@ -159,7 +159,7 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
     if (!files || files.length === 0) return;
     setVideoUploading(true); setError(null);
     const selectedFiles = Array.from(files);
-    const remainingSlots = 3 - media.filter((m) => m.type === 'video').length;
+    const remainingSlots = 1 - media.filter((m) => m.type === 'video').length;
     const filesToUpload = selectedFiles.slice(0, remainingSlots);
     try {
       for (const file of filesToUpload) {

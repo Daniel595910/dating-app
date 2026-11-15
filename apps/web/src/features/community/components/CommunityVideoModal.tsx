@@ -215,6 +215,7 @@ export function CommunityVideoModal({
   };
 
   const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    try { e.currentTarget.setPointerCapture(e.pointerId); } catch {}
     setSwipeState({ startX: e.clientX, deltaX: 0, isDragging: true });
   };
 
@@ -223,12 +224,13 @@ export function CommunityVideoModal({
     setSwipeState((prev) => ({ ...prev, deltaX: e.clientX - prev.startX }));
   };
 
-  const handlePointerUp = () => {
+  const handlePointerUp = (e?: React.PointerEvent<HTMLDivElement>) => {
     if (!swipeState.isDragging) return;
     const threshold = 50;
     if (swipeState.deltaX < -threshold) handleNext();
     else if (swipeState.deltaX > threshold) handlePrev();
     setSwipeState({ startX: 0, deltaX: 0, isDragging: false });
+    if (e) { try { e.currentTarget.releasePointerCapture(e.pointerId); } catch {} }
   };
 
   if (!open) return null;
@@ -260,6 +262,7 @@ export function CommunityVideoModal({
           onPointerMove={handlePointerMove}
           onPointerUp={handlePointerUp}
           onPointerCancel={handlePointerUp}
+          onPointerLeave={handlePointerUp}
         >
           <video
             ref={videoRef}
