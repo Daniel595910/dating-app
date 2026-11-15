@@ -1,4 +1,4 @@
-﻿// Media validation rules for the community CreatePostForm.
+// Media validation rules for the community CreatePostForm.
 // Extracted from inline logic in CreatePostForm.tsx + media.service.ts so that:
 //   1. Validation happens BEFORE upload starts (faster failure, better UX)
 //   2. Rules are unit-testable in isolation
@@ -131,13 +131,29 @@ export function canAddVideo(media: PostMedia[], hasVoice: boolean): MutexCheck {
   if (hasVoice) {
     return { allowed: false, reason: 'Remove the voice note before adding a video' };
   }
+  if (media.some((m) => m.type === 'image')) {
+    return {
+      allowed: false,
+      reason: 'Photos and videos cannot be mixed in one post. Remove the photos to add a video.',
+    };
+  }
   return { allowed: true };
 }
 
-export function canAddVoice(media: PostMedia[], hasVoice: boolean): MutexCheck {
+export function canAddVoice(media: PostMedia[], _hasVoice: boolean): MutexCheck {
   const hasVideo = media.some((m) => m.type === 'video');
   if (hasVideo) {
     return { allowed: false, reason: 'Remove the video before recording a voice note' };
+  }
+  return { allowed: true };
+}
+
+export function canAddImage(media: PostMedia[]): MutexCheck {
+  if (media.some((m) => m.type === 'video')) {
+    return {
+      allowed: false,
+      reason: 'Photos and videos cannot be mixed in one post. Remove the video to add photos.',
+    };
   }
   return { allowed: true };
 }

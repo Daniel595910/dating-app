@@ -1,6 +1,6 @@
 import { ImagePlus, Mic, Square, Upload, Video } from 'lucide-react';
 import type { PostMedia } from '../../types/community.types';
-import { canAddVideo, canAddVoice } from '../../utils/mediaValidation';
+import { canAddVideo, canAddVoice, canAddImage } from '../../utils/mediaValidation';
 import styles from './Composer.module.css';
 
 interface MediaPickerRowProps {
@@ -49,7 +49,8 @@ export function MediaPickerRow({
   const voiceCheck = canAddVoice(media, hasVoice);
 
   const photosFull = media.length >= maxPhotosPerPost;
-  const photosDisabled = uploading || photosFull;
+  const imageCheck = canAddImage(media);
+  const photosDisabled = uploading || photosFull || !imageCheck.allowed;
 
   return (
     <div className={styles.attachmentRow}>
@@ -59,7 +60,7 @@ export function MediaPickerRow({
         onClick={onAddPhotos}
         disabled={photosDisabled}
         className={styles.uploadButton}
-        title={photosFull ? `Maximum ${maxPhotosPerPost} media items` : 'Add photos'}
+        title={photosFull ? `Maximum ${maxPhotosPerPost} media items` : (imageCheck.reason || 'Add photos')}
       >
         <ImagePlus size={16} />
         <span>
