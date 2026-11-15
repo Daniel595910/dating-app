@@ -9,7 +9,6 @@ import { LookingForBadge } from './LookingForBadge';
 import { PostMedia } from './PostMedia.v2';
 import { PostActions } from './PostActions';
 import { ImagePreviewModal } from './ImagePreviewModal';
-import { CommunityVideoModal } from './CommunityVideoModal';
 import styles from '../styles/CommunityPostCard.v2.module.css';
 
 interface CommunityPostCardProps {
@@ -19,6 +18,7 @@ interface CommunityPostCardProps {
   onComment: (postId: string) => void;
   onShare: (postId: string) => void;
   onProfileClick: (authorId: string) => void;
+  onVideoExpand?: (postId: string, videoUrl: string, startTime: number) => void;
 }
 
 export const CommunityPostCard: React.FC<CommunityPostCardProps> = ({
@@ -28,6 +28,7 @@ export const CommunityPostCard: React.FC<CommunityPostCardProps> = ({
   onComment,
   onShare,
   onProfileClick,
+  onVideoExpand,
 }) => {
   const [reportSheetOpen, setReportSheetOpen] = useState(false);
   const [blockSheetOpen, setBlockSheetOpen] = useState(false);
@@ -43,8 +44,6 @@ export const CommunityPostCard: React.FC<CommunityPostCardProps> = ({
   const audioProgressRef = useRef<HTMLDivElement>(null);
   const [showMenu, setShowMenu] = useState(false);
   const audioRef = useRef<HTMLAudioElement>(null);
-  const [expandedVideoUrl, setExpandedVideoUrl] = useState<string | null>(null);
-  const [expandedStartTime, setExpandedStartTime] = useState(0);
 
   
 
@@ -249,8 +248,7 @@ export const CommunityPostCard: React.FC<CommunityPostCardProps> = ({
             media={post.media}
             onImageClick={(index) => { setPreviewIndex(index); setImagePreviewOpen(true); }}
             onVideoExpand={(videoUrl, startTime) => {
-              setExpandedStartTime(startTime);
-              setExpandedVideoUrl(videoUrl);
+              onVideoExpand?.(post.id, videoUrl, startTime);
             }}
           />
         </div>
@@ -310,17 +308,6 @@ export const CommunityPostCard: React.FC<CommunityPostCardProps> = ({
         onPrev={() => setPreviewIndex((prev) => Math.max(prev - 1, 0))}
       />
 
-      {expandedVideoUrl && (
-        <CommunityVideoModal
-          open={true}
-          onClose={() => setExpandedVideoUrl(null)}
-          post={post}
-          videoUrl={expandedVideoUrl}
-          startTimeSeconds={expandedStartTime}
-          currentUserId={currentUserId}
-          onLike={onLike}
-        />
-      )}
     </article>
   );
 };

@@ -15,6 +15,7 @@ import { MembersAndStoriesSheet } from '../../features/community/components/Memb
 import { communityService } from '../../features/community/services/community.service';
 import { FilterBar } from '../../features/community/components/FilterBar';
 import { CommunityPostCard } from '../../features/community/components/CommunityPostCard';
+import { CommunityVideoModal } from '../../features/community/components/CommunityVideoModal';
 import { CreatePostButton } from '../../features/community/components/CreatePostSheet';
 import { CreatePostForm } from '../../features/community/components/CreatePostForm.v2';
 import { CommunitySkeleton } from '../../features/community/components/CommunitySkeleton';
@@ -53,6 +54,9 @@ export const CommunityPage: React.FC = () => {
   const [filter, setFilter] = useState<FeedFilter>('all');
   const [createSheetOpen, setCreateSheetOpen] = useState(false);
   const [commentPostId, setCommentPostId] = useState<string | null>(null);
+  const [expandedPostId, setExpandedPostId] = useState<string | null>(null);
+  const [expandedVideoUrl, setExpandedVideoUrl] = useState<string | null>(null);
+  const [expandedStartTime, setExpandedStartTime] = useState(0);
   const [previewAuthorId, setPreviewAuthorId] = useState<string | null>(null);
   const [connectionTarget, setConnectionTarget] = useState<{ id: string; name: string } | null>(null);
   const [matchUser, setMatchUser] = useState<string | null>(null);
@@ -371,6 +375,11 @@ export const CommunityPage: React.FC = () => {
           <>
             {posts.map((post) => (
               <CommunityPostCard
+                onVideoExpand={(postId, videoUrl, startTime) => {
+                  setExpandedPostId(postId);
+                  setExpandedVideoUrl(videoUrl);
+                  setExpandedStartTime(startTime);
+                }}
                 key={post.id}
                 post={post}
                 currentUserId={user?.id || ''}
@@ -385,6 +394,23 @@ export const CommunityPage: React.FC = () => {
         )}
         </div>
         </VideoPlaybackProvider>
+
+      {expandedVideoUrl && expandedPostId && (
+        <CommunityVideoModal
+          open={true}
+          onClose={() => {
+            setExpandedPostId(null);
+            setExpandedVideoUrl(null);
+          }}
+          posts={posts}
+          initialPostId={expandedPostId}
+          initialVideoUrl={expandedVideoUrl}
+          startTimeSeconds={expandedStartTime}
+          onNeedMorePosts={loadMore}
+          currentUserId={user?.id || ''}
+          onLike={handleLike}
+        />
+      )}
       </main>
 
       <CreatePostButton onClick={() => setCreateSheetOpen(true)} />
