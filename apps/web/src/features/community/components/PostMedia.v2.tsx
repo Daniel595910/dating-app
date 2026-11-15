@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Play } from 'lucide-react';
+import { Play, Maximize2 } from 'lucide-react';
 import { PostMedia as PostMediaType } from '../types/community.types';
 import { useVideoPlayback } from '../context/VideoPlaybackContext';
 import styles from '../styles/PostMedia.v2.module.css';
@@ -8,6 +8,7 @@ import { VideoPlayerControls } from './VideoPlayerControls';
 interface PostMediaProps {
   media: PostMediaType[];
   onImageClick: (imageIndex: number) => void;
+  onVideoExpand?: (videoUrl: string, startTimeSeconds: number) => void;
 }
 
 type Format = 'empty' | 'photo' | 'video' | 'mixed';
@@ -27,7 +28,7 @@ function formatDuration(seconds: number): string {
   return m + ':' + String(s).padStart(2, '0');
 }
 
-export const PostMedia: React.FC<PostMediaProps> = ({ media, onImageClick }) => {
+export const PostMedia: React.FC<PostMediaProps> = ({ media, onImageClick, onVideoExpand }) => {
   const format = detectFormat(media);
   if (format === 'empty') return null;
 
@@ -41,7 +42,7 @@ export const PostMedia: React.FC<PostMediaProps> = ({ media, onImageClick }) => 
   if (format === 'video') {
     return (
       <div className={styles.videoStack}>
-        {videos.map((v) => (<VideoTile key={v.id} item={v} />))}
+        {videos.map((v) => (<VideoTile key={v.id} item={v} onExpand={onVideoExpand} />))}
       </div>
     );
   }
@@ -51,7 +52,7 @@ export const PostMedia: React.FC<PostMediaProps> = ({ media, onImageClick }) => 
       {images.length > 0 && <PhotoGrid images={images} onImageClick={onImageClick} />}
       {videos.length > 0 && (
         <div className={styles.videoStack}>
-          {videos.map((v) => (<VideoTile key={v.id} item={v} />))}
+          {videos.map((v) => (<VideoTile key={v.id} item={v} onExpand={onVideoExpand} />))}
         </div>
       )}
     </div>
@@ -122,9 +123,10 @@ function PhotoGrid({ images, onImageClick }: PhotoGridProps) {
 
 interface VideoTileProps {
   item: PostMediaType;
+  onExpand?: (videoUrl: string, startTimeSeconds: number) => void;
 }
 
-function VideoTile({ item }: VideoTileProps) {
+function VideoTile({ item, onExpand }: VideoTileProps) {
   const [playing, setPlaying] = useState(false);
   const [duration, setDuration] = useState<number | null>(
     item.durationSeconds && item.durationSeconds > 0 ? item.durationSeconds : null
@@ -281,6 +283,22 @@ function VideoTile({ item }: VideoTileProps) {
           }
         }}
       />
+      {playing && onExpand && (
+        <button
+          type='button'
+          className={styles.expandButton}
+          onClick={() => {
+            if (videoRef.current) {
+              const currentTime = videoRef.current.currentTime;
+              videoRef.current.pause();
+              onExpand(item.url, currentTime);
+            }
+          }}
+          aria-label='Expand video'
+        >
+          <Maximize2 size={18} />
+        </button>
+      )}
     </div>
   );
 }
