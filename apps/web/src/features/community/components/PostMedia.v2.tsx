@@ -1,8 +1,9 @@
-﻿import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Play } from 'lucide-react';
 import { PostMedia as PostMediaType } from '../types/community.types';
 import { useVideoPlayback } from '../context/VideoPlaybackContext';
 import styles from '../styles/PostMedia.v2.module.css';
+import { VideoPlayerControls } from './VideoPlayerControls';
 
 interface PostMediaProps {
   media: PostMediaType[];
@@ -131,6 +132,7 @@ function VideoTile({ item }: VideoTileProps) {
   const [extractedPoster, setExtractedPoster] = useState<string | null>(null);
   const [posterFailed, setPosterFailed] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   const playback = useVideoPlayback();
   const videoId = item.id;
 
@@ -240,15 +242,17 @@ function VideoTile({ item }: VideoTileProps) {
   }
 
   return (
-    <video
-      ref={videoRef}
-      src={item.url}
-      poster={posterSrc ?? undefined}
-      controls
-      autoPlay
-      playsInline
-      onLoadedMetadata={handleLoadedMetadata}
-      className={styles.videoPlayer}
-    />
+    <div ref={containerRef} className={styles.videoPlayerWrapper}>
+      <video
+        ref={videoRef}
+        src={item.url}
+        poster={posterSrc ?? undefined}
+        autoPlay
+        playsInline
+        onLoadedMetadata={handleLoadedMetadata}
+        className={styles.videoPlayerNoControls}
+      />
+      <VideoPlayerControls videoRef={videoRef} containerRef={containerRef} />
+    </div>
   );
 }

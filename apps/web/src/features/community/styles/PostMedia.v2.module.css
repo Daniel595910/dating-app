@@ -1,4 +1,4 @@
-﻿/* PostMedia v2 — premium Facebook-style photo & video layouts */
+/* PostMedia v2 — premium Facebook-style photo & video layouts */
 
 .photoSingle {
   position: relative;
@@ -234,5 +234,41 @@
   .playButtonOverlay {
     width: 56px;
     height: 56px;
+  }
+}
+
+/* ─── Custom video player wrapper ─── */
+
+.videoPlayerWrapper {
+  position: relative;
+  width: 100%;
+  max-height: 500px;
+  border-radius: var(--radius-md, 12px);
+  overflow: hidden;
+  background: #000;
+  display: block;
+}
+
+.videoPlayerWrapper:fullscreen {
+  border-radius: 0;
+  max-height: 100vh;
+}
+
+.videoPlayerNoControls {
+  width: 100%;
+  max-height: 500px;
+  background: #000;
+  display: block;
+  object-fit: contain;
+}
+
+.videoPlayerNoControls:fullscreen {
+  max-height: 100vh;
+}
+
+@media (max-width: 640px) {
+  .videoPlayerWrapper,
+  .videoPlayerNoControls {
+    max-height: 60vh;
   }
 }
