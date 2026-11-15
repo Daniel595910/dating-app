@@ -104,6 +104,17 @@ export function CommunityVideoModal({
     setShowReplay(false);
   };
 
+  const handleVideoTap = (e: React.MouseEvent<HTMLVideoElement>) => {
+    if (e.target !== e.currentTarget) return;
+    const video = videoRef.current;
+    if (!video) return;
+    if (video.paused) {
+      video.play().catch(() => {});
+    } else {
+      video.pause();
+    }
+  };
+
   // Backdrop click closes
   const handleBackdropClick = (e: React.MouseEvent<HTMLDivElement>) => {
     if (e.target === e.currentTarget) {
@@ -152,6 +163,7 @@ export function CommunityVideoModal({
             playsInline
             autoPlay
             onEnded={handleEnded}
+            onClick={handleVideoTap}
             className={styles.videoElement}
           />
           <VideoPlayerControls videoRef={videoRef} containerRef={containerRef} hideFullscreen={true} />
