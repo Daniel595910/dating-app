@@ -884,6 +884,8 @@ class CommunityService {
         id: `${post.id}-vid-${sortIdx}`,
         type: 'video' as const,
         url,
+        thumbnailUrl: post.metadata?.videoThumbnails?.[url] || undefined,
+        durationSeconds: post.metadata?.videoDurations?.[url] || undefined,
         sortOrder: sortIdx++,
       });
     });
