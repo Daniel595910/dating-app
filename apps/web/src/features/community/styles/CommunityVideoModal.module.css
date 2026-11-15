@@ -469,3 +469,20 @@
 .caughtUpSecondary:hover {
   background: var(--color-surface-alt, #f9fafb);
 }
+
+.caughtUpTertiary {
+  padding: 12px 20px;
+  background: rgba(239, 68, 68, 0.15);
+  color: var(--color-primary, #ef4444);
+  border: none;
+  border-radius: var(--radius-full, 9999px);
+  font-size: var(--font-sm, 13px);
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+  min-height: 44px;
+}
+
+.caughtUpTertiary:hover {
+  background: rgba(239, 68, 68, 0.28);
+}

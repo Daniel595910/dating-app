@@ -288,13 +288,20 @@ export function CommunityVideoModal({
 
           {/* Caught up overlay — appears when user reaches end of video queue */}
           {atEnd && !showReplay && (
-            <div className={styles.caughtUpOverlay}>
+            <div className={styles.caughtUpOverlay} onClick={(e) => { if (e.target === e.currentTarget) handlePrev(); }}>
               <div className={styles.caughtUpCard}>
                 <h3 className={styles.caughtUpTitle}>You've watched all videos here</h3>
                 <p className={styles.caughtUpText}>
                   Explore fresh videos from the Discover feed
                 </p>
                 <div className={styles.caughtUpActions}>
+                  <button
+                    type='button'
+                    className={styles.caughtUpTertiary}
+                    onClick={handlePrev}
+                  >
+                    Rewatch Previous Videos
+                  </button>
                   <button
                     type='button'
                     className={styles.caughtUpPrimary}
