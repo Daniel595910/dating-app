@@ -186,6 +186,7 @@ export function VideoPlayerControls({
   return (
     <div
       className={`${styles.controlsBar} ${visible ? styles.visible : styles.hidden}`}
+      onClick={(e) => e.stopPropagation()}
       onPointerMove={resetHideTimer}
       onPointerLeave={() => {
         if (playing && !dragging) {

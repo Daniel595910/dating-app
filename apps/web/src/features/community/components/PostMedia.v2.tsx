@@ -214,6 +214,24 @@ function VideoTile({ item }: VideoTileProps) {
     setPlaying(true);
   };
 
+  const handleEnded = () => {
+    setPlaying(false);
+    if (videoRef.current) {
+      videoRef.current.currentTime = 0;
+    }
+  };
+
+  const handleVideoTap = (e: React.MouseEvent<HTMLVideoElement>) => {
+    if (e.target !== e.currentTarget) return;
+    const video = videoRef.current;
+    if (!video) return;
+    if (video.paused) {
+      video.play().catch(() => {});
+    } else {
+      video.pause();
+    }
+  };
+
   const handleLoadedMetadata = () => {
     if (videoRef.current) {
       const d = videoRef.current.duration;
@@ -250,9 +268,19 @@ function VideoTile({ item }: VideoTileProps) {
         autoPlay
         playsInline
         onLoadedMetadata={handleLoadedMetadata}
+        onEnded={handleEnded}
+        onClick={handleVideoTap}
         className={styles.videoPlayerNoControls}
       />
-      <VideoPlayerControls videoRef={videoRef} containerRef={containerRef} />
+      <VideoPlayerControls
+        videoRef={videoRef}
+        containerRef={containerRef}
+        onPlayingChange={(isPlaying) => {
+          if (!isPlaying && videoRef.current && videoRef.current.ended) {
+            setPlaying(false);
+          }
+        }}
+      />
     </div>
   );
 }
