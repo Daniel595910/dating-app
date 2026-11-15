@@ -1,12 +1,12 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Heart, MessageCircle, MapPin, BadgeCheck, Share2, UserPlus, Check, Play, Pause, Mic, MoreHorizontal, Flag, Ban } from 'lucide-react';
-import { CommunityPost } from '../../types/community.types';
+import { CommunityPost } from '../types/community.types';
 import { supabase } from '@/config/supabase.client';
 import { ReportSheet } from './ReportSheet';
 import { BlockConfirmSheet } from './BlockConfirmSheet';
 import { ShareSheet } from './ShareSheet';
 import { LookingForBadge } from './LookingForBadge';
-import { PostMedia } from './PostMedia';
+import { PostMedia } from './PostMedia.v2';
 import { PostActions } from './PostActions';
 import { ImagePreviewModal } from './ImagePreviewModal';
 import styles from '../styles/CommunityPostCard.module.css';
@@ -63,7 +63,7 @@ export const CommunityPostCard: React.FC<CommunityPostCardProps> = ({
 
     checkFollowStatus();
   }, [currentUserId, post.author.id, isOwnPost]);
-  const mediaUrls = post.media.map((m) => m.url);
+  const mediaUrls = post.media.filter((m) => m.type === 'image').map((m) => m.url);
 
   const handleFollow = async (e: React.MouseEvent) => {
     e.stopPropagation();
