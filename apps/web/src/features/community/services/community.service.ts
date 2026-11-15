@@ -242,6 +242,7 @@ class CommunityService {
     const images = (media || []).filter((m) => m.type === 'image').map((m) => m.url);
     const videos = (media || []).filter((m) => m.type === 'video').map((m) => m.url);
     const finalAudio = audioUrl || (media || []).find((m) => m.type === 'audio')?.url;
+    const videoMedia = (media || []).filter((m) => m.type === 'video');
 
     const insertData: any = {
       community_id: communityId,
@@ -254,8 +255,25 @@ class CommunityService {
       tags: tags || [],
     };
 
-    if (finalAudio) {
-      insertData.metadata = { audioUrl: finalAudio };
+    // Build metadata additively — preserve existing fields, add video thumbnails + durations
+    const metadata: Record<string, unknown> = {};
+    if (finalAudio) metadata.audioUrl = finalAudio;
+    const audioMedia = (media || []).find((m) => m.type === 'audio');
+    if (audioMedia && typeof (audioMedia as any).durationMs === 'number') {
+      metadata.durationMs = (audioMedia as any).durationMs;
+    }
+    if (videoMedia.length > 0) {
+      const videoThumbnails: Record<string, string> = {};
+      const videoDurations: Record<string, number> = {};
+      videoMedia.forEach((v) => {
+        if (v.thumbnailUrl) videoThumbnails[v.url] = v.thumbnailUrl;
+        if (v.durationSeconds && v.durationSeconds > 0) videoDurations[v.url] = v.durationSeconds;
+      });
+      if (Object.keys(videoThumbnails).length > 0) metadata.videoThumbnails = videoThumbnails;
+      if (Object.keys(videoDurations).length > 0) metadata.videoDurations = videoDurations;
+    }
+    if (Object.keys(metadata).length > 0) {
+      insertData.metadata = metadata;
     }
 
     const { data, error } = await supabase
