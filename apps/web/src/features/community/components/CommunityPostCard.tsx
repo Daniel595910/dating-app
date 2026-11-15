@@ -9,6 +9,7 @@ import { LookingForBadge } from './LookingForBadge';
 import { PostMedia } from './PostMedia.v2';
 import { PostActions } from './PostActions';
 import { ImagePreviewModal } from './ImagePreviewModal';
+import { CommunityVideoModal } from './CommunityVideoModal';
 import styles from '../styles/CommunityPostCard.v2.module.css';
 
 interface CommunityPostCardProps {
@@ -42,6 +43,8 @@ export const CommunityPostCard: React.FC<CommunityPostCardProps> = ({
   const audioProgressRef = useRef<HTMLDivElement>(null);
   const [showMenu, setShowMenu] = useState(false);
   const audioRef = useRef<HTMLAudioElement>(null);
+  const [expandedVideoUrl, setExpandedVideoUrl] = useState<string | null>(null);
+  const [expandedStartTime, setExpandedStartTime] = useState(0);
 
   
 
@@ -242,7 +245,14 @@ export const CommunityPostCard: React.FC<CommunityPostCardProps> = ({
       {/* Media */}
       {post.media.length > 0 && (
         <div className={styles.mediaWrapper}>
-          <PostMedia media={post.media} onImageClick={(index) => { setPreviewIndex(index); setImagePreviewOpen(true); }} />
+          <PostMedia
+            media={post.media}
+            onImageClick={(index) => { setPreviewIndex(index); setImagePreviewOpen(true); }}
+            onVideoExpand={(videoUrl, startTime) => {
+              setExpandedStartTime(startTime);
+              setExpandedVideoUrl(videoUrl);
+            }}
+          />
         </div>
       )}
 
@@ -299,6 +309,18 @@ export const CommunityPostCard: React.FC<CommunityPostCardProps> = ({
         onNext={() => setPreviewIndex((prev) => Math.min(prev + 1, mediaUrls.length - 1))}
         onPrev={() => setPreviewIndex((prev) => Math.max(prev - 1, 0))}
       />
+
+      {expandedVideoUrl && (
+        <CommunityVideoModal
+          open={true}
+          onClose={() => setExpandedVideoUrl(null)}
+          post={post}
+          videoUrl={expandedVideoUrl}
+          startTimeSeconds={expandedStartTime}
+          currentUserId={currentUserId}
+          onLike={onLike}
+        />
+      )}
     </article>
   );
 };
