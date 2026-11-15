@@ -7,6 +7,7 @@ import { ShareSheet } from './ShareSheet';
 import { ReportSheet } from './ReportSheet';
 import { BlockConfirmSheet } from './BlockConfirmSheet';
 import styles from '../styles/CommunityVideoModal.module.css';
+import { useWatchedVideos } from '../hooks/useWatchedVideos';
 
 interface CommunityVideoModalProps {
   open: boolean;
@@ -50,6 +51,8 @@ export function CommunityVideoModal({
   const [currentVideoUrl, setCurrentVideoUrl] = useState<string | null>(initialVideoUrl ?? legacyVideoUrl ?? null);
   const [swipeState, setSwipeState] = useState({ startX: 0, deltaX: 0, isDragging: false });
 
+  const { watched, markWatched, startPlayTimer, clearPlayTimer } = useWatchedVideos();
+
   const allPosts = posts ?? (legacyPost ? [legacyPost] : []);
   const currentPost = allPosts.find((p) => p.id === currentPostId) ?? legacyPost ?? allPosts[0];
   const isOwnPost = currentPost?.author.id === currentUserId;
@@ -84,6 +87,22 @@ export function CommunityVideoModal({
     }
   }, [open, currentVideoUrl, startTimeSeconds]);
 
+  // Play/pause tracking → mark watched after 3s
+  useEffect(() => {
+    if (!open || !currentPost) return;
+    const video = videoRef.current;
+    if (!video) return;
+    const handlePlay = () => startPlayTimer(currentPost.id);
+    const handlePause = () => clearPlayTimer();
+    video.addEventListener('play', handlePlay);
+    video.addEventListener('pause', handlePause);
+    return () => {
+      video.removeEventListener('play', handlePlay);
+      video.removeEventListener('pause', handlePause);
+      clearPlayTimer();
+    };
+  }, [open, currentPost?.id, startPlayTimer, clearPlayTimer]);
+
   // Escape key closes modal
   useEffect(() => {
     if (!open) return;
@@ -100,15 +119,18 @@ export function CommunityVideoModal({
 
   // On close, propagate current playback time back to parent
   const handleClose = useCallback(() => {
+    clearPlayTimer();
     const video = videoRef.current;
     if (video && onTimeUpdate) {
       onTimeUpdate(video.currentTime);
     }
     onClose();
-  }, [onClose, onTimeUpdate]);
+  }, [onClose, onTimeUpdate, clearPlayTimer]);
 
   // Video ended → show replay
   const handleEnded = () => {
+    if (currentPost) markWatched(currentPost.id);
+    clearPlayTimer();
     setShowReplay(true);
   };
 
@@ -151,9 +173,14 @@ export function CommunityVideoModal({
     setShareSheetOpen(true);
   };
 
-  const getVideoPosts = () => allPosts.filter((p) => p.media.some((m) => m.type === 'video'));
+  const getVideoPosts = () => {
+    const allVideoPosts = allPosts.filter((p) => p.media.some((m) => m.type === 'video'));
+    const unwatched = allVideoPosts.filter((p) => !watched.has(p.id) || p.id === currentPostId);
+    return unwatched.length > 0 ? unwatched : allVideoPosts;
+  };
 
   const navigateToPost = (targetPost: CommunityPost) => {
+    clearPlayTimer();
     const videoMedia = targetPost.media.find((m) => m.type === 'video');
     if (!videoMedia) return;
     setCurrentPostId(targetPost.id);
