@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { X, Heart, MessageCircle, Share2, MoreHorizontal, Flag, Ban, RotateCcw, BadgeCheck, MapPin } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { CommunityPost } from '../types/community.types';
 import { VideoPlayerControls } from './VideoPlayerControls';
 import { CommentSheet } from './CommentSheet';
@@ -50,8 +51,10 @@ export function CommunityVideoModal({
   const [currentPostId, setCurrentPostId] = useState<string | null>(initialPostId ?? legacyPost?.id ?? null);
   const [currentVideoUrl, setCurrentVideoUrl] = useState<string | null>(initialVideoUrl ?? legacyVideoUrl ?? null);
   const [swipeState, setSwipeState] = useState({ startX: 0, deltaX: 0, isDragging: false });
+  const [atEnd, setAtEnd] = useState(false);
 
   const { watched, markWatched, startPlayTimer, clearPlayTimer } = useWatchedVideos();
+  const navigate = useNavigate();
 
   const allPosts = posts ?? (legacyPost ? [legacyPost] : []);
   const currentPost = allPosts.find((p) => p.id === currentPostId) ?? legacyPost ?? allPosts[0];
@@ -185,6 +188,7 @@ export function CommunityVideoModal({
     if (!videoMedia) return;
     setCurrentPostId(targetPost.id);
     setCurrentVideoUrl(videoMedia.url);
+    setAtEnd(false);
     setShowReplay(false);
   };
 
@@ -195,11 +199,14 @@ export function CommunityVideoModal({
     if (idx >= 0 && idx < videoPosts.length - 1) {
       navigateToPost(videoPosts[idx + 1]!);
       if (idx >= videoPosts.length - 3 && onNeedMorePosts) onNeedMorePosts();
+    } else if (idx === videoPosts.length - 1) {
+      setAtEnd(true);
     }
   };
 
   const handlePrev = () => {
     if (!currentPost) return;
+    setAtEnd(false);
     const videoPosts = getVideoPosts();
     const idx = videoPosts.findIndex((p) => p.id === currentPost.id);
     if (idx > 0) {
@@ -273,6 +280,34 @@ export function CommunityVideoModal({
                 <RotateCcw size={32} />
                 <span>Replay</span>
               </button>
+            </div>
+          )}
+
+          {/* Caught up overlay — appears when user reaches end of video queue */}
+          {atEnd && !showReplay && (
+            <div className={styles.caughtUpOverlay}>
+              <div className={styles.caughtUpCard}>
+                <h3 className={styles.caughtUpTitle}>You've watched all videos here</h3>
+                <p className={styles.caughtUpText}>
+                  Explore fresh videos from the Discover feed
+                </p>
+                <div className={styles.caughtUpActions}>
+                  <button
+                    type='button'
+                    className={styles.caughtUpPrimary}
+                    onClick={() => { onClose(); navigate('/discover'); }}
+                  >
+                    Explore Videos
+                  </button>
+                  <button
+                    type='button'
+                    className={styles.caughtUpSecondary}
+                    onClick={onClose}
+                  >
+                    Close
+                  </button>
+                </div>
+              </div>
             </div>
           )}
         </div>
