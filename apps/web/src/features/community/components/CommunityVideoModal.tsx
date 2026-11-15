@@ -11,8 +11,12 @@ import styles from '../styles/CommunityVideoModal.module.css';
 interface CommunityVideoModalProps {
   open: boolean;
   onClose: () => void;
-  post: CommunityPost;
-  videoUrl: string;
+  posts?: CommunityPost[];
+  initialPostId?: string;
+  initialVideoUrl?: string;
+  onNeedMorePosts?: () => void;
+  post?: CommunityPost;
+  videoUrl?: string;
   startTimeSeconds?: number;
   onTimeUpdate?: (seconds: number) => void;
   currentUserId: string;
@@ -22,8 +26,12 @@ interface CommunityVideoModalProps {
 export function CommunityVideoModal({
   open,
   onClose,
-  post,
-  videoUrl,
+  posts,
+  initialPostId,
+  initialVideoUrl,
+  onNeedMorePosts,
+  post: legacyPost,
+  videoUrl: legacyVideoUrl,
   startTimeSeconds = 0,
   onTimeUpdate,
   currentUserId,
@@ -38,11 +46,19 @@ export function CommunityVideoModal({
   const [blockSheetOpen, setBlockSheetOpen] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
 
-  const isOwnPost = post.author.id === currentUserId;
+  const [currentPostId, setCurrentPostId] = useState<string | null>(initialPostId ?? legacyPost?.id ?? null);
+  const [currentVideoUrl, setCurrentVideoUrl] = useState<string | null>(initialVideoUrl ?? legacyVideoUrl ?? null);
+  const [swipeState, setSwipeState] = useState({ startX: 0, deltaX: 0, isDragging: false });
+
+  const allPosts = posts ?? (legacyPost ? [legacyPost] : []);
+  const currentPost = allPosts.find((p) => p.id === currentPostId) ?? legacyPost ?? allPosts[0];
+  const isOwnPost = currentPost?.author.id === currentUserId;
 
   // Find the video's stored thumbnail if any
-  const videoMedia = post.media.find((m) => m.type === 'video' && m.url === videoUrl);
-  const posterUrl = videoMedia?.thumbnailUrl;
+  const currentVideoMedia = currentPost?.media.find(
+    (m) => m.type === 'video' && m.url === currentVideoUrl
+  );
+  const currentPosterUrl = currentVideoMedia?.thumbnailUrl;
 
   // Set start time on mount / when open changes
   useEffect(() => {
@@ -66,7 +82,7 @@ export function CommunityVideoModal({
     } else {
       video.addEventListener('loadedmetadata', applyStartTime, { once: true });
     }
-  }, [open, videoUrl, startTimeSeconds]);
+  }, [open, currentVideoUrl, startTimeSeconds]);
 
   // Escape key closes modal
   useEffect(() => {
@@ -124,7 +140,7 @@ export function CommunityVideoModal({
 
   // Like toggle — call parent's onLike
   const handleLike = () => {
-    onLike(post.id);
+    if (currentPost) onLike(currentPost.id);
   };
 
   const handleComment = () => {
@@ -135,9 +151,57 @@ export function CommunityVideoModal({
     setShareSheetOpen(true);
   };
 
+  const getVideoPosts = () => allPosts.filter((p) => p.media.some((m) => m.type === 'video'));
+
+  const navigateToPost = (targetPost: CommunityPost) => {
+    const videoMedia = targetPost.media.find((m) => m.type === 'video');
+    if (!videoMedia) return;
+    setCurrentPostId(targetPost.id);
+    setCurrentVideoUrl(videoMedia.url);
+    setShowReplay(false);
+  };
+
+  const handleNext = () => {
+    if (!currentPost) return;
+    const videoPosts = getVideoPosts();
+    const idx = videoPosts.findIndex((p) => p.id === currentPost.id);
+    if (idx >= 0 && idx < videoPosts.length - 1) {
+      navigateToPost(videoPosts[idx + 1]!);
+      if (idx >= videoPosts.length - 3 && onNeedMorePosts) onNeedMorePosts();
+    }
+  };
+
+  const handlePrev = () => {
+    if (!currentPost) return;
+    const videoPosts = getVideoPosts();
+    const idx = videoPosts.findIndex((p) => p.id === currentPost.id);
+    if (idx > 0) {
+      navigateToPost(videoPosts[idx - 1]!);
+    }
+  };
+
+  const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    setSwipeState({ startX: e.clientX, deltaX: 0, isDragging: true });
+  };
+
+  const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!swipeState.isDragging) return;
+    setSwipeState((prev) => ({ ...prev, deltaX: e.clientX - prev.startX }));
+  };
+
+  const handlePointerUp = () => {
+    if (!swipeState.isDragging) return;
+    const threshold = 50;
+    if (swipeState.deltaX < -threshold) handleNext();
+    else if (swipeState.deltaX > threshold) handlePrev();
+    setSwipeState({ startX: 0, deltaX: 0, isDragging: false });
+  };
+
   if (!open) return null;
 
-  const formattedDate = post.createdAt ? new Date(post.createdAt).toLocaleDateString() : '';
+  const formattedDate = currentPost?.createdAt ? new Date(currentPost.createdAt).toLocaleDateString() : '';
+
+  if (!currentPost) return null;
 
   return (
     <div className={styles.backdrop} onClick={handleBackdropClick}>
@@ -155,11 +219,18 @@ export function CommunityVideoModal({
         </button>
 
         {/* Video pane */}
-        <div className={styles.videoPane} ref={containerRef}>
+        <div
+          className={styles.videoPane}
+          ref={containerRef}
+          onPointerDown={handlePointerDown}
+          onPointerMove={handlePointerMove}
+          onPointerUp={handlePointerUp}
+          onPointerCancel={handlePointerUp}
+        >
           <video
             ref={videoRef}
-            src={videoUrl}
-            poster={posterUrl}
+            src={currentVideoUrl ?? ''}
+            poster={currentPosterUrl}
             playsInline
             autoPlay
             onEnded={handleEnded}
@@ -184,22 +255,22 @@ export function CommunityVideoModal({
           {/* Author row */}
           <div className={styles.authorRow}>
             <div className={styles.avatar}>
-              {post.author.avatarUrl ? (
-                <img src={post.author.avatarUrl} alt={post.author.name} />
+              {currentPost.author.avatarUrl ? (
+                <img src={currentPost.author.avatarUrl} alt={currentPost.author.name} />
               ) : (
-                post.author.name.charAt(0).toUpperCase()
+                currentPost.author.name.charAt(0).toUpperCase()
               )}
             </div>
             <div className={styles.authorInfo}>
               <div className={styles.nameRow}>
-                <span className={styles.name}>{post.author.name}</span>
-                {post.author.verified && <BadgeCheck size={14} className={styles.verifiedIcon} />}
+                <span className={styles.name}>{currentPost.author.name}</span>
+                {currentPost.author.verified && <BadgeCheck size={14} className={styles.verifiedIcon} />}
               </div>
               <div className={styles.metaRow}>
-                {post.author.location && (
+                {currentPost.author.location && (
                   <span className={styles.locationRow}>
                     <MapPin size={10} />
-                    <span>{post.author.location}</span>
+                    <span>{currentPost.author.location}</span>
                   </span>
                 )}
                 <span className={styles.timeAgo}>{formattedDate}</span>
@@ -233,14 +304,14 @@ export function CommunityVideoModal({
           </div>
 
           {/* Caption */}
-          {post.content && (
-            <p className={styles.content}>{post.content}</p>
+          {currentPost.content && (
+            <p className={styles.content}>{currentPost.content}</p>
           )}
 
           {/* Tags */}
-          {post.tags.length > 0 && (
+          {currentPost.tags.length > 0 && (
             <div className={styles.tagsRow}>
-              {post.tags.map((tag, i) => (
+              {currentPost.tags.map((tag, i) => (
                 <span key={i} className={styles.tag}>#{tag}</span>
               ))}
             </div>
@@ -250,12 +321,12 @@ export function CommunityVideoModal({
           <div className={styles.actionsDivider} />
           <div className={styles.actionsBar}>
             <button
-              className={`${styles.actionButton} ${post.viewer.liked ? styles.actionButtonLiked : ''}`}
+              className={`${styles.actionButton} ${currentPost.viewer.liked ? styles.actionButtonLiked : ''}`}
               onClick={handleLike}
-              aria-label={post.viewer.liked ? 'Unlike' : 'Like'}
+              aria-label={currentPost.viewer.liked ? 'Unlike' : 'Like'}
             >
-              <Heart size={20} fill={post.viewer.liked ? 'currentColor' : 'none'} />
-              <span>{post.stats.likes}</span>
+              <Heart size={20} fill={currentPost.viewer.liked ? 'currentColor' : 'none'} />
+              <span>{currentPost.stats.likes}</span>
             </button>
             <button
               className={styles.actionButton}
@@ -263,7 +334,7 @@ export function CommunityVideoModal({
               aria-label="Comments"
             >
               <MessageCircle size={20} />
-              <span>{post.stats.comments}</span>
+              <span>{currentPost.stats.comments}</span>
             </button>
             <button
               className={styles.actionButton}
@@ -280,14 +351,14 @@ export function CommunityVideoModal({
       <CommentSheet
         open={commentSheetOpen}
         onClose={() => setCommentSheetOpen(false)}
-        postId={post.id}
+        postId={currentPost.id}
         userId={currentUserId}
       />
 
       <ShareSheet
         open={shareSheetOpen}
         onClose={() => setShareSheetOpen(false)}
-        postUrl={typeof window !== 'undefined' ? window.location.origin + '/post/' + post.id : ''}
+        postUrl={typeof window !== 'undefined' ? window.location.origin + '/post/' + currentPost.id : ''}
       />
 
       <ReportSheet
@@ -295,16 +366,16 @@ export function CommunityVideoModal({
         onClose={() => setReportSheetOpen(false)}
         reporterId={currentUserId}
         targetType="post"
-        targetId={post.id}
-        reportedUserId={post.author.id}
+        targetId={currentPost.id}
+        reportedUserId={currentPost.author.id}
       />
 
       <BlockConfirmSheet
         open={blockSheetOpen}
         onClose={() => setBlockSheetOpen(false)}
         blockerId={currentUserId}
-        targetUserId={post.author.id}
-        targetUserName={post.author.name}
+        targetUserId={currentPost.author.id}
+        targetUserName={currentPost.author.name}
         onBlocked={() => setBlockSheetOpen(false)}
       />
     </div>
