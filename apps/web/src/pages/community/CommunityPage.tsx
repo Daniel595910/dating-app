@@ -37,6 +37,7 @@ import { OfflineBanner } from '../../features/community/components/OfflineBanner
 import { CommunitySwitcher } from '../../features/community/components/CommunitySwitcher';
 import { FeedFilter } from '../../features/community/types/community.types';
 import styles from '../../features/community/styles/CommunityPage.module.css';
+import { VideoPlaybackProvider } from '../../features/community/context/VideoPlaybackContext';
 
 export const CommunityPage: React.FC = () => {
   const navigate = useNavigate();
@@ -356,6 +357,7 @@ export const CommunityPage: React.FC = () => {
         />
         <FilterBar activeFilter={filter} onFilterChange={setFilter} />
         </div>
+        <VideoPlaybackProvider>
         <div className={styles.postsWrapper}>
         {filter === 'profiles' ? (
           <ProfileSwipeDeck userId={user?.id || ''} communityId={community.id} onGetToKnow={(id) => handleGetToKnow(id)} />
@@ -382,6 +384,7 @@ export const CommunityPage: React.FC = () => {
           </>
         )}
         </div>
+        </VideoPlaybackProvider>
       </main>
 
       <CreatePostButton onClick={() => setCreateSheetOpen(true)} />
