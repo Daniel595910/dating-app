@@ -9,7 +9,7 @@ import { LookingForBadge } from './LookingForBadge';
 import { PostMedia } from './PostMedia.v2';
 import { PostActions } from './PostActions';
 import { ImagePreviewModal } from './ImagePreviewModal';
-import styles from '../styles/CommunityPostCard.module.css';
+import styles from '../styles/CommunityPostCard.v2.module.css';
 
 interface CommunityPostCardProps {
   post: CommunityPost;
