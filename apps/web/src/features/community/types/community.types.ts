@@ -18,6 +18,7 @@ export interface PostMedia {
   width?: number;
   height?: number;
   thumbnailUrl?: string;
+  durationSeconds?: number;
   sortOrder: number;
 }
 
@@ -42,6 +43,8 @@ export interface CommunityPost {
   metadata?: {
     audioUrl?: string;
     durationMs?: number;
+    videoThumbnails?: Record<string, string>;
+    videoDurations?: Record<string, number>;
   } | null;
   id: string;
   communityId: string;

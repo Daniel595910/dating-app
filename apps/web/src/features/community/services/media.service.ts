@@ -193,6 +193,7 @@ class MediaService {
       let thumbnailUrl: string | null = null;
 
       // 3. Generate and upload thumbnail
+      let videoDurationSeconds = 0;
       try {
         const video = document.createElement('video');
         video.src = URL.createObjectURL(file);
@@ -207,6 +208,7 @@ class MediaService {
           video.onseeked = resolve;
           video.onerror = resolve;
         });
+        videoDurationSeconds = Number.isFinite(video.duration) && video.duration > 0 ? video.duration : 0;
 
         const canvas = document.createElement('canvas');
         canvas.width = video.videoWidth;
@@ -237,7 +239,8 @@ class MediaService {
           id: `${timestamp}-${randomSuffix}`,
           type: 'video',
           url: publicUrlData.publicUrl,
-          thumbnailUrl: thumbnailUrl,
+          thumbnailUrl: thumbnailUrl ?? undefined,
+          durationSeconds: videoDurationSeconds || undefined,
           sortOrder: 0,
         },
       };
