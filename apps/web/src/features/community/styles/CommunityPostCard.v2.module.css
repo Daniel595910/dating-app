@@ -369,3 +369,10 @@
   from { opacity: 0; transform: translateY(-4px); }
   to   { opacity: 1; transform: translateY(0); }
 }
+
+/* Mobile — square corners so cards can touch screen edges cleanly */
+@media (max-width: 640px) {
+  .card {
+    border-radius: 0;
+  }
+}
