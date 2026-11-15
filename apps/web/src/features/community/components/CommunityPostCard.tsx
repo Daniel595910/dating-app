@@ -196,14 +196,6 @@ export const CommunityPostCard: React.FC<CommunityPostCardProps> = ({
       {/* Looking For Badge */}
       {post.lookingFor && <LookingForBadge lookingFor={post.lookingFor} />}
 
-            {/* Tags */}
-      {post.tags.length > 0 && (
-        <div className={styles.tagsRow}>
-          {post.tags.map((tag, index) => (
-            <span key={index} className={styles.tag}>#{tag}</span>
-          ))}
-        </div>
-      )}
 
       {/* Content */}
       {post.content && (
