@@ -154,7 +154,7 @@ export function CommunityVideoModal({
             onEnded={handleEnded}
             className={styles.videoElement}
           />
-          <VideoPlayerControls videoRef={videoRef} containerRef={containerRef} />
+          <VideoPlayerControls videoRef={videoRef} containerRef={containerRef} hideFullscreen={true} />
 
           {/* Replay overlay */}
           {showReplay && (

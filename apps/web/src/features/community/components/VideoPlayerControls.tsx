@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Play, Pause, Volume2, VolumeX, Maximize, Minimize } from 'lucide-react';
+import { Play, Pause, Volume2, VolumeX, Maximize, Minimize, Maximize2 } from 'lucide-react';
 import styles from '../styles/VideoPlayerControls.module.css';
 
 interface VideoPlayerControlsProps {
@@ -7,6 +7,8 @@ interface VideoPlayerControlsProps {
   containerRef: React.RefObject<HTMLDivElement>;
   onPlayingChange?: (playing: boolean) => void;
   autoHideMs?: number;
+  onExpand?: () => void;
+  hideFullscreen?: boolean;
 }
 
 function formatTime(seconds: number): string {
@@ -21,6 +23,8 @@ export function VideoPlayerControls({
   containerRef,
   onPlayingChange,
   autoHideMs = 3000,
+  onExpand,
+  hideFullscreen = false,
 }: VideoPlayerControlsProps) {
   const [playing, setPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
@@ -239,14 +243,25 @@ export function VideoPlayerControls({
           {muted ? <VolumeX size={18} /> : <Volume2 size={18} />}
         </button>
 
-        <button
-          type="button"
-          onClick={toggleFullscreen}
-          className={styles.iconButton}
-          aria-label={isFullscreen ? 'Exit fullscreen' : 'Fullscreen'}
-        >
-          {isFullscreen ? <Minimize size={18} /> : <Maximize size={18} />}
-        </button>
+        {onExpand ? (
+          <button
+            type='button'
+            onClick={() => { onExpand(); resetHideTimer(); }}
+            className={styles.iconButton}
+            aria-label='Expand video'
+          >
+            <Maximize2 size={18} />
+          </button>
+        ) : !hideFullscreen ? (
+          <button
+            type='button'
+            onClick={toggleFullscreen}
+            className={styles.iconButton}
+            aria-label={isFullscreen ? 'Exit fullscreen' : 'Fullscreen'}
+          >
+            {isFullscreen ? <Minimize size={18} /> : <Maximize size={18} />}
+          </button>
+        ) : null}
       </div>
     </div>
   );

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Play, Maximize2 } from 'lucide-react';
+import { Play } from 'lucide-react';
 import { PostMedia as PostMediaType } from '../types/community.types';
 import { useVideoPlayback } from '../context/VideoPlaybackContext';
 import styles from '../styles/PostMedia.v2.module.css';
@@ -282,23 +282,14 @@ function VideoTile({ item, onExpand }: VideoTileProps) {
             setPlaying(false);
           }
         }}
+        onExpand={onExpand ? () => {
+          if (videoRef.current) {
+            const currentTime = videoRef.current.currentTime;
+            videoRef.current.pause();
+            onExpand(item.url, currentTime);
+          }
+        } : undefined}
       />
-      {playing && onExpand && (
-        <button
-          type='button'
-          className={styles.expandButton}
-          onClick={() => {
-            if (videoRef.current) {
-              const currentTime = videoRef.current.currentTime;
-              videoRef.current.pause();
-              onExpand(item.url, currentTime);
-            }
-          }}
-          aria-label='Expand video'
-        >
-          <Maximize2 size={18} />
-        </button>
-      )}
     </div>
   );
 }
