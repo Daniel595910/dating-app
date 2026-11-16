@@ -189,6 +189,19 @@ export const DiscoverPage: React.FC = () => {
       setLikeCounts({});
     }
     setCandidates(result);
+
+    // Deep-link support: /discover?video=<id>
+    try {
+      const targetParams = new URLSearchParams(window.location.search);
+      const targetVideoId = targetParams.get('video');
+      if (targetVideoId) {
+        const targetIdx = result.findIndex((c) => c.videoId === targetVideoId);
+        setCurrentIndex(targetIdx >= 0 ? targetIdx : 0);
+        navigate('/discover', { replace: true });
+      }
+    } catch {
+      // Silent — URL parsing failure should not crash the page
+    }
     setLoading(false);
     if (result.length === 0) {
       setError('No more profiles to discover right now. Check back later!');

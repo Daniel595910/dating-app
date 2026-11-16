@@ -9,6 +9,7 @@ import { ReportSheet } from './ReportSheet';
 import { BlockConfirmSheet } from './BlockConfirmSheet';
 import styles from '../styles/CommunityVideoModal.module.css';
 import { useWatchedVideos } from '../hooks/useWatchedVideos';
+import { SimilarVideosSection } from './SimilarVideosSection';
 
 interface CommunityVideoModalProps {
   open: boolean;
@@ -507,6 +508,16 @@ export function CommunityVideoModal({
               )}
             </div>
           )}
+
+          {/* Similar videos section */}
+          <SimilarVideosSection
+            location={currentPost.author.location || null}
+            excludeVideoIds={[currentPost.id]}
+            onOpenVideo={(videoId) => {
+              handleClose();
+              navigate(`/discover?video=${videoId}`);
+            }}
+          />
         </div>
         </div>
       </div>
