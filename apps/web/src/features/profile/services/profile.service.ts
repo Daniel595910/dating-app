@@ -109,10 +109,65 @@ class ProfileService {
       type: p.type,
       content: p.content,
       images: p.images || [],
+      videos: p.videos || [],
       likeCount: p.like_count || 0,
       commentCount: p.comment_count || 0,
       createdAt: p.created_at,
     }));
+  }
+
+  async getUserVideoPosts(userId: string): Promise<Array<{
+    id: string;
+    videoUrl: string;
+    thumbnailUrl: string | null;
+    caption: string;
+    durationSeconds: number | null;
+    likeCount: number;
+    commentCount: number;
+    createdAt: string;
+  }>> {
+    const { data, error } = await supabase
+      .from('posts')
+      .select('*')
+      .eq('author_id', userId)
+      .eq('status', 'published')
+      .not('videos', 'is', null)
+      .order('created_at', { ascending: false })
+      .limit(50);
+
+    if (error || !data) return [];
+
+    const results: Array<{
+      id: string;
+      videoUrl: string;
+      thumbnailUrl: string | null;
+      caption: string;
+      durationSeconds: number | null;
+      likeCount: number;
+      commentCount: number;
+      createdAt: string;
+    }> = [];
+
+    for (const p of data as any[]) {
+      const videos: string[] = p.videos || [];
+      if (videos.length === 0) continue;
+      const firstUrl = videos[0];
+      if (!firstUrl) continue;
+      const thumbnails = p.metadata?.videoThumbnails || {};
+      const durations = p.metadata?.videoDurations || {};
+      results.push({
+        id: p.id,
+        videoUrl: firstUrl,
+        thumbnailUrl: thumbnails[firstUrl] || null,
+        caption: p.content || "",
+        durationSeconds: durations[firstUrl] ?? null,
+        likeCount: p.like_count || 0,
+        commentCount: p.comment_count || 0,
+        createdAt: p.created_at,
+      });
+    }
+
+    return results;
   }
 
   async getProfileStats(userId: string): Promise<ProfileStats> {

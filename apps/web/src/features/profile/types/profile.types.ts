@@ -45,6 +45,7 @@ export interface UserPost {
   type: string;
   content: string;
   images: string[];
+  videos: string[];
   likeCount: number;
   commentCount: number;
   createdAt: string;
