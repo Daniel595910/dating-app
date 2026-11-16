@@ -24,8 +24,29 @@
   overflow-y: hidden;
   scroll-snap-type: x mandatory;
   -webkit-overflow-scrolling: touch;
-  scrollbar-width: thin;
   padding-bottom: 6px;
+  /* Hide scrollbar on mobile — still scrollable */
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.scroller::-webkit-scrollbar {
+  display: none;
+}
+
+/* Desktop: show scrollbar for discoverability */
+@media (min-width: 640px) {
+  .scroller {
+    scrollbar-width: thin;
+  }
+  .scroller::-webkit-scrollbar {
+    display: block;
+    height: 6px;
+  }
+  .scroller::-webkit-scrollbar-thumb {
+    background: var(--color-border-strong, #e5e7eb);
+    border-radius: 3px;
+  }
 }
 
 .scroller > * {

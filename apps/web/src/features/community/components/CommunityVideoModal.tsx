@@ -53,9 +53,9 @@ export function CommunityVideoModal({
   const [currentPostId, setCurrentPostId] = useState<string | null>(initialPostId ?? legacyPost?.id ?? null);
   const [currentVideoUrl, setCurrentVideoUrl] = useState<string | null>(initialVideoUrl ?? legacyVideoUrl ?? null);
   const [swipeState, setSwipeState] = useState({ startX: 0, startY: 0, deltaX: 0, deltaY: 0, axis: null as 'x' | 'y' | null, isDragging: false });
-  const [atEnd, setAtEnd] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
   const [captionExpanded, setCaptionExpanded] = useState(false);
+  const [atEnd, setAtEnd] = useState(false);
 
   const { watched, markWatched, startPlayTimer, clearPlayTimer } = useWatchedVideos();
   const navigate = useNavigate();
@@ -229,9 +229,9 @@ export function CommunityVideoModal({
     if (!videoMedia) return;
     setCurrentPostId(targetPost.id);
     setCurrentVideoUrl(videoMedia.url);
-    setAtEnd(false);
     setCaptionExpanded(false);
     setIsMinimized(false);
+    setAtEnd(false);
     setShowReplay(false);
   };
 
@@ -242,19 +242,20 @@ export function CommunityVideoModal({
     if (idx >= 0 && idx < videoPosts.length - 1) {
       navigateToPost(videoPosts[idx + 1]!);
       if (idx >= videoPosts.length - 3 && onNeedMorePosts) onNeedMorePosts();
-    } else if (idx === videoPosts.length - 1) {
+    }
+    else if (idx === videoPosts.length - 1) {
       setAtEnd(true);
     }
   };
 
   const handlePrev = () => {
     if (!currentPost) return;
-    setAtEnd(false);
     const videoPosts = getVideoPosts();
     const idx = videoPosts.findIndex((p) => p.id === currentPost.id);
     if (idx > 0) {
       navigateToPost(videoPosts[idx - 1]!);
     }
+    setAtEnd(false);
   };
 
   const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
@@ -350,40 +351,27 @@ export function CommunityVideoModal({
             </div>
           )}
 
-          {/* Caught up overlay — appears when user reaches end of video queue */}
+          {/* End overlay — shown when user swipes past last video */}
           {atEnd && !showReplay && (
-            <div className={styles.caughtUpOverlay} onClick={(e) => { if (e.target === e.currentTarget) handlePrev(); }}>
-              <div className={styles.caughtUpCard}>
-                <h3 className={styles.caughtUpTitle}>You've watched all videos here</h3>
-                <p className={styles.caughtUpText}>
-                  Explore fresh videos from the Discover feed
-                </p>
-                <div className={styles.caughtUpActions}>
-                  <button
-                    type='button'
-                    className={styles.caughtUpTertiary}
-                    onClick={handlePrev}
-                  >
-                    Rewatch Previous Videos
-                  </button>
-                  <button
-                    type='button'
-                    className={styles.caughtUpPrimary}
-                    onClick={() => { onClose(); navigate('/discover'); }}
-                  >
-                    Explore Videos
-                  </button>
-                  <button
-                    type='button'
-                    className={styles.caughtUpSecondary}
-                    onClick={onClose}
-                  >
-                    Close
-                  </button>
-                </div>
+            <div className={styles.endOverlay}>
+              <div className={styles.endCard}>
+                <h3 className={styles.endTitle}>You're all caught up</h3>
+                <p className={styles.endText}>Watch more videos below</p>
+                <button
+                  type="button"
+                  className={styles.endButton}
+                  onClick={() => {
+                    if (contextPaneRef.current) {
+                      contextPaneRef.current.scrollTo({ top: 9999, behavior: 'smooth' });
+                    }
+                  }}
+                >
+                  See similar videos
+                </button>
               </div>
             </div>
           )}
+
         </div>
 
         {/* Context pane — desktop side panel, mobile overlay bottom */}

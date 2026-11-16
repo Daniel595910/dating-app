@@ -601,3 +601,62 @@
 .caughtUpTertiary:hover {
   background: rgba(239, 68, 68, 0.28);
 }
+
+/* ─── End overlay (swiped past last video) ─── */
+
+.endOverlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.75);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 60;
+  padding: 24px;
+  animation: fadeIn 0.2s ease;
+}
+
+.endCard {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  max-width: 320px;
+  text-align: center;
+}
+
+.endTitle {
+  margin: 0;
+  font-size: var(--font-lg, 18px);
+  font-weight: 700;
+  color: #ffffff;
+  letter-spacing: -0.02em;
+}
+
+.endText {
+  margin: 0;
+  font-size: var(--font-sm, 13px);
+  color: rgba(255, 255, 255, 0.8);
+  line-height: 1.5;
+}
+
+.endButton {
+  padding: 10px 20px;
+  background: var(--color-primary, #ef4444);
+  color: #ffffff;
+  border: none;
+  border-radius: var(--radius-full, 9999px);
+  font-size: var(--font-sm, 13px);
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.15s ease, transform 0.1s ease;
+  min-height: 40px;
+}
+
+.endButton:hover {
+  background: var(--color-primary-hover, #dc2626);
+}
+
+.endButton:active {
+  transform: scale(0.97);
+}
