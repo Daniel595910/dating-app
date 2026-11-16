@@ -16,6 +16,7 @@ import {
   KeyRound,
   Heart,
   MessageCircle,
+  Cake,
   X,
   RefreshCw,
 } from 'lucide-react';
@@ -39,6 +40,7 @@ const ICON_MAP: Record<string, React.ReactNode> = {
   KeyRound: <KeyRound size={16} />,
   Heart: <Heart size={16} />,
   MessageCircle: <MessageCircle size={16} />,
+  Cake: <Cake size={16} />,
 };
 
 export const NotificationBell: React.FC = () => {

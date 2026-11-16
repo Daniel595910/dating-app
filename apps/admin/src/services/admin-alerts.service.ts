@@ -33,6 +33,62 @@ class AdminAlertsService {
     }
   }
 
+  // 5-minute cache for the unsent-birthday count. The bell polls every 30s;
+  // the birthday count changes at most once per day (cron at 09:00 UTC).
+  // Caching prevents 30s poll cycles from hammering the profiles table.
+  private birthdayCache: { value: number; expiresAt: number } | null = null;
+
+  private async countBirthdaysUnsent(): Promise<number> {
+    const nowMs = Date.now();
+    if (this.birthdayCache && this.birthdayCache.expiresAt > nowMs) {
+      return this.birthdayCache.value;
+    }
+    try {
+      const now = new Date();
+      const utcYear = now.getUTCFullYear();
+      const utcMonth = now.getUTCMonth() + 1;
+      const utcDay = now.getUTCDate();
+
+      // PostgREST cannot express EXTRACT(MONTH FROM birth_date); fetch all
+      // non-null birth_dates and filter month/day client-side. Fine at current
+      // profile scale; upgrade to an RPC if this becomes a hot path.
+      const { data: profileRaw } = await supabase
+        .from('profiles')
+        .select('user_id, birth_date')
+        .not('birth_date', 'is', null);
+
+      const todayBirthdayUserIds = ((profileRaw || []) as Array<{ user_id: string; birth_date: string }>)
+        .filter((p) => {
+          const bd = new Date(p.birth_date + 'T00:00:00Z');
+          return bd.getUTCMonth() + 1 === utcMonth && bd.getUTCDate() === utcDay;
+        })
+        .map((p) => p.user_id);
+
+      if (todayBirthdayUserIds.length === 0) {
+        this.birthdayCache = { value: 0, expiresAt: nowMs + 5 * 60 * 1000 };
+        return 0;
+      }
+
+      const { data: notifRaw } = await supabase
+        .from('notifications')
+        .select('user_id, data')
+        .eq('type', 'birthday')
+        .in('user_id', todayBirthdayUserIds);
+
+      const sentUserIds = new Set(
+        ((notifRaw || []) as Array<{ user_id: string; data: any }>)
+          .filter((n) => Number(n.data?.year) === utcYear)
+          .map((n) => n.user_id)
+      );
+
+      const unsent = todayBirthdayUserIds.filter((id) => !sentUserIds.has(id)).length;
+      this.birthdayCache = { value: unsent, expiresAt: nowMs + 5 * 60 * 1000 };
+      return unsent;
+    } catch {
+      return 0;
+    }
+  }
+
   async getAlerts(): Promise<AdminAlertsResult> {
     const now = new Date();
     const dayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000).toISOString();
@@ -53,6 +109,7 @@ class AdminAlertsService {
       recentLogins,
       matches24h,
       messages1h,
+      birthdaysUnsent,
     ] = await Promise.all([
       // High priority
       this.count('identity_verifications', { status: 'pending' }),
@@ -71,6 +128,7 @@ class AdminAlertsService {
       // Info
       this.count('matches', {}, 'created_at', dayAgo),
       this.count('messages', {}, 'created_at', hourAgo),
+      this.countBirthdaysUnsent(),
     ]);
 
     const items: AlertItem[] = [
@@ -88,6 +146,7 @@ class AdminAlertsService {
       { id: 'recent-logins', label: 'new device login' + (recentLogins === 1 ? '' : 's') + ' (24h)', count: recentLogins, priority: 'medium', icon: 'KeyRound', route: '/audit-log' },
       { id: 'matches-24h', label: 'match' + (matches24h === 1 ? '' : 'es') + ' (24h)', count: matches24h, priority: 'info', icon: 'Heart', route: '/matches' },
       { id: 'messages-1h', label: 'message' + (messages1h === 1 ? '' : 's') + ' (1h)', count: messages1h, priority: 'info', icon: 'MessageCircle', route: '/analytics' },
+      { id: 'birthdays-unsent', label: 'birthday notification' + (birthdaysUnsent === 1 ? '' : 's') + ' unsent', count: birthdaysUnsent, priority: 'high', icon: 'Cake', route: '/birthdays' },
     ];
 
     // Filter out zero-count items
