@@ -1,5 +1,5 @@
 import React from 'react';
-import { X, Plus, Video } from 'lucide-react';
+import { X, Video } from 'lucide-react';
 import styles from './MyVideosSheet.module.css';
 
 interface MyVideo {
@@ -97,11 +97,6 @@ export const MyVideosSheet: React.FC<MyVideosSheetProps> = ({
           )}
         </div>
 
-        {videos.length > 0 && (
-          <button className={styles.uploadFab} onClick={onUploadClick} aria-label="Upload new video">
-            <Plus size={24} />
-          </button>
-        )}
       </div>
     </div>
   );

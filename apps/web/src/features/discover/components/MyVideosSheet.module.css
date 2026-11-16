@@ -213,33 +213,6 @@
   background: var(--color-primary-hover);
 }
 
-.uploadFab {
-  position: absolute;
-  bottom: 20px;
-  right: 20px;
-  width: 56px;
-  height: 56px;
-  border-radius: 50%;
-  background: var(--color-primary);
-  color: #ffffff;
-  border: none;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  z-index: 10;
-  box-shadow: 0 6px 20px rgba(239, 68, 68, 0.4);
-  transition: transform 0.15s ease, background 0.15s ease;
-}
-
-.uploadFab:hover {
-  background: var(--color-primary-hover);
-  transform: scale(1.08);
-}
-
-.uploadFab:active {
-  transform: scale(0.94);
-}
 
 @keyframes fadeIn {
   from { opacity: 0; }
