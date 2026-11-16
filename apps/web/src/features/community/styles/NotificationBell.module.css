@@ -261,6 +261,7 @@
 .iconVerify { color: #3b82f6; }
 .iconVip { color: var(--color-warning, #f59e0b); }
 .iconDefault { color: var(--color-text-secondary, #6b7280); }
+.iconBirthday { color: #f59e0b; }
 
 .notificationContent {
   flex: 1;

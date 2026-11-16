@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/config/supabase.client';
-import { Bell, Heart, MessageCircle, UserPlus, BadgeCheck, Crown, X, CheckCheck, Trash2 } from 'lucide-react';
+import { Bell, Heart, MessageCircle, UserPlus, BadgeCheck, Crown, Cake, X, CheckCheck, Trash2 } from 'lucide-react';
 import styles from '../styles/NotificationBell.module.css';
 
 interface NotificationBellProps {
@@ -171,6 +171,7 @@ export const NotificationBell: React.FC<NotificationBellProps> = ({ userId, butt
       case 'connection': return <UserPlus size={16} className={styles.iconConnection} />;
       case 'verification': return <BadgeCheck size={16} className={styles.iconVerify} />;
       case 'vip': return <Crown size={16} className={styles.iconVip} />;
+      case 'birthday': return <Cake size={16} className={styles.iconBirthday} />;
       default: return <Bell size={22} className={styles.iconDefault} />;
     }
   };
