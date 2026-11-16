@@ -1,4 +1,4 @@
-﻿import { supabase } from '@/config/supabase.client';
+import { supabase } from '@/config/supabase.client';
 import { auditService } from './audit.service';
 
 export type NotificationType =
@@ -11,7 +11,8 @@ export type NotificationType =
   | 'verification'
   | 'vip'
   | 'report'
-  | 'community';
+  | 'community'
+  | 'birthday';
 
 export interface Notification {
   id: string;
@@ -247,6 +248,144 @@ class NotificationService {
       return (data || []) as Notification[];
     } catch {
       return [];
+    }
+  }
+
+  async getBirthdayMonitor(): Promise<{
+    today: Array<{
+      userId: string;
+      displayName: string;
+      avatarUrl: string | null;
+      birthDate: string;
+      ageTurning: number | null;
+      notificationSent: boolean;
+      notificationId: string | null;
+      sentAt: string | null;
+      readAt: string | null;
+    }>;
+    recentSent: Notification[];
+    stats: {
+      birthdaysToday: number;
+      sentToday: number;
+      sentThisYear: number;
+      unread: number;
+    };
+  }> {
+    try {
+      const now = new Date();
+      const utcYear = now.getUTCFullYear();
+      const utcMonth = now.getUTCMonth() + 1;
+      const utcDay = now.getUTCDate();
+      const todayStartUtc = new Date(Date.UTC(utcYear, utcMonth - 1, utcDay, 0, 0, 0)).toISOString();
+
+      const { data: recentRaw } = await supabase
+        .from('notifications')
+        .select('*')
+        .eq('type', 'birthday')
+        .order('created_at', { ascending: false })
+        .limit(50);
+
+      const recent = (recentRaw || []) as Notification[];
+
+      // PostgREST cannot express EXTRACT(MONTH FROM birth_date); fetch all
+      // non-null birth_dates and filter month/day client-side. Fine at current
+      // profile scale. Upgrade to an RPC if profiles grow large.
+      const { data: profileRaw } = await supabase
+        .from('profiles')
+        .select('user_id, display_name, avatar_url, birth_date')
+        .not('birth_date', 'is', null);
+
+      const profiles = (profileRaw || []) as Array<{
+        user_id: string;
+        display_name: string;
+        avatar_url: string | null;
+        birth_date: string;
+      }>;
+
+      const birthdayProfiles = profiles.filter((p) => {
+        const bd = new Date(p.birth_date + 'T00:00:00Z');
+        return bd.getUTCMonth() + 1 === utcMonth && bd.getUTCDate() === utcDay;
+      });
+
+      const thisYearBirthdayNotifs = recent.filter((n) => {
+        const y = (n.data as any)?.year;
+        return Number(y) === utcYear;
+      });
+      const notifByUser = new Map<string, Notification>();
+      for (const n of thisYearBirthdayNotifs) {
+        if (!notifByUser.has(n.user_id)) notifByUser.set(n.user_id, n);
+      }
+
+      const today = birthdayProfiles.map((p) => {
+        const bd = new Date(p.birth_date + 'T00:00:00Z');
+        const ageTurning = utcYear - bd.getUTCFullYear();
+        const notif = notifByUser.get(p.user_id) || null;
+        return {
+          userId: p.user_id,
+          displayName: p.display_name,
+          avatarUrl: p.avatar_url,
+          birthDate: p.birth_date,
+          ageTurning: Number.isFinite(ageTurning) && ageTurning > 0 ? ageTurning : null,
+          notificationSent: !!notif,
+          notificationId: notif?.id || null,
+          sentAt: notif?.created_at || null,
+          readAt: notif?.read_at || null,
+        };
+      });
+
+      const recentUserIds = [...new Set(recent.map((n) => n.user_id).filter(Boolean))];
+      let recentProfileMap = new Map<string, { display_name: string; avatar_url: string | null }>();
+      if (recentUserIds.length > 0) {
+        try {
+          const { data: recentProfiles } = await supabase
+            .from('profiles')
+            .select('user_id, display_name, avatar_url')
+            .in('user_id', recentUserIds);
+          recentProfileMap = new Map(
+            (recentProfiles || []).map((p: any) => [p.user_id, { display_name: p.display_name, avatar_url: p.avatar_url }])
+          );
+        } catch {}
+      }
+      const recentSent: Notification[] = recent.map((n) => ({
+        ...n,
+        user: recentProfileMap.get(n.user_id) || undefined,
+      }));
+
+      const safeCount = async (filter?: (q: any) => any) => {
+        try {
+          let q = supabase.from('notifications').select('*', { count: 'exact', head: true }).eq('type', 'birthday');
+          if (filter) q = filter(q);
+          const { count, error } = await q;
+          return error ? 0 : count || 0;
+        } catch {
+          return 0;
+        }
+      };
+      const yearStartUtc = new Date(Date.UTC(utcYear, 0, 1, 0, 0, 0)).toISOString();
+
+      const [sentToday, sentThisYear, unread] = await Promise.all([
+        safeCount((q) => q.gte('created_at', todayStartUtc)),
+        safeCount((q) => q.gte('created_at', yearStartUtc)),
+        safeCount((q) => q.eq('status', 'unread')),
+      ]);
+
+      return {
+        today,
+        recentSent,
+        stats: {
+          birthdaysToday: today.length,
+          sentToday,
+          sentThisYear,
+          unread,
+        },
+      };
+    } catch (err) {
+      console.error('Failed to load birthday monitor:', err);
+      return {
+        today: [],
+        recentSent: [],
+        stats: { birthdaysToday: 0, sentToday: 0, sentThisYear: 0, unread: 0 },
+      };
     }
   }
 }
