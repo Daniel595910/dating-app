@@ -213,6 +213,8 @@ class MediaService {
         const canvas = document.createElement('canvas');
         canvas.width = video.videoWidth;
         canvas.height = video.videoHeight;
+        const videoWidth = video.videoWidth;
+        const videoHeight = video.videoHeight;
         const ctx = canvas.getContext('2d');
         
         if (ctx && canvas.width > 0) {
@@ -241,6 +243,8 @@ class MediaService {
           url: publicUrlData.publicUrl,
           thumbnailUrl: thumbnailUrl ?? undefined,
           durationSeconds: videoDurationSeconds || undefined,
+          width: videoWidth || undefined,
+          height: videoHeight || undefined,
           sortOrder: 0,
         },
       };
