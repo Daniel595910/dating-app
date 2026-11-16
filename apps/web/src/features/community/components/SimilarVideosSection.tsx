@@ -51,9 +51,6 @@ export function SimilarVideosSection({ location, excludeVideoIds = [], onOpenVid
     setShareUrl(`${window.location.origin}/discover?video=${video.videoId}`);
   }, []);
 
-  const handleSeen = useCallback((videoId: string) => {
-    markSeen(videoId);
-  }, [markSeen]);
 
   const excludeSet = new Set(excludeVideoIds);
   const filtered = videos
@@ -103,7 +100,6 @@ export function SimilarVideosSection({ location, excludeVideoIds = [], onOpenVid
               onOpen={onOpenVideo}
               onNotInterested={handleNotInterested}
               onShare={handleShare}
-              onSeen={handleSeen}
             />
           ))}
         </div>

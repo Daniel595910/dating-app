@@ -11,12 +11,10 @@ interface ReelCardProps {
   onSeen?: (videoId: string) => void;
 }
 
-const SEEN_DELAY_MS = 3000;
 
 export function ReelCard({ video, onOpen, onNotInterested, onShare, onSeen }: ReelCardProps) {
   const cardRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
-  const seenTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
 
@@ -31,20 +29,10 @@ export function ReelCard({ video, onOpen, onNotInterested, onShare, onSeen }: Re
           if (!v) return;
           if (entry.isIntersecting && entry.intersectionRatio >= 0.5) {
             v.play().then(() => setIsPlaying(true)).catch(() => setIsPlaying(false));
-            if (onSeen && !seenTimerRef.current) {
-              seenTimerRef.current = setTimeout(() => {
-                onSeen(video.videoId);
-                seenTimerRef.current = null;
-              }, SEEN_DELAY_MS);
-            }
           } else {
             v.pause();
             v.currentTime = 0;
             setIsPlaying(false);
-            if (seenTimerRef.current) {
-              clearTimeout(seenTimerRef.current);
-              seenTimerRef.current = null;
-            }
           }
         });
       },
@@ -54,9 +42,8 @@ export function ReelCard({ video, onOpen, onNotInterested, onShare, onSeen }: Re
     observer.observe(card);
     return () => {
       observer.disconnect();
-      if (seenTimerRef.current) clearTimeout(seenTimerRef.current);
     };
-  }, [video.videoId, onSeen]);
+  }, [video.videoId]);
 
   const handleCardClick = () => onOpen(video.videoId);
 
