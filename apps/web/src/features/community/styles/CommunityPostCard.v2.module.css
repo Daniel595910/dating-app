@@ -245,17 +245,17 @@
   -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
   overflow: hidden;
-  padding-bottom: 6px;
+  padding-bottom: 0;
 }
 
 .readMoreButton {
   background: none;
   border: none;
   padding: 0 18px 8px;
-  margin-top: -6px;
-  color: var(--color-primary, #ef4444);
+  margin-top: -8px;
+  color: var(--color-text-secondary, #6b7280);
   font-size: 13px;
-  font-weight: 600;
+  font-weight: 500;
   cursor: pointer;
   text-align: left;
   transition: opacity 0.15s ease;
