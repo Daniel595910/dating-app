@@ -68,15 +68,50 @@ export function getVideoDuration(file: File): Promise<number | null> {
     const url = URL.createObjectURL(file);
     const video = document.createElement('video');
     video.preload = 'metadata';
-    video.onloadedmetadata = () => {
-      URL.revokeObjectURL(url);
+    video.muted = true;
+    video.playsInline = true;
+
+    let done = false;
+    const finish = (value: number | null) => {
+      if (done) return;
+      done = true;
+      try { URL.revokeObjectURL(url); } catch {}
+      resolve(value);
+    };
+
+    const tryReadDuration = () => {
       const d = video.duration;
-      resolve(Number.isFinite(d) ? d : null);
+      if (Number.isFinite(d) && d > 0) {
+        finish(d);
+        return true;
+      }
+      return false;
     };
+
+    video.onloadedmetadata = () => {
+      if (tryReadDuration()) return;
+      // Some MP4s report Infinity/NaN until the browser parses the whole file.
+      // Force seek to end so browser reads the full duration.
+      try {
+        video.currentTime = Number.MAX_SAFE_INTEGER;
+      } catch {
+        finish(null);
+      }
+    };
+
+    video.onseeked = () => {
+      if (!tryReadDuration()) {
+        finish(null);
+      }
+    };
+
     video.onerror = () => {
-      URL.revokeObjectURL(url);
-      resolve(null);
+      finish(null);
     };
+
+    // Safety timeout — 5s max
+    setTimeout(() => finish(null), 5000);
+
     video.src = url;
   });
 }
@@ -92,10 +127,10 @@ export async function validateVideoFile(file: File): Promise<ValidationResult> {
     return { valid: false, error: `Video "${file.name}" exceeds the 100MB limit` };
   }
   const duration = await getVideoDuration(file);
-  if (duration === null) {
-    return { valid: false, error: `Could not read video duration for "${file.name}". Please try a different file.` };
-  }
-  if (duration > MAX_VIDEO_DURATION_SECONDS) {
+  // If duration could not be read (browser limitation for some codecs),
+  // allow the upload — server extracts duration as fallback.
+  // Only block if duration is KNOWN to exceed the limit.
+  if (duration !== null && duration > MAX_VIDEO_DURATION_SECONDS) {
     const mins = Math.floor(duration / 60);
     const secs = Math.floor(duration % 60);
     return { valid: false, error: `Video "${file.name}" is ${mins}m ${secs}s long. Maximum allowed is 10 minutes.` };
