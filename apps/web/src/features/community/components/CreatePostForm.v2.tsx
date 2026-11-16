@@ -1,6 +1,6 @@
 import { useRef } from 'react';
 import { X, ArrowLeft, ArrowRight, Camera, Heart, MessageCircle, Sparkles, HelpCircle, Check, Mic, Scissors } from 'lucide-react';
-import { CommunityPostType } from '../types/community.types';
+import { CommunityPostType, PostMedia } from '../types/community.types';
 import { mediaService } from '../services/media.service';
 import styles from '../styles/CreatePostForm.module.css';
 import { useSettings } from '@/hooks/useSettings';
@@ -96,6 +96,7 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
   const trimAudioRef = useRef<HTMLAudioElement>(null);
   const videoInputRef = useRef<HTMLInputElement>(null);
   const recordingTimeRef = useRef(0);
+  const [portraitPending, setPortraitPending] = useState<PostMedia | null>(null);
 
   const handleTypeSelect = (type: CommunityPostType) => { setPostType(type); setStep('compose'); };
   const handleBack = () => { if (step === 'compose') setStep('type'); else if (step === 'preview') setStep('compose'); };
@@ -178,7 +179,15 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
         const v = await validateVideoFile(file);
         if (!v.valid) { setError(v.error || 'Invalid video'); continue; }
         const result = await mediaService.uploadVideo(file, userId, 'post_video');
-        if (result.success && result.media) addMedia({ ...result.media!, sortOrder: 0 });
+        if (result.success && result.media) {
+          const m = result.media;
+          if (m.width && m.height && m.height > m.width) {
+            // Portrait video detected — hold for confirmation
+            setPortraitPending({ ...m, sortOrder: 0 });
+          } else {
+            addMedia({ ...m, sortOrder: 0 });
+          }
+        }
         else setError(result.error || 'Failed to upload ' + file.name);
       }
     } catch (err: any) { setError(err.message || 'Video upload failed'); }
@@ -319,6 +328,40 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
           </div>
         )}
       </div>
+      {portraitPending && (
+        <div onClick={(e) => e.stopPropagation()} className={styles.modalOverlay}>
+          <div className={styles.modalDialog}>
+            <h3 className={styles.modalTitle}>Portrait video detected</h3>
+            <p className={styles.modalDescription}>
+              This video is portrait ({portraitPending.width}×{portraitPending.height}). It will display vertically in the feed.
+            </p>
+            {portraitPending.thumbnailUrl && (
+              <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'center' }}>
+                <img
+                  src={portraitPending.thumbnailUrl}
+                  alt='Video thumbnail preview'
+                  style={{ maxWidth: 120, maxHeight: 180, borderRadius: 12, objectFit: 'cover', boxShadow: '0 4px 16px rgba(0,0,0,0.15)' }}
+                />
+              </div>
+            )}
+            <p className={styles.modalHint}>We auto-extracted a thumbnail. Want to use it, or cancel this upload?</p>
+            <div className={styles.modalActions}>
+              <button
+                onClick={() => { addMedia(portraitPending); setPortraitPending(null); }}
+                className={styles.modalPrimaryButton}
+              >
+                Use this video
+              </button>
+              <button
+                onClick={() => setPortraitPending(null)}
+                className={styles.modalSecondaryButton}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       {showRecordPrompt && (
         <div onClick={(e) => e.stopPropagation()} className={styles.modalOverlay}>
           <div className={styles.modalDialog}>
