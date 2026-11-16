@@ -66,14 +66,31 @@ function MediaTile({ item, onRemove }: MediaTileProps) {
         <div
           className={styles.mediaPreviewImage}
           style={{
+            position: 'relative',
+            backgroundImage: item.thumbnailUrl ? `url(${item.thumbnailUrl})` : undefined,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+            backgroundColor: '#000',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            background: '#000',
-            position: 'relative',
           }}
         >
-          <Play size={20} color="#fff" />
+          {/* Play icon overlay — always visible so users know it is a video */}
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              width: 36,
+              height: 36,
+              borderRadius: '50%',
+              background: 'rgba(0,0,0,0.55)',
+              backdropFilter: 'blur(4px)',
+            }}
+          >
+            <Play size={18} color='#fff' fill='#fff' />
+          </div>
           {durationLabel && (
             <span
               style={{
@@ -93,7 +110,7 @@ function MediaTile({ item, onRemove }: MediaTileProps) {
           )}
         </div>
       ) : (
-        <img src={item.url} alt="" className={styles.mediaPreviewImage} />
+        <img src={item.url} alt='' className={styles.mediaPreviewImage} />
       )}
       <button
         className={styles.mediaRemoveButton}

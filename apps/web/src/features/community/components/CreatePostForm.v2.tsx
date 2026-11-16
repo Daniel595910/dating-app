@@ -95,8 +95,12 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
   const recordingTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const trimAudioRef = useRef<HTMLAudioElement>(null);
   const videoInputRef = useRef<HTMLInputElement>(null);
+  const thumbnailInputRef = useRef<HTMLInputElement>(null);
   const recordingTimeRef = useRef(0);
   const [portraitPending, setPortraitPending] = useState<PostMedia | null>(null);
+  const [customThumbnailFile, setCustomThumbnailFile] = useState<File | null>(null);
+  const [customThumbnailPreview, setCustomThumbnailPreview] = useState<string | null>(null);
+  const [customThumbnailUploading, setCustomThumbnailUploading] = useState(false);
 
   const handleTypeSelect = (type: CommunityPostType) => { setPostType(type); setStep('compose'); };
   const handleBack = () => { if (step === 'compose') setStep('type'); else if (step === 'preview') setStep('compose'); };
@@ -335,26 +339,91 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
             <p className={styles.modalDescription}>
               This video is portrait ({portraitPending.width}×{portraitPending.height}). It will display vertically in the feed.
             </p>
-            {portraitPending.thumbnailUrl && (
-              <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'center' }}>
+            <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'center' }}>
+              {(customThumbnailPreview || portraitPending.thumbnailUrl) ? (
                 <img
-                  src={portraitPending.thumbnailUrl}
+                  src={customThumbnailPreview || portraitPending.thumbnailUrl || ''}
                   alt='Video thumbnail preview'
                   style={{ maxWidth: 120, maxHeight: 180, borderRadius: 12, objectFit: 'cover', boxShadow: '0 4px 16px rgba(0,0,0,0.15)' }}
                 />
-              </div>
-            )}
-            <p className={styles.modalHint}>We auto-extracted a thumbnail. Want to use it, or cancel this upload?</p>
+              ) : (
+                <div style={{ width: 120, height: 180, borderRadius: 12, background: '#000', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 12 }}>
+                  No thumbnail
+                </div>
+              )}
+            </div>
+            <p className={styles.modalHint}>
+              {customThumbnailPreview ? 'Using your custom thumbnail.' : 'We auto-extracted this thumbnail.'} Want to use your own instead?
+            </p>
+            <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'center' }}>
+              <button
+                type='button'
+                onClick={() => thumbnailInputRef.current?.click()}
+                disabled={customThumbnailUploading}
+                style={{ padding: '8px 16px', background: 'transparent', border: '1px solid var(--color-border-strong, #e5e7eb)', borderRadius: 9999, fontSize: 13, fontWeight: 500, color: 'var(--color-text-secondary, #6b7280)', cursor: 'pointer' }}
+              >
+                {customThumbnailUploading ? 'Uploading...' : customThumbnailPreview ? 'Change thumbnail' : 'Upload your own thumbnail'}
+              </button>
+              <input
+                ref={thumbnailInputRef}
+                type='file'
+                accept='image/jpeg,image/png,image/webp'
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (!file) return;
+                  if (!file.type.startsWith('image/')) {
+                    e.target.value = ''
+                    return;
+                  }
+                  if (customThumbnailPreview) URL.revokeObjectURL(customThumbnailPreview);
+                  setCustomThumbnailFile(file);
+                  setCustomThumbnailPreview(URL.createObjectURL(file));
+                  e.target.value = ''
+                }}
+                style={{ display: 'none' }}
+              />
+            </div>
             <div className={styles.modalActions}>
               <button
-                onClick={() => { addMedia(portraitPending); setPortraitPending(null); }}
+                onClick={async () => {
+                  if (customThumbnailUploading) return;
+                  if (customThumbnailFile) {
+                    setCustomThumbnailUploading(true);
+                    try {
+                      const up = await mediaService.uploadImage(customThumbnailFile, userId, 'post_thumbnail');
+                      if (up.success && up.media) {
+                        addMedia({ ...portraitPending, thumbnailUrl: up.media.url, sortOrder: 0 });
+                        if (customThumbnailPreview) URL.revokeObjectURL(customThumbnailPreview);
+                        setCustomThumbnailFile(null);
+                        setCustomThumbnailPreview(null);
+                        setPortraitPending(null);
+                      } else {
+                        setError(up.error || 'Failed to upload thumbnail');
+                      }
+                    } catch (err: any) {
+                      setError(err?.message || 'Failed to upload thumbnail');
+                    } finally {
+                      setCustomThumbnailUploading(false);
+                    }
+                  } else {
+                    addMedia(portraitPending);
+                    setPortraitPending(null);
+                  }
+                }}
                 className={styles.modalPrimaryButton}
+                disabled={customThumbnailUploading}
               >
-                Use this video
+                {customThumbnailUploading ? 'Uploading...' : 'Use this video'}
               </button>
               <button
-                onClick={() => setPortraitPending(null)}
+                onClick={() => {
+                  if (customThumbnailPreview) URL.revokeObjectURL(customThumbnailPreview);
+                  setCustomThumbnailFile(null);
+                  setCustomThumbnailPreview(null);
+                  setPortraitPending(null);
+                }}
                 className={styles.modalSecondaryButton}
+                disabled={customThumbnailUploading}
               >
                 Cancel
               </button>
