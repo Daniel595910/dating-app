@@ -61,7 +61,7 @@ export function SimilarVideosSection({ location, excludeVideoIds = [], onOpenVid
     return (
       <div className={styles.section}>
         <h3 className={styles.title}>Check out more similar videos</h3>
-        <div className={styles.grid}>
+        <div className={styles.scroller}>
           {Array.from({ length: 4 }).map((_, i) => (
             <div key={i} className={styles.skeleton} />
           ))}
@@ -92,7 +92,7 @@ export function SimilarVideosSection({ location, excludeVideoIds = [], onOpenVid
     <>
       <div className={styles.section}>
         <h3 className={styles.title}>Check out more similar videos</h3>
-        <div className={styles.grid}>
+        <div className={styles.scroller}>
           {filtered.map((video) => (
             <ReelCard
               key={video.videoId}

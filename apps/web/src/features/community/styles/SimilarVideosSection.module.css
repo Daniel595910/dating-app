@@ -17,19 +17,30 @@
   letter-spacing: -0.01em;
 }
 
-.grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
+.scroller {
+  display: flex;
   gap: 10px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  padding-bottom: 6px;
 }
 
-@media (max-width: 400px) {
-  .grid {
-    grid-template-columns: 1fr;
+.scroller > * {
+  flex: 0 0 130px;
+  scroll-snap-align: start;
+}
+
+@media (min-width: 640px) {
+  .scroller > * {
+    flex: 0 0 160px;
   }
 }
 
 .skeleton {
+  flex: 0 0 130px;
   aspect-ratio: 9 / 16;
   background: linear-gradient(90deg, var(--color-surface-alt, #f9fafb) 0%, var(--color-border, #f3f4f6) 50%, var(--color-surface-alt, #f9fafb) 100%);
   background-size: 200% 100%;
