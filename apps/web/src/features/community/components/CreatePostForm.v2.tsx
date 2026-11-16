@@ -100,7 +100,19 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
   const handleTypeSelect = (type: CommunityPostType) => { setPostType(type); setStep('compose'); };
   const handleBack = () => { if (step === 'compose') setStep('type'); else if (step === 'preview') setStep('compose'); };
 
+  const CAPTION_MIN = 5;
+  const TAGS_MIN = 1;
+
+  const tagArrayForValidation = tags.split(',').map((t) => t.trim()).filter((t) => t.length > 0);
+  const trimmedCaption = content.trim();
+  const hasMediaOrAudio = media.length > 0 || Boolean(audioUrl);
+  const captionTooShort = !hasMediaOrAudio && trimmedCaption.length < CAPTION_MIN;
+  const tagsMissing = tagArrayForValidation.length < TAGS_MIN;
+  const canContinue = !captionTooShort && !tagsMissing;
+
   const handleNext = () => {
+    if (captionTooShort) { setError(`Caption needs at least ${CAPTION_MIN} characters (currently ${trimmedCaption.length})`); return; }
+    if (tagsMissing) { setError(`Add at least ${TAGS_MIN} hashtag to help people find your post`); return; }
     if (!content.trim() && !audioUrl && media.length === 0 && postType !== 'photo') { setError('Please write something, record audio, or add a photo'); return; }
     if (postType === 'looking_for' && !lookingFor) { setError('Please select what you are looking for'); return; }
     setError(null); setStep('preview');
@@ -245,6 +257,12 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
               </div>
             )}
             <textarea className={styles.contentInput} value={content} onChange={(e) => setContent(e.target.value)} placeholder={postType === 'introduction' ? 'Tell the community about yourself...' : postType === 'question' ? 'Ask your question...' : 'What is on your mind?'} rows={5} maxLength={5000} />
+            <div className={styles.captionMeta}>
+              <span className={trimmedCaption.length < CAPTION_MIN && !hasMediaOrAudio ? styles.captionMetaError : styles.captionMetaMuted}>
+                {trimmedCaption.length}/{5000}
+                {trimmedCaption.length < CAPTION_MIN && !hasMediaOrAudio && ` (min ${CAPTION_MIN})`}
+              </span>
+            </div>
             <MediaPickerRow
               media={media}
               hasVoice={Boolean(audioBlob || audioUrl)}
@@ -265,9 +283,23 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
             <input ref={videoInputRef} type='file' accept='video/mp4,video/webm,video/quicktime' multiple onChange={(e) => handleVideoSelect(e.target.files)} style={{ display: 'none' }} />
             {audioUrl && <VoiceNoteBar audioUrl={audioUrl} onRemove={removeAudio} />}
             <MediaPreviewGrid media={media} onRemove={removeMedia} />
-            <input className={styles.tagsInput} value={tags} onChange={(e) => setTags(e.target.value)} placeholder='Tags (comma-separated, optional)' />
+            <div className={styles.tagsWrapper}>
+              <input
+                className={styles.tagsInput + (tagsMissing ? ' ' + styles.tagsInputError : '')}
+                value={tags}
+                onChange={(e) => setTags(e.target.value)}
+                placeholder='Hashtags (required, comma-separated) e.g. growth, motivation'
+              />
+              <div className={styles.captionMeta}>
+                <span className={tagsMissing ? styles.captionMetaError : styles.captionMetaMuted}>
+                  {tagArrayForValidation.length} tag{tagArrayForValidation.length === 1 ? '' : 's'} {tagsMissing ? '(min 1)' : ''}
+                </span>
+              </div>
+            </div>
             {error && <p className={styles.error}>{error}</p>}
-            <button className={styles.nextButton} onClick={handleNext}>Continue <ArrowRight size={16} /></button>
+            <button className={styles.nextButton} onClick={handleNext} disabled={!canContinue}>
+              Continue <ArrowRight size={16} />
+            </button>
           </div>
         ) : (
           <div className={styles.previewForm}>

@@ -218,6 +218,37 @@
   margin: 0;
 }
 
+/* Caption meta row — character counter under textarea */
+.captionMeta {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: -0.25rem;
+  padding: 0 0.25rem;
+  font-size: 0.75rem;
+  line-height: 1.4;
+}
+
+.captionMetaMuted {
+  color: var(--color-text-muted, #9ca3af);
+}
+
+.captionMetaError {
+  color: var(--color-danger, #ef4444);
+  font-weight: 600;
+}
+
+/* Tags wrapper — contains input + meta row */
+.tagsWrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.tagsInputError {
+  border-color: var(--color-danger, #ef4444) !important;
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-danger, #ef4444) 15%, transparent);
+}
+
 .warningBanner {
   display: flex;
   align-items: flex-start;
