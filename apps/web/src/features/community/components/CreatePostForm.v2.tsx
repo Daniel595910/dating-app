@@ -1,4 +1,4 @@
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
 import { X, ArrowLeft, ArrowRight, Camera, Heart, MessageCircle, Sparkles, HelpCircle, Check, Mic, Scissors } from 'lucide-react';
 import { CommunityPostType, PostMedia } from '../types/community.types';
 import { mediaService } from '../services/media.service';
