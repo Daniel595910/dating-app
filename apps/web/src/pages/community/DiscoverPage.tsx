@@ -1054,7 +1054,7 @@ resetDragVisual();  // cancel any pending swipe gesture
         </div>
       )}
       <input ref={videoInputRef} type="file" accept="video/*" onChange={(e) => handleVideoUpload(e.target.files)} style={{ display: 'none' }} />
-      <BottomNav />
+      <BottomNav fab={{ icon: 'video', label: 'Upload video', onClick: () => videoInputRef.current?.click() }} />
     </div>
   );
 };
