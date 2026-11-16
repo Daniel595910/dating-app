@@ -494,66 +494,64 @@
 
 /* Outer nav — light theme (default) */
 .bottomNavWithFab {
-  display: grid;
-  grid-template-columns: 1fr 1fr 1fr 1fr;
-  grid-template-areas: "left1 left2 right1 right2";
-  padding: 10px 8px calc(10px + env(safe-area-inset-bottom));
-  border-radius: 20px 20px 0 0;
+  display: flex;
   align-items: end;
-  height: 72px;
+  padding: 8px 8px calc(8px + env(safe-area-inset-bottom));
+  height: 64px;
+  border-radius: 24px;
   overflow: visible;
 }
 
 /* Dark theme override (Community page in dark mode) */
 [data-theme="dark"] .bottomNavWithFab {
-  border-radius: 20px 20px 0 0;
+  border-radius: 24px;
 }
 
 /* Discover page override — solid black bottom nav, keep rounded corners */
 .bottomNavWithFab.bottomNavDiscover {
-  border-radius: 20px 20px 0 0;
+  border-radius: 24px;
 }
 
 /* Left/right halves — distribute 2 tabs each */
 .navFabLeft,
 .navFabRight {
-  display: contents;
-}
-
-.navFabLeft > *,
-.navFabRight > * {
   display: flex;
+  flex: 1;
+  align-items: end;
+  justify-content: space-around;
+  gap: 0;
 }
 
-/* Center FAB container — absolutely positioned, floats above the nav */
+/* Reserved center gap for FAB — 84px wide, no content */
 .navFabCenter {
-  position: absolute;
-  bottom: calc(100% - 8px);
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 50;
+  width: 84px;
+  flex-shrink: 0;
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
+  z-index: 50;
   pointer-events: auto;
 }
 
 /* FAB button — 64px circle, red brand color, elevated shadow + glow */
 .navFabButton {
-  width: 64px;
-  height: 64px;
+  width: 52px;
+  height: 52px;
   border-radius: 50%;
   background: #fe2c55;
   color: #ffffff;
-  border: 4px solid var(--color-surface, #ffffff);
+  border: none;
   box-sizing: border-box;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
   box-shadow:
-    0 6px 16px rgba(254, 44, 85, 0.35),
-    0 2px 6px rgba(0, 0, 0, 0.15);
+    0 -2px 0 var(--color-surface, #ffffff),
+    0 6px 16px rgba(0, 0, 0, 0.15),
+    0 3px 8px rgba(254, 44, 85, 0.3);
+  transform: translateY(-14px);
   transition: transform 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
   -webkit-tap-highlight-color: transparent;
 }
@@ -561,23 +559,30 @@
 .navFabButton:hover {
   background: #e0224a;
   box-shadow:
-    0 8px 20px rgba(254, 44, 85, 0.45),
-    0 3px 8px rgba(0, 0, 0, 0.2);
-  transform: translateY(-1px);
+    0 -2px 0 var(--color-surface, #ffffff),
+    0 8px 20px rgba(0, 0, 0, 0.2),
+    0 4px 10px rgba(254, 44, 85, 0.4);
+  transform: translateY(-15px);
 }
 
 .navFabButton:active {
-  transform: scale(0.94);
+  transform: translateY(-14px) scale(0.94);
 }
 
 /* Dark theme — FAB border matches dark nav bg */
 [data-theme="dark"] .navFabButton {
-  border-color: #1a1a1c;
+  box-shadow:
+    0 -2px 0 #1a1a1c,
+    0 6px 16px rgba(0, 0, 0, 0.4),
+    0 3px 8px rgba(254, 44, 85, 0.35);
 }
 
 /* Discover page FAB border — matches solid black nav */
 .bottomNavDiscover .navFabButton {
-  border-color: #000000;
+  box-shadow:
+    0 -2px 0 #000000,
+    0 6px 16px rgba(0, 0, 0, 0.4),
+    0 3px 8px rgba(254, 44, 85, 0.35);
 }
 
 /* Reduce nav padding at each tab so 4 items fit comfortably */
