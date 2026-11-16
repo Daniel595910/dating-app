@@ -1,8 +1,7 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
-import { X, Heart, MessageCircle, Share2, MoreHorizontal, Flag, Ban, RotateCcw, BadgeCheck, MapPin, UserPlus } from 'lucide-react';
+import { X, Heart, MessageCircle, Share2, MoreHorizontal, Flag, Ban, RotateCcw, BadgeCheck, MapPin } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { CommunityPost } from '../types/community.types';
-import { supabase } from '@/config/supabase.client';
 import { VideoPlayerControls } from './VideoPlayerControls';
 import { CommentSheet } from './CommentSheet';
 import { ShareSheet } from './ShareSheet';
