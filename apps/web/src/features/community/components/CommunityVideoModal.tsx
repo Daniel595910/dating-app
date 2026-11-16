@@ -49,12 +49,10 @@ export function CommunityVideoModal({
   const [reportSheetOpen, setReportSheetOpen] = useState(false);
   const [blockSheetOpen, setBlockSheetOpen] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
-  const [isFollowing, setIsFollowing] = useState(false);
-  const [followLoading, setFollowLoading] = useState(false);
 
   const [currentPostId, setCurrentPostId] = useState<string | null>(initialPostId ?? legacyPost?.id ?? null);
   const [currentVideoUrl, setCurrentVideoUrl] = useState<string | null>(initialVideoUrl ?? legacyVideoUrl ?? null);
-  const [swipeState, setSwipeState] = useState({ startX: 0, deltaX: 0, isDragging: false });
+  const [swipeState, setSwipeState] = useState({ startX: 0, startY: 0, deltaX: 0, deltaY: 0, axis: null as 'x' | 'y' | null, isDragging: false });
   const [atEnd, setAtEnd] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
   const [captionExpanded, setCaptionExpanded] = useState(false);
@@ -162,6 +160,17 @@ export function CommunityVideoModal({
     }
   };
 
+  // Tap on video pane (which now has no pointer-events on <video> child)
+  const handleVideoPaneTap = () => {
+    const video = videoRef.current;
+    if (!video) return;
+    if (video.paused) {
+      video.play().catch(() => {});
+    } else {
+      video.pause();
+    }
+  };
+
   // Backdrop click closes
   const handleBackdropClick = (e: React.MouseEvent<HTMLDivElement>) => {
     if (e.target === e.currentTarget) {
@@ -182,22 +191,6 @@ export function CommunityVideoModal({
     setShareSheetOpen(true);
   };
 
-  // Follow status — mirrors CommunityPostCard behavior
-  useEffect(() => {
-    if (!open || !currentPost || isOwnPost) { setIsFollowing(false); return; }
-    let cancelled = false;
-    const checkFollowStatus = async () => {
-      const { data } = await supabase
-        .from('follows')
-        .select('id')
-        .eq('follower_id', currentUserId)
-        .eq('following_id', currentPost.author.id)
-        .maybeSingle();
-      if (!cancelled) setIsFollowing(Boolean(data));
-    };
-    checkFollowStatus();
-    return () => { cancelled = true; };
-  }, [open, currentPost?.author.id, currentUserId, isOwnPost]);
 
   // Minimize video pane when context pane scrolls (mobile only)
   useEffect(() => {
@@ -223,29 +216,6 @@ export function CommunityVideoModal({
     };
   }, [open]);
 
-  const handleFollow = async (e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (followLoading || !currentPost) return;
-    setFollowLoading(true);
-    try {
-      if (isFollowing) {
-        await supabase.from('follows').delete()
-          .eq('follower_id', currentUserId)
-          .eq('following_id', currentPost.author.id);
-        setIsFollowing(false);
-      } else {
-        await supabase.from('follows').insert({
-          follower_id: currentUserId,
-          following_id: currentPost.author.id,
-        });
-        setIsFollowing(true);
-      }
-    } catch (err) {
-      console.error('Follow error:', err);
-    } finally {
-      setFollowLoading(false);
-    }
-  };
 
   const getVideoPosts = () => {
     const allVideoPosts = allPosts.filter((p) => p.media.some((m) => m.type === 'video'));
@@ -288,21 +258,38 @@ export function CommunityVideoModal({
   };
 
   const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
-    try { e.currentTarget.setPointerCapture(e.pointerId); } catch {}
-    setSwipeState({ startX: e.clientX, deltaX: 0, isDragging: true });
+    setSwipeState({ startX: e.clientX, startY: e.clientY, deltaX: 0, deltaY: 0, axis: null, isDragging: true });
   };
 
   const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
     if (!swipeState.isDragging) return;
-    setSwipeState((prev) => ({ ...prev, deltaX: e.clientX - prev.startX }));
+    const dx = e.clientX - swipeState.startX;
+    const dy = e.clientY - swipeState.startY;
+    // Determine axis once: horizontal if |dx| > |dy| + 10
+    let axis = swipeState.axis;
+    if (axis === null && (Math.abs(dx) > 10 || Math.abs(dy) > 10)) {
+      axis = Math.abs(dx) > Math.abs(dy) ? 'x' : 'y';
+      if (axis === 'x') {
+        try { e.currentTarget.setPointerCapture(e.pointerId); } catch {}
+      }
+    }
+    if (axis === 'y') {
+      // Vertical gesture — release pointer so browser scrolls naturally
+      try { e.currentTarget.releasePointerCapture(e.pointerId); } catch {}
+      return;
+    }
+    setSwipeState((prev) => ({ ...prev, deltaX: dx, deltaY: dy, axis }));
   };
 
   const handlePointerUp = (e?: React.PointerEvent<HTMLDivElement>) => {
     if (!swipeState.isDragging) return;
-    const threshold = 50;
-    if (swipeState.deltaX < -threshold) handleNext();
-    else if (swipeState.deltaX > threshold) handlePrev();
-    setSwipeState({ startX: 0, deltaX: 0, isDragging: false });
+    // Only fire swipe navigation if horizontal gesture
+    if (swipeState.axis === 'x') {
+      const threshold = 50;
+      if (swipeState.deltaX < -threshold) handleNext();
+      else if (swipeState.deltaX > threshold) handlePrev();
+    }
+    setSwipeState({ startX: 0, startY: 0, deltaX: 0, deltaY: 0, axis: null, isDragging: false });
     if (e) { try { e.currentTarget.releasePointerCapture(e.pointerId); } catch {} }
   };
 
@@ -339,6 +326,7 @@ export function CommunityVideoModal({
           onPointerUp={handlePointerUp}
           onPointerCancel={handlePointerUp}
           onPointerLeave={handlePointerUp}
+          onClick={handleVideoPaneTap}
         >
           <video
             ref={videoRef}
@@ -424,16 +412,6 @@ export function CommunityVideoModal({
                 <span className={styles.timeAgo}>{formattedDate}</span>
               </div>
             </div>
-            {!isOwnPost && !isFollowing && (
-              <button
-                className={styles.followButton}
-                onClick={handleFollow}
-                disabled={followLoading}
-              >
-                <UserPlus size={12} />
-                <span>Follow</span>
-              </button>
-            )}
             <div className={styles.reactionsPill}>
               <button
                 className={`${styles.pillButton} ${currentPost.viewer.liked ? styles.pillButtonLiked : ''}`}
