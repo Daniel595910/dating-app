@@ -485,3 +485,105 @@
 .bottomNavDiscover .navBadge {
   border-color: #000000;
 }
+
+/* ═══════════════════════════════════════════════════════════
+   FAB LAYOUT — 2 tabs | notch + FAB | 2 tabs
+   Used when <BottomNav fab={...} /> is provided.
+   Backward-compatible: pages without fab use plain .bottomNav.
+   ═══════════════════════════════════════════════════════════ */
+
+/* Outer nav — light theme (default) */
+.bottomNavWithFab {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr 1fr;
+  grid-template-areas: "left1 left2 right1 right2";
+  padding: 10px 8px calc(10px + env(safe-area-inset-bottom));
+  border-radius: 20px 20px 0 0;
+  align-items: end;
+  height: 72px;
+  overflow: visible;
+}
+
+/* Dark theme override (Community page in dark mode) */
+[data-theme="dark"] .bottomNavWithFab {
+  border-radius: 20px 20px 0 0;
+}
+
+/* Discover page override — solid black bottom nav, keep rounded corners */
+.bottomNavWithFab.bottomNavDiscover {
+  border-radius: 20px 20px 0 0;
+}
+
+/* Left/right halves — distribute 2 tabs each */
+.navFabLeft,
+.navFabRight {
+  display: contents;
+}
+
+.navFabLeft > *,
+.navFabRight > * {
+  display: flex;
+}
+
+/* Center FAB container — absolutely positioned, floats above the nav */
+.navFabCenter {
+  position: absolute;
+  bottom: calc(100% - 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: auto;
+}
+
+/* FAB button — 64px circle, red brand color, elevated shadow + glow */
+.navFabButton {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: #fe2c55;
+  color: #ffffff;
+  border: 4px solid var(--color-surface, #ffffff);
+  box-sizing: border-box;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow:
+    0 6px 16px rgba(254, 44, 85, 0.35),
+    0 2px 6px rgba(0, 0, 0, 0.15);
+  transition: transform 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.navFabButton:hover {
+  background: #e0224a;
+  box-shadow:
+    0 8px 20px rgba(254, 44, 85, 0.45),
+    0 3px 8px rgba(0, 0, 0, 0.2);
+  transform: translateY(-1px);
+}
+
+.navFabButton:active {
+  transform: scale(0.94);
+}
+
+/* Dark theme — FAB border matches dark nav bg */
+[data-theme="dark"] .navFabButton {
+  border-color: #1a1a1c;
+}
+
+/* Discover page FAB border — matches solid black nav */
+.bottomNavDiscover .navFabButton {
+  border-color: #000000;
+}
+
+/* Reduce nav padding at each tab so 4 items fit comfortably */
+.bottomNavWithFab .navItem {
+  padding: 8px 4px;
+  min-width: 0;
+  max-width: none;
+}
+
