@@ -204,11 +204,14 @@ export function CommunityVideoModal({
     if (!open) { setIsMinimized(false); setCaptionExpanded(false); return; }
     const pane = contextPaneRef.current;
     if (!pane) return;
-    const threshold = 80;
+    // Adaptive threshold: 80px for long content, less for short content
     const check = () => {
-      const should = pane.scrollTop > threshold;
+      const scrollTop = pane.scrollTop;
+      const maxScroll = pane.scrollHeight - pane.clientHeight;
+      // Adaptive threshold: snap before end even on short content
+      const threshold = maxScroll > 0 ? Math.min(80, maxScroll * 0.6) : 80;
+      const should = scrollTop > threshold;
       setIsMinimized((prev) => (prev === should ? prev : should));
-      if (pane.scrollTop === 0) setCaptionExpanded(false);
     };
     pane.addEventListener('scroll', check, { passive: true });
     pane.addEventListener('touchmove', check, { passive: true });
@@ -258,6 +261,7 @@ export function CommunityVideoModal({
     setCurrentVideoUrl(videoMedia.url);
     setAtEnd(false);
     setCaptionExpanded(false);
+    setIsMinimized(false);
     setShowReplay(false);
   };
 
@@ -324,7 +328,7 @@ export function CommunityVideoModal({
         </button>
 
         {/* Scroll container — mobile scrolls, desktop flex row */}
-        <div className={`${styles.scrollContainer} ${isMinimized ? styles.scrollContainerMinimized : ''}`} ref={contextPaneRef}>
+        <div className={styles.scrollContainer} ref={contextPaneRef}>
 
         {/* Video pane */}
         <div
@@ -485,10 +489,10 @@ export function CommunityVideoModal({
           {/* Caption */}
           {currentPost.content && (
             <>
-              <p className={`${styles.content} ${(!captionExpanded && !isMinimized) ? styles.contentClamped : ''}`}>
+              <p className={`${styles.content} ${!captionExpanded ? styles.contentClamped : ''}`}>
                 {currentPost.content}
               </p>
-              {!captionExpanded && !isMinimized && currentPost.content.length > 150 && (
+              {!captionExpanded && currentPost.content.length > 150 && (
                 <button
                   type="button"
                   className={styles.contentMoreButton}
@@ -497,7 +501,7 @@ export function CommunityVideoModal({
                   Show more
                 </button>
               )}
-              {captionExpanded && !isMinimized && currentPost.content.length > 150 && (
+              {captionExpanded && currentPost.content.length > 150 && (
                 <button
                   type="button"
                   className={styles.contentMoreButton}
@@ -512,10 +516,10 @@ export function CommunityVideoModal({
           {/* Tags */}
           {currentPost.tags.length > 0 && (
             <div className={styles.tagsRow}>
-              {((captionExpanded || isMinimized) ? currentPost.tags : currentPost.tags.slice(0, 4)).map((tag, i) => (
+              {(captionExpanded ? currentPost.tags : currentPost.tags.slice(0, 4)).map((tag, i) => (
                 <span key={i} className={styles.tag}>#{tag}</span>
               ))}
-              {!captionExpanded && !isMinimized && currentPost.tags.length > 4 && (
+              {!captionExpanded && currentPost.tags.length > 4 && (
                 <button
                   type="button"
                   className={styles.tagsMoreButton}
