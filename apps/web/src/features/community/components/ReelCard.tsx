@@ -8,11 +8,11 @@ interface ReelCardProps {
   onOpen: (videoId: string) => void;
   onNotInterested: (videoId: string) => void;
   onShare: (video: DiscoverCandidate) => void;
-  onSeen?: (videoId: string) => void;
+
 }
 
 
-export function ReelCard({ video, onOpen, onNotInterested, onShare, onSeen }: ReelCardProps) {
+export function ReelCard({ video, onOpen, onNotInterested, onShare }: ReelCardProps) {
   const cardRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const [isPlaying, setIsPlaying] = useState(false);
