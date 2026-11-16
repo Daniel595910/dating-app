@@ -237,6 +237,7 @@ function VideoTile({ item, onExpand }: VideoTileProps) {
     const video = videoRef.current;
     if (!video) return;
     if (video.paused) {
+      video.muted = false;
       video.play().catch(() => {});
     } else {
       video.pause();
