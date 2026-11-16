@@ -1,0 +1,52 @@
+/* SimilarVideosSection — reels grid inside the video modal */
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--color-border, #f3f4f6);
+  margin-top: 4px;
+}
+
+.title {
+  margin: 0;
+  font-size: var(--font-md, 15px);
+  font-weight: 700;
+  color: var(--color-text, #111827);
+  letter-spacing: -0.01em;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+
+@media (max-width: 400px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.skeleton {
+  aspect-ratio: 9 / 16;
+  background: linear-gradient(90deg, var(--color-surface-alt, #f9fafb) 0%, var(--color-border, #f3f4f6) 50%, var(--color-surface-alt, #f9fafb) 100%);
+  background-size: 200% 100%;
+  border-radius: var(--radius-md, 12px);
+  animation: shimmer 1.4s ease-in-out infinite;
+}
+
+@keyframes shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+.emptyText {
+  margin: 0;
+  font-size: var(--font-sm, 13px);
+  color: var(--color-text-muted, #9ca3af);
+  text-align: center;
+  padding: 16px 0;
+}
+
