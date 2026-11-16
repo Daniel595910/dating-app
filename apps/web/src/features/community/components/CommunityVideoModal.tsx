@@ -42,6 +42,7 @@ export function CommunityVideoModal({
 }: CommunityVideoModalProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const contextPaneRef = useRef<HTMLDivElement>(null);
   const [showReplay, setShowReplay] = useState(false);
   const [commentSheetOpen, setCommentSheetOpen] = useState(false);
   const [shareSheetOpen, setShareSheetOpen] = useState(false);
@@ -55,6 +56,8 @@ export function CommunityVideoModal({
   const [currentVideoUrl, setCurrentVideoUrl] = useState<string | null>(initialVideoUrl ?? legacyVideoUrl ?? null);
   const [swipeState, setSwipeState] = useState({ startX: 0, deltaX: 0, isDragging: false });
   const [atEnd, setAtEnd] = useState(false);
+  const [isMinimized, setIsMinimized] = useState(false);
+  const [captionExpanded, setCaptionExpanded] = useState(false);
 
   const { watched, markWatched, startPlayTimer, clearPlayTimer } = useWatchedVideos();
   const navigate = useNavigate();
@@ -196,6 +199,27 @@ export function CommunityVideoModal({
     return () => { cancelled = true; };
   }, [open, currentPost?.author.id, currentUserId, isOwnPost]);
 
+  // Minimize video pane when context pane scrolls (mobile only)
+  useEffect(() => {
+    if (!open) { setIsMinimized(false); setCaptionExpanded(false); return; }
+    const pane = contextPaneRef.current;
+    if (!pane) return;
+    const threshold = 80;
+    const check = () => {
+      const should = pane.scrollTop > threshold;
+      setIsMinimized((prev) => (prev === should ? prev : should));
+      if (pane.scrollTop === 0) setCaptionExpanded(false);
+    };
+    pane.addEventListener('scroll', check, { passive: true });
+    pane.addEventListener('touchmove', check, { passive: true });
+    pane.addEventListener('touchend', check, { passive: true });
+    return () => {
+      pane.removeEventListener('scroll', check);
+      pane.removeEventListener('touchmove', check);
+      pane.removeEventListener('touchend', check);
+    };
+  }, [open]);
+
   const handleFollow = async (e: React.MouseEvent) => {
     e.stopPropagation();
     if (followLoading || !currentPost) return;
@@ -233,6 +257,7 @@ export function CommunityVideoModal({
     setCurrentPostId(targetPost.id);
     setCurrentVideoUrl(videoMedia.url);
     setAtEnd(false);
+    setCaptionExpanded(false);
     setShowReplay(false);
   };
 
@@ -298,9 +323,12 @@ export function CommunityVideoModal({
           <X size={22} />
         </button>
 
+        {/* Scroll container — mobile scrolls, desktop flex row */}
+        <div className={`${styles.scrollContainer} ${isMinimized ? styles.scrollContainerMinimized : ''}`} ref={contextPaneRef}>
+
         {/* Video pane */}
         <div
-          className={styles.videoPane}
+          className={`${styles.videoPane} ${(isMinimized || captionExpanded) ? styles.videoPaneMinimized : ''}`}
           ref={containerRef}
           onPointerDown={handlePointerDown}
           onPointerMove={handlePointerMove}
@@ -456,17 +484,49 @@ export function CommunityVideoModal({
 
           {/* Caption */}
           {currentPost.content && (
-            <p className={styles.content}>{currentPost.content}</p>
+            <>
+              <p className={`${styles.content} ${(!captionExpanded && !isMinimized) ? styles.contentClamped : ''}`}>
+                {currentPost.content}
+              </p>
+              {!captionExpanded && !isMinimized && currentPost.content.length > 150 && (
+                <button
+                  type="button"
+                  className={styles.contentMoreButton}
+                  onClick={() => setCaptionExpanded(true)}
+                >
+                  Show more
+                </button>
+              )}
+              {captionExpanded && !isMinimized && currentPost.content.length > 150 && (
+                <button
+                  type="button"
+                  className={styles.contentMoreButton}
+                  onClick={() => setCaptionExpanded(false)}
+                >
+                  Show less
+                </button>
+              )}
+            </>
           )}
 
           {/* Tags */}
           {currentPost.tags.length > 0 && (
             <div className={styles.tagsRow}>
-              {currentPost.tags.map((tag, i) => (
+              {((captionExpanded || isMinimized) ? currentPost.tags : currentPost.tags.slice(0, 4)).map((tag, i) => (
                 <span key={i} className={styles.tag}>#{tag}</span>
               ))}
+              {!captionExpanded && !isMinimized && currentPost.tags.length > 4 && (
+                <button
+                  type="button"
+                  className={styles.tagsMoreButton}
+                  onClick={() => setCaptionExpanded(true)}
+                >
+                  +{currentPost.tags.length - 4} more
+                </button>
+              )}
             </div>
           )}
+        </div>
         </div>
       </div>
 

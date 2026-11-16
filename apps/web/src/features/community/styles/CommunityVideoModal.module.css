@@ -49,6 +49,20 @@
   }
 }
 
+/* Scroll container — mobile: single scroller w/ sticky video; desktop: flex row */
+.scrollContainer {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  position: relative;
+}
+
+@media (min-width: 640px) {
+  .scrollContainer {
+    flex-direction: row;
+  }
+}
 /* Close button — top-right, visible on both */
 .closeButton {
   position: absolute;
@@ -93,6 +107,43 @@
     flex: 0 0 65%;
     aspect-ratio: 16 / 9;
     max-height: 90vh;
+  }
+}
+
+/* ─── Mobile: sticky video + shrink-to-pip ─── */
+@media (max-width: 639px) {
+  .scrollContainer {
+    overflow-y: auto;
+    overflow-x: hidden;
+  }
+  .videoPane {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    width: 100%;
+    aspect-ratio: auto;
+    max-height: 60vh;
+    flex: none;
+    min-height: auto;
+    transition: width 0.2s ease, margin-left 0.2s ease;
+  }
+.videoPaneMinimized {
+    width: 100%;
+    margin: 0;
+    border-radius: 0;
+    box-shadow: none;
+    aspect-ratio: 16 / 9;
+    max-height: none;
+  }
+  .contextPane {
+    flex: none;
+    max-height: none;
+    height: auto;
+    overflow: visible;
+  }
+  .videoElement {
+    height: auto;
+    max-height: 60vh;
   }
 }
 
@@ -146,7 +197,6 @@
   flex-direction: column;
   justify-content: flex-start;
   background: var(--color-surface, #ffffff);
-  overflow-y: auto;
   padding: var(--space-lg, 16px);
   gap: var(--space-md, 12px);
   min-height: 0;
@@ -158,20 +208,10 @@
     min-width: 320px;
     max-width: 380px;
     border-left: 1px solid var(--color-border, #f3f4f6);
+    overflow-y: auto;
     height: 100%;
     padding: 20px;
     gap: 14px;
-  }
-}
-
-/* Mobile — context pane scrolls under video */
-@media (max-width: 639px) {
-  .contextPane {
-    flex: 0 0 auto;
-    max-height: 40vh;
-  }
-  .videoPane {
-    flex: 1;
   }
 }
 
@@ -387,6 +427,45 @@
   color: var(--color-text, #111827);
   white-space: pre-wrap;
   word-break: break-word;
+}
+
+/* Caption clamp — 3 lines when collapsed */
+.contentClamped {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.contentMoreButton {
+  align-self: flex-start;
+  background: none;
+  border: none;
+  padding: 0;
+  margin-top: -6px;
+  color: var(--color-primary, #ef4444);
+  font-size: var(--font-sm, 13px);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.contentMoreButton:hover {
+  text-decoration: underline;
+}
+
+.tagsMoreButton {
+  background: none;
+  border: none;
+  padding: 3px 9px;
+  border-radius: var(--radius-full, 9999px);
+  color: var(--color-primary, #ef4444);
+  font-size: var(--font-sm, 12px);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.tagsMoreButton:hover {
+  background: var(--color-primary-soft, #fef2f2);
 }
 
 /* Tags */
