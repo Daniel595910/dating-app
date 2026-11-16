@@ -131,8 +131,6 @@ function VideoTile({ item, onExpand }: VideoTileProps) {
   const [duration, setDuration] = useState<number | null>(
     item.durationSeconds && item.durationSeconds > 0 ? item.durationSeconds : null
   );
-  const [extractedPoster, setExtractedPoster] = useState<string | null>(null);
-  const [posterFailed, setPosterFailed] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const playback = useVideoPlayback();
@@ -156,69 +154,7 @@ function VideoTile({ item, onExpand }: VideoTileProps) {
     return () => playback.unregisterVideo(videoId);
   }, [videoId, playback]);
 
-  useEffect(() => {
-    if (item.thumbnailUrl) return;
-    if (extractedPoster) return;
 
-    let cancelled = false;
-    const video = document.createElement('video');
-    video.src = item.url;
-    video.preload = 'metadata';
-    video.crossOrigin = 'anonymous';
-    video.muted = true;
-    video.playsInline = true;
-
-    const cleanup = () => {
-      video.removeAttribute('src');
-      video.load();
-    };
-
-    video.onloadeddata = () => {
-      if (cancelled) return;
-      const targetTime = Math.min(1, video.duration * 0.1);
-      try {
-        video.currentTime = targetTime;
-      } catch {
-        setPosterFailed(true);
-        cleanup();
-      }
-    };
-
-    video.onseeked = () => {
-      if (cancelled) { cleanup(); return; }
-      try {
-        const canvas = document.createElement('canvas');
-        canvas.width = video.videoWidth;
-        canvas.height = video.videoHeight;
-        const ctx = canvas.getContext('2d');
-        if (ctx && canvas.width > 0) {
-          ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-          setExtractedPoster(canvas.toDataURL('image/jpeg', 0.7));
-          if (!duration && Number.isFinite(video.duration)) {
-            setDuration(video.duration);
-          }
-        } else {
-          setPosterFailed(true);
-        }
-      } catch {
-        setPosterFailed(true);
-      }
-      cleanup();
-    };
-
-    video.onerror = () => {
-      if (!cancelled) setPosterFailed(true);
-      cleanup();
-    };
-
-    return () => {
-      cancelled = true;
-      cleanup();
-    };
-  }, [item.url, item.thumbnailUrl, extractedPoster, duration]);
-
-  const posterSrc = item.thumbnailUrl || extractedPoster || null;
-  const showPlaceholder = !posterSrc && posterFailed;
 
   const handlePlayClick = () => {
     playback.onPlay(videoId);
@@ -254,12 +190,20 @@ function VideoTile({ item, onExpand }: VideoTileProps) {
   if (!playing) {
     return (
       <div className={styles.videoPosterWrapper} onClick={handlePlayClick}>
-        {posterSrc ? (
-          <img src={posterSrc} alt="" className={styles.videoPoster} loading="lazy" />
+        {item.thumbnailUrl ? (
+          <img src={item.thumbnailUrl} alt="" className={styles.videoPoster} loading="lazy" />
         ) : (
-          <div className={showPlaceholder ? styles.videoPlaceholder : styles.videoPlaceholderLoading}>
-            {showPlaceholder && <Play size={32} color="#fff" />}
-          </div>
+          <video
+            src={item.url}
+            preload="metadata"
+            muted
+            playsInline
+            onLoadedMetadata={(e) => {
+              const d = e.currentTarget.duration;
+              if (Number.isFinite(d) && d > 0) setDuration(d);
+            }}
+            className={styles.videoPoster}
+          />
         )}
         <div className={styles.playButtonOverlay}>
           <Play size={28} fill="#fff" color="#fff" />
@@ -276,7 +220,7 @@ function VideoTile({ item, onExpand }: VideoTileProps) {
       <video
         ref={videoRef}
         src={item.url}
-        poster={posterSrc ?? undefined}
+        poster={item.thumbnailUrl ?? undefined}
         autoPlay
         muted
         playsInline
