@@ -136,6 +136,15 @@ function VideoTile({ item, onExpand }: VideoTileProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const playback = useVideoPlayback();
+
+  // Mount-muted autoplay: browsers block unmuted autoplay without a direct
+  // gesture on the <video> element. Play muted, user unmutes via controls.
+  useEffect(() => {
+    if (!playing) return;
+    const v = videoRef.current;
+    if (!v) return;
+    v.play().catch(() => {});
+  }, [playing]);
   const videoId = item.id;
 
   useEffect(() => {
@@ -268,6 +277,7 @@ function VideoTile({ item, onExpand }: VideoTileProps) {
         src={item.url}
         poster={posterSrc ?? undefined}
         autoPlay
+        muted
         playsInline
         onLoadedMetadata={handleLoadedMetadata}
         onEnded={handleEnded}
