@@ -173,14 +173,14 @@
 /* Author row — mirrors card */
 .authorRow {
   display: flex;
-  align-items: flex-start;
-  gap: 12px;
+  align-items: center;
+  gap: 8px;
   position: relative;
 }
 
 .avatar {
-  width: 44px;
-  height: 44px;
+  width: 32px;
+  height: 32px;
   border-radius: 50%;
   background: var(--color-primary-soft, #fef2f2);
   color: var(--color-primary, #ef4444);
@@ -188,7 +188,7 @@
   align-items: center;
   justify-content: center;
   font-weight: 700;
-  font-size: 16px;
+  font-size: 13px;
   flex-shrink: 0;
   overflow: hidden;
 }
@@ -212,12 +212,12 @@
 
 .name {
   font-weight: 600;
-  font-size: var(--font-md, 15px);
+  font-size: var(--font-sm, 13px);
   color: var(--color-text, #111827);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 200px;
+  max-width: 140px;
 }
 
 .verifiedIcon {
@@ -263,6 +263,73 @@
 .moreButton:hover {
   color: var(--color-text, #111827);
   background: var(--color-surface-alt, #f9fafb);
+}
+
+/* Follow button — mirrors CommunityPostCard */
+.followButton {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  background: var(--color-primary, #ef4444);
+  color: #ffffff;
+  border: none;
+  border-radius: var(--radius-full, 9999px);
+  font-size: var(--font-xs, 11px);
+  font-weight: 600;
+  cursor: pointer;
+  flex-shrink: 0;
+  min-height: 24px;
+  transition: background-color 0.15s ease, opacity 0.15s ease;
+}
+
+.followButton:hover {
+  background: var(--color-primary-hover, #dc2626);
+}
+
+.followButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Reactions pill — like / comment / share grouped compact */
+.reactionsPill {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 2px;
+  background: var(--color-surface-alt, #f9fafb);
+  border-radius: var(--radius-full, 9999px);
+  flex-shrink: 0;
+  margin-left: auto;
+}
+
+.pillButton {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  padding: 4px 6px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--color-text-secondary, #6b7280);
+  font-size: var(--font-xs, 11px);
+  font-weight: 500;
+  border-radius: var(--radius-full, 9999px);
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.pillButton:hover {
+  background: var(--color-surface, #ffffff);
+  color: var(--color-text, #111827);
+}
+
+.pillButtonLiked {
+  color: var(--color-primary, #ef4444);
+}
+
+.pillButtonLiked:hover {
+  color: var(--color-primary, #ef4444);
 }
 
 /* Dropdown */
@@ -333,49 +400,6 @@
   border-radius: var(--radius-full, 9999px);
 }
 
-/* Actions */
-.actionsDivider {
-  border-top: 1px solid var(--color-border, #f3f4f6);
-  padding: 0;
-  margin-top: auto;
-}
-
-.actionsBar {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  padding-top: var(--space-sm, 8px);
-}
-
-.actionButton {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  background: none;
-  border: none;
-  cursor: pointer;
-  color: var(--color-text-muted, #9ca3af);
-  font-size: var(--font-sm, 13px);
-  font-weight: 500;
-  padding: 10px 14px;
-  border-radius: var(--radius-full, 9999px);
-  min-height: 40px;
-  transition: background-color 0.15s ease, color 0.15s ease;
-}
-
-.actionButton:hover {
-  background: var(--color-surface-alt, #f9fafb);
-  color: var(--color-text, #111827);
-}
-
-.actionButtonLiked {
-  color: var(--color-primary, #ef4444);
-}
-
-.actionButtonLiked:hover {
-  color: var(--color-primary, #ef4444);
-  background: var(--color-primary-soft, #fef2f2);
-}
 
 /* Reduced motion */
 @media (prefers-reduced-motion: reduce) {

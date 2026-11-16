@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
-import { X, Heart, MessageCircle, Share2, MoreHorizontal, Flag, Ban, RotateCcw, BadgeCheck, MapPin } from 'lucide-react';
+import { X, Heart, MessageCircle, Share2, MoreHorizontal, Flag, Ban, RotateCcw, BadgeCheck, MapPin, UserPlus } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { CommunityPost } from '../types/community.types';
+import { supabase } from '@/config/supabase.client';
 import { VideoPlayerControls } from './VideoPlayerControls';
 import { CommentSheet } from './CommentSheet';
 import { ShareSheet } from './ShareSheet';
@@ -47,6 +48,8 @@ export function CommunityVideoModal({
   const [reportSheetOpen, setReportSheetOpen] = useState(false);
   const [blockSheetOpen, setBlockSheetOpen] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
+  const [isFollowing, setIsFollowing] = useState(false);
+  const [followLoading, setFollowLoading] = useState(false);
 
   const [currentPostId, setCurrentPostId] = useState<string | null>(initialPostId ?? legacyPost?.id ?? null);
   const [currentVideoUrl, setCurrentVideoUrl] = useState<string | null>(initialVideoUrl ?? legacyVideoUrl ?? null);
@@ -174,6 +177,47 @@ export function CommunityVideoModal({
 
   const handleShare = () => {
     setShareSheetOpen(true);
+  };
+
+  // Follow status — mirrors CommunityPostCard behavior
+  useEffect(() => {
+    if (!open || !currentPost || isOwnPost) { setIsFollowing(false); return; }
+    let cancelled = false;
+    const checkFollowStatus = async () => {
+      const { data } = await supabase
+        .from('follows')
+        .select('id')
+        .eq('follower_id', currentUserId)
+        .eq('following_id', currentPost.author.id)
+        .maybeSingle();
+      if (!cancelled) setIsFollowing(Boolean(data));
+    };
+    checkFollowStatus();
+    return () => { cancelled = true; };
+  }, [open, currentPost?.author.id, currentUserId, isOwnPost]);
+
+  const handleFollow = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (followLoading || !currentPost) return;
+    setFollowLoading(true);
+    try {
+      if (isFollowing) {
+        await supabase.from('follows').delete()
+          .eq('follower_id', currentUserId)
+          .eq('following_id', currentPost.author.id);
+        setIsFollowing(false);
+      } else {
+        await supabase.from('follows').insert({
+          follower_id: currentUserId,
+          following_id: currentPost.author.id,
+        });
+        setIsFollowing(true);
+      }
+    } catch (err) {
+      console.error('Follow error:', err);
+    } finally {
+      setFollowLoading(false);
+    }
   };
 
   const getVideoPosts = () => {
@@ -348,6 +392,41 @@ export function CommunityVideoModal({
                 <span className={styles.timeAgo}>{formattedDate}</span>
               </div>
             </div>
+            {!isOwnPost && !isFollowing && (
+              <button
+                className={styles.followButton}
+                onClick={handleFollow}
+                disabled={followLoading}
+              >
+                <UserPlus size={12} />
+                <span>Follow</span>
+              </button>
+            )}
+            <div className={styles.reactionsPill}>
+              <button
+                className={`${styles.pillButton} ${currentPost.viewer.liked ? styles.pillButtonLiked : ''}`}
+                onClick={handleLike}
+                aria-label={currentPost.viewer.liked ? 'Unlike' : 'Like'}
+              >
+                <Heart size={14} fill={currentPost.viewer.liked ? 'currentColor' : 'none'} />
+                <span>{currentPost.stats.likes}</span>
+              </button>
+              <button
+                className={styles.pillButton}
+                onClick={handleComment}
+                aria-label='Comments'
+              >
+                <MessageCircle size={14} />
+                <span>{currentPost.stats.comments}</span>
+              </button>
+              <button
+                className={styles.pillButton}
+                onClick={handleShare}
+                aria-label='Share'
+              >
+                <Share2 size={14} />
+              </button>
+            </div>
             <button
               className={styles.moreButton}
               onClick={() => setShowMenu(!showMenu)}
@@ -388,34 +467,6 @@ export function CommunityVideoModal({
               ))}
             </div>
           )}
-
-          {/* Action bar */}
-          <div className={styles.actionsDivider} />
-          <div className={styles.actionsBar}>
-            <button
-              className={`${styles.actionButton} ${currentPost.viewer.liked ? styles.actionButtonLiked : ''}`}
-              onClick={handleLike}
-              aria-label={currentPost.viewer.liked ? 'Unlike' : 'Like'}
-            >
-              <Heart size={20} fill={currentPost.viewer.liked ? 'currentColor' : 'none'} />
-              <span>{currentPost.stats.likes}</span>
-            </button>
-            <button
-              className={styles.actionButton}
-              onClick={handleComment}
-              aria-label="Comments"
-            >
-              <MessageCircle size={20} />
-              <span>{currentPost.stats.comments}</span>
-            </button>
-            <button
-              className={styles.actionButton}
-              onClick={handleShare}
-              aria-label="Share"
-            >
-              <Share2 size={20} />
-            </button>
-          </div>
         </div>
       </div>
 
