@@ -1,0 +1,212 @@
+/* ReelCard — discover video card for the "similar videos" section */
+
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  background: var(--color-surface, #ffffff);
+  border-radius: var(--radius-md, 12px);
+  overflow: hidden;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  position: relative;
+}
+
+.card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.media {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 9 / 16;
+  background: #000;
+  overflow: hidden;
+}
+
+.thumbnail,
+.video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.video {
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.videoVisible {
+  opacity: 1;
+}
+
+.playIcon {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.55);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(4px);
+  pointer-events: none;
+}
+
+.moreButton {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.6);
+  color: #ffffff;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 5;
+  transition: background-color 0.15s ease;
+}
+
+.moreButton:hover {
+  background: rgba(0, 0, 0, 0.85);
+}
+
+.dropdown {
+  position: absolute;
+  top: 38px;
+  right: 6px;
+  background: var(--color-surface-raised, #ffffff);
+  border-radius: var(--radius-md, 12px);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15), 0 0 0 1px var(--color-border, #f3f4f6);
+  z-index: 50;
+  min-width: 150px;
+  overflow: hidden;
+}
+
+.dropdownItem,
+.dropdownItemDanger {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 10px 14px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: var(--font-sm, 13px);
+  font-weight: 500;
+  color: var(--color-text, #111827);
+  transition: background-color 0.12s ease;
+  text-align: left;
+}
+
+.dropdownItem:hover {
+  background: var(--color-surface-alt, #f9fafb);
+}
+
+.dropdownItemDanger {
+  color: var(--color-danger, #ef4444);
+}
+
+.dropdownItemDanger:hover {
+  background: var(--color-primary-soft, #fef2f2);
+}
+
+.statsOverlay {
+  position: absolute;
+  bottom: 6px;
+  left: 6px;
+  display: flex;
+  gap: 8px;
+  z-index: 3;
+  pointer-events: none;
+}
+
+.stat {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  background: rgba(0, 0, 0, 0.55);
+  color: #ffffff;
+  padding: 2px 6px;
+  border-radius: var(--radius-full, 9999px);
+  font-size: var(--font-xs, 11px);
+  font-weight: 600;
+  backdrop-filter: blur(4px);
+}
+
+.title {
+  margin: 0;
+  padding: 0 8px;
+  font-size: var(--font-sm, 13px);
+  font-weight: 500;
+  color: var(--color-text, #111827);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  line-height: 1.35;
+}
+
+.footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  padding: 0 8px 8px;
+}
+
+.author {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+  flex: 1;
+}
+
+.avatar {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.authorName {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  font-size: var(--font-xs, 11px);
+  font-weight: 600;
+  color: var(--color-text, #111827);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.verified {
+  color: var(--color-primary, #ef4444);
+  flex-shrink: 0;
+}
+
+.location {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  font-size: var(--font-xs, 11px);
+  color: var(--color-text-muted, #9ca3af);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
