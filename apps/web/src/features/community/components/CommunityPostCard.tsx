@@ -44,6 +44,7 @@ export const CommunityPostCard: React.FC<CommunityPostCardProps> = ({
   const audioProgressRef = useRef<HTMLDivElement>(null);
   const [showMenu, setShowMenu] = useState(false);
   const audioRef = useRef<HTMLAudioElement>(null);
+  const [captionExpanded, setCaptionExpanded] = useState(false);
 
   
 
@@ -201,7 +202,20 @@ export const CommunityPostCard: React.FC<CommunityPostCardProps> = ({
 
       {/* Content */}
       {post.content && (
-        <p className={styles.content}>{post.content}</p>
+        <>
+          <p className={`${styles.content} ${post.content.length > 150 && !captionExpanded ? styles.contentClamped : ''}`}>
+            {post.content}
+          </p>
+          {post.content.length > 150 && (
+            <button
+              type="button"
+              className={styles.readMoreButton}
+              onClick={() => setCaptionExpanded((v) => !v)}
+            >
+              {captionExpanded ? 'Read less' : 'Read more'}
+            </button>
+          )}
+        </>
       )}
 
       {/* Voice/Audio Message */}

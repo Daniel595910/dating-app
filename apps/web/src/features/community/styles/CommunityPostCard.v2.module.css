@@ -239,6 +239,32 @@
   word-break: break-word;
 }
 
+/* ---------- Caption clamp + Read more ---------- */
+.contentClamped {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  padding-bottom: 6px;
+}
+
+.readMoreButton {
+  background: none;
+  border: none;
+  padding: 0 18px 8px;
+  margin-top: -6px;
+  color: var(--color-primary, #ef4444);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: left;
+  transition: opacity 0.15s ease;
+}
+
+.readMoreButton:hover {
+  opacity: 0.75;
+}
+
 /* ---------- Media (inset from card edges) ---------- */
 .mediaWrapper {
   padding: 0 var(--space-lg, 16px) var(--space-sm, 8px);
