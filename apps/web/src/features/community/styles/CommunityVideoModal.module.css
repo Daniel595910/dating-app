@@ -144,10 +144,12 @@
 .contextPane {
   display: flex;
   flex-direction: column;
+  justify-content: flex-start;
   background: var(--color-surface, #ffffff);
   overflow-y: auto;
   padding: var(--space-lg, 16px);
   gap: var(--space-md, 12px);
+  min-height: 0;
 }
 
 @media (min-width: 640px) {
@@ -156,6 +158,9 @@
     min-width: 320px;
     max-width: 380px;
     border-left: 1px solid var(--color-border, #f3f4f6);
+    height: 100%;
+    padding: 20px;
+    gap: 14px;
   }
 }
 
