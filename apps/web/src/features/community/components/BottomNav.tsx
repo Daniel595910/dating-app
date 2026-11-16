@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Home, MessageCircle, User, Heart } from 'lucide-react';
+import { Home, MessageCircle, User, Heart, Plus, Video } from 'lucide-react';
 import { useAuthStore } from '@/store/auth.store';
 import { supabase } from '@/config/supabase.client';
 import styles from '../styles/BottomNav.module.css';
@@ -12,7 +12,17 @@ interface NavProfile {
   displayName: string;
 }
 
-export const BottomNav: React.FC = () => {
+export interface BottomNavFabConfig {
+  icon: 'plus' | 'video';
+  label: string;
+  onClick: () => void;
+}
+
+interface BottomNavProps {
+  fab?: BottomNavFabConfig;
+}
+
+export const BottomNav: React.FC<BottomNavProps> = ({ fab }) => {
   const location = useLocation();
   const navigate = useNavigate();
   const { user } = useAuthStore();
@@ -108,30 +118,83 @@ export const BottomNav: React.FC = () => {
     );
   };
 
+  if (!fab) {
+    return (
+      <nav className={`${styles.bottomNav} ${location.pathname.startsWith('/discover') ? styles.bottomNavDiscover : ''}`} aria-label="Main navigation">
+        {items.map((item) => {
+          const isActive = location.pathname === item.path;
+          const Icon = item.icon;
+          const isProfile = item.id === 'profile';
+          return (
+            <button
+              key={item.id}
+              className={`${styles.navItem} ${isActive ? styles.navItemActive : ''}`}
+              onClick={() => navigate(item.path)}
+              aria-label={item.label}
+              aria-current={isActive ? 'page' : undefined}
+            >
+              {item.id === 'chats' && unreadCount > 0 && (
+                <span className={styles.navBadge}>
+                  {unreadCount > 99 ? '99+' : unreadCount}
+                </span>
+              )}
+              {isProfile ? renderProfileVisual(isActive) : <Icon size={22} />}
+              <span className={styles.navLabel}>{item.label}</span>
+            </button>
+          );
+        })}
+      </nav>
+    );
+  }
+
+  // FAB layout — 2 tabs | notch + FAB | 2 tabs
+  const leftItems = items.slice(0, 2);
+  const rightItems = items.slice(2, 4);
+  const isDiscover = location.pathname.startsWith('/discover');
+
+  const renderNavItem = (item: typeof items[0]) => {
+    const isActive = location.pathname === item.path;
+    const Icon = item.icon;
+    const isProfile = item.id === 'profile';
+    return (
+      <button
+        key={item.id}
+        className={`${styles.navItem} ${isActive ? styles.navItemActive : ''}`}
+        onClick={() => navigate(item.path)}
+        aria-label={item.label}
+        aria-current={isActive ? 'page' : undefined}
+      >
+        {item.id === 'chats' && unreadCount > 0 && (
+          <span className={styles.navBadge}>
+            {unreadCount > 99 ? '99+' : unreadCount}
+          </span>
+        )}
+        {isProfile ? renderProfileVisual(isActive) : <Icon size={22} />}
+        <span className={styles.navLabel}>{item.label}</span>
+      </button>
+    );
+  };
+
   return (
-    <nav className={`${styles.bottomNav} ${location.pathname.startsWith('/discover') ? styles.bottomNavDiscover : ''}`} aria-label="Main navigation">
-      {items.map((item) => {
-        const isActive = location.pathname === item.path;
-        const Icon = item.icon;
-        const isProfile = item.id === 'profile';
-        return (
-          <button
-            key={item.id}
-            className={`${styles.navItem} ${isActive ? styles.navItemActive : ''}`}
-            onClick={() => navigate(item.path)}
-            aria-label={item.label}
-            aria-current={isActive ? 'page' : undefined}
-          >
-            {item.id === 'chats' && unreadCount > 0 && (
-              <span className={styles.navBadge}>
-                {unreadCount > 99 ? '99+' : unreadCount}
-              </span>
-            )}
-            {isProfile ? renderProfileVisual(isActive) : <Icon size={22} />}
-            <span className={styles.navLabel}>{item.label}</span>
-          </button>
-        );
-      })}
+    <nav className={`${styles.bottomNav} ${styles.bottomNavWithFab} ${isDiscover ? styles.bottomNavDiscover : ''}`} aria-label="Main navigation">
+      <div className={styles.navFabLeft}>
+        {leftItems.map(renderNavItem)}
+      </div>
+
+      <div className={styles.navFabCenter}>
+        <button
+          type="button"
+          className={styles.navFabButton}
+          onClick={fab.onClick}
+          aria-label={fab.label}
+        >
+          {fab.icon === 'plus' ? <Plus size={26} /> : <Video size={26} />}
+        </button>
+      </div>
+
+      <div className={styles.navFabRight}>
+        {rightItems.map(renderNavItem)}
+      </div>
     </nav>
   );
 };
