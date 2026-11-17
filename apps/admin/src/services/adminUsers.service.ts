@@ -1,4 +1,4 @@
-﻿import { supabase } from '@/config/supabase.client';
+import { supabase } from '@/config/supabase.client';
 import { auditService } from './audit.service';
 
 export type AdminRole = 'super_admin' | 'admin' | 'moderator' | 'support_agent' | 'analyst';
@@ -14,6 +14,13 @@ export interface AdminUser {
   created_at: string;
   last_active?: string;
   total_actions?: number;
+  status?: 'active' | 'suspended';
+  suspended_reason?: string | null;
+  suspended_at?: string | null;
+  suspended_by?: string | null;
+  last_active_at?: string | null;
+  extra_permissions?: string[];
+  removed_permissions?: string[];
 }
 
 export interface AdminFilters {
@@ -62,8 +69,38 @@ class AdminUsersService {
         return { items: [], total: 0, hasMore: false };
       }
 
+      const rows = (data || []) as AdminUser[];
+
+      if (rows.length > 0) {
+        try {
+          const ids = rows.map((r) => r.user_id);
+          const { data: accessRows, error: accessErr } = await supabase
+            .from('admin_access')
+            .select('user_id, status, suspended_reason, suspended_at, suspended_by, last_active_at, extra_permissions, removed_permissions')
+            .in('user_id', ids);
+          if (!accessErr && accessRows) {
+            const byId = new Map<string, any>();
+            for (const a of accessRows as any[]) byId.set(a.user_id, a);
+            for (const r of rows) {
+              const a = byId.get(r.user_id);
+              if (a) {
+                r.status = a.status ?? undefined;
+                r.suspended_reason = a.suspended_reason ?? null;
+                r.suspended_at = a.suspended_at ?? null;
+                r.suspended_by = a.suspended_by ?? null;
+                r.last_active_at = a.last_active_at ?? null;
+                r.extra_permissions = a.extra_permissions ?? [];
+                r.removed_permissions = a.removed_permissions ?? [];
+              }
+            }
+          }
+        } catch {
+          // fail soft - list still renders without suspension fields
+        }
+      }
+
       return {
-        items: (data || []) as AdminUser[],
+        items: rows,
         total: count || 0,
         hasMore: (count || 0) > offset + limit,
       };
@@ -197,6 +234,39 @@ class AdminUsersService {
     } catch {
       return [];
     }
+  }
+
+  async suspendAdmin(userId: string, reason?: string): Promise<boolean> {
+    const { data, error } = await supabase.rpc('admin_suspend', {
+      p_user_id: userId,
+      p_reason: reason ?? null,
+    });
+    if (error) throw new Error(error.message);
+    const res = data as { success?: boolean; error?: string } | null;
+    if (!res || res.success !== true) throw new Error(res?.error || 'Suspend failed');
+    return true;
+  }
+
+  async reactivateAdmin(userId: string): Promise<boolean> {
+    const { data, error } = await supabase.rpc('admin_reactivate', {
+      p_user_id: userId,
+    });
+    if (error) throw new Error(error.message);
+    const res = data as { success?: boolean; error?: string } | null;
+    if (!res || res.success !== true) throw new Error(res?.error || 'Reactivate failed');
+    return true;
+  }
+
+  async setPermissions(userId: string, extra: string[], removed: string[]): Promise<boolean> {
+    const { data, error } = await supabase.rpc('admin_set_permissions', {
+      p_user_id: userId,
+      p_extra: extra,
+      p_removed: removed,
+    });
+    if (error) throw new Error(error.message);
+    const res = data as { success?: boolean; error?: string } | null;
+    if (!res || res.success !== true) throw new Error(res?.error || 'Set permissions failed');
+    return true;
   }
 }
 
