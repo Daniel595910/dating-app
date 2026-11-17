@@ -1607,7 +1607,7 @@ export const ProfilePage: React.FC = () => {
                             </div>
                             {video.duration_seconds && (
                               <span className={styles.videoDurationV3}>
-                                {`${Math.floor(video.duration_seconds / 60)}:${String(video.duration_seconds % 60).padStart(2, '0')}`}
+                                {`${Math.floor(video.duration_seconds / 60)}:${String(Math.floor(video.duration_seconds % 60)).padStart(2, '0')}`}
                               </span>
                             )}
                             {isOwnProfile && (
