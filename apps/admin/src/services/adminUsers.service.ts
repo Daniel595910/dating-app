@@ -45,10 +45,24 @@ class AdminUsersService {
     try {
       const { search, role = 'all', limit = 20, offset = 0 } = filters;
 
+      const { data: suspendedRows } = await supabase
+        .from('admin_access')
+        .select('user_id')
+        .eq('status', 'suspended');
+      const suspendedIds = (suspendedRows || []).map((r: any) => r.user_id);
+      const suspendedFilter = suspendedIds.length > 0
+        ? 'is_admin.eq.true,user_id.in.(' + suspendedIds.join(',') + ')'
+        : null;
+
       let query = supabase
         .from('profiles')
-        .select('*', { count: 'exact' })
-        .eq('is_admin', true);
+        .select('*', { count: 'exact' });
+
+      if (suspendedFilter) {
+        query = query.or(suspendedFilter);
+      } else {
+        query = query.eq('is_admin', true);
+      }
 
       if (role !== 'all') {
         query = query.eq('role', role);
