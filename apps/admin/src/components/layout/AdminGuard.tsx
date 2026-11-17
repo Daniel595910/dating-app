@@ -1,4 +1,4 @@
-﻿import React from 'react';
+import React from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAdminAuth } from '@/hooks/useAdminAuth';
 import styles from './AdminGuard.module.css';
@@ -9,7 +9,7 @@ interface AdminGuardProps {
 }
 
 export const AdminGuard: React.FC<AdminGuardProps> = ({ children, requiredPermissions }) => {
-  const { user, isAdmin, loading, hasAnyPermission } = useAdminAuth();
+  const { user, isAdmin, loading, hasAnyPermission, adminUser } = useAdminAuth();
 
   if (loading) {
     return (
@@ -22,6 +22,18 @@ export const AdminGuard: React.FC<AdminGuardProps> = ({ children, requiredPermis
 
   if (!user) {
     return <Navigate to="/login" replace />;
+  }
+
+  if (adminUser?.suspended) {
+    return (
+      <div className={styles.denied}>
+        <div className={styles.deniedIcon}>⏸</div>
+        <h2 className={styles.deniedTitle}>Admin Access Suspended</h2>
+        <p className={styles.deniedText}>
+          Your admin access has been suspended. Contact a super admin to restore it.
+        </p>
+      </div>
+    );
   }
 
   if (!isAdmin) {
