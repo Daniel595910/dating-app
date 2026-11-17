@@ -273,6 +273,46 @@ export const ProfilePage: React.FC = () => {
     setDiscoverVideos(data || []);
   };
 
+  const loadVideos = async () => {
+    if (!targetUserId || targetUserId === 'undefined') return;
+    try {
+      const [discoverRes, communityRes] = await Promise.all([
+        supabase.from('discover_videos').select('*').eq('user_id', targetUserId).order('created_at', { ascending: false }),
+        profileService.getUserVideoPosts(targetUserId),
+      ]);
+
+      const discoverItems = (discoverRes.data || []).map((v: any) => ({
+        ...v,
+        source: 'discover' as const,
+        video_url: v.video_url,
+        thumbnail_url: null,
+        duration_seconds: v.duration_seconds || null,
+        view_count: v.view_count || 0,
+      }));
+
+      const communityItems = (communityRes || []).map((v) => ({
+        id: v.id,
+        source: 'community' as const,
+        video_url: v.videoUrl,
+        thumbnail_url: v.thumbnailUrl,
+        caption: v.caption || null,
+        duration_seconds: v.durationSeconds,
+        view_count: 0,
+        status: 'published',
+        created_at: v.createdAt,
+      }));
+
+      const merged = [...discoverItems, ...communityItems].sort(
+        (a, b) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime()
+      );
+
+      setDiscoverVideos(merged);
+    } catch (err) {
+      console.error('[loadVideos]', err);
+      setDiscoverVideos([]);
+    }
+  };
+
   const handleDeleteVideo = async (videoId: string) => {
     if (!isOwnProfile || !user?.id) {
       showToast('You can only delete your own videos', 'error');
@@ -1380,7 +1420,7 @@ export const ProfilePage: React.FC = () => {
         </button>
         <button
           className={`${styles.tabV3} ${activeTab === 'videos' ? styles.tabActiveV3 : ''}`}
-          onClick={() => { setActiveTab('videos'); loadDiscoverVideos(); }}
+          onClick={() => { setActiveTab('videos'); loadVideos(); }}
         >
           <Video size={22} />
           <span>Videos</span>
@@ -1536,20 +1576,26 @@ export const ProfilePage: React.FC = () => {
                       onClick={() => {
                         if (videoSelectionMode) {
                           toggleVideoSelection(video.id);
+                        } else if (video.source === 'community') {
+                          navigate('/community?postId=' + video.id);
                         } else {
                           setPreviewDiscoverVideo(video);
                         }
                       }}
-                      onMouseDown={() => isOwnProfile && !videoSelectionMode && startVideoLongPress(video.id)}
+                      onMouseDown={() => isOwnProfile && !videoSelectionMode && video.source === 'discover' && startVideoLongPress(video.id)}
                       onMouseUp={cancelVideoLongPress}
                       onMouseLeave={cancelVideoLongPress}
-                      onTouchStart={() => isOwnProfile && !videoSelectionMode && startVideoLongPress(video.id)}
+                      onTouchStart={() => isOwnProfile && !videoSelectionMode && video.source === 'discover' && startVideoLongPress(video.id)}
                       onTouchEnd={cancelVideoLongPress}
                       onTouchMove={cancelVideoLongPress}
                       onContextMenu={(e) => e.preventDefault()}
                     >
                       <div className={styles.videoThumbWrapV3}>
-                        <video src={video.video_url} muted playsInline className={styles.videoThumbnailV3} />
+                        {video.thumbnail_url ? (
+                          <img src={video.thumbnail_url} alt="" className={styles.videoThumbnailV3} />
+                        ) : (
+                          <video src={video.video_url} muted playsInline className={styles.videoThumbnailV3} />
+                        )}
                         {videoSelectionMode ? (
                           <div className={`${styles.selectionCheckbox} ${isSelected ? styles.selectionCheckboxActive : ''}`}>
                             {isSelected && <Check size={14} />}
@@ -1579,19 +1625,29 @@ export const ProfilePage: React.FC = () => {
                             )}
                             {videoMenuOpen === video.id && (
                               <div className={styles.videoDropdownMenu} onClick={(e) => e.stopPropagation()}>
-                                <button onClick={(e) => { e.stopPropagation(); handleToggleVideoVisibility(video.id, video.status); }}>
-                                  {video.status === 'removed' ? 'Show in Discover' : 'Hide from Discover'}
-                                </button>
-                                <button className={styles.deleteVideoButton} onClick={(e) => { e.stopPropagation(); handleDeleteVideo(video.id); }}>
-                                  Delete Video
-                                </button>
+                                {video.source === 'discover' ? (
+                                  <>
+                                    <button onClick={(e) => { e.stopPropagation(); handleToggleVideoVisibility(video.id, video.status); }}>
+                                      {video.status === 'removed' ? 'Show in Discover' : 'Hide from Discover'}
+                                    </button>
+                                    <button className={styles.deleteVideoButton} onClick={(e) => { e.stopPropagation(); handleDeleteVideo(video.id); }}>
+                                      Delete Video
+                                    </button>
+                                  </>
+                                ) : (
+                                  <button className={styles.deleteVideoButton} onClick={(e) => { e.stopPropagation(); handleDeletePost(video.id); }}>
+                                    Delete Post
+                                  </button>
+                                )}
                               </div>
                             )}
                           </>
                         )}
                       </div>
                       <div className={styles.videoMetaV3}>
-                        <span className={styles.videoViewsV3}><Eye size={12} /> {video.view_count || 0}</span>
+                        {video.source === 'discover' && (
+                          <span className={styles.videoViewsV3}><Eye size={12} /> {video.view_count || 0}</span>
+                        )}
                         {video.caption && (
                           <p className={styles.videoTitleV3}>{video.caption}</p>
                         )}
