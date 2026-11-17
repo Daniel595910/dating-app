@@ -20,6 +20,11 @@ export interface ProfileData {
   isVerified: boolean;
   verificationBadge: string;
   vipLevel: 'free' | 'basic' | 'premium' | 'vip';
+  isProfessional: boolean;
+  professionalSince: string | null;
+  linkInBioUrl: string | null;
+  professionalCategory: string | null;
+  socialLinks: Record<string, string>;
   createdAt: string;
   updatedAt: string;
 }

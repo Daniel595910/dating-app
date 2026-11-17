@@ -29,6 +29,11 @@ class ProfileService {
       isVerified: data.is_verified,
       verificationBadge: data.verification_badge,
       vipLevel: data.vip_level || 'free',
+      isProfessional: data.is_professional ?? false,
+      professionalSince: data.professional_since ?? null,
+      linkInBioUrl: data.link_in_bio_url ?? null,
+      professionalCategory: data.professional_category ?? null,
+      socialLinks: data.social_links ?? {},
       createdAt: data.created_at,
       updatedAt: data.updated_at,
     };
@@ -61,6 +66,11 @@ class ProfileService {
       isVerified: data.is_verified,
       verificationBadge: data.verification_badge,
       vipLevel: data.vip_level || 'free',
+      isProfessional: data.is_professional ?? false,
+      professionalSince: data.professional_since ?? null,
+      linkInBioUrl: data.link_in_bio_url ?? null,
+      professionalCategory: data.professional_category ?? null,
+      socialLinks: data.social_links ?? {},
       createdAt: data.created_at,
       updatedAt: data.updated_at,
     };
@@ -216,6 +226,39 @@ class ProfileService {
       })
       .eq('user_id', userId);
 
+    return !error;
+  }
+
+  async activateProfessional(userId: string): Promise<boolean> {
+    const { error } = await supabase
+      .from('profiles')
+      .update({
+        is_professional: true,
+        professional_since: new Date().toISOString(),
+      })
+      .eq('user_id', userId);
+    return !error;
+  }
+
+  async updateProfessionalProfile(
+    userId: string,
+    updates: {
+      bio?: string | null;
+      linkInBioUrl?: string | null;
+      professionalCategory?: string | null;
+      socialLinks?: Record<string, string>;
+    }
+  ): Promise<boolean> {
+    const payload: Record<string, any> = {};
+    if (updates.bio !== undefined) payload.bio = updates.bio;
+    if (updates.linkInBioUrl !== undefined) payload.link_in_bio_url = updates.linkInBioUrl;
+    if (updates.professionalCategory !== undefined) payload.professional_category = updates.professionalCategory;
+    if (updates.socialLinks !== undefined) payload.social_links = updates.socialLinks;
+    if (Object.keys(payload).length === 0) return true;
+    const { error } = await supabase
+      .from('profiles')
+      .update(payload)
+      .eq('user_id', userId);
     return !error;
   }
 
