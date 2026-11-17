@@ -43,6 +43,7 @@ export interface ProfileStats {
   followers: number;
   following: number;
   connections: number;
+  likes?: number;
 }
 
 export interface UserPost {

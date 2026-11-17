@@ -203,11 +203,20 @@ class ProfileService {
       .select('*', { count: 'exact', head: true })
       .or(`user1_id.eq.${userId},user2_id.eq.${userId}`);
 
+    const { data: likeRows } = await supabase
+      .from('posts')
+      .select('like_count')
+      .eq('author_id', userId)
+      .eq('is_deleted', false);
+
+    const likesTotal = (likeRows || []).reduce((sum: number, r: any) => sum + (r.like_count || 0), 0);
+
     return {
       posts: postsCount || 0,
       followers: followersCount || 0,
       following: followingCount || 0,
       connections: connectionsCount || 0,
+      likes: likesTotal,
     };
   }
 
