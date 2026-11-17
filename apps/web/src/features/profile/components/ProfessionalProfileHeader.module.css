@@ -1,0 +1,348 @@
+﻿/* ProfessionalProfileHeader — professional creator profile header
+   Design system per spec:
+   Primary purple: #7615E8, Deep purple: #5010C9
+   Pink: #F34DAB, Blue: #2875F5
+   White: #FFFFFF, Secondary bg: #F8F6FF
+   Text: #11133D, Secondary text: #686A91 */
+
+.container {
+  position: relative;
+  background: #FFFFFF;
+  border-radius: 0 0 28px 28px;
+  overflow: hidden;
+  padding-bottom: 8px;
+}
+
+.gradientBg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 180px;
+  background: linear-gradient(135deg, #7615E8 0%, #F34DAB 55%, #2875F5 100%);
+  opacity: 0.14;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ===== Top bar ===== */
+.topBar {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px 8px;
+}
+
+.topBarTitle {
+  font-size: 16px;
+  font-weight: 600;
+  color: #11133D;
+  max-width: 55%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.topBarActions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.iconBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border: none;
+  background: transparent;
+  color: #11133D;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.iconBtn:hover {
+  background: rgba(118, 21, 232, 0.08);
+}
+
+/* ===== Profile row: avatar left, info right ===== */
+.profileRow {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 8px 18px 16px;
+}
+
+.avatarColumn {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.avatarRing {
+  position: relative;
+  width: 108px;
+  height: 108px;
+  border-radius: 50%;
+  padding: 3px;
+  background: linear-gradient(135deg, #7615E8, #F34DAB, #2875F5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.avatar {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid #FFFFFF;
+  display: block;
+}
+
+.avatarFallback {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background: #F8F6FF;
+  color: #7615E8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 38px;
+  font-weight: 700;
+  border: 3px solid #FFFFFF;
+}
+
+.avatarVerified {
+  position: absolute;
+  bottom: 2px;
+  right: 2px;
+  color: #2875F5;
+  background: #FFFFFF;
+  border-radius: 50%;
+  padding: 2px;
+}
+
+.proBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #7615E8, #5010C9);
+  color: #FFFFFF;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  box-shadow: 0 2px 6px rgba(118, 21, 232, 0.35);
+}
+
+.proBadgeCrown {
+  font-size: 11px;
+  line-height: 1;
+}
+
+.proBadgeText {
+  line-height: 1;
+}
+
+/* ===== Info column ===== */
+.infoColumn {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding-top: 2px;
+}
+
+.nameRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.displayName {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 800;
+  color: #11133D;
+  line-height: 1.15;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
+}
+
+.nameVerified {
+  flex: 0 0 auto;
+  color: #2875F5;
+}
+
+.username {
+  margin: 0;
+  font-size: 13px;
+  color: #686A91;
+  line-height: 1.2;
+}
+
+.locationRow {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: #686A91;
+  line-height: 1.2;
+}
+
+.bio {
+  margin: 4px 0 2px;
+  font-size: 13px;
+  color: #11133D;
+  line-height: 1.4;
+  word-break: break-word;
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.linkInBio {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: rgba(118, 21, 232, 0.10);
+  border: 1px solid rgba(118, 21, 232, 0.25);
+  color: #7615E8;
+  text-decoration: none;
+  font-size: 12px;
+  font-weight: 600;
+  max-width: 100%;
+  margin-top: 4px;
+  transition: background 0.15s ease;
+}
+
+.linkInBio:hover {
+  background: rgba(118, 21, 232, 0.16);
+}
+
+.linkText {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 180px;
+}
+
+.linkArrow {
+  flex: 0 0 auto;
+  opacity: 0.7;
+}
+
+/* ===== Stats row ===== */
+.statsRow {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 18px 14px;
+  border-top: 1px solid rgba(104, 106, 145, 0.10);
+  margin-top: 4px;
+}
+
+.statsLeft {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.statItem {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1px;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  text-align: left;
+}
+
+.statValue {
+  font-size: 16px;
+  font-weight: 800;
+  color: #11133D;
+  line-height: 1.1;
+}
+
+.statLabel {
+  font-size: 11px;
+  color: #686A91;
+  font-weight: 500;
+  line-height: 1.1;
+  letter-spacing: 0.01em;
+}
+
+.editBtn {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 18px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #7615E8, #5010C9);
+  color: #FFFFFF;
+  border: none;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 4px 10px rgba(118, 21, 232, 0.25);
+  transition: transform 0.12s ease, opacity 0.12s ease;
+}
+
+.editBtn:hover {
+  opacity: 0.95;
+  transform: translateY(-1px);
+}
+
+.editBtn:active {
+  transform: translateY(0);
+}
+
+/* ===== Responsive ===== */
+@media (max-width: 380px) {
+  .avatarRing {
+    width: 92px;
+    height: 92px;
+  }
+  .displayName {
+    font-size: 18px;
+  }
+  .statValue {
+    font-size: 14px;
+  }
+  .statLabel {
+    font-size: 10px;
+  }
+  .editBtn {
+    padding: 8px 14px;
+    font-size: 12px;
+  }
+  .statsLeft {
+    gap: 14px;
+  }
+}
