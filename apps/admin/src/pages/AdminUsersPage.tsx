@@ -100,6 +100,13 @@ export const AdminUsersPage: React.FC = () => {
     user: AdminUser;
   } | null>(null);
 
+  // Suspend modal
+  const [suspendUser, setSuspendUser] = useState<AdminUser | null>(null);
+  const [suspendReason, setSuspendReason] = useState('');
+
+  // Reactivate confirm
+  const [reactivateUser, setReactivateUser] = useState<AdminUser | null>(null);
+
   useEffect(() => {
     const timer = setTimeout(() => setDebouncedSearch(search), 400);
     return () => clearTimeout(timer);
@@ -200,6 +207,49 @@ export const AdminUsersPage: React.FC = () => {
       setConfirmAction(null);
     } catch (err: any) {
       toast.error('Revoke failed', err.message);
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleSuspend = async () => {
+    if (!suspendUser) return;
+    setActionLoading(true);
+    try {
+      await adminUsersService.suspendAdmin(suspendUser.user_id, suspendReason.trim() || undefined);
+      setAdmins((prev) =>
+        prev.map((a) =>
+          a.user_id === suspendUser.user_id
+            ? { ...a, status: 'suspended' as const, suspended_reason: suspendReason.trim() || null }
+            : a
+        )
+      );
+      toast.success(`${suspendUser.display_name} suspended`);
+      setSuspendUser(null);
+      setSuspendReason('');
+    } catch (err: any) {
+      toast.error('Suspend failed', err.message);
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleReactivate = async () => {
+    if (!reactivateUser) return;
+    setActionLoading(true);
+    try {
+      await adminUsersService.reactivateAdmin(reactivateUser.user_id);
+      setAdmins((prev) =>
+        prev.map((a) =>
+          a.user_id === reactivateUser.user_id
+            ? { ...a, status: 'active' as const, suspended_reason: null, suspended_at: null, suspended_by: null }
+            : a
+        )
+      );
+      toast.success(`${reactivateUser.display_name} reactivated`);
+      setReactivateUser(null);
+    } catch (err: any) {
+      toast.error('Reactivate failed', err.message);
     } finally {
       setActionLoading(false);
     }
@@ -690,6 +740,67 @@ export const AdminUsersPage: React.FC = () => {
         confirmText="Revoke Access"
         variant="danger"
         requireTyping="REVOKE"
+        loading={actionLoading}
+      />
+
+      {/* Suspend modal */}
+      <Modal
+        open={!!suspendUser}
+        onClose={() => {
+          setSuspendUser(null);
+          setSuspendReason('');
+        }}
+        title="Suspend admin?"
+        description={`Suspend ${suspendUser?.display_name || 'this admin'}? They will lose all admin access immediately.`}
+        size="sm"
+        footer={
+          <div className={styles.modalActions}>
+            <Button
+              variant="secondary"
+              onClick={() => {
+                setSuspendUser(null);
+                setSuspendReason('');
+              }}
+              disabled={actionLoading}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="danger"
+              onClick={() => void handleSuspend()}
+              loading={actionLoading}
+            >
+              Suspend Admin
+            </Button>
+          </div>
+        }
+      >
+        <div className={styles.suspendForm}>
+          <label className={styles.suspendLabel} htmlFor="suspend-reason">
+            Reason (optional)
+          </label>
+          <textarea
+            id="suspend-reason"
+            className={styles.suspendTextarea}
+            placeholder="Why is this admin being suspended?"
+            value={suspendReason}
+            onChange={(e) => setSuspendReason(e.target.value)}
+            maxLength={500}
+            rows={4}
+          />
+          <span className={styles.suspendHint}>{suspendReason.length}/500</span>
+        </div>
+      </Modal>
+
+      {/* Reactivate confirm */}
+      <ConfirmDialog
+        open={!!reactivateUser}
+        onClose={() => setReactivateUser(null)}
+        onConfirm={() => { if (reactivateUser) void handleReactivate(); }}
+        title="Reactivate admin?"
+        description={`${reactivateUser?.display_name || 'This admin'} will regain their previous role and permissions.`}
+        confirmText="Reactivate"
+        variant="info"
         loading={actionLoading}
       />
     </div>
