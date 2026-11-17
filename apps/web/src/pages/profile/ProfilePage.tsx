@@ -9,6 +9,7 @@ import { ProfileData, ProfileStats, UserPost } from '../../features/profile/type
 import { PhotoViewer } from '../../features/profile/components/PhotoViewer';
 import { VideoPreviewModal } from '../../features/profile/components/VideoPreviewModal';
 import { PhotoManagement } from '../../features/profile/components/PhotoManagement';
+import { ProfessionalProfileHeader } from '../../features/profile/components/ProfessionalProfileHeader';
 import { CommunityCreationSheet } from '../../features/community/components/CommunityCreationSheet';
 import { ReportSheet } from '../../features/community/components/ReportSheet';
 import { BlockConfirmSheet } from '../../features/community/components/BlockConfirmSheet';
@@ -1195,6 +1196,21 @@ export const ProfilePage: React.FC = () => {
         </div>
       )}
 
+      {profile.isProfessional ? (
+        <ProfessionalProfileHeader
+          profile={profile}
+          stats={stats}
+          isOwnProfile={isOwnProfile}
+          onBack={() => navigate(-1)}
+          onShare={handleShareLink}
+          onSettings={() => navigate('/settings')}
+          onMoreMenu={() => setShowMoreMenu((prev) => !prev)}
+          onEditProfile={() => navigate('/profile/edit')}
+          onOpenFollowers={() => { setStatsModal('followers'); loadStatsLists('followers'); }}
+          onOpenFollowing={() => { setStatsModal('following'); loadStatsLists('following'); }}
+          onOpenLikes={() => {}}
+        />
+      ) : (
       <div className={styles.topSectionV2}>
         <div className={styles.wavesBg} aria-hidden="true">
           <svg viewBox="0 0 375 300" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
@@ -1376,10 +1392,11 @@ export const ProfilePage: React.FC = () => {
           )}
         </div>
       </div>
+      )}
 
       <div className={styles.hero}>
 
-        {isOwnProfile ? (
+        {isOwnProfile && !profile?.isProfessional ? (
           <div className={styles.ownActionsV2}>
             <div className={styles.primaryRowV2}>
               <button
