@@ -1,4 +1,4 @@
-﻿.container {
+.container {
   padding: 24px;
   max-width: 1400px;
   margin: 0 auto;
@@ -597,6 +597,43 @@
   margin-top: 16px;
 }
 
+
+/* Suspend modal form */
+.suspendForm {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.suspendLabel {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+}
+
+.suspendTextarea {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-bg-elevated);
+  color: var(--color-text-primary);
+  font-family: inherit;
+  font-size: 14px;
+  resize: vertical;
+  min-height: 80px;
+}
+
+.suspendTextarea:focus {
+  outline: none;
+  border-color: var(--color-primary);
+}
+
+.suspendHint {
+  font-size: 12px;
+  color: var(--color-text-tertiary);
+  text-align: right;
+}
 /* Empty wrapper */
 .emptyWrapper {
   background: var(--color-bg-elevated);

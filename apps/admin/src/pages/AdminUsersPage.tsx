@@ -397,6 +397,9 @@ export const AdminUsersPage: React.FC = () => {
                       <Badge variant={getRoleBadgeVariant(admin.role)} size="sm">
                         <Shield size={10} /> {roleInfo?.label || admin.role}
                       </Badge>
+                      {admin.status === 'suspended' && (
+                        <Badge variant="error" size="sm">Suspended</Badge>
+                      )}
                     </div>
 
                     {isSuperAdmin && !isSelf && (
@@ -430,6 +433,29 @@ export const AdminUsersPage: React.FC = () => {
                               >
                                 <UserCog size={14} /> Change role
                               </button>
+                              {!isSuperAdminRow && admin.status !== 'suspended' && (
+                                <button
+                                  className={`${styles.menuItem} ${styles.menuItemDanger}`}
+                                  onClick={() => {
+                                    setSuspendUser(admin);
+                                    setSuspendReason(admin.suspended_reason || '');
+                                    setOpenMenuId(null);
+                                  }}
+                                >
+                                  <UserX size={14} /> Suspend admin
+                                </button>
+                              )}
+                              {!isSuperAdminRow && admin.status === 'suspended' && (
+                                <button
+                                  className={styles.menuItem}
+                                  onClick={() => {
+                                    setReactivateUser(admin);
+                                    setOpenMenuId(null);
+                                  }}
+                                >
+                                  <Check size={14} /> Reactivate
+                                </button>
+                              )}
                               {!isSuperAdminRow && (
                                 <button
                                   className={`${styles.menuItem} ${styles.menuItemDanger}`}
