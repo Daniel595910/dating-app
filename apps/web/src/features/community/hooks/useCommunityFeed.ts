@@ -1,4 +1,4 @@
-﻿import { useState, useCallback, useRef, useEffect } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { CommunityPost, FeedCursor, FeedFilter, FeedResponse } from '../types/community.types';
 import { communityService } from '../services/community.service';
 
@@ -90,6 +90,22 @@ export function useCommunityFeed({
       loadPosts(true);
     }
   }, [communityId, userId, filter, loadPosts]);
+
+  // Refetch on app resume so users see posts created while the app was
+  // backgrounded (mobile) or the tab was hidden (desktop). loadPosts(true)
+  // keeps existing posts visible during refetch — no spinner flash.
+  useEffect(() => {
+    const handleResume = () => {
+      if (document.visibilityState === 'visible') loadPosts(true);
+    };
+    const handleFocus = () => loadPosts(true);
+    document.addEventListener('visibilitychange', handleResume);
+    window.addEventListener('focus', handleFocus);
+    return () => {
+      document.removeEventListener('visibilitychange', handleResume);
+      window.removeEventListener('focus', handleFocus);
+    };
+  }, [loadPosts]);
 
   const refresh = useCallback(() => loadPosts(true), [loadPosts]);
   const loadMore = useCallback(() => loadPosts(false), [loadPosts]);

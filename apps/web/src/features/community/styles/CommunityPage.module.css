@@ -94,10 +94,11 @@
 }
 
 .newPostsIndicator {
-  position: relative;
-  top: 0.5rem;
-  z-index: 5;
-  margin: 0 auto 0.5rem;
+  position: fixed;
+  top: calc(env(safe-area-inset-top, 0px) + 88px);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 150;
   padding: 0.5rem 1rem;
   background-color: var(--color-text, #111827);
   color: #ffffff;
@@ -107,6 +108,8 @@
   font-size: 0.8125rem;
   font-weight: 500;
   display: block;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  white-space: nowrap;
 }
 
 .pullIndicator {
