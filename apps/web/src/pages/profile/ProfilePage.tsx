@@ -64,6 +64,25 @@ export const ProfilePage: React.FC = () => {
   const [postMenuOpen, setPostMenuOpen] = useState<string | null>(null);
   const [previewDiscoverVideo, setPreviewDiscoverVideo] = useState<any>(null);
   const [bioExpanded, setBioExpanded] = useState(false);
+  const [activatingProfessional, setActivatingProfessional] = useState(false);
+  const [showActivateProConfirm, setShowActivateProConfirm] = useState(false);
+
+  const handleActivateProfessional = async () => {
+    if (!user?.id || activatingProfessional) return;
+    setActivatingProfessional(true);
+    try {
+      const ok = await profileService.activateProfessional(user.id);
+      if (!ok) throw new Error('Activation failed');
+      const refreshed = await profileService.getProfileByUserId(user.id);
+      if (refreshed) setProfile(refreshed);
+      showToast('Professional profile activated', 'success');
+      setShowActivateProConfirm(false);
+    } catch (err: any) {
+      showToast(err?.message || 'Could not activate professional profile', 'error');
+    } finally {
+      setActivatingProfessional(false);
+    }
+  };
 
   // Header Share button: copy profile link (native share if available)
   const handleShareLink = async () => {
@@ -1156,6 +1175,26 @@ export const ProfilePage: React.FC = () => {
         </div>
       )}
 
+      {isOwnProfile && profile && !profile.isProfessional && (
+        <div className={styles.proActivateCard}>
+          <div className={styles.proActivateIcon}>👑</div>
+          <div className={styles.proActivateContent}>
+            <h3 className={styles.proActivateTitle}>Become a Professional Creator</h3>
+            <p className={styles.proActivateDesc}>
+              Unlock a professional bio, Link in Bio, and creator tools.
+            </p>
+          </div>
+          <button
+            type="button"
+            className={styles.proActivateButton}
+            onClick={() => setShowActivateProConfirm(true)}
+            disabled={activatingProfessional}
+          >
+            Activate
+          </button>
+        </div>
+      )}
+
       <div className={styles.topSectionV2}>
         <div className={styles.wavesBg} aria-hidden="true">
           <svg viewBox="0 0 375 300" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
@@ -1986,6 +2025,38 @@ export const ProfilePage: React.FC = () => {
                 onClick={confirmBatchDeleteVideos}
               >
                 Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showActivateProConfirm && (
+        <div className={styles.confirmOverlay} onClick={() => setShowActivateProConfirm(false)}>
+          <div className={styles.confirmDialog} onClick={(e) => e.stopPropagation()}>
+            <div className={styles.confirmIcon}>
+              👑
+            </div>
+            <h3 className={styles.confirmTitle}>
+              Become a Professional Creator?
+            </h3>
+            <p className={styles.confirmText}>
+              Your profile will switch to the professional layout. You can add a professional bio, Link in Bio, and access creator tools. This is free.
+            </p>
+            <div className={styles.confirmActions}>
+              <button
+                className={styles.confirmCancel}
+                onClick={() => setShowActivateProConfirm(false)}
+                disabled={activatingProfessional}
+              >
+                Cancel
+              </button>
+              <button
+                className={styles.confirmDelete}
+                onClick={() => void handleActivateProfessional()}
+                disabled={activatingProfessional}
+              >
+                {activatingProfessional ? 'Activating…' : 'Activate'}
               </button>
             </div>
           </div>
