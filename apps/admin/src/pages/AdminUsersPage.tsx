@@ -13,6 +13,7 @@ import {
   RefreshCw,
   TrendingUp,
   Clock,
+  KeyRound,
 } from 'lucide-react';
 import { useAdminAuth } from '@/hooks/useAdminAuth';
 import { useToast } from '@/components/ui/Toast';
@@ -23,6 +24,7 @@ import { Modal } from '@/components/ui/Modal';
 import { Loader } from '@/components/ui/Loader';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
+import { ROLE_PERMISSIONS, getAllPermissionsByCategory } from '@/config/permissions';
 import {
   adminUsersService,
   AdminUser,
@@ -106,6 +108,11 @@ export const AdminUsersPage: React.FC = () => {
 
   // Reactivate confirm
   const [reactivateUser, setReactivateUser] = useState<AdminUser | null>(null);
+
+  // Manage access (permission overrides) modal
+  const [manageAccessUser, setManageAccessUser] = useState<AdminUser | null>(null);
+  const [accessExtra, setAccessExtra] = useState<string[]>([]);
+  const [accessRemoved, setAccessRemoved] = useState<string[]>([]);
 
   useEffect(() => {
     const timer = setTimeout(() => setDebouncedSearch(search), 400);
@@ -250,6 +257,57 @@ export const AdminUsersPage: React.FC = () => {
       setReactivateUser(null);
     } catch (err: any) {
       toast.error('Reactivate failed', err.message);
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleOpenManageAccess = (admin: AdminUser) => {
+    setManageAccessUser(admin);
+    setAccessExtra(admin.extra_permissions || []);
+    setAccessRemoved(admin.removed_permissions || []);
+  };
+
+  const handleTogglePermission = (permId: string) => {
+    if (!manageAccessUser) return;
+    const roleHas = (ROLE_PERMISSIONS[manageAccessUser.role] || []).includes(permId);
+    const isExtra = accessExtra.includes(permId);
+    const isRemoved = accessRemoved.includes(permId);
+    const currentlyGranted = (roleHas && !isRemoved) || isExtra;
+
+    if (currentlyGranted) {
+      if (isExtra) {
+        setAccessExtra((prev) => prev.filter((p) => p !== permId));
+      } else if (roleHas) {
+        setAccessRemoved((prev) => (prev.includes(permId) ? prev : [...prev, permId]));
+      }
+    } else {
+      if (isRemoved) {
+        setAccessRemoved((prev) => prev.filter((p) => p !== permId));
+      } else {
+        setAccessExtra((prev) => (prev.includes(permId) ? prev : [...prev, permId]));
+      }
+    }
+  };
+
+  const handleSaveAccess = async () => {
+    if (!manageAccessUser) return;
+    setActionLoading(true);
+    try {
+      await adminUsersService.setPermissions(manageAccessUser.user_id, accessExtra, accessRemoved);
+      setAdmins((prev) =>
+        prev.map((a) =>
+          a.user_id === manageAccessUser.user_id
+            ? { ...a, extra_permissions: accessExtra, removed_permissions: accessRemoved }
+            : a
+        )
+      );
+      toast.success(`Access updated for ${manageAccessUser.display_name}`);
+      setManageAccessUser(null);
+      setAccessExtra([]);
+      setAccessRemoved([]);
+    } catch (err: any) {
+      toast.error('Access update failed', err.message);
     } finally {
       setActionLoading(false);
     }
@@ -432,6 +490,15 @@ export const AdminUsersPage: React.FC = () => {
                                 }}
                               >
                                 <UserCog size={14} /> Change role
+                              </button>
+                              <button
+                                className={styles.menuItem}
+                                onClick={() => {
+                                  handleOpenManageAccess(admin);
+                                  setOpenMenuId(null);
+                                }}
+                              >
+                                <KeyRound size={14} /> Manage access
                               </button>
                               {!isSuperAdminRow && admin.status !== 'suspended' && (
                                 <button
@@ -829,6 +896,79 @@ export const AdminUsersPage: React.FC = () => {
         variant="info"
         loading={actionLoading}
       />
+
+      {/* Manage access modal */}
+      <Modal
+        open={!!manageAccessUser}
+        onClose={() => {
+          setManageAccessUser(null);
+          setAccessExtra([]);
+          setAccessRemoved([]);
+        }}
+        title={`Manage access: ${manageAccessUser?.display_name || ''}`}
+        description="Toggle individual permissions for this admin. Role defaults can be removed; extras can be added."
+        size="lg"
+        footer={
+          <div className={styles.modalActions}>
+            <Button
+              variant="secondary"
+              onClick={() => {
+                setManageAccessUser(null);
+                setAccessExtra([]);
+                setAccessRemoved([]);
+              }}
+              disabled={actionLoading}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="primary"
+              onClick={() => void handleSaveAccess()}
+              loading={actionLoading}
+            >
+              Save access
+            </Button>
+          </div>
+        }
+      >
+        {manageAccessUser && (
+          <div className={styles.accessModal}>
+            {Object.entries(getAllPermissionsByCategory()).map(([cat, perms]) => (
+              <div key={cat} className={styles.accessSection}>
+                <h4 className={styles.accessSectionTitle}>{cat}</h4>
+                {perms.map((perm) => {
+                  const roleHas = (ROLE_PERMISSIONS[manageAccessUser.role] || []).includes(perm.id);
+                  const isExtra = accessExtra.includes(perm.id);
+                  const isRemoved = accessRemoved.includes(perm.id);
+                  const checked = (roleHas && !isRemoved) || isExtra;
+                  const locked = !roleHas && (perm.id === 'ADMIN_MANAGE' || perm.id === 'USER_ROLE');
+                  return (
+                    <label
+                      key={perm.id}
+                      className={`${styles.accessRow} ${locked ? styles.accessLocked : ''}`}
+                    >
+                      <input
+                        type="checkbox"
+                        className={styles.accessCheckbox}
+                        checked={checked}
+                        disabled={locked || actionLoading}
+                        onChange={() => handleTogglePermission(perm.id)}
+                      />
+                      <div className={styles.accessInfo}>
+                        <span className={styles.accessLabel}>
+                          {perm.label}
+                          {perm.sensitive ? ' (sensitive)' : ''}
+                        </span>
+                        <span className={styles.accessDesc}>{perm.description}</span>
+                      </div>
+                    </label>
+                  );
+                })}
+              </div>
+            ))}
+          </div>
+        )}
+      </Modal>
     </div>
   );
 };

@@ -687,6 +687,80 @@
   to { opacity: 1; transform: scale(1); }
 }
 
+/* ============ Manage access modal ============ */
+.accessModal {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  max-height: 60vh;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.accessSection {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.accessSectionTitle {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-text-tertiary);
+  margin: 0 0 4px;
+}
+
+.accessRow {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.accessRow:hover {
+  background: var(--color-bg-elevated);
+}
+
+.accessLocked {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.accessCheckbox {
+  margin-top: 2px;
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.accessCheckbox:disabled {
+  cursor: not-allowed;
+}
+
+.accessInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.accessLabel {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.accessDesc {
+  font-size: 12px;
+  color: var(--color-text-secondary);
+}
+
 @media (max-width: 768px) {
   .container { padding: 16px; }
   .title { font-size: 20px; }

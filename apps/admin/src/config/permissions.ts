@@ -127,3 +127,18 @@ export function getPermissionsByCategory(role: AdminRole): Record<string, Permis
 
   return grouped;
 }
+
+// Groups ALL permissions by category, ignoring role. Used by the admin-permission
+// override editor — the super admin needs to see every grantable permission,
+// not just the ones the admin's current role already grants.
+export function getAllPermissionsByCategory(): Record<string, Permission[]> {
+  const grouped: Record<string, Permission[]> = {};
+
+  Object.values(PERMISSIONS).forEach((p) => {
+    const cat = p.category ?? 'system';
+    if (!grouped[cat]) grouped[cat] = [];
+    grouped[cat].push(p);
+  });
+
+  return grouped;
+}
