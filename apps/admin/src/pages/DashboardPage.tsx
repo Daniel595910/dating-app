@@ -233,11 +233,19 @@ export const DashboardPage: React.FC = () => {
 
       {!myActivityLoading && (
         <div className={styles.yourActivity}>
-          <div className={styles.yourActivityHeader}>
-            <h2 className={styles.yourActivityTitle}>
-              <Activity size={16} /> Your Activity
-            </h2>
-            <span className={styles.yourActivitySubtitle}>Your admin actions, not the platform-wide numbers</span>
+          <div className={styles.yourActivityHeaderRow}>
+            <div className={styles.yourActivityHeader}>
+              <h2 className={styles.yourActivityTitle}>
+                <Activity size={16} /> Your Activity
+              </h2>
+              <span className={styles.yourActivitySubtitle}>Your admin actions, not the platform-wide numbers</span>
+            </div>
+            <button
+              className={styles.yourActivityViewAll}
+              onClick={() => navigate(`/audit-log?userId=${adminUser?.userId || ''}`)}
+            >
+              View all <ArrowRight size={14} />
+            </button>
           </div>
           <div className={styles.yourStatsRow}>
             <div className={styles.yourStatChip}>
