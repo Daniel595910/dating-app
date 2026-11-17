@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Users,
@@ -12,10 +12,12 @@ import {
   Crown,
   Shield,
   Activity,
+  Clock,
 } from 'lucide-react';
 import { supabase } from '@/config/supabase.client';
 import { useAdminAuth } from '@/hooks/useAdminAuth';
 import { useToast } from '@/components/ui/Toast';
+import { adminUsersService } from '@/services/adminUsers.service';
 import styles from './DashboardPage.module.css';
 
 interface DashboardStats {
@@ -53,7 +55,7 @@ async function safeCount(table: string, filters?: (q: any) => any): Promise<numb
 
 export const DashboardPage: React.FC = () => {
   const navigate = useNavigate();
-  const { adminUser } = useAdminAuth();
+  const { adminUser, hasPermission } = useAdminAuth();
   const toast = useToast();
   const [stats, setStats] = useState<DashboardStats>({
     totalUsers: 0,
@@ -70,6 +72,28 @@ export const DashboardPage: React.FC = () => {
   const [activities, setActivities] = useState<RecentActivity[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [myStats, setMyStats] = useState({ total: 0, today: 0, week: 0 });
+  const [myActivity, setMyActivity] = useState<{ action: string; resource_type: string; created_at: string }[]>([]);
+  const [myActivityLoading, setMyActivityLoading] = useState(true);
+
+  useEffect(() => {
+    if (!adminUser?.userId) { setMyActivityLoading(false); return; }
+    let cancelled = false;
+    (async () => {
+      try {
+        const [s, a] = await Promise.all([
+          adminUsersService.getAdminStats(adminUser.userId),
+          adminUsersService.getAdminActivity(adminUser.userId, 5),
+        ]);
+        if (!cancelled) { setMyStats(s); setMyActivity(a as any); }
+      } catch (e) {
+        if (!cancelled) console.error("Failed to load personal activity:", e);
+      } finally {
+        if (!cancelled) setMyActivityLoading(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [adminUser?.userId]);
 
   const loadStats = async () => {
     const now = new Date();
@@ -177,17 +201,20 @@ export const DashboardPage: React.FC = () => {
   }
 
   const primaryStats = [
-    { label: 'Total Users', value: stats.totalUsers, change: stats.newUsersToday, changeLabel: 'today', icon: <Users size={20} />, color: 'blue', path: '/users' },
-    { label: 'Total Posts', value: stats.totalPosts, change: stats.postsToday, changeLabel: 'today', icon: <FileText size={20} />, color: 'purple', path: '/moderation' },
+    { label: 'Total Users', value: stats.totalUsers, change: stats.newUsersToday, changeLabel: 'today', icon: <Users size={20} />, color: 'blue', path: '/users', permission: 'USER_VIEW' },
+    { label: 'Total Posts', value: stats.totalPosts, change: stats.postsToday, changeLabel: 'today', icon: <FileText size={20} />, color: 'purple', path: '/moderation', permission: 'CONTENT_VIEW' },
     { label: 'Total Matches', value: stats.totalMatches, change: stats.matchesToday, changeLabel: 'today', icon: <Heart size={20} />, color: 'pink', path: '/matches' },
-    { label: 'Pending Reports', value: stats.pendingReports, change: 0, changeLabel: 'needs review', icon: <Flag size={20} />, color: 'red', path: '/reports', urgent: stats.pendingReports > 0 },
+    { label: 'Pending Reports', value: stats.pendingReports, change: 0, changeLabel: 'needs review', icon: <Flag size={20} />, color: 'red', path: '/reports', urgent: stats.pendingReports > 0, permission: 'CONTENT_VIEW' },
   ];
 
   const secondaryStats = [
-    { label: 'Communities', value: stats.totalCommunities, icon: <UsersRound size={16} />, path: '/communities' },
+    { label: 'Communities', value: stats.totalCommunities, icon: <UsersRound size={16} />, path: '/communities', permission: 'COMMUNITY_VIEW' },
     { label: 'Active Now', value: stats.activeUsers, icon: <Activity size={16} /> },
-    { label: 'VIP Users', value: stats.vipUsers, icon: <Crown size={16} />, path: '/vip' },
+    { label: 'VIP Users', value: stats.vipUsers, icon: <Crown size={16} />, path: '/vip', permission: 'VIP_VIEW' },
   ];
+
+  const visiblePrimary = primaryStats.filter((s: any) => !s.permission || hasPermission(s.permission));
+  const visibleSecondary = secondaryStats.filter((s: any) => !s.permission || hasPermission(s.permission));
 
   return (
     <div className={styles.container}>
@@ -204,8 +231,49 @@ export const DashboardPage: React.FC = () => {
         </button>
       </div>
 
+      {!myActivityLoading && (
+        <div className={styles.yourActivity}>
+          <div className={styles.yourActivityHeader}>
+            <h2 className={styles.yourActivityTitle}>
+              <Activity size={16} /> Your Activity
+            </h2>
+            <span className={styles.yourActivitySubtitle}>Your admin actions, not the platform-wide numbers</span>
+          </div>
+          <div className={styles.yourStatsRow}>
+            <div className={styles.yourStatChip}>
+              <span className={styles.yourStatLabel}>Total actions</span>
+              <span className={styles.yourStatValue}>{myStats.total}</span>
+            </div>
+            <div className={styles.yourStatChip}>
+              <span className={styles.yourStatLabel}>Today</span>
+              <span className={styles.yourStatValue}>{myStats.today}</span>
+            </div>
+            <div className={styles.yourStatChip}>
+              <span className={styles.yourStatLabel}>This week</span>
+              <span className={styles.yourStatValue}>{myStats.week}</span>
+            </div>
+          </div>
+          <div className={styles.yourActivityList}>
+            {myActivity.length === 0 ? (
+              <div className={styles.yourActivityEmpty}>
+                <Clock size={16} />
+                <span>No actions yet</span>
+              </div>
+            ) : (
+              myActivity.map((a, i) => (
+                <div key={i} className={styles.yourActivityItem}>
+                  <span className={styles.yourActivityAction}>{a.action}</span>
+                  <span className={styles.yourActivityResource}>{a.resource_type}</span>
+                  <span className={styles.yourActivityTime}>{timeAgo(a.created_at)}</span>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      )}
+
       <div className={styles.statsGrid}>
-        {primaryStats.map((stat) => (
+        {visiblePrimary.map((stat) => (
           <button
             key={stat.label}
             className={`${styles.statCard} ${stat.urgent ? styles.statCardUrgent : ''}`}
@@ -236,7 +304,7 @@ export const DashboardPage: React.FC = () => {
       </div>
 
       <div className={styles.secondaryGrid}>
-        {secondaryStats.map((stat) => (
+        {visibleSecondary.map((stat) => (
           <button
             key={stat.label}
             className={styles.secondaryCard}
