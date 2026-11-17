@@ -484,14 +484,25 @@ export const ProfilePage: React.FC = () => {
     if (!isOwnProfile || !user?.id || selectedVideos.size === 0) return;
     try {
       for (const videoId of selectedVideos) {
-        const { error } = await supabase
-          .from('discover_videos')
-          .delete()
-          .eq('id', videoId)
-          .eq('user_id', user.id);
-        if (error) throw error;
+        const item = discoverVideos.find((v: any) => v.id === videoId);
+        const isCommunity = item?.source === 'community';
+        if (isCommunity) {
+          const { error } = await supabase
+            .from('posts')
+            .delete()
+            .eq('id', videoId)
+            .eq('author_id', user.id);
+          if (error) throw error;
+        } else {
+          const { error } = await supabase
+            .from('discover_videos')
+            .delete()
+            .eq('id', videoId)
+            .eq('user_id', user.id);
+          if (error) throw error;
+        }
       }
-      await loadDiscoverVideos();
+      await loadVideos();
       setVideoSelectionMode(false);
       setSelectedVideos(new Set());
       showToast(`Deleted ${selectedVideos.size} video${selectedVideos.size > 1 ? 's' : ''}`, 'success');
@@ -1580,10 +1591,10 @@ export const ProfilePage: React.FC = () => {
                           setPreviewDiscoverVideo(video);
                         }
                       }}
-                      onMouseDown={() => isOwnProfile && !videoSelectionMode && video.source === 'discover' && startVideoLongPress(video.id)}
+                      onMouseDown={() => isOwnProfile && !videoSelectionMode && startVideoLongPress(video.id)}
                       onMouseUp={cancelVideoLongPress}
                       onMouseLeave={cancelVideoLongPress}
-                      onTouchStart={() => isOwnProfile && !videoSelectionMode && video.source === 'discover' && startVideoLongPress(video.id)}
+                      onTouchStart={() => isOwnProfile && !videoSelectionMode && startVideoLongPress(video.id)}
                       onTouchEnd={cancelVideoLongPress}
                       onTouchMove={cancelVideoLongPress}
                       onContextMenu={(e) => e.preventDefault()}
