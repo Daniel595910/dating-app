@@ -95,6 +95,24 @@ export function hasAllPermissions(role: AdminRole, permissions: string[]): boole
   return permissions.every((p) => hasPermission(role, p));
 }
 
+// Merges a role's default permissions with per-admin overrides set by a super admin.
+// Overrides are enforced in the admin app only (menus/routes). The role stays the
+// database-level boundary, and ADMIN_MANAGE / USER_ROLE can never be granted as extras.
+const NEVER_GRANTABLE = ['ADMIN_MANAGE', 'USER_ROLE'];
+
+export function hasPermissionWithOverrides(
+  role: AdminRole,
+  permission: string,
+  extra: string[] = [],
+  removed: string[] = []
+): boolean {
+  if (!role) return false;
+  if (role === 'super_admin') return true;
+  if (removed.includes(permission)) return false;
+  if (extra.includes(permission) && !NEVER_GRANTABLE.includes(permission)) return true;
+  return hasPermission(role, permission);
+}
+
 export function getPermissionsByCategory(role: AdminRole): Record<string, Permission[]> {
   const permissions = ROLE_PERMISSIONS[role] || [];
   const grouped: Record<string, Permission[]> = {};

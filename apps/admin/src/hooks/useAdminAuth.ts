@@ -1,7 +1,7 @@
-﻿import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/config/supabase.client';
 import { User } from '@supabase/supabase-js';
-import { hasPermission as checkPermission, AdminRole } from '@/config/permissions';
+import { hasPermissionWithOverrides, AdminRole } from '@/config/permissions';
 import { SESSION_TIMEOUT_MS } from '@/config/constants';
 
 export type { AdminRole };
@@ -14,6 +14,9 @@ export interface AdminUser {
   avatarUrl: string | null;
   role: AdminRole;
   isAdmin: boolean;
+  extraPermissions?: string[];
+  removedPermissions?: string[];
+  suspended?: boolean;
 }
 
 interface UseAdminAuthResult {
@@ -57,6 +60,28 @@ export function useAdminAuth(): UseAdminAuthResult {
       const role = (profile.role || 'user') as AdminRole;
       const isAdmin = profile.is_admin || ADMIN_ROLES.includes(role);
 
+      let extraPermissions: string[] = [];
+      let removedPermissions: string[] = [];
+      let suspended = false;
+      try {
+        const { data: access } = await supabase
+          .from('admin_access')
+          .select('status, extra_permissions, removed_permissions')
+          .eq('user_id', authUser.id)
+          .maybeSingle();
+        if (access) {
+          extraPermissions = access.extra_permissions || [];
+          removedPermissions = access.removed_permissions || [];
+          suspended = access.status === 'suspended';
+        }
+      } catch {
+        // access row is optional - role defaults apply
+      }
+
+      if (isAdmin && !suspended) {
+        void supabase.rpc('admin_touch_last_active').then(() => {}, () => {});
+      }
+
       return {
         id: profile.id,
         userId: profile.user_id,
@@ -65,6 +90,9 @@ export function useAdminAuth(): UseAdminAuthResult {
         avatarUrl: profile.avatar_url,
         role,
         isAdmin,
+        extraPermissions,
+        removedPermissions,
+        suspended,
       };
     } catch (err) {
       console.error('Error loading admin user:', err);
@@ -91,7 +119,7 @@ export function useAdminAuth(): UseAdminAuthResult {
       setAdminUser(admin);
 
       if (!admin || !admin.isAdmin) {
-        setError('Access denied. Admin privileges required.');
+        setError(admin?.suspended ? 'Your admin access has been suspended. Contact a super admin.' : 'Access denied. Admin privileges required.');
       }
     } catch (err: any) {
       console.error('Auth check failed:', err);
@@ -170,7 +198,7 @@ export function useAdminAuth(): UseAdminAuthResult {
 
       if (!admin || !admin.isAdmin) {
         await supabase.auth.signOut();
-        return { success: false, error: 'Access denied. Admin privileges required.' };
+        return { success: false, error: admin?.suspended ? 'Your admin access has been suspended. Contact a super admin.' : 'Access denied. Admin privileges required.' };
       }
 
       setUser(data.user);
@@ -197,7 +225,7 @@ export function useAdminAuth(): UseAdminAuthResult {
   const hasPermission = useCallback(
     (permission: string): boolean => {
       if (!adminUser) return false;
-      return checkPermission(adminUser.role, permission);
+      return hasPermissionWithOverrides(adminUser.role, permission, adminUser.extraPermissions, adminUser.removedPermissions);
     },
     [adminUser]
   );
@@ -205,7 +233,7 @@ export function useAdminAuth(): UseAdminAuthResult {
   const hasAnyPermission = useCallback(
     (permissions: string[]): boolean => {
       if (!adminUser) return false;
-      return permissions.some((p) => checkPermission(adminUser.role, p));
+      return permissions.some((p) => hasPermissionWithOverrides(adminUser.role, p, adminUser.extraPermissions, adminUser.removedPermissions));
     },
     [adminUser]
   );
