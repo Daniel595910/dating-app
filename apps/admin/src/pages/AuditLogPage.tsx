@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import {
   ScrollText,
   Search,
@@ -68,17 +69,26 @@ export const AuditLogPage: React.FC = () => {
   const [selectedLog, setSelectedLog] = useState<AuditLogEntry | null>(null);
   const [actionTypes, setActionTypes] = useState<string[]>([]);
   const [resourceTypes, setResourceTypes] = useState<string[]>([]);
+  const [userId, setUserId] = useState<string>('');
+  const [searchParams, setSearchParams] = useSearchParams();
 
   useEffect(() => {
     const timer = setTimeout(() => setDebouncedSearch(search), 400);
     return () => clearTimeout(timer);
   }, [search]);
 
+  // Seed from ?userId= (used by dashboard "View all" link)
+  useEffect(() => {
+    const fromUrl = searchParams.get('userId') || '';
+    setUserId((prev) => (prev !== fromUrl ? fromUrl : prev));
+  }, [searchParams]);
+
   const loadLogs = useCallback(async (showLoader = true) => {
     try {
       if (showLoader) setLoading(true);
 
       const result = await auditService.getLogs({
+        userId: userId || undefined,
         action: actionFilter,
         resourceType: resourceFilter,
         search: debouncedSearch,
@@ -96,7 +106,7 @@ export const AuditLogPage: React.FC = () => {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [actionFilter, resourceFilter, debouncedSearch, dateFrom, dateTo, page, toast]);
+  }, [actionFilter, resourceFilter, debouncedSearch, dateFrom, dateTo, page, userId, toast]);
 
   const loadStats = async () => {
     try {
@@ -128,7 +138,7 @@ export const AuditLogPage: React.FC = () => {
 
   useEffect(() => {
     setPage(0);
-  }, [actionFilter, resourceFilter, debouncedSearch, dateFrom, dateTo]);
+  }, [actionFilter, resourceFilter, debouncedSearch, dateFrom, dateTo, userId]);
 
   const handleRefresh = async () => {
     setRefreshing(true);
@@ -164,6 +174,12 @@ export const AuditLogPage: React.FC = () => {
   };
 
   const clearFilters = () => {
+    setUserId('');
+    if (searchParams.get('userId')) {
+      const next = new URLSearchParams(searchParams);
+      next.delete('userId');
+      setSearchParams(next, { replace: true });
+    }
     setSearch('');
     setActionFilter('all');
     setResourceFilter('all');
@@ -172,7 +188,7 @@ export const AuditLogPage: React.FC = () => {
   };
 
   const hasActiveFilters =
-    search || actionFilter !== 'all' || resourceFilter !== 'all' || dateFrom || dateTo;
+    search || actionFilter !== 'all' || resourceFilter !== 'all' || dateFrom || dateTo || userId;
 
   const timeAgo = (dateString: string): string => {
     const seconds = Math.floor((Date.now() - new Date(dateString).getTime()) / 1000);
@@ -201,6 +217,18 @@ export const AuditLogPage: React.FC = () => {
           <p className={styles.subtitle}>
             Complete history of all admin actions
           </p>
+          {userId && (
+            <p style={{ display: 'inline-flex', alignItems: 'center', gap: 6, marginTop: 6, fontSize: 12, color: 'var(--color-text-secondary)', background: 'var(--color-bg-secondary)', padding: '3px 10px', borderRadius: 9999 }}>
+              Filtered to admin: <code style={{ fontFamily: 'monospace', fontSize: 11 }}>{userId.substring(0, 8)}</code>
+              <button
+                onClick={clearFilters}
+                title="Clear user filter"
+                style={{ background: 'transparent', border: 'none', cursor: 'pointer', padding: 2, display: 'inline-flex', alignItems: 'center', color: 'var(--color-text-tertiary)' }}
+              >
+                <X size={12} />
+              </button>
+            </p>
+          )}
         </div>
         <div className={styles.headerActions}>
           <button
