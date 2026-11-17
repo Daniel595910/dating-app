@@ -48,6 +48,7 @@ const NAV_ITEMS: NavItem[] = [
   { path: '/stickers', label: 'Stickers & GIFs', icon: <Smile size={18} />, permission: 'CONTENT_VIEW' },
   { path: '/discover-videos', label: 'Discover Videos', icon: <Video size={18} />, permission: 'CONTENT_VIEW' },
   { path: '/photos', label: 'Photo Posts', icon: <Camera size={18} />, permission: 'CONTENT_VIEW' },
+  { path: '/community-videos', label: 'Community Videos', icon: <Video size={18} />, permission: 'CONTENT_VIEW' },
   { path: '/reports', label: 'Reports', icon: <Flag size={18} />, permission: 'CONTENT_VIEW' },
   { path: '/safety', label: 'Safety', icon: <UserX size={18} />, permission: 'USER_VIEW' },
   { path: '/verifications', label: 'Verifications', icon: <ShieldCheck size={18} />, permission: 'USER_VERIFY' },
