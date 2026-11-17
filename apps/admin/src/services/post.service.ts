@@ -9,6 +9,7 @@ export interface AdminPost {
   content: string;
   status: string;
   images: string[];
+  videos: string[];
   like_count: number;
   comment_count: number;
   report_count: number;
@@ -31,6 +32,7 @@ export interface PostFilters {
   search?: string;
   status?: 'all' | 'published' | 'hidden' | 'deleted' | 'reported';
   hasImages?: boolean;
+  hasVideos?: boolean;
   dateFrom?: string;
   dateTo?: string;
   limit?: number;
@@ -40,6 +42,7 @@ export interface PostFilters {
 export interface PostStats {
   total: number;
   withImages: number;
+  withVideos: number;
   hidden: number;
   reported: number;
   today: number;
@@ -56,6 +59,7 @@ class PostService {
         search,
         status = 'all',
         hasImages = false,
+        hasVideos = false,
         dateFrom,
         dateTo,
         limit = 24,
@@ -73,6 +77,11 @@ class PostService {
       // Has images filter
       if (hasImages) {
         query = query.not('images', 'is', null).neq('images', '{}');
+      }
+
+      // Has videos filter
+      if (hasVideos) {
+        query = query.not('videos', 'is', null).neq('videos', '{}');
       }
 
       if (dateFrom) query = query.gte('created_at', dateFrom);
@@ -123,6 +132,7 @@ class PostService {
         content: p.content,
         status: p.status,
         images: p.images || [],
+        videos: p.videos || [],
         like_count: p.like_count || 0,
         comment_count: p.comment_count || 0,
         report_count: p.report_count || 0,
@@ -287,6 +297,31 @@ class PostService {
     ]);
 
     return { total, withImages, hidden, reported, today };
+  }
+
+  async getVideoStats(): Promise<{ total: number; withVideos: number; hidden: number; reported: number; today: number }> {
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
+
+    const safeCount = async (extraFilter?: (q: any) => any) => {
+      try {
+        let q = supabase.from('posts').select('*', { count: 'exact', head: true })
+          .not('videos', 'is', null)
+          .neq('videos', '{}');
+        if (extraFilter) q = extraFilter(q);
+        const { count, error } = await q;
+        return error ? 0 : count || 0;
+      } catch { return 0; }
+    };
+
+    const [total, hidden, reported, today] = await Promise.all([
+      safeCount(),
+      safeCount((q) => q.eq('is_hidden', true)),
+      safeCount((q) => q.gt('report_count', 0)),
+      safeCount((q) => q.gte('created_at', todayStart.toISOString())),
+    ]);
+
+    return { total, withVideos: total, hidden, reported, today };
   }
 }
 
