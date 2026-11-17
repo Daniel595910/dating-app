@@ -42,7 +42,7 @@ export interface PostFilters {
 export interface PostStats {
   total: number;
   withImages: number;
-  withVideos: number;
+  withVideos?: number;
   hidden: number;
   reported: number;
   today: number;
@@ -73,6 +73,7 @@ class PostService {
       else if (status === 'hidden') query = query.eq('is_hidden', true);
       else if (status === 'deleted') query = query.eq('is_deleted', true);
       else if (status === 'reported') query = query.gt('report_count', 0);
+      else query = query.eq('is_deleted', false);
 
       // Has images filter
       if (hasImages) {

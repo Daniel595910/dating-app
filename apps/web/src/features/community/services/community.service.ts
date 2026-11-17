@@ -102,6 +102,7 @@ class CommunityService {
       .eq('community_id', communityId)
       .neq('type', 'profile_share')
       .eq('status', 'published')
+      .eq('is_deleted', false)
       .order('created_at', { ascending: false })
       .order('id', { ascending: false })
       .limit(limit + 1);

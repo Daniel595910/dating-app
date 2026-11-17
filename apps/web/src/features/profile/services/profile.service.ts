@@ -99,6 +99,7 @@ class ProfileService {
       .select('*')
       .eq('author_id', userId)
       .eq('status', 'published')
+      .eq('is_deleted', false)
       .order('created_at', { ascending: false })
       .limit(50);
 
@@ -131,6 +132,7 @@ class ProfileService {
       .select('*')
       .eq('author_id', userId)
       .eq('status', 'published')
+      .eq('is_deleted', false)
       .not('videos', 'is', null)
       .order('created_at', { ascending: false })
       .limit(50);
