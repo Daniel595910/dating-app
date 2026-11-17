@@ -296,7 +296,7 @@ export const ProfilePage: React.FC = () => {
         video_url: v.videoUrl,
         thumbnail_url: v.thumbnailUrl,
         caption: v.caption || null,
-        duration_seconds: v.durationSeconds,
+        duration_seconds: Number.isFinite(Number(v.durationSeconds)) ? Number(v.durationSeconds) : null,
         view_count: 0,
         status: 'published',
         created_at: v.createdAt,
@@ -1576,8 +1576,6 @@ export const ProfilePage: React.FC = () => {
                       onClick={() => {
                         if (videoSelectionMode) {
                           toggleVideoSelection(video.id);
-                        } else if (video.source === 'community') {
-                          navigate('/community?postId=' + video.id);
                         } else {
                           setPreviewDiscoverVideo(video);
                         }
@@ -1920,7 +1918,7 @@ export const ProfilePage: React.FC = () => {
         onChangeVideo={(v) => setPreviewDiscoverVideo(v)}
         onClose={() => setPreviewDiscoverVideo(null)}
         isOwner={isOwnProfile}
-        onUpdatePrivacy={handleUpdateVideoPrivacy}
+        onUpdatePrivacy={previewDiscoverVideo?.source === 'discover' ? handleUpdateVideoPrivacy : undefined}
       />
 
       {showDeleteConfirm && (
