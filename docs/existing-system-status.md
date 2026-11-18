@@ -130,3 +130,54 @@ Deferred. Phase 2 can proceed without them.
 - Does the normal profile's stat row already query followers/following counts, and if so where exactly?
 - The exact Paystack payment flow for future promotions — deferred to Phase 1E.
 - The exact VIP / points schema — deferred to Phase 1D.
+
+---
+
+## UPDATE — End of Phase 2 session (2026-11-17)
+
+Phase 2 (Professional Profile Transformation) is COMPLETE and shipped. HEAD at close: 2adcc80.
+
+### Commits shipped this session
+- 320223a — CP7a: DB migration (is_professional, professional_since, link_in_bio_url, professional_category, social_links)
+- 8f708f0 — CP7b: ProfileData type + service (activateProfessional, updateProfessionalProfile)
+- 047d366 — CP7c: activation card + confirm modal (renders on own profile when !isProfessional)
+- 2ebba60 — CP7d-1: ProfileStats.likes (sum of posts.like_count)
+- a6dd2cc — CP7d-2: ProfessionalProfileHeader component + CSS (left avatar / right info, Pro Creator pill, Followers/Following/Likes, Edit Profile)
+- 32ea7d3 — CP7d-3: wired ProfessionalProfileHeader into ProfilePage (ternary swap of topSectionV2)
+- 0c9c06d — CP7f: six marketing shortcuts (Analytics / Promote / Monetization / Link in Bio / Rewards / Creator Tools)
+- 9c8172d — CP7g: Professional Dashboard promotional banner
+- 7ca7dcb — CP7j: polish (removed debug log, fixed ternary so own professional profile shows neither Edit nor Follow/Message rows, bio 3-line clamp + Read more, mobile breakpoints 420/340px)
+- 2adcc80 — CP7k-3: pull info column up, enlarge stat numbers to 24px
+
+### What works end to end
+- Non-professional users see the unchanged normal profile
+- "Become a Professional Creator" card shows on own profile when !isProfessional
+- Click Activate -> confirm modal -> DB write (activateProfessional) -> profile refetches -> header swaps to professional layout
+- Persists across hard refresh (is_professional=true in DB, mapping is correct)
+- Professional header: left circular avatar with gradient ring + verified badge + Pro Creator crown pill; right info column with display name + verified + @username + location + bio (3-line clamp + Read more) + Link in Bio pill (if set)
+- Stats row: Followers / Following / Likes (24px numbers, formatCount 1.2K/1.5M format) + Edit Profile pill (top-aligned to stat values)
+- Six marketing shortcut icons in a horizontal scroll row on mobile, 6-column grid on desktop
+- Gradient professional dashboard banner with inline SVG chart, "Open Studio ->" button
+- No visitor actions (Follow/Message/Get to Know) on own professional profile
+- Edit/My Communities/Gallery/Favorites row hidden on professional self-view
+- Responsive breakpoints at 420px and 340px scale avatar/pro-badge/stat text/edit pill
+
+### What is NOT built (Phase 3 opening)
+- Studio modal (full-screen, 7 tabs: Overview/Content Manager/Promote/Advertisements/Analytics/Monetization/Wallet/Transactions/Link in Bio/Creator Tools/My Gallery & Favorites/My Communities/Settings)
+- Feature moves: My Communities (currently at /profile/my-communities), Gallery (currently galleryGridV3 inside posts tab), Favorites (data source not yet traced - see open question in Phase 1C)
+- 4th "Studio" tab on the profile (currently tabs are posts / videos / about)
+- Shortcuts and banner currently open a "coming soon" toast instead of the modal
+
+### Next session starts here
+- CP7h: build ProfessionalStudioDashboard component + full-screen Modal shell with 7 tabs
+- CP7i: add 'studio' to ProfilePage activeTab type, add 4th tab button, wire shortcuts + banner + tab to open the modal
+- First thing to dump: ProfilePage.tsx around tabsV3 (L~1463 originally, shifted by later patches — use grep for 'tabsV3')
+- Also dump: CommunityManagementPage.tsx (818 lines) - this is the current My Communities page to move into Studio
+- Favorites data source: not yet traced. Search ProfilePage.tsx for the Favorites button's onClick to find where it navigates or what it queries.
+
+### Known state at session close
+- Admin tsc: 24 (baseline)
+- Web tsc: 372 (baseline)
+- Both builds green
+- Tree clean
+- origin/main = 2adcc80
