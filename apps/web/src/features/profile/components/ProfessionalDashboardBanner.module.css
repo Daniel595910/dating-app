@@ -1,5 +1,6 @@
 ﻿/* ProfessionalDashboardBanner — gradient promotional banner.
-   Blue-to-purple gradient, growth chart left, text center, white pill button right. */
+   Uses app design tokens (--color-*) so it themes correctly in light/dark.
+   Red gradient uses brand primary -> deeper primary hover state. */
 
 .banner {
   display: flex;
@@ -8,8 +9,8 @@
   margin: 12px 16px 8px;
   padding: 16px 18px;
   border-radius: 28px;
-  background: linear-gradient(135deg, #2875F5 0%, #7615E8 100%);
-  box-shadow: 0 8px 20px rgba(40, 117, 245, 0.28);
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-hover) 100%);
+  box-shadow: var(--shadow-lg);
   color: #FFFFFF;
 }
 
@@ -64,20 +65,20 @@
   gap: 5px;
   padding: 9px 15px;
   border-radius: 999px;
-  background: #FFFFFF;
-  color: #5010C9;
+  background: var(--color-surface);
+  color: var(--color-primary);
   font-size: 12px;
   font-weight: 700;
   border: none;
   cursor: pointer;
   white-space: nowrap;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.10);
+  box-shadow: var(--shadow-sm);
   transition: transform 0.12s ease, box-shadow 0.12s ease;
 }
 
 .openButton:hover {
   transform: translateY(-1px);
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.14);
+  box-shadow: var(--shadow-md);
 }
 
 .openButton:active {
