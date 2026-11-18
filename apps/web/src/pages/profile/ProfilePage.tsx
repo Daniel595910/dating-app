@@ -11,6 +11,7 @@ import { VideoPreviewModal } from '../../features/profile/components/VideoPrevie
 import { PhotoManagement } from '../../features/profile/components/PhotoManagement';
 import { ProfessionalProfileHeader } from '../../features/profile/components/ProfessionalProfileHeader';
 import { ProfessionalMarketingShortcuts } from '../../features/profile/components/ProfessionalMarketingShortcuts';
+import { ProfessionalDashboardBanner } from '../../features/profile/components/ProfessionalDashboardBanner';
 import { CommunityCreationSheet } from '../../features/community/components/CommunityCreationSheet';
 import { ReportSheet } from '../../features/community/components/ReportSheet';
 import { BlockConfirmSheet } from '../../features/community/components/BlockConfirmSheet';
@@ -1399,6 +1400,11 @@ export const ProfilePage: React.FC = () => {
       {profile.isProfessional && (
         <ProfessionalMarketingShortcuts
           onOpen={(target) => showToast(`${target} is coming soon`, 'success')}
+        />
+      )}
+      {profile.isProfessional && (
+        <ProfessionalDashboardBanner
+          onOpenStudio={() => showToast('Studio is coming soon', 'success')}
         />
       )}
       <div className={styles.hero}>

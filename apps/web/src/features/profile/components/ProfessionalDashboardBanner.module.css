@@ -1,0 +1,113 @@
+﻿/* ProfessionalDashboardBanner — gradient promotional banner.
+   Blue-to-purple gradient, growth chart left, text center, white pill button right. */
+
+.banner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 12px 16px 8px;
+  padding: 16px 18px;
+  border-radius: 28px;
+  background: linear-gradient(135deg, #2875F5 0%, #7615E8 100%);
+  box-shadow: 0 8px 20px rgba(40, 117, 245, 0.28);
+  color: #FFFFFF;
+}
+
+.chartIcon {
+  flex: 0 0 auto;
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.16);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px;
+}
+
+.chartIcon svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.textColumn {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.title {
+  font-size: 14px;
+  font-weight: 800;
+  line-height: 1.2;
+  color: #FFFFFF;
+}
+
+.subtitle {
+  font-size: 11px;
+  line-height: 1.35;
+  color: rgba(255, 255, 255, 0.88);
+  font-weight: 400;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.openButton {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 9px 15px;
+  border-radius: 999px;
+  background: #FFFFFF;
+  color: #5010C9;
+  font-size: 12px;
+  font-weight: 700;
+  border: none;
+  cursor: pointer;
+  white-space: nowrap;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.10);
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+}
+
+.openButton:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.14);
+}
+
+.openButton:active {
+  transform: translateY(0);
+}
+
+.arrow {
+  font-size: 13px;
+  line-height: 1;
+}
+
+/* Compact layout on very narrow screens */
+@media (max-width: 380px) {
+  .banner {
+    gap: 10px;
+    padding: 14px 14px;
+    border-radius: 24px;
+  }
+  .chartIcon {
+    width: 38px;
+    height: 38px;
+  }
+  .title {
+    font-size: 13px;
+  }
+  .subtitle {
+    font-size: 10.5px;
+  }
+  .openButton {
+    padding: 8px 12px;
+    font-size: 11px;
+  }
+}
