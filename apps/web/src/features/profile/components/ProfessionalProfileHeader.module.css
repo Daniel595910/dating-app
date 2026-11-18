@@ -144,6 +144,7 @@
   font-weight: 700;
   letter-spacing: 0.02em;
   box-shadow: 0 2px 6px rgba(118, 21, 232, 0.35);
+  white-space: nowrap;
 }
 
 .proBadgeCrown {
@@ -169,6 +170,7 @@
   display: flex;
   align-items: center;
   gap: 6px;
+  min-width: 0;
 }
 
 .displayName {
@@ -193,6 +195,9 @@
   font-size: 13px;
   color: #686A91;
   line-height: 1.2;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .locationRow {
@@ -204,16 +209,42 @@
   line-height: 1.2;
 }
 
+.bioWrap {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-top: 4px;
+}
+
 .bio {
-  margin: 4px 0 2px;
+  margin: 0;
   font-size: 13px;
   color: #11133D;
   line-height: 1.4;
   word-break: break-word;
+}
+
+.bioCollapsed {
   display: -webkit-box;
-  -webkit-line-clamp: 4;
+  -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
   overflow: hidden;
+}
+
+.bioToggle {
+  align-self: flex-start;
+  background: none;
+  border: none;
+  padding: 0;
+  color: #7615E8;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.bioToggle:hover {
+  text-decoration: underline;
 }
 
 .linkInBio {
@@ -229,7 +260,8 @@
   font-size: 12px;
   font-weight: 600;
   max-width: 100%;
-  margin-top: 4px;
+  margin-top: 6px;
+  align-self: flex-start;
   transition: background 0.15s ease;
 }
 
@@ -312,6 +344,7 @@
   cursor: pointer;
   box-shadow: 0 4px 10px rgba(118, 21, 232, 0.25);
   transition: transform 0.12s ease, opacity 0.12s ease;
+  white-space: nowrap;
 }
 
 .editBtn:hover {
@@ -323,14 +356,39 @@
   transform: translateY(0);
 }
 
-/* ===== Responsive ===== */
-@media (max-width: 380px) {
+/* ===== Responsive: small screens ===== */
+@media (max-width: 420px) {
+  .profileRow {
+    gap: 12px;
+    padding: 8px 14px 14px;
+  }
   .avatarRing {
     width: 92px;
     height: 92px;
   }
+  .avatarFallback {
+    font-size: 32px;
+  }
+  .avatarVerified {
+    width: 22px;
+    height: 22px;
+  }
   .displayName {
     font-size: 18px;
+  }
+  .username {
+    font-size: 12px;
+  }
+  .bio {
+    font-size: 12.5px;
+    line-height: 1.35;
+  }
+  .bioToggle {
+    font-size: 11.5px;
+  }
+  .proBadge {
+    font-size: 10px;
+    padding: 3px 8px;
   }
   .statValue {
     font-size: 14px;
@@ -344,5 +402,29 @@
   }
   .statsLeft {
     gap: 14px;
+  }
+  .statsRow {
+    padding: 8px 14px 12px;
+    gap: 10px;
+  }
+}
+
+/* ===== Very narrow ===== */
+@media (max-width: 340px) {
+  .avatarRing {
+    width: 80px;
+    height: 80px;
+  }
+  .displayName {
+    font-size: 16px;
+  }
+  .statsLeft {
+    gap: 10px;
+  }
+  .editBtn span {
+    display: none;
+  }
+  .editBtn {
+    padding: 8px 10px;
   }
 }

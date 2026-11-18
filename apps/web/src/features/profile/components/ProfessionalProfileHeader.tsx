@@ -1,4 +1,4 @@
-﻿import React from 'react';
+﻿import React, { useState } from 'react';
 import { ArrowLeft, Share2, Settings, MoreVertical, BadgeCheck, MapPin, Link2, ChevronRight, Pencil } from 'lucide-react';
 import { ProfileData, ProfileStats } from '../types/profile.types';
 import styles from './ProfessionalProfileHeader.module.css';
@@ -37,12 +37,15 @@ export const ProfessionalProfileHeader: React.FC<ProfessionalProfileHeaderProps>
   onOpenFollowing,
   onOpenLikes,
 }) => {
+  const [bioExpanded, setBioExpanded] = useState(false);
+
   const locationText = profile.location
     ? [profile.location.city, profile.location.state, profile.location.country].filter(Boolean).join(', ')
     : '';
 
   const hasLinkInBio = Boolean(profile.linkInBioUrl);
   const likesValue = stats.likes ?? 0;
+  const bioLongEnoughForToggle = Boolean(profile.bio && profile.bio.length > 120);
 
   return (
     <div className={styles.container}>
@@ -99,7 +102,22 @@ export const ProfessionalProfileHeader: React.FC<ProfessionalProfileHeaderProps>
               <span>{locationText}</span>
             </div>
           )}
-          {profile.bio && <p className={styles.bio}>{profile.bio}</p>}
+          {profile.bio && (
+            <div className={styles.bioWrap}>
+              <p className={`${styles.bio} ${!bioExpanded && bioLongEnoughForToggle ? styles.bioCollapsed : ''}`}>
+                {profile.bio}
+              </p>
+              {bioLongEnoughForToggle && (
+                <button
+                  type="button"
+                  className={styles.bioToggle}
+                  onClick={() => setBioExpanded((v) => !v)}
+                >
+                  {bioExpanded ? 'Show less' : 'Read more'}
+                </button>
+              )}
+            </div>
+          )}
           {hasLinkInBio && (
             <a
               href={profile.linkInBioUrl ?? '#'}

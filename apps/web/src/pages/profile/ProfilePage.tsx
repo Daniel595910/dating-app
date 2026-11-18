@@ -1409,7 +1409,7 @@ export const ProfilePage: React.FC = () => {
       )}
       <div className={styles.hero}>
 
-        {isOwnProfile && !profile?.isProfessional ? (
+        {isOwnProfile ? (!profile?.isProfessional ? (
           <div className={styles.ownActionsV2}>
             <div className={styles.primaryRowV2}>
               <button
@@ -1452,7 +1452,7 @@ export const ProfilePage: React.FC = () => {
               </button>
             </div>
           </div>
-        ) : (
+        ) : null) : (
           <div className={styles.actionRow}>
             {connectionStatus === 'matched' ? (
               <button className={styles.publicPrimary} onClick={handleMessage}>
