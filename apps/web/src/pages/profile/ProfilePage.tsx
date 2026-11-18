@@ -12,6 +12,7 @@ import { PhotoManagement } from '../../features/profile/components/PhotoManageme
 import { ProfessionalProfileHeader } from '../../features/profile/components/ProfessionalProfileHeader';
 import { ProfessionalMarketingShortcuts } from '../../features/profile/components/ProfessionalMarketingShortcuts';
 import { ProfessionalDashboardBanner } from '../../features/profile/components/ProfessionalDashboardBanner';
+import { ProfessionalStudioModal, StudioTab } from '../../features/profile/components/ProfessionalStudioModal';
 import { CommunityCreationSheet } from '../../features/community/components/CommunityCreationSheet';
 import { ReportSheet } from '../../features/community/components/ReportSheet';
 import { BlockConfirmSheet } from '../../features/community/components/BlockConfirmSheet';
@@ -69,6 +70,21 @@ export const ProfilePage: React.FC = () => {
   const [bioExpanded, setBioExpanded] = useState(false);
   const [activatingProfessional, setActivatingProfessional] = useState(false);
   const [showActivateProConfirm, setShowActivateProConfirm] = useState(false);
+  const [studioOpen, setStudioOpen] = useState(false);
+  const [studioTab, setStudioTab] = useState<StudioTab>('overview');
+
+  const openStudioTab = (target: string) => {
+    const map: Record<string, StudioTab> = {
+      analytics: 'overview',
+      promote: 'content',
+      monetization: 'wallet',
+      link: 'overview',
+      rewards: 'wallet',
+      tools: 'overview',
+    };
+    setStudioTab(map[target] || 'overview');
+    setStudioOpen(true);
+  };
 
   const handleActivateProfessional = async () => {
     if (!user?.id || activatingProfessional) return;
@@ -1399,12 +1415,12 @@ export const ProfilePage: React.FC = () => {
 
       {profile.isProfessional && (
         <ProfessionalMarketingShortcuts
-          onOpen={(target) => showToast(`${target} is coming soon`, 'success')}
+          onOpen={openStudioTab}
         />
       )}
       {profile.isProfessional && (
         <ProfessionalDashboardBanner
-          onOpenStudio={() => showToast('Studio is coming soon', 'success')}
+          onOpenStudio={() => { setStudioTab('overview'); setStudioOpen(true); }}
         />
       )}
       <div className={styles.hero}>
@@ -2092,6 +2108,14 @@ export const ProfilePage: React.FC = () => {
           </div>
         </div>
       )}
+
+      <ProfessionalStudioModal
+        open={studioOpen}
+        initialTab={studioTab}
+        profile={profile}
+        stats={stats}
+        onClose={() => setStudioOpen(false)}
+      />
     </div>
   );
 };
